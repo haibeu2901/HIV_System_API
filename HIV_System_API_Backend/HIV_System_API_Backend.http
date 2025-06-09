@@ -1,0 +1,6 @@
+@HIV_System_API_Backend_HostAddress = http://localhost:5000
+
+GET {{HIV_System_API_Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
