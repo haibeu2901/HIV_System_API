@@ -33,5 +33,25 @@ namespace HIV_System_API_Services.Implements
         {
             return await _accountRepo.GetAccountByIdAsync(accId);
         }
+
+        public async Task<Account?> GetAccountByUserameAsync(string accUsername)
+        {
+            return await _accountRepo.GetAccountByUsernameAsync(accUsername);
+        }
+
+        public async Task<bool> UpdateAccountByIdAsync(int id)
+        {
+            return await _accountRepo.UpdateAccountByIdAsync(id);
+        }
+
+        public async Task<bool> DeleteAccountAsync(int accId)
+        {
+            return await _accountRepo.DeleteAccountAsync(accId);
+        }
+
+        public async Task<bool> CreateAccountAsync(Account account)
+        {
+            return await _accountRepo.CreateAccountAsync(account);
+        }
     }
 }

@@ -12,5 +12,9 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<Account>> GetAllAccountsAsync();
         Task<Account> GetAccountByLoginAsync(string accUsername, string accPassword);
         Task<Account?> GetAccountByIdAsync(int accId);
+        Task<Account?> GetAccountByUserameAsync(string accUsername);
+        Task<bool> UpdateAccountByIdAsync(int id);
+        Task<bool> DeleteAccountAsync(int accId);
+        Task<bool> CreateAccountAsync(Account account);
     }
 }

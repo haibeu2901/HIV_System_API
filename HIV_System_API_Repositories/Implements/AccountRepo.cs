@@ -25,5 +25,25 @@ namespace HIV_System_API_Repositories.Implements
         {
             return await AccountDAO.Instance.GetAccountByIdAsync(accId);
         }
+
+        public async Task<Account?> GetAccountByUsernameAsync(string accUsername)
+        {
+            return await AccountDAO.Instance.GetAccountByUsernameAsync(accUsername);
+        }
+
+        public async Task<bool> UpdateAccountByIdAsync(int id)
+        {
+            return await AccountDAO.Instance.UpdateAccountByIdAsync(id);
+        }
+
+        public async Task<bool> DeleteAccountAsync(int accId)
+        {
+            return await AccountDAO.Instance.DeleteAccountAsync(accId);
+        }
+
+        public async Task<bool> CreateAccountAsync(Account account)
+        {
+            return await AccountDAO.Instance.CreateAccountAsync(account);
+        }
     }
 }

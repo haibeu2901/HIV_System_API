@@ -36,6 +36,7 @@ public partial class Account
     [JsonIgnore]
     public virtual Patient? Patient { get; set; }
 
+    [JsonIgnore]
     public virtual ICollection<SocialBlog> SocialBlogs { get; set; } = new List<SocialBlog>();
 
     [JsonIgnore]
