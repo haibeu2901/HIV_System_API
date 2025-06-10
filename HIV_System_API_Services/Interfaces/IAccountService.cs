@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HIV_System_API_DAOs.Interfaces
+namespace HIV_System_API_Services.Interfaces
 {
-    public interface IAccountDAO
+    public interface IAccountService
     {
         Task<List<Account>> GetAllAccountsAsync();
         Task<Account> GetAccountByLoginAsync(string accUsername, string accPassword);

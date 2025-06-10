@@ -18,6 +18,8 @@ builder.Services.AddDbContext<HivSystemContext>(options =>
 
 // Add Services
 builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IPatientService, PatientService>();
 
 var app = builder.Build();
 
