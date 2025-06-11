@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace HIV_System_API_BOs;
 
@@ -18,6 +17,5 @@ public partial class ArvMedicationDetail
 
     public string? Manufactorer { get; set; }
 
-    [JsonIgnore]
     public virtual ICollection<PatientArvMedication> PatientArvMedications { get; set; } = new List<PatientArvMedication>();
 }

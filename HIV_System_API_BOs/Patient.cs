@@ -1,6 +1,5 @@
-﻿using System;
+﻿    using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace HIV_System_API_BOs;
 

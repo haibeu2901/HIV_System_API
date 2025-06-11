@@ -27,6 +27,8 @@ public partial class HivSystemContext : DbContext
 
     public virtual DbSet<DoctorPatientMr> DoctorPatientMrs { get; set; }
 
+    public virtual DbSet<DoctorWorkSchedule> DoctorWorkSchedules { get; set; }
+
     public virtual DbSet<MedicalService> MedicalServices { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
@@ -49,7 +51,7 @@ public partial class HivSystemContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost;Database=HIV_SYSTEM;Uid=sa;Pwd=12345;TrustServerCertificate=True");
+        => optionsBuilder.UseSqlServer("Server=localhost;Database=HIV_SYSTEM;User Id=sa;Password=12345;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -157,6 +159,23 @@ public partial class HivSystemContext : DbContext
                 .HasForeignKey(d => d.PmrId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_DoctorPatientMR_PatientMedicalRecord");
+        });
+
+        modelBuilder.Entity<DoctorWorkSchedule>(entity =>
+        {
+            entity.HasKey(e => e.DwsId).HasName("PK__Doctor_W__9CB300CF67AD5039");
+
+            entity.ToTable("Doctor_Work_Schedule");
+
+            entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week");
+            entity.Property(e => e.DoctorId).HasColumnName("doctor_id");
+            entity.Property(e => e.EndTime).HasColumnName("end_time");
+            entity.Property(e => e.StartTime).HasColumnName("start_time");
+
+            entity.HasOne(d => d.Doctor).WithMany(p => p.DoctorWorkSchedules)
+                .HasForeignKey(d => d.DoctorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Doctor_Work_Schedule");
         });
 
         modelBuilder.Entity<MedicalService>(entity =>
@@ -274,11 +293,11 @@ public partial class HivSystemContext : DbContext
             entity.ToTable("Social_Blog");
 
             entity.Property(e => e.IsAnonymous).HasDefaultValue(false);
-            entity.Property(e => e.Notes).HasMaxLength(200);
+            entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PublishedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Title).HasMaxLength(50);
+            entity.Property(e => e.Title).HasMaxLength(255);
 
             entity.HasOne(d => d.Acc).WithMany(p => p.SocialBlogs)
                 .HasForeignKey(d => d.AccId)
