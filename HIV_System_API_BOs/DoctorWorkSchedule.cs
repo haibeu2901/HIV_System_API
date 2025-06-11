@@ -11,9 +11,9 @@ public partial class DoctorWorkSchedule
 
     public byte? DayOfWeek { get; set; }
 
-    public TimeOnly? StartTime { get; set; }
+    public TimeOnly StartTime { get; set; }
 
-    public TimeOnly? EndTime { get; set; }
+    public TimeOnly EndTime { get; set; }
 
     public virtual Doctor Doctor { get; set; } = null!;
 }

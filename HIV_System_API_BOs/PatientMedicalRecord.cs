@@ -9,7 +9,7 @@ public partial class PatientMedicalRecord
 
     public int PtnId { get; set; }
 
-    public virtual ICollection<DoctorPatientMr> DoctorPatientMrs { get; set; } = new List<DoctorPatientMr>();
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
     public virtual ICollection<PatientArvRegiman> PatientArvRegimen { get; set; } = new List<PatientArvRegiman>();
 
