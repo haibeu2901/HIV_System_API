@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.Appointment;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -32,16 +33,36 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAppointment")]
-        public async Task<IActionResult> CreateAppointment([FromBody] Appointment appointment)
+        public async Task<ActionResult<AppointmentDTO>> CreateAppointment([FromBody] AppointmentCreateDTO dto)
         {
-            if (appointment == null)
+            if(dto == null)
             {
-                return BadRequest("Appointment cannot be null");
+                return BadRequest("Appointment data is required.");
             }
             try
             {
+                var appointment = new Appointment
+                {
+                    PmrId = dto.PmrId,
+                    DctId = dto.DctId,
+                    ApmtDate = dto.ApmtDate,
+                    ApmTime = dto.ApmTime,
+                    ApmStatus = dto.ApmStatus,
+                    Notes = dto.Notes
+                };
+                
                 var createdAppointment = await _appointmentService.CreateAppointmentAsync(appointment);
-                return CreatedAtAction(nameof(GetAllAppointments), new { id = createdAppointment.ApmId }, createdAppointment);
+                var result = new AppointmentDTO
+                {
+                    ApmId = createdAppointment.ApmId,
+                    PmrId = createdAppointment.PmrId,
+                    DctId = createdAppointment.DctId,
+                    ApmtDate = createdAppointment.ApmtDate,
+                    ApmTime = createdAppointment.ApmTime,
+                    ApmStatus = createdAppointment.ApmStatus,
+                    Notes = createdAppointment.Notes
+                };
+                return CreatedAtAction(nameof(GetAppointmentByIdAsync), new { id = result.ApmId }, result);
             }
             catch (Exception ex)
             {
@@ -102,20 +123,26 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateAppointment/{id}")]
-        public async Task<IActionResult> UpdateAppointmentByIdAsync(int id, [FromBody] Appointment appointment)
+        public async Task<IActionResult> UpdateAppointmentByIdAsync(int id, [FromBody] AppointmentUpdateDTO dto)
         {
-            if (id <= 0 || appointment == null)
+            if (id <= 0 || dto == null)
             {
-                return BadRequest("Invalid appointment ID or appointment data.");
+                return BadRequest("Invalid appointment ID or data.");
             }
             try
             {
-                var existingAppointment = await _appointmentService.GetAppointmentByIdAsync(id);
-                if (existingAppointment == null)
+                var appointment = await _appointmentService.GetAppointmentByIdAsync(id);
+                if (appointment == null)
                 {
                     return NotFound($"Appointment with ID {id} not found.");
                 }
-
+                // Update the appointment properties
+                appointment.PmrId = dto.PmrId;
+                appointment.DctId = dto.DctId;
+                appointment.ApmtDate = dto.ApmtDate;
+                appointment.ApmTime = dto.ApmTime;
+                appointment.ApmStatus = dto.ApmStatus;
+                appointment.Notes = dto.Notes;
                 var result = await _appointmentService.UpdateAppointmentByIdAsync(id);
                 if (!result)
                 {
