@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,12 +10,12 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface IAccountService
     {
-        Task<List<Account>> GetAllAccountsAsync();
-        Task<Account> GetAccountByLoginAsync(string accUsername, string accPassword);
-        Task<Account?> GetAccountByIdAsync(int accId);
-        Task<Account?> GetAccountByUserameAsync(string accUsername);
-        Task<bool> UpdateAccountByIdAsync(int id);
+        Task<List<AccountDTO>> GetAllAccountsAsync();
+        Task<AccountDTO?> GetAccountByLoginAsync(string accUsername, string accPassword);
+        Task<AccountDTO?> GetAccountByIdAsync(int accId);
+        Task<AccountDTO?> GetAccountByUsernameAsync(string accUsername);
+        Task<bool> UpdateAccountByIdAsync(int id, AccountDTO accountDTO);
         Task<bool> DeleteAccountAsync(int accId);
-        Task<bool> CreateAccountAsync(Account account);
+        Task<AccountDTO> CreateAccountAsync(AccountDTO accountDTO);
     }
 }

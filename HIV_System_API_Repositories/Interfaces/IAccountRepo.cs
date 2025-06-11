@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +14,8 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<Account> GetAccountByLoginAsync(string accUsername, string accPassword);
         Task<Account?> GetAccountByIdAsync(int accId);
         Task<Account?> GetAccountByUsernameAsync(string accUsername);
-        Task<bool> UpdateAccountByIdAsync(int id);
+        Task<bool> UpdateAccountByIdAsync(int id, Account updatedAccount);
         Task<bool> DeleteAccountAsync(int accId);
-        Task<bool> CreateAccountAsync(Account account);
+        Task<Account> CreateAccountAsync(Account account);
     }
 }

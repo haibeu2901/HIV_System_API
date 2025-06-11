@@ -38,8 +38,8 @@ namespace HIV_System_API_DAOs.Implements
 
             if (appointment.Dct == null)
                 throw new ArgumentException("The Dct field is required.", nameof(appointment.Dct));
-            if (appointment.Dpm == null)
-                throw new ArgumentException("The Dpm field is required.", nameof(appointment.Dpm));
+            if (appointment.PmrId == null)
+                throw new ArgumentException("The Dpm field is required.", nameof(appointment.PmrId));
 
             await _context.Appointments.AddAsync(appointment);
             await _context.SaveChangesAsync();
