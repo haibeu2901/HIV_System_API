@@ -11,5 +11,9 @@ namespace HIV_System_API_Repositories.Interfaces
     {
         Task<List<ArvMedicationDetail>> GetAllArvMedicationDetailsAsync();
         Task<ArvMedicationDetail> GetArvMedicationDetailByIdAsync(int id);
+        Task<bool> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail);
+        Task<bool> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail);
+        Task<bool> DeleteArvMedicationDetailAsync(int id);
+        Task<List<ArvMedicationDetail>> SearchArvMedicationDetailsByNameAsync(string searchTerm);
     }
 }

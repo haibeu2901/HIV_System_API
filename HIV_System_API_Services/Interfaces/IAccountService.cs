@@ -5,14 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HIV_System_API_DAOs.Interfaces
+namespace HIV_System_API_Services.Interfaces
 {
-    public interface IAccountDAO
+    public interface IAccountService
     {
         Task<List<Account>> GetAllAccountsAsync();
         Task<Account> GetAccountByLoginAsync(string accUsername, string accPassword);
         Task<Account?> GetAccountByIdAsync(int accId);
-        Task<Account?> GetAccountByUsernameAsync(string accUsername);
+        Task<Account?> GetAccountByUserameAsync(string accUsername);
         Task<bool> UpdateAccountByIdAsync(int id);
         Task<bool> DeleteAccountAsync(int accId);
         Task<bool> CreateAccountAsync(Account account);
