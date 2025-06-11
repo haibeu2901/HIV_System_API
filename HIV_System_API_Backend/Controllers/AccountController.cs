@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -23,6 +24,10 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var accounts = await _accountService.GetAllAccountsAsync();
+                if (accounts == null || !accounts.Any())
+                {
+                    return NotFound("No accounts found.");
+                }
                 return Ok(accounts);
             }
             catch (Exception ex)
@@ -84,7 +89,7 @@ namespace HIV_System_API_Backend.Controllers
                 {
                     return BadRequest("Username cannot be null or empty.");
                 }
-                var account = await _accountService.GetAccountByUserameAsync(username);
+                var account = await _accountService.GetAccountByUsernameAsync(username);
                 if (account == null)
                 {
                     return NotFound($"Account with username {username} not found.");
@@ -98,20 +103,20 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAccount")]
-        public async Task<IActionResult> CreateAccount([FromBody] Account account)
+        public async Task<IActionResult> CreateAccount([FromBody] AccountDTO accountDTO)
         {
             try
             {
-                if (account == null)
+                if (accountDTO == null)
                 {
-                    return BadRequest("Account cannot be null.");
+                    return BadRequest("Account data cannot be null.");
                 }
-                var result = await _accountService.CreateAccountAsync(account);
-                if (result)
+                var createdAccount = await _accountService.CreateAccountAsync(accountDTO);
+                if (createdAccount == null)
                 {
-                    return CreatedAtAction(nameof(GetAccountById), new { id = account.AccId }, account);
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create account.");
                 }
-                return BadRequest("Failed to create account.");
+                return CreatedAtAction(nameof(GetAccountById), new { id = createdAccount.AccId }, createdAccount);
             }
             catch (DbUpdateException dbEx)
             {
@@ -124,7 +129,7 @@ namespace HIV_System_API_Backend.Controllers
         }
         
         [HttpPut("UpdateAccount/{id}")]
-        public async Task<IActionResult> UpdateAccount(int id, [FromBody] Account updatedAccount)
+        public async Task<IActionResult> UpdateAccount(int id, [FromBody] AccountDTO accountDTO)
         {
             try
             {
@@ -132,38 +137,16 @@ namespace HIV_System_API_Backend.Controllers
                 {
                     return BadRequest("Account ID must be greater than zero.");
                 }
-                if (updatedAccount == null)
+                if (accountDTO == null)
                 {
-                    return BadRequest("Updated account data cannot be null.");
+                    return BadRequest("Account data cannot be null.");
                 }
-
-                var existingAccount = await _accountService.GetAccountByIdAsync(id);
-                if (existingAccount == null)
-                {
-                    return NotFound($"Account with ID {id} not found.");
-                }
-
-                // Update properties
-                existingAccount.AccId = id;
-                existingAccount.AccUsername = updatedAccount.AccUsername;
-                existingAccount.AccPassword = updatedAccount.AccPassword;
-                existingAccount.Email = updatedAccount.Email;
-                existingAccount.Fullname = updatedAccount.Fullname;
-                existingAccount.Dob = updatedAccount.Dob;
-                existingAccount.Gender = updatedAccount.Gender;
-                existingAccount.Roles = updatedAccount.Roles;
-                existingAccount.IsActive = updatedAccount.IsActive;
-
-                var result = await _accountService.UpdateAccountByIdAsync(id);
+                var result = await _accountService.UpdateAccountByIdAsync(id, accountDTO);
                 if (result)
                 {
-                    return NoContent();
+                    return NoContent(); // 204 No Content
                 }
-                return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update account.");
-            }
-            catch (DbUpdateException dbEx)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Database error: {dbEx.InnerException?.Message ?? dbEx.Message}");
+                return NotFound($"Account with ID {id} not found.");
             }
             catch (Exception ex)
             {

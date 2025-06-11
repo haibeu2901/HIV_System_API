@@ -6,9 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\HIV_System_API_BOs\HIV_System_API_BOs.csproj" />
-    <ProjectReference Include="..\HIV_System_API_DTOs\HIV_System_API_DTOs.csproj" />
-  </ItemGroup>
-
 </Project>
