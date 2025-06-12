@@ -9,7 +9,7 @@ public partial class Patient
 
     public int AccId { get; set; }
 
-    public virtual Account Acc { get; set; } = null!;
+    public virtual Account Account { get; set; } = null!;
 
     public virtual PatientMedicalRecord? PatientMedicalRecord { get; set; }
 }

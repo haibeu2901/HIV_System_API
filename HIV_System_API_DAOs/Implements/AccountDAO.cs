@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Interfaces;
+using HIV_System_API_DTOs.AccountDTO;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -31,142 +32,136 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<Account> GetAccountByLoginAsync(string accUsername, string accPassword)
+        public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
         {
-            // Validate input parameters
-            if (string.IsNullOrWhiteSpace(accUsername) || string.IsNullOrWhiteSpace(accPassword))
+            var accounts = await _context.Accounts.ToListAsync();
+            var result = accounts.Select(a => new AccountResponseDTO
             {
-                throw new ArgumentException("Username and password cannot be null or empty.");
-            }
+                AccId = a.AccId,
+                AccUsername = a.AccUsername,
+                AccPassword = a.AccPassword,
+                Email = a.Email,
+                Fullname = a.Fullname,
+                Dob = a.Dob,
+                Gender = a.Gender,
+                Roles = a.Roles,
+                IsActive = a.IsActive
+            }).ToList();
+            return result;
+        }
 
-            // Query the database asynchronously to find the account
+        public async Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword)
+        {
             var account = await _context.Accounts
                 .FirstOrDefaultAsync(a => a.AccUsername == accUsername && a.AccPassword == accPassword);
 
-            // Return the account or null if not found
-            return account;
-        }
-
-        public async Task<List<Account>> GetAllAccountsAsync()
-        {
-            return await _context.Accounts.ToListAsync();
-        }
-
-        public async Task<Account?> GetAccountByIdAsync(int accId)
-        {
-            // Validate input parameter
-            if (accId <= 0)
+            if (account == null)
             {
-                throw new ArgumentException("Account ID must be greater than zero.");
-            }
-            // Query the database asynchronously to find the account by ID
-            var account = await _context.Accounts.FindAsync(accId);
-            // Return the account or null if not found
-            return account;
-        }
-
-        public async Task<Account?> GetAccountByUsernameAsync(string accUsername)
-        {
-            if (string.IsNullOrWhiteSpace(accUsername))
-            {
-                throw new ArgumentException("Username cannot be null or empty.");
+                return null;
             }
 
-            return await _context.Accounts
-                .FirstOrDefaultAsync(a => a.AccUsername.ToLower().Contains(accUsername.ToLower()));
+            return new AccountResponseDTO
+            {
+                AccId = account.AccId,
+                AccUsername = account.AccUsername,
+                AccPassword = account.AccPassword,
+                Email = account.Email,
+                Fullname = account.Fullname,
+                Dob = account.Dob,
+                Gender = account.Gender,
+                Roles = account.Roles,
+                IsActive = account.IsActive
+            };
         }
 
-        public async Task<bool> UpdateAccountByIdAsync(int id, Account updatedAccount)
+        public async Task<AccountResponseDTO?> GetAccountByIdAsync(int accId)
         {
-            if (id <= 0)
-                throw new ArgumentException("ID tài khoản phải lớn hơn 0.");
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId);
+            if (account == null)
+            {
+                return null;
+            }
 
-            if (updatedAccount == null)
-                throw new ArgumentException("Thông tin tài khoản không được để trống.");
+            return new AccountResponseDTO
+            {
+                AccId = account.AccId,
+                AccUsername = account.AccUsername,
+                AccPassword = account.AccPassword,
+                Email = account.Email,
+                Fullname = account.Fullname,
+                Dob = account.Dob,
+                Gender = account.Gender,
+                Roles = account.Roles,
+                IsActive = account.IsActive
+            };
+        }
 
-            var existingAccount = await _context.Accounts.FindAsync(id);
-            if (existingAccount == null)
+        public async Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
+        {
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
+            if (account == null)
+            {
                 return false;
+            }
 
-            // Update fields
-            existingAccount.AccUsername = updatedAccount.AccUsername ?? existingAccount.AccUsername;
-            existingAccount.AccPassword = updatedAccount.AccPassword ?? existingAccount.AccPassword;
-            existingAccount.Email = updatedAccount.Email ?? existingAccount.Email;
-            existingAccount.Fullname = updatedAccount.Fullname ?? existingAccount.Fullname;
-            existingAccount.Dob = updatedAccount.Dob ?? existingAccount.Dob;
-            existingAccount.Gender = updatedAccount.Gender ?? existingAccount.Gender;
-            existingAccount.Roles = updatedAccount.Roles != 0 ? updatedAccount.Roles : existingAccount.Roles;
-            existingAccount.IsActive = updatedAccount.IsActive;
+            account.AccPassword = updatedAccount.AccPassword;
+            account.Email = updatedAccount.Email;
+            account.Fullname = updatedAccount.Fullname;
+            account.Dob = updatedAccount.Dob;
+            account.Gender = updatedAccount.Gender;
+            account.Roles = updatedAccount.Roles;
+            account.IsActive = updatedAccount.IsActive;
 
-            // Validate updated data
-            if (existingAccount.AccUsername.Length > 100)
-                throw new ArgumentException("Tên đăng nhập phải dưới 100 ký tự.");
-
-            if (existingAccount.Email != null && existingAccount.Email.Length > 100)
-                throw new ArgumentException("Email phải dưới 100 ký tự.");
-
-            if (existingAccount.Fullname != null && existingAccount.Fullname.Length > 50)
-                throw new ArgumentException("Họ tên phải dưới 50 ký tự.");
-
-            if (existingAccount.Roles < 1 || existingAccount.Roles > 5)
-                throw new ArgumentException("Vai trò phải từ 1 đến 5.");
-
-            _context.Accounts.Update(existingAccount);
-            var result = await _context.SaveChangesAsync();
-            return result > 0;
+            _context.Accounts.Update(account);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> DeleteAccountAsync(int accId)
         {
-            // Validate input parameter
-            if (accId <= 0)
-            {
-                throw new ArgumentException("Account ID must be greater than zero.");
-            }
-
-            // Find the account by ID
-            var account = await _context.Accounts.FindAsync(accId);
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId);
             if (account == null)
             {
-                // Account not found, return false
                 return false;
             }
 
-            // Remove the account
             _context.Accounts.Remove(account);
             await _context.SaveChangesAsync();
-
-            // Return true to indicate successful deletion
             return true;
         }
 
-        public async Task<Account> CreateAccountAsync(Account account)
+        public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
-            // Validate input
             if (account == null)
-                throw new ArgumentException("Tài khoản không được để trống.");
+                throw new ArgumentNullException(nameof(account));
 
-            if (string.IsNullOrWhiteSpace(account.AccUsername) || account.AccUsername.Length > 100)
-                throw new ArgumentException("Tên đăng nhập là bắt buộc và phải dưới 100 ký tự.");
+            var newAccount = new Account
+            {
+                AccUsername = account.AccUsername,
+                AccPassword = account.AccPassword,
+                Email = account.Email,
+                Fullname = account.Fullname,
+                Dob = account.Dob,
+                Gender = account.Gender,
+                Roles = account.Roles,
+                IsActive = account.IsActive
+            };
 
-            if (string.IsNullOrWhiteSpace(account.AccPassword))
-                throw new ArgumentException("Mật khẩu là bắt buộc.");
-
-            if (account.Email != null && account.Email.Length > 100)
-                throw new ArgumentException("Email phải dưới 100 ký tự.");
-
-            if (account.Fullname != null && account.Fullname.Length > 50)
-                throw new ArgumentException("Họ tên phải dưới 50 ký tự.");
-
-            if (account.Roles < 1 || account.Roles > 5)
-                throw new ArgumentException("Vai trò phải từ 1 đến 5.");
-
-            // Hash password
-            account.AccId = 0; // Ensure ID is generated by database
-
-            await _context.Accounts.AddAsync(account);
+            _context.Accounts.Add(newAccount);
             await _context.SaveChangesAsync();
-            return account;
+
+            return new AccountResponseDTO
+            {
+                AccId = newAccount.AccId,
+                AccUsername = account.AccUsername,
+                AccPassword= account.AccPassword,
+                Email = newAccount.Email,
+                Fullname = newAccount.Fullname,
+                Dob = newAccount.Dob,
+                Gender = newAccount.Gender,
+                Roles = newAccount.Roles,
+                IsActive = newAccount.IsActive
+            };
         }
     }
 }

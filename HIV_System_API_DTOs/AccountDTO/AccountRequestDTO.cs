@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace HIV_System_API_DTOs;
+namespace HIV_System_API_DTOs.AccountDTO;
 
-public class AccountDTO
+public class AccountRequestDTO
 {
-    public int AccId { get; set; }
-
     public string AccUsername { get; set; } = null!;
 
     public string AccPassword { get; set; } = null!;

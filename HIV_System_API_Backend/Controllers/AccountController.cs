@@ -1,5 +1,5 @@
 ﻿using HIV_System_API_BOs;
-using HIV_System_API_DTOs;
+using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -80,30 +80,8 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetAccountByUsername/{username}")]
-        public async Task<IActionResult> GetAccountByUsername(string username)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(username))
-                {
-                    return BadRequest("Username cannot be null or empty.");
-                }
-                var account = await _accountService.GetAccountByUsernameAsync(username);
-                if (account == null)
-                {
-                    return NotFound($"Account with username {username} not found.");
-                }
-                return Ok(account);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
-            }
-        }
-
         [HttpPost("CreateAccount")]
-        public async Task<IActionResult> CreateAccount([FromBody] AccountDTO accountDTO)
+        public async Task<IActionResult> CreateAccount([FromBody] AccountRequestDTO accountDTO)
         {
             try
             {
@@ -120,7 +98,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException dbEx)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Database error: {dbEx.InnerException?.Message ?? dbEx.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Database error: {dbEx.InnerException?.Message ?? dbEx.Source}");
             }
             catch (Exception ex)
             {
@@ -129,7 +107,7 @@ namespace HIV_System_API_Backend.Controllers
         }
         
         [HttpPut("UpdateAccount/{id}")]
-        public async Task<IActionResult> UpdateAccount(int id, [FromBody] AccountDTO accountDTO)
+        public async Task<IActionResult> UpdateAccount(int id, [FromBody] AccountRequestDTO accountDTO)
         {
             try
             {

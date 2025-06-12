@@ -1,5 +1,5 @@
 ﻿using HIV_System_API_BOs;
-using HIV_System_API_DTOs;
+using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -20,47 +20,9 @@ namespace HIV_System_API_Services.Implements
             _accountRepo = new AccountRepo();
         }
 
-        private AccountDTO ToDTO(Account account)
+        public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
-            return new AccountDTO
-            {
-                AccId = account.AccId,
-                AccUsername = account.AccUsername,
-                AccPassword = account.AccPassword,
-                Fullname = account.Fullname,
-                Email = account.Email,
-                Dob = account.Dob,
-                Gender = account.Gender,
-                Roles = account.Roles,
-                IsActive = account.IsActive
-            };
-        }
-
-        private Account ToEntity(AccountDTO accountDTO)
-        {
-            return new Account
-            {
-                AccId = accountDTO.AccId,
-                AccUsername = accountDTO.AccUsername,
-                AccPassword = accountDTO.AccPassword,
-                Fullname = accountDTO.Fullname,
-                Email = accountDTO.Email,
-                Dob = accountDTO.Dob,
-                Gender = accountDTO.Gender,
-                Roles = accountDTO.Roles,
-                IsActive = accountDTO.IsActive
-            };
-        }
-
-        public async Task<AccountDTO> CreateAccountAsync(AccountDTO accountDTO)
-        {
-            var account = ToEntity(accountDTO);
-            var createdAccount = await _accountRepo.CreateAccountAsync(account);
-            if (createdAccount == null)
-            {
-                throw new Exception("Failed to create account.");
-            }
-            return ToDTO(createdAccount);
+            return await _accountRepo.CreateAccountAsync(account);
         }
 
         public async Task<bool> DeleteAccountAsync(int accId)
@@ -68,46 +30,24 @@ namespace HIV_System_API_Services.Implements
             return await _accountRepo.DeleteAccountAsync(accId);
         }
 
-        public async Task<AccountDTO?> GetAccountByIdAsync(int accId)
+        public async Task<AccountResponseDTO?> GetAccountByIdAsync(int accId)
         {
-            var account = await _accountRepo.GetAccountByIdAsync(accId);
-            if (account == null)
-            {
-                return null;
-            }
-            return ToDTO(account);
+            return await _accountRepo.GetAccountByIdAsync(accId);
         }
 
-        public async Task<AccountDTO?> GetAccountByLoginAsync(string accUsername, string accPassword)
+        public async Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
-            var account = await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
-            if (account == null)
-            {
-                return null;
-            }
-            return ToDTO(account);
+            return await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
         }
 
-        public async Task<AccountDTO?> GetAccountByUsernameAsync(string accUsername)
+        public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
         {
-            var account = await _accountRepo.GetAccountByUsernameAsync(accUsername);
-            if (account == null)
-            {
-                return null;
-            }
-            return ToDTO(account);
+            return await _accountRepo.GetAllAccountsAsync();
         }
 
-        public async Task<List<AccountDTO>> GetAllAccountsAsync()
+        public async Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
         {
-            var accounts = await _accountRepo.GetAllAccountsAsync();
-            return accounts.Select(ToDTO).ToList();
-        }
-
-        public Task<bool> UpdateAccountByIdAsync(int id, AccountDTO accountDTO)
-        {
-            var account = ToEntity(accountDTO);
-            return _accountRepo.UpdateAccountByIdAsync(id, account);
+            return await _accountRepo.UpdateAccountByIdAsync(id, updatedAccount);
         }
     }
 }
