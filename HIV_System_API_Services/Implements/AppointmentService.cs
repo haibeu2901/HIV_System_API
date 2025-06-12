@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.Appointment;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -34,19 +35,19 @@ namespace HIV_System_API_Services.Implements
             return await _appointmentRepo.DeleteAppointmentByIdAsync(id);
         }
 
-        public async Task<List<Appointment>> GetAllAppointmentsAsync()
+        public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
         {
             return await _appointmentRepo.GetAllAppointmentsAsync();
         }
 
-        public async Task<Appointment> GetAppointmentByIdAsync(int id)
+        public async Task<AppointmentDTO> GetAppointmentByIdAsync(int id)
         {
             return await _appointmentRepo.GetAppointmentByIdAsync(id);
         }
 
-        public async Task<bool> UpdateAppointmentByIdAsync(int id)
+        public async Task<bool> UpdateAppointmentByIdAsync(Appointment appointment)
         {
-            return await _appointmentRepo.UpdateAppointmentByIdAsync(id);
+            return await _appointmentRepo.UpdateAppointmentByIdAsync(appointment);
         }
     }
 }

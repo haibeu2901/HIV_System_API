@@ -48,21 +48,19 @@ namespace HIV_System_API_Backend.Controllers
                     ApmtDate = dto.ApmtDate,
                     ApmTime = dto.ApmTime,
                     ApmStatus = dto.ApmStatus,
-                    Notes = dto.Notes
+                    Notes = dto.Notes,
+                    Dct = null,
+                    Pmr = null
                 };
                 
                 var createdAppointment = await _appointmentService.CreateAppointmentAsync(appointment);
-                var result = new AppointmentDTO
-                {
-                    ApmId = createdAppointment.ApmId,
-                    PmrId = createdAppointment.PmrId,
-                    DctId = createdAppointment.DctId,
-                    ApmtDate = createdAppointment.ApmtDate,
-                    ApmTime = createdAppointment.ApmTime,
-                    ApmStatus = createdAppointment.ApmStatus,
-                    Notes = createdAppointment.Notes
-                };
-                return CreatedAtAction(nameof(GetAppointmentByIdAsync), new { id = result.ApmId }, result);
+                var result = await _appointmentService.GetAppointmentByIdAsync(createdAppointment.ApmId);
+                
+                return CreatedAtAction(
+                    actionName: "GetAppointmentById",
+                    routeValues: new { id = createdAppointment.ApmId },
+                    value: result
+                );
             }
             catch (Exception ex)
             {
@@ -101,7 +99,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAppointmentById/{id}")]
-        public async Task<IActionResult> GetAppointmentByIdAsync(int id)
+        public async Task<ActionResult<AppointmentDTO>> GetAppointmentById(int id)
         {
             if (id <= 0)
             {
@@ -131,24 +129,27 @@ namespace HIV_System_API_Backend.Controllers
             }
             try
             {
-                var appointment = await _appointmentService.GetAppointmentByIdAsync(id);
-                if (appointment == null)
+                // Create Appointment object with updated values
+                var appointment = new Appointment
                 {
-                    return NotFound($"Appointment with ID {id} not found.");
-                }
-                // Update the appointment properties
-                appointment.PmrId = dto.PmrId;
-                appointment.DctId = dto.DctId;
-                appointment.ApmtDate = dto.ApmtDate;
-                appointment.ApmTime = dto.ApmTime;
-                appointment.ApmStatus = dto.ApmStatus;
-                appointment.Notes = dto.Notes;
-                var result = await _appointmentService.UpdateAppointmentByIdAsync(id);
+                    ApmId = id,  // Important: Include the ID
+                    PmrId = dto.PmrId,
+                    DctId = dto.DctId,
+                    ApmtDate = dto.ApmtDate,
+                    ApmTime = dto.ApmTime,
+                    ApmStatus = dto.ApmStatus,
+                    Notes = dto.Notes
+                };
+
+                var result = await _appointmentService.UpdateAppointmentByIdAsync(appointment);
                 if (!result)
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update the appointment.");
                 }
-                return NoContent();
+                
+                // Get updated appointment to return
+                var updatedAppointment = await _appointmentService.GetAppointmentByIdAsync(id);
+                return Ok(updatedAppointment);
             }
             catch (Exception ex)
             {
