@@ -1,4 +1,5 @@
-﻿using HIV_System_API_Services.Implements;
+﻿using HIV_System_API_DTOs.PatientDTO;
+using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -52,21 +53,75 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetPatientsByName/{name}")]
-        public async Task<IActionResult> GetPatientsByName(string name)
+        [HttpPost("CreatePatient")]
+        public async Task<IActionResult> CreatePatient([FromBody] PatientRequestDTO patientRequest)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(name))
+                if (patientRequest == null)
                 {
-                    return BadRequest("Name cannot be null or empty.");
+                    return BadRequest("Patient request data is required.");
                 }
-                var patients = await _patientService.GetPatientsByNameAsync(name);
-                if (patients == null || !patients.Any())
+
+                var createdPatient = await _patientService.CreatePatientAsync(patientRequest);
+                if (createdPatient == null)
                 {
-                    return NotFound($"No patients found with name containing '{name}'.");
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create patient.");
                 }
-                return Ok(patients);
+
+                return CreatedAtAction(nameof(GetPatientById), new { patientId = createdPatient.PtnId }, createdPatient);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpPut("UpdatePatient/{patientId}")]
+        public async Task<IActionResult> UpdatePatient(int patientId, [FromBody] PatientRequestDTO patientRequest)
+        {
+            try
+            {
+                if (patientId <= 0)
+                {
+                    return BadRequest("Patient ID must be greater than zero.");
+                }
+                if (patientRequest == null)
+                {
+                    return BadRequest("Patient request data is required.");
+                }
+
+                var updatedPatient = await _patientService.UpdatePatientAsync(patientId, patientRequest);
+                if (updatedPatient == null)
+                {
+                    return NotFound($"Patient with ID {patientId} not found.");
+                }
+
+                return Ok(updatedPatient);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpDelete("DeletePatient/{patientId}")]
+        public async Task<IActionResult> DeletePatient(int patientId)
+        {
+            try
+            {
+                if (patientId <= 0)
+                {
+                    return BadRequest("Patient ID must be greater than zero.");
+                }
+
+                var deleted = await _patientService.DeletePatientAsync(patientId);
+                if (!deleted)
+                {
+                    return NotFound($"Patient with ID {patientId} not found.");
+                }
+
+                return NoContent();
             }
             catch (Exception ex)
             {
