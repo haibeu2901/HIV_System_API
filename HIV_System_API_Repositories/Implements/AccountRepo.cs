@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Implements;
+using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -11,29 +12,9 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class AccountRepo : IAccountRepo
     {
-        public async Task<Account> GetAccountByLoginAsync(string accUsername, string accPassword)
+        public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
-            return await AccountDAO.Instance.GetAccountByLoginAsync(accUsername, accPassword);
-        }
-
-        public async Task<List<Account>> GetAllAccountsAsync()
-        {
-            return await AccountDAO.Instance.GetAllAccountsAsync();
-        }
-
-        public async Task<Account?> GetAccountByIdAsync(int accId)
-        {
-            return await AccountDAO.Instance.GetAccountByIdAsync(accId);
-        }
-
-        public async Task<Account?> GetAccountByUsernameAsync(string accUsername)
-        {
-            return await AccountDAO.Instance.GetAccountByUsernameAsync(accUsername);
-        }
-
-        public async Task<bool> UpdateAccountByIdAsync(int id, Account updatedAccount)
-        {
-            return await AccountDAO.Instance.UpdateAccountByIdAsync(id, updatedAccount);
+            return await AccountDAO.Instance.CreateAccountAsync(account);
         }
 
         public async Task<bool> DeleteAccountAsync(int accId)
@@ -41,9 +22,24 @@ namespace HIV_System_API_Repositories.Implements
             return await AccountDAO.Instance.DeleteAccountAsync(accId);
         }
 
-        public async Task<Account> CreateAccountAsync(Account account)
+        public async Task<AccountResponseDTO?> GetAccountByIdAsync(int accId)
         {
-            return await AccountDAO.Instance.CreateAccountAsync(account);
+            return await AccountDAO.Instance.GetAccountByIdAsync(accId);
+        }
+
+        public async Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword)
+        {
+            return await AccountDAO.Instance.GetAccountByLoginAsync(accUsername, accPassword);
+        }
+
+        public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
+        {
+            return await AccountDAO.Instance.GetAllAccountsAsync();
+        }
+
+        public async Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
+        {
+            return await AccountDAO.Instance.UpdateAccountByIdAsync(id, updatedAccount);
         }
     }
 }

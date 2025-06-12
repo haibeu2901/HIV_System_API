@@ -11,6 +11,8 @@ namespace HIV_System_API_DAOs.Interfaces
     {
         Task<List<Patient>> GetAllPatientsAsync();
         Task<Patient> GetPatientByIdAsync(int patientId);
-        Task<List<Patient>> GetPatientsByNameAsync(string name);
+        Task<bool> DeletePatientAsync(int patientId);
+        Task<Patient> CreatePatientAsync(int accId);
+        Task<bool> UpdatePatientAsync(int patientId, Patient updatedPatient);
     }
 }

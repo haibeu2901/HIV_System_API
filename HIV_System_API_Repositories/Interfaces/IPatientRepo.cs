@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,8 @@ namespace HIV_System_API_Repositories.Interfaces
     {
         Task<List<Patient>> GetAllPatientsAsync();
         Task<Patient> GetPatientByIdAsync(int patientId);
-        Task<List<Patient>> GetPatientsByNameAsync(string name);
+        Task<bool> DeletePatientAsync(int patientId);
+        Task<Patient> CreatePatientAsync(int accId);
+        Task<bool> UpdatePatientAsync(int patientId, Patient updatedPatient);
     }
 }

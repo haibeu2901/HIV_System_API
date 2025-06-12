@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.PatientDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +10,10 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface IPatientService
     {
-        Task<List<Patient>> GetAllPatientsAsync();
-        Task<Patient> GetPatientByIdAsync(int patientId);
-        Task<List<Patient>> GetPatientsByNameAsync(string name);
+        Task<List<PatientDTO>> GetAllPatientsAsync();
+        Task<PatientDTO> GetPatientByIdAsync(int patientId);
+        Task<bool> DeletePatientAsync(int patientId);
+        Task<PatientDTO> CreatePatientAsync(int accId);
+        Task<bool> UpdatePatientAsync(int patientId, PatientDTO updatedPatient);
     }
 }

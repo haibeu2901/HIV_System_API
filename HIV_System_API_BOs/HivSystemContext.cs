@@ -213,7 +213,7 @@ public partial class HivSystemContext : DbContext
 
             entity.Property(e => e.PtnId).ValueGeneratedNever();
 
-            entity.HasOne(d => d.Acc).WithOne(p => p.Patient)
+            entity.HasOne(d => d.Account).WithOne(p => p.Patient)
                 .HasForeignKey<Patient>(d => d.AccId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Patient_Account");
