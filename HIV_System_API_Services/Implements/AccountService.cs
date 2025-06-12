@@ -20,9 +20,45 @@ namespace HIV_System_API_Services.Implements
             _accountRepo = new AccountRepo();
         }
 
+        private Account MapToEntity(AccountRequestDTO dto)
+        {
+            return new Account
+            {
+                AccUsername = dto.AccUsername,
+                AccPassword = dto.AccPassword,
+                Email = dto.Email,
+                Fullname = dto.Fullname,
+                Dob = dto.Dob,
+                Gender = dto.Gender,
+                Roles = dto.Roles,
+                IsActive = dto.IsActive
+            };
+        }
+
+        private AccountResponseDTO MapToResponseDTO(Account account)
+        {
+            return new AccountResponseDTO
+            {
+                AccId = account.AccId,
+                AccUsername = account.AccUsername,
+                AccPassword = account.AccPassword,
+                Email = account.Email,
+                Fullname = account.Fullname,
+                Dob = account.Dob,
+                Gender = account.Gender,
+                Roles = account.Roles,
+                IsActive = account.IsActive
+            };
+        }
+
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
-            return await _accountRepo.CreateAccountAsync(account);
+            if (account == null)
+                throw new ArgumentNullException(nameof(account));
+
+            var entity = MapToEntity(account);
+            var createdAccount = await _accountRepo.CreateAccountAsync(entity);
+            return MapToResponseDTO(createdAccount);
         }
 
         public async Task<bool> DeleteAccountAsync(int accId)
@@ -32,22 +68,48 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<AccountResponseDTO?> GetAccountByIdAsync(int accId)
         {
-            return await _accountRepo.GetAccountByIdAsync(accId);
+            var account = await _accountRepo.GetAccountByIdAsync(accId);
+            if (account == null)
+                return null;
+            return MapToResponseDTO(account);
         }
 
-        public async Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword)
+        public async Task<AccountResponseDTO?> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
-            return await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
+            var account = await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
+            if (account == null)
+                return null;
+            return MapToResponseDTO(account);
         }
 
         public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
         {
-            return await _accountRepo.GetAllAccountsAsync();
+            var accounts = await _accountRepo.GetAllAccountsAsync();
+            return accounts.Select(MapToResponseDTO).ToList();
         }
 
-        public async Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
+        public async Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
         {
-            return await _accountRepo.UpdateAccountByIdAsync(id, updatedAccount);
+            if (updatedAccount == null)
+                throw new ArgumentNullException(nameof(updatedAccount));
+
+            // Fetch the existing account
+            var existingAccount = await _accountRepo.GetAccountByIdAsync(id);
+            if (existingAccount == null)
+                throw new KeyNotFoundException($"Account with id {id} not found.");
+
+            // Update fields
+            existingAccount.AccPassword = updatedAccount.AccPassword;
+            existingAccount.Email = updatedAccount.Email;
+            existingAccount.Fullname = updatedAccount.Fullname;
+            existingAccount.Dob = updatedAccount.Dob;
+            existingAccount.Gender = updatedAccount.Gender;
+            existingAccount.Roles = updatedAccount.Roles;
+            existingAccount.IsActive = updatedAccount.IsActive;
+
+            // Save changes
+            var updatedEntity = await _accountRepo.UpdateAccountByIdAsync(id, existingAccount);
+            return MapToResponseDTO(updatedEntity);
         }
     }
 }

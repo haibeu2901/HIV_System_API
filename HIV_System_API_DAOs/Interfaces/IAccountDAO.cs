@@ -10,11 +10,11 @@ namespace HIV_System_API_DAOs.Interfaces
 {
     public interface IAccountDAO
     {
-        Task<List<AccountResponseDTO>> GetAllAccountsAsync();
-        Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword);
-        Task<AccountResponseDTO?> GetAccountByIdAsync(int accId);
-        Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount);
+        Task<List<Account>> GetAllAccountsAsync();
+        Task<Account?> GetAccountByLoginAsync(string accUsername, string accPassword);
+        Task<Account?> GetAccountByIdAsync(int accId);
+        Task<Account> UpdateAccountByIdAsync(int id, Account updatedAccount);
         Task<bool> DeleteAccountAsync(int accId);
-        Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account);
+        Task<Account> CreateAccountAsync(Account account);
     }
 }
