@@ -10,10 +10,10 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface IPatientService
     {
-        Task<List<PatientDTO>> GetAllPatientsAsync();
-        Task<PatientDTO> GetPatientByIdAsync(int patientId);
+        Task<List<PatientResponseDTO>> GetAllPatientsAsync();
+        Task<PatientResponseDTO> GetPatientByIdAsync(int patientId);
         Task<bool> DeletePatientAsync(int patientId);
-        Task<PatientDTO> CreatePatientAsync(int accId);
-        Task<bool> UpdatePatientAsync(int patientId, PatientDTO updatedPatient);
+        Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patientRequest);
+        Task<PatientResponseDTO> UpdatePatientAsync(int patientId, PatientRequestDTO patientRequest);
     }
 }

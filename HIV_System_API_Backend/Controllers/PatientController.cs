@@ -54,16 +54,16 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreatePatient")]
-        public async Task<IActionResult> CreatePatient(int accId)
+        public async Task<IActionResult> CreatePatient([FromBody] PatientRequestDTO patientRequest)
         {
             try
             {
-                if (accId <= 0)
+                if (patientRequest == null)
                 {
-                    return BadRequest("Account ID must be greater than zero.");
+                    return BadRequest("Patient request data is required.");
                 }
 
-                var createdPatient = await _patientService.CreatePatientAsync(accId);
+                var createdPatient = await _patientService.CreatePatientAsync(patientRequest);
                 if (createdPatient == null)
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create patient.");
@@ -78,7 +78,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdatePatient/{patientId}")]
-        public async Task<IActionResult> UpdatePatient(int patientId, [FromBody] PatientDTO patientDTO)
+        public async Task<IActionResult> UpdatePatient(int patientId, [FromBody] PatientRequestDTO patientRequest)
         {
             try
             {
@@ -86,24 +86,18 @@ namespace HIV_System_API_Backend.Controllers
                 {
                     return BadRequest("Patient ID must be greater than zero.");
                 }
-                if (patientDTO == null)
+                if (patientRequest == null)
                 {
-                    return BadRequest("Patient data is required.");
+                    return BadRequest("Patient request data is required.");
                 }
 
-                var existingPatient = await _patientService.GetPatientByIdAsync(patientId);
-                if (existingPatient == null)
+                var updatedPatient = await _patientService.UpdatePatientAsync(patientId, patientRequest);
+                if (updatedPatient == null)
                 {
                     return NotFound($"Patient with ID {patientId} not found.");
                 }
 
-                var updateResult = await _patientService.UpdatePatientAsync(patientId, patientDTO);
-                if (!updateResult)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update patient.");
-                }
-
-                return NoContent();
+                return Ok(updatedPatient);
             }
             catch (Exception ex)
             {
@@ -121,16 +115,10 @@ namespace HIV_System_API_Backend.Controllers
                     return BadRequest("Patient ID must be greater than zero.");
                 }
 
-                var existingPatient = await _patientService.GetPatientByIdAsync(patientId);
-                if (existingPatient == null)
+                var deleted = await _patientService.DeletePatientAsync(patientId);
+                if (!deleted)
                 {
                     return NotFound($"Patient with ID {patientId} not found.");
-                }
-
-                var deleteResult = await _patientService.DeletePatientAsync(patientId);
-                if (!deleteResult)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to delete patient.");
                 }
 
                 return NoContent();

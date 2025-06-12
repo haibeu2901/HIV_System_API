@@ -1,6 +1,9 @@
-﻿using HIV_System_API_BOs;
+﻿using Azure.Core;
+using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Interfaces;
 using HIV_System_API_DTOs;
+using HIV_System_API_DTOs.AccountDTO;
+using HIV_System_API_DTOs.PatientDTO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using System;
@@ -33,94 +36,156 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<List<Patient>> GetAllPatientsAsync()
-        {
-            return await _context.Patients.Include(p => p.Account).ToListAsync();
-        }
-
-        public async Task<Patient> GetPatientByIdAsync(int patientId)
+        public async Task<List<PatientResponseDTO>> GetAllPatientsAsync()
         {
             return await _context.Patients
-                .Include(p => p.Account)
-                .FirstOrDefaultAsync(p => p.PtnId == patientId);
+            .Include(p => p.Account)
+            .Select(p => new PatientResponseDTO
+            {
+                PtnId = p.PtnId,
+                AccId = p.AccId,
+                Account = new AccountResponseDTO
+                {
+                    AccId = p.Account.AccId,
+                    AccUsername = p.Account.AccUsername,
+                    AccPassword = p.Account.AccPassword,
+                    Email = p.Account.Email,
+                    Fullname = p.Account.Fullname,
+                    Dob = p.Account.Dob,
+                    Gender = p.Account.Gender,
+                    Roles = p.Account.Roles,
+                    IsActive = p.Account.IsActive
+                }
+            })
+            .ToListAsync();
         }
 
-        public async Task<bool> DeletePatientAsync(int patientId)
+        public async Task<PatientResponseDTO> GetPatientByIdAsync(int patientId)
         {
             var patient = await _context.Patients
                 .Include(p => p.Account)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
 
             if (patient == null)
-                return false;
+                return null;
 
-            // Remove related Account if needed
-            if (patient.Account != null)
+            return new PatientResponseDTO
             {
-                _context.Accounts.Remove(patient.Account);
-            }
+                PtnId = patient.PtnId,
+                AccId = patient.AccId,
+                Account = new AccountResponseDTO
+                {
+                    AccId = patient.Account.AccId,
+                    AccUsername = patient.Account.AccUsername,
+                    AccPassword = patient.Account.AccPassword,
+                    Email = patient.Account.Email,
+                    Fullname = patient.Account.Fullname,
+                    Dob = patient.Account.Dob,
+                    Gender = patient.Account.Gender,
+                    Roles = patient.Account.Roles,
+                    IsActive = patient.Account.IsActive
+                }
+            };
+        }
+
+        public async Task<bool> DeletePatientAsync(int patientId)
+        {
+            var patient = await _context.Patients.FindAsync(patientId);
+            if (patient == null)
+                return false;
 
             _context.Patients.Remove(patient);
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<Patient> CreatePatientAsync(int accId)
+        public async Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patientRequest)
         {
-            // Check if Account exists
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId);
-            if (account == null)
-                throw new ArgumentException($"Account with AccId {accId} does not exist.");
+            // Pseudocode:
+            // 1. Find the Account by patientRequest.AccId.
+            // 2. If not found, return null.
+            // 3. Create a new Patient and assign the Account.
+            // 4. Add Patient to context and save changes.
+            // 5. Map to PatientResponseDTO and return.
 
-            // Create new Patient
+            var account = await _context.Accounts.FindAsync(patientRequest.AccId);
+            if (account == null)
+                throw new ArgumentException("Account does not exist.");
+            if (account.Roles != 3) // 3 = Patient
+                throw new ArgumentException("Account must have Patient role (Roles = 3).");
+            if (await _context.Patients.AnyAsync(p => p.AccId == patientRequest.AccId))
+                throw new InvalidOperationException("Patient with this AccId already exists.");
+
             var patient = new Patient
             {
-                AccId = accId,
+                PtnId = patientRequest.AccId,
+                AccId = patientRequest.AccId,
                 Account = account
             };
 
             _context.Patients.Add(patient);
             await _context.SaveChangesAsync();
 
-            // Optionally reload with Account navigation property
-            return await _context.Patients
-                .Include(p => p.Account)
-                .FirstOrDefaultAsync(p => p.PtnId == patient.PtnId);
+            return new PatientResponseDTO
+            {
+                PtnId = patient.PtnId,
+                AccId = patient.AccId,
+                Account = new AccountResponseDTO
+                {
+                    AccId = account.AccId,
+                    AccUsername = account.AccUsername,
+                    AccPassword = account.AccPassword,
+                    Email = account.Email,
+                    Fullname = account.Fullname,
+                    Dob = account.Dob,
+                    Gender = account.Gender,
+                    Roles = account.Roles,
+                    IsActive = account.IsActive
+                }
+            };
         }
 
-        public async Task<bool> UpdatePatientAsync(int patientId, Patient updatedPatient)
+        public async Task<PatientResponseDTO> UpdatePatientAsync(int patientId, PatientRequestDTO patientRequest)
         {
-            if (updatedPatient == null)
-                throw new ArgumentNullException(nameof(updatedPatient));
-
-            var existingPatient = await _context.Patients
+            // 1. Find the Patient by patientId, including Account.
+            var patient = await _context.Patients
                 .Include(p => p.Account)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
 
-            if (existingPatient == null)
-                return false;
+            if (patient == null)
+                return null;
 
-            if (existingPatient.Account == null)
-                throw new InvalidOperationException("The existing patient's account is null.");
+            // 2. Validate AccId
+            var account = await _context.Accounts.FindAsync(patientRequest.AccId);
+            if (account == null)
+                throw new ArgumentException("Account does not exist.");
+            if (account.Roles != 3)
+                throw new ArgumentException("Account must have Patient role (Roles = 3).");
+            if (await _context.Patients.AnyAsync(p => p.AccId == patientRequest.AccId && p.PtnId != patientId))
+                throw new InvalidOperationException("Patient with this AccId already exists.");
 
-            // Update Patient properties
-            existingPatient.AccId = updatedPatient.AccId;
-            existingPatient.Account.Roles = updatedPatient.Account.Roles;   
-            existingPatient.Account.IsActive = updatedPatient.Account.IsActive;
+            // 3. Update fields
+            patient.AccId = patientRequest.AccId;
 
-            // Update Account if provided
-            if (updatedPatient.Account != null && existingPatient.Account != null)
-            {
-                existingPatient.Account.AccPassword = updatedPatient.Account.AccPassword;
-                existingPatient.Account.Email = updatedPatient.Account.Email;
-                existingPatient.Account.Fullname = updatedPatient.Account.Fullname;
-                existingPatient.Account.Dob = updatedPatient.Account.Dob;
-                existingPatient.Account.Gender = updatedPatient.Account.Gender;
-            }
-
-            _context.Patients.Update(existingPatient);
             await _context.SaveChangesAsync();
-            return true;
+
+            return new PatientResponseDTO
+            {
+                PtnId = patient.PtnId,
+                AccId = patient.AccId,
+                Account = new AccountResponseDTO
+                {
+                    AccId = account.AccId,
+                    AccUsername = account.AccUsername,
+                    AccPassword = account.AccPassword,
+                    Email = account.Email,
+                    Fullname = account.Fullname,
+                    Dob = account.Dob,
+                    Gender = account.Gender,
+                    Roles = account.Roles,
+                    IsActive = account.IsActive
+                }
+            };
         }
     }
 }
