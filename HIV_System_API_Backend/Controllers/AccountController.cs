@@ -1,5 +1,4 @@
 ﻿using HIV_System_API_BOs;
-using HIV_System_API_DTOs;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
@@ -78,11 +77,16 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Account creation failed: {ex.Message}");
+                // Add detailed error information including inner exception
+                var innerMsg = ex.InnerException?.Message ?? "No inner exception details available";
+                return Conflict($"Account creation failed. Details: {ex.Message}. Inner exception: {innerMsg}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                // Add inner exception details for general exceptions too
+                var innerMsg = ex.InnerException?.Message ?? "No inner exception details available";
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"An error occurred: {ex.Message}. Inner exception: {innerMsg}");
             }
         }
         
