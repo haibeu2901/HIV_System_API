@@ -157,7 +157,7 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpPut("ChangeAppointmentStatus/{id}/{status}")]
+        [HttpPatch("ChangeAppointmentStatus/{id}/{status}")]
         public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
         {
             if (id <= 0)
