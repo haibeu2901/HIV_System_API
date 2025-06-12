@@ -11,9 +11,9 @@ namespace HIV_System_API_Services.Interfaces
     public interface IAccountService
     {
         Task<List<AccountResponseDTO>> GetAllAccountsAsync();
-        Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword);
+        Task<AccountResponseDTO?> GetAccountByLoginAsync(string accUsername, string accPassword);
         Task<AccountResponseDTO?> GetAccountByIdAsync(int accId);
-        Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount);
+        Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount);
         Task<bool> DeleteAccountAsync(int accId);
         Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account);
     }
