@@ -10,10 +10,10 @@ namespace HIV_System_API_DAOs.Interfaces
 {
     public interface IPatientDAO
     {
-        Task<List<PatientResponseDTO>> GetAllPatientsAsync();
-        Task<PatientResponseDTO> GetPatientByIdAsync(int patientId);
+        Task<List<Patient>> GetAllPatientsAsync();
+        Task<Patient?> GetPatientByIdAsync(int patientId);
         Task<bool> DeletePatientAsync(int patientId);
-        Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patientRequest);
-        Task<PatientResponseDTO> UpdatePatientAsync(int patientId, PatientRequestDTO patientRequest);
+        Task<Patient> CreatePatientAsync(Patient patient);
+        Task<Patient> UpdatePatientAsync(int patientId, Patient patient);
     }
 }

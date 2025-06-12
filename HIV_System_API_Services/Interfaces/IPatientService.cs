@@ -11,9 +11,9 @@ namespace HIV_System_API_Services.Interfaces
     public interface IPatientService
     {
         Task<List<PatientResponseDTO>> GetAllPatientsAsync();
-        Task<PatientResponseDTO> GetPatientByIdAsync(int patientId);
+        Task<PatientResponseDTO?> GetPatientByIdAsync(int patientId);
         Task<bool> DeletePatientAsync(int patientId);
-        Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patientRequest);
-        Task<PatientResponseDTO> UpdatePatientAsync(int patientId, PatientRequestDTO patientRequest);
+        Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patient);
+        Task<PatientResponseDTO> UpdatePatientAsync(int patientId, PatientRequestDTO patient);
     }
 }
