@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
@@ -21,114 +22,96 @@ namespace HIV_System_API_Backend.Controllers
         [HttpGet("GetAllAccounts")]
         public async Task<IActionResult> GetAllAccounts()
         {
-            try
+            var accounts = await _accountService.GetAllAccountsAsync();
+            if (accounts == null || accounts.Count == 0)
             {
-                var accounts = await _accountService.GetAllAccountsAsync();
-                if (accounts == null || !accounts.Any())
-                {
-                    return NotFound("No accounts found.");
-                }
-                return Ok(accounts);
+                return NotFound("No accounts found.");
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
-            }
+            return Ok(accounts);
         }
 
-        [HttpGet("GetAccountByLogin/{username}/{password}")]
-        public async Task<IActionResult> GetAccountByLogin(string username, string password)
+        [HttpPost("GetAccountByLogin")]
+        public async Task<IActionResult> GetAccountByLogin([FromBody] LoginRequestDTO loginRequest)
         {
-            try
+            if (loginRequest == null || string.IsNullOrWhiteSpace(loginRequest.AccUsername) || string.IsNullOrWhiteSpace(loginRequest.AccPassword))
             {
-                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-                {
-                    return BadRequest("Username and password cannot be null or empty.");
-                }
-                var account = await _accountService.GetAccountByLoginAsync(username, password);
-                if (account == null)
-                {
-                    return NotFound($"Account with username {username} not found.");
-                }
-                return Ok(account);
+                return BadRequest("Username and password are required.");
             }
-            catch (Exception ex)
+
+            var account = await _accountService.GetAccountByLoginAsync(loginRequest.AccUsername, loginRequest.AccPassword);
+            if (account == null)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return NotFound("Account not found or invalid credentials.");
             }
+            return Ok(account);
         }
 
         [HttpGet("GetAccountById/{id}")]
         public async Task<IActionResult> GetAccountById(int id)
         {
-            try
+            var account = await _accountService.GetAccountByIdAsync(id);
+            if (account == null)
             {
-                if (id <= 0)
-                {
-                    return BadRequest("Account ID must be greater than zero.");
-                }
-                var account = await _accountService.GetAccountByIdAsync(id);
-                if (account == null)
-                {
-                    return NotFound($"Account with ID {id} not found.");
-                }
-                return Ok(account);
+                return NotFound($"Account with ID {id} not found.");
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
-            }
+            return Ok(account);
         }
 
         [HttpPost("CreateAccount")]
         public async Task<IActionResult> CreateAccount([FromBody] AccountRequestDTO accountDTO)
         {
+            if (accountDTO == null ||
+                string.IsNullOrWhiteSpace(accountDTO.AccUsername) ||
+                string.IsNullOrWhiteSpace(accountDTO.AccPassword))
+            {
+                return BadRequest("Username and password are required.");
+            }
+
             try
             {
-                if (accountDTO == null)
-                {
-                    return BadRequest("Account data cannot be null.");
-                }
                 var createdAccount = await _accountService.CreateAccountAsync(accountDTO);
                 if (createdAccount == null)
                 {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create account.");
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Account could not be created.");
                 }
                 return CreatedAtAction(nameof(GetAccountById), new { id = createdAccount.AccId }, createdAccount);
             }
-            catch (DbUpdateException dbEx)
+            catch (DbUpdateException ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Database error: {dbEx.InnerException?.Message ?? dbEx.Source}");
+                return Conflict($"Account creation failed: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
             }
         }
         
         [HttpPut("UpdateAccount/{id}")]
         public async Task<IActionResult> UpdateAccount(int id, [FromBody] AccountRequestDTO accountDTO)
         {
+            if (accountDTO == null ||
+                string.IsNullOrWhiteSpace(accountDTO.AccUsername) ||
+                string.IsNullOrWhiteSpace(accountDTO.AccPassword))
+            {
+                return BadRequest("Username and password are required.");
+            }
+
             try
             {
-                if (id <= 0)
+                var updatedAccount = await _accountService.UpdateAccountByIdAsync(id, accountDTO);
+                if (updatedAccount == null)
                 {
-                    return BadRequest("Account ID must be greater than zero.");
+                    return NotFound($"Account with ID {id} not found.");
                 }
-                if (accountDTO == null)
-                {
-                    return BadRequest("Account data cannot be null.");
-                }
-                var result = await _accountService.UpdateAccountByIdAsync(id, accountDTO);
-                if (result)
-                {
-                    return NoContent(); // 204 No Content
-                }
-                return NotFound($"Account with ID {id} not found.");
+                return Ok(updatedAccount);
+            }
+            catch (DbUpdateException ex)
+            {
+                return Conflict($"Account update failed: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
             }
         }
 
@@ -137,20 +120,20 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
-                if (id <= 0)
+                var deleted = await _accountService.DeleteAccountAsync(id);
+                if (!deleted)
                 {
-                    return BadRequest("Account ID must be greater than zero.");
+                    return NotFound($"Account with ID {id} not found.");
                 }
-                var result = await _accountService.DeleteAccountAsync(id);
-                if (result)
-                {
-                    return NoContent(); // 204 No Content
-                }
-                return NotFound($"Account with ID {id} not found.");
+                return NoContent();
+            }
+            catch (DbUpdateException ex)
+            {
+                return Conflict($"Account deletion failed: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
             }
         }
     }

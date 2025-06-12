@@ -12,7 +12,7 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class AccountRepo : IAccountRepo
     {
-        public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
+        public async Task<Account> CreateAccountAsync(Account account)
         {
             return await AccountDAO.Instance.CreateAccountAsync(account);
         }
@@ -22,22 +22,22 @@ namespace HIV_System_API_Repositories.Implements
             return await AccountDAO.Instance.DeleteAccountAsync(accId);
         }
 
-        public async Task<AccountResponseDTO?> GetAccountByIdAsync(int accId)
+        public async Task<Account?> GetAccountByIdAsync(int accId)
         {
             return await AccountDAO.Instance.GetAccountByIdAsync(accId);
         }
 
-        public async Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword)
+        public async Task<Account?> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
             return await AccountDAO.Instance.GetAccountByLoginAsync(accUsername, accPassword);
         }
 
-        public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
+        public async Task<List<Account>> GetAllAccountsAsync()
         {
             return await AccountDAO.Instance.GetAllAccountsAsync();
         }
 
-        public async Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
+        public async Task<Account> UpdateAccountByIdAsync(int id, Account updatedAccount)
         {
             return await AccountDAO.Instance.UpdateAccountByIdAsync(id, updatedAccount);
         }
