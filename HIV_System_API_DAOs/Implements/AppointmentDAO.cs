@@ -62,12 +62,12 @@ namespace HIV_System_API_DAOs.Implements
                     .ThenInclude(d => d.Acc)
                 .Include(a => a.Pmr)
                     .ThenInclude(p => p.Ptn)
-                    .ThenInclude(pt => pt.Acc)
+                    .ThenInclude(pt => pt.Account) // Fixed: Changed 'Acc' to 'Account'
                 .Select(a => new AppointmentDTO
                 {
                     ApmId = a.ApmId,
                     PmrId = a.PmrId,
-                    PatientName = a.Pmr.Ptn.Acc.Fullname,
+                    PatientName = a.Pmr.Ptn.Account.Fullname, // Fixed: Changed 'Acc' to 'Account'
                     DctId = a.DctId,
                     DoctorName = a.Dct.Acc.Fullname,
                     ApmtDate = a.ApmtDate,
@@ -87,7 +87,7 @@ namespace HIV_System_API_DAOs.Implements
                     .ThenInclude(d => d.Acc)
                 .Include(a => a.Pmr)
                     .ThenInclude(p => p.Ptn)
-                    .ThenInclude(pt => pt.Acc)
+                    .ThenInclude(pt => pt.Account)
                 .FirstOrDefaultAsync(a => a.ApmId == id);
 
             if (appointment == null)
@@ -97,7 +97,7 @@ namespace HIV_System_API_DAOs.Implements
             {
                 ApmId = appointment.ApmId,
                 PmrId = appointment.PmrId,
-                PatientName = appointment.Pmr?.Ptn?.Acc?.Fullname,
+                PatientName = appointment.Pmr?.Ptn?.Account?.Fullname,
                 DctId = appointment.DctId,
                 DoctorName = appointment.Dct?.Acc?.Fullname,
                 ApmtDate = appointment.ApmtDate,
