@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs;
 using HIV_System_API_DTOs.AccountDTO;
+using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -130,6 +131,35 @@ namespace HIV_System_API_Backend.Controllers
             catch (DbUpdateException ex)
             {
                 return Conflict($"Account deletion failed: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPost("CreatePatientAccount")]
+        public async Task<IActionResult> CreatePatientAccount([FromBody] PatientAccountRequestDTO request)
+        {
+            if (request == null ||
+                string.IsNullOrWhiteSpace(request.AccUsername) ||
+                string.IsNullOrWhiteSpace(request.AccPassword))
+            {
+                return BadRequest("Username and password are required.");
+            }
+
+            try
+            {
+                var createdPatient = await _accountService.CreatePatientAccountAsync(request);
+                if (createdPatient == null)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Patient account could not be created.");
+                }
+                return CreatedAtAction(nameof(GetAccountById), new { id = createdPatient.AccId }, createdPatient);
+            }
+            catch (DbUpdateException ex)
+            {
+                return Conflict($"Patient account creation failed: {ex.Message}");
             }
             catch (Exception ex)
             {

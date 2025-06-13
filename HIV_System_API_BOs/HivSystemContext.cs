@@ -136,7 +136,7 @@ public partial class HivSystemContext : DbContext
             entity.Property(e => e.Bio).HasMaxLength(500);
             entity.Property(e => e.Degree).HasMaxLength(100);
 
-            entity.HasOne(d => d.Acc).WithOne(p => p.Doctor)
+            entity.HasOne(d => d.Account).WithOne(p => p.Doctor)
                 .HasForeignKey<Doctor>(d => d.AccId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Doctor_Account");
