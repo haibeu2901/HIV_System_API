@@ -13,7 +13,7 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<List<Appointment>> GetAllAppointmentsAsync();
         Task<Appointment> CreateAppointmentAsync(Appointment appointment);
         Task<Appointment?> GetAppointmentByIdAsync(int id);
-        Task<Appointment> UpdateAppointmentByIdAsync(Appointment appointment);
+        Task<Appointment> UpdateAppointmentByIdAsync(int id, Appointment appointment);
         Task<bool> DeleteAppointmentByIdAsync(int id);
         Task<Appointment> ChangeAppointmentStatusAsync(int id, byte status);
         Task<List<Appointment>> GetAppointmentsByDoctorIdAsync(int doctorId);

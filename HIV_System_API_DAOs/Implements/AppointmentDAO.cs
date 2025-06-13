@@ -66,10 +66,10 @@ namespace HIV_System_API_DAOs.Implements
             .FirstOrDefaultAsync(a => a.ApmId == id);
         }
 
-        public async Task<Appointment> UpdateAppointmentByIdAsync(Appointment appointment)
+        public async Task<Appointment> UpdateAppointmentByIdAsync(int id, Appointment appointment)
         {
             var existingAppointment = await _context.Appointments
-            .FirstOrDefaultAsync(a => a.ApmId == appointment.ApmId)
+            .FirstOrDefaultAsync(a => a.ApmId == id)
             ?? throw new InvalidOperationException($"Appointment with ApmId: {appointment.ApmId} not found.");
 
             existingAppointment.PmrId = appointment.PmrId;
