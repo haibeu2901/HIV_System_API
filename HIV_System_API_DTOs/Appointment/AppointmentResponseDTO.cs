@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace HIV_System_API_DTOs.Appointment
 {
-    public class AppointmentDTO
-    {  
+    public class AppointmentResponseDTO
+    {
         public int ApmId { get; set; }
         public int PmrId { get; set; }
         public string? PatientName { get; set; }
@@ -17,6 +17,5 @@ namespace HIV_System_API_DTOs.Appointment
         public TimeOnly ApmTime { get; set; }
         public string? Notes { get; set; }
         public byte ApmStatus { get; set; }
-
     }
 }

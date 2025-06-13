@@ -12,7 +12,7 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class AppointmentRepo : IAppointmentRepo
     {
-        public async Task<bool> ChangeAppointmentStatusAsync(int id, byte status)
+        public async Task<Appointment> ChangeAppointmentStatusAsync(int id, byte status)
         {
             return await AppointmentDAO.Instance.ChangeAppointmentStatusAsync(id, status);
         }
@@ -27,19 +27,24 @@ namespace HIV_System_API_Repositories.Implements
             return await AppointmentDAO.Instance.DeleteAppointmentByIdAsync(id);
         }
 
-        public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
+        public async Task<List<Appointment>> GetAllAppointmentsAsync()
         {
             return await AppointmentDAO.Instance.GetAllAppointmentsAsync();
         }
 
-        public async Task<AppointmentDTO> GetAppointmentByIdAsync(int id)
+        public async Task<Appointment?> GetAppointmentByIdAsync(int id)
         {
             return await AppointmentDAO.Instance.GetAppointmentByIdAsync(id);
         }
 
-        public async Task<bool> UpdateAppointmentByIdAsync(Appointment appointment)
+        public async Task<List<Appointment>> GetAppointmentsByDoctorIdAsync(int doctorId)
         {
-            return await AppointmentDAO.Instance.UpdateAppointmentByIdAsync(appointment);
+            return await AppointmentDAO.Instance.GetAppointmentsByDoctorIdAsync(doctorId);
+        }
+
+        public async Task<Appointment> UpdateAppointmentByIdAsync(int id, Appointment appointment)
+        {
+            return await AppointmentDAO.Instance.UpdateAppointmentByIdAsync(id, appointment);
         }
     }
 }

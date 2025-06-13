@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HIV_System_API_DTOs.Appointment
 {
-    public class AppointmentCreateDTO
+    public class AppointmentRequestDTO
     {
         public int PmrId { get; set; }
         public int DctId { get; set; }
