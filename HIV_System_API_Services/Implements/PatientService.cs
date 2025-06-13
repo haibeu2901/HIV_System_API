@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.PatientDTO;
+using HIV_System_API_DTOs.PatientMedicalRecordDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -35,6 +36,19 @@ namespace HIV_System_API_Services.Implements
             if (patient == null || patient.Account == null)
                 return null!;
 
+            PatientMedicalRecordResponseDTO? medicalRecordDto = null;
+            // Only map medical record if it exists and is not deleted (assuming null means deleted)
+            if (patient.PatientMedicalRecord != null
+                && patient.PatientMedicalRecord.PmrId > 0
+                && patient.PatientMedicalRecord.PtnId == patient.PtnId)
+            {
+                medicalRecordDto = new PatientMedicalRecordResponseDTO
+                {
+                    PmrId = patient.PatientMedicalRecord.PmrId,
+                    PtnId = patient.PatientMedicalRecord.PtnId
+                };
+            }
+
             return new PatientResponseDTO
             {
                 PtnId = patient.PtnId,
@@ -50,7 +64,8 @@ namespace HIV_System_API_Services.Implements
                     Gender = patient.Account.Gender,
                     Roles = patient.Account.Roles,
                     IsActive = patient.Account.IsActive
-                }
+                },
+                MedicalRecord = medicalRecordDto // Will be null if deleted
             };
         }
 
