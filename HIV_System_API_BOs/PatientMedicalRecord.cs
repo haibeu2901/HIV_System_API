@@ -11,7 +11,7 @@ public partial class PatientMedicalRecord
 
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
-    public virtual ICollection<PatientArvRegiman> PatientArvRegimen { get; set; } = new List<PatientArvRegiman>();
+    public virtual ICollection<PatientArvRegimen> PatientArvRegimen { get; set; } = new List<PatientArvRegimen>();
 
     public virtual Patient Ptn { get; set; } = null!;
 

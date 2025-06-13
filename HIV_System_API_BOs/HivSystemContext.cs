@@ -37,7 +37,7 @@ public partial class HivSystemContext : DbContext
 
     public virtual DbSet<PatientArvMedication> PatientArvMedications { get; set; }
 
-    public virtual DbSet<PatientArvRegiman> PatientArvRegimen { get; set; }
+    public virtual DbSet<PatientArvRegimen> PatientArvRegimen { get; set; }
 
     public virtual DbSet<PatientMedicalRecord> PatientMedicalRecords { get; set; }
 
@@ -238,7 +238,7 @@ public partial class HivSystemContext : DbContext
                 .HasConstraintName("FK_PatientARVMedication_PatientARVRegimen");
         });
 
-        modelBuilder.Entity<PatientArvRegiman>(entity =>
+        modelBuilder.Entity<PatientArvRegimen>(entity =>
         {
             entity.HasKey(e => e.ParId).HasName("PK__Patient___F35E4C972A0C8197");
 

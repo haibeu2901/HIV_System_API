@@ -15,5 +15,5 @@ public partial class PatientArvMedication
 
     public virtual ArvMedicationDetail Amd { get; set; } = null!;
 
-    public virtual PatientArvRegiman Par { get; set; } = null!;
+    public virtual PatientArvRegimen Par { get; set; } = null!;
 }
