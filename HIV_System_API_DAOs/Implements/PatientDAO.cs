@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -54,24 +55,36 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<bool> DeletePatientAsync(int patientId)
         {
+            Debug.WriteLine($"Attempting to delete patient with PtnId: {patientId}");
             var patient = await _context.Patients
-                .Include(p => p.Account)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
 
-            if (patient == null)
+            // Delete PatientMedicalRecord first if exists
+            if (patient.PatientMedicalRecord != null)
             {
-                return false;
+                _context.PatientMedicalRecords.Remove(patient.PatientMedicalRecord);
+                await _context.SaveChangesAsync();
+                // Reload patient to ensure it's still tracked and not deleted by cascade
+                patient = await _context.Patients.FirstOrDefaultAsync(p => p.PtnId == patientId);
+                if (patient == null)
+                {
+                    Debug.WriteLine($"Patient with PtnId: {patientId} was deleted by cascade after removing PatientMedicalRecord.");
+                    return true;
+                }
             }
 
-            //// Remove related Account if needed
-            //if (patient.Account != null)
-            //{
-            //    _context.Accounts.Remove(patient.Account);
-            //}
-
-            _context.Patients.Remove(patient);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                _context.Patients.Remove(patient);
+                await _context.SaveChangesAsync();
+                Debug.WriteLine($"Successfully deleted patient with PtnId: {patientId}");
+                return true;
+            }
+            catch (DbUpdateException ex)
+            {
+                Debug.WriteLine($"Failed to delete patient with PtnId: {patientId}. Error: {ex.Message}, InnerException: {ex.InnerException?.Message}");
+                throw new InvalidOperationException($"Failed to delete patient: {ex.Message}", ex);
+            }
         }
 
         public async Task<Patient> CreatePatientAsync(Patient patient)
