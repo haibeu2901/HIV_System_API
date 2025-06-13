@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.DoctorDTO;
+using HIV_System_API_DTOs.DoctorWorkScheduleDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -15,10 +16,12 @@ namespace HIV_System_API_Services.Implements
     public class DoctorService : IDoctorService
     {
         private readonly IDoctorRepo _doctorRepo;
+        private readonly IDoctorWorkScheduleRepo _workScheduleRepo;
 
         public DoctorService()
         {
             _doctorRepo = new DoctorRepo();
+            _workScheduleRepo = new DoctorWorkScheduleRepo();
         }
 
         private Doctor MapToEntity(DoctorRequestDTO dto)
@@ -39,6 +42,16 @@ namespace HIV_System_API_Services.Implements
         {
             if (doctor == null) throw new ArgumentNullException(nameof(doctor));
 
+            var workSchedules = doctor.DoctorWorkSchedules?
+                .Select(ws => new DoctorWorkScheduleResponseDTO
+                {
+                    DwsId = ws.DwsId,
+                    DctId = ws.DoctorId,
+                    DayOfWeek = ws.DayOfWeek ?? 0,
+                    StartTime = ws.StartTime,
+                    EndTime = ws.EndTime
+                }).ToList() ?? new List<DoctorWorkScheduleResponseDTO>();
+
             return new DoctorResponseDTO
             {
                 DctId = doctor.DctId,
@@ -56,7 +69,8 @@ namespace HIV_System_API_Services.Implements
                     Gender = doctor.Account.Gender,
                     Roles = doctor.Account.Roles,
                     IsActive = doctor.Account.IsActive
-                }
+                },
+                WorkSchedule = workSchedules
             };
         }
 
