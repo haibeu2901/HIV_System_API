@@ -32,89 +32,43 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
+        public async Task<List<Account>> GetAllAccountsAsync()
         {
-            var accounts = await _context.Accounts.ToListAsync();
-            var result = accounts.Select(a => new AccountResponseDTO
-            {
-                AccId = a.AccId,
-                AccUsername = a.AccUsername,
-                AccPassword = a.AccPassword,
-                Email = a.Email,
-                Fullname = a.Fullname,
-                Dob = a.Dob,
-                Gender = a.Gender,
-                Roles = a.Roles,
-                IsActive = a.IsActive
-            }).ToList();
-            return result;
+            return await _context.Accounts.ToListAsync();
         }
 
-        public async Task<AccountResponseDTO> GetAccountByLoginAsync(string accUsername, string accPassword)
+        public async Task<Account?> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
-            var account = await _context.Accounts
+            return await _context.Accounts
                 .FirstOrDefaultAsync(a => a.AccUsername == accUsername && a.AccPassword == accPassword);
-
-            if (account == null)
-            {
-                return null;
-            }
-
-            return new AccountResponseDTO
-            {
-                AccId = account.AccId,
-                AccUsername = account.AccUsername,
-                AccPassword = account.AccPassword,
-                Email = account.Email,
-                Fullname = account.Fullname,
-                Dob = account.Dob,
-                Gender = account.Gender,
-                Roles = account.Roles,
-                IsActive = account.IsActive
-            };
         }
 
-        public async Task<AccountResponseDTO?> GetAccountByIdAsync(int accId)
+        public async Task<Account?> GetAccountByIdAsync(int accId)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId);
-            if (account == null)
-            {
-                return null;
-            }
-
-            return new AccountResponseDTO
-            {
-                AccId = account.AccId,
-                AccUsername = account.AccUsername,
-                AccPassword = account.AccPassword,
-                Email = account.Email,
-                Fullname = account.Fullname,
-                Dob = account.Dob,
-                Gender = account.Gender,
-                Roles = account.Roles,
-                IsActive = account.IsActive
-            };
+            return await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId);
         }
 
-        public async Task<bool> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
+        public async Task<Account> UpdateAccountByIdAsync(int id, Account updatedAccount)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
-            if (account == null)
+            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
+            if (existingAccount == null)
             {
-                return false;
+                throw new KeyNotFoundException($"Account with id {id} not found.");
             }
 
-            account.AccPassword = updatedAccount.AccPassword;
-            account.Email = updatedAccount.Email;
-            account.Fullname = updatedAccount.Fullname;
-            account.Dob = updatedAccount.Dob;
-            account.Gender = updatedAccount.Gender;
-            account.Roles = updatedAccount.Roles;
-            account.IsActive = updatedAccount.IsActive;
+            // Update fields
+            existingAccount.AccPassword = updatedAccount.AccPassword;
+            existingAccount.Email = updatedAccount.Email;
+            existingAccount.Fullname = updatedAccount.Fullname;
+            existingAccount.Dob = updatedAccount.Dob;
+            existingAccount.Gender = updatedAccount.Gender;
+            existingAccount.Roles = updatedAccount.Roles;
+            existingAccount.IsActive = updatedAccount.IsActive;
 
-            _context.Accounts.Update(account);
+            // Note: Navigation properties (Doctor, Patient, Staff) are not updated here.
+
             await _context.SaveChangesAsync();
-            return true;
+            return existingAccount;
         }
 
         public async Task<bool> DeleteAccountAsync(int accId)
@@ -130,38 +84,16 @@ namespace HIV_System_API_DAOs.Implements
             return true;
         }
 
-        public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
+        public async Task<Account> CreateAccountAsync(Account account)
         {
             if (account == null)
+            {
                 throw new ArgumentNullException(nameof(account));
+            }
 
-            var newAccount = new Account
-            {
-                AccUsername = account.AccUsername,
-                AccPassword = account.AccPassword,
-                Email = account.Email,
-                Fullname = account.Fullname,
-                Dob = account.Dob,
-                Gender = account.Gender,
-                Roles = account.Roles,
-                IsActive = account.IsActive
-            };
-
-            _context.Accounts.Add(newAccount);
+            _context.Accounts.Add(account);
             await _context.SaveChangesAsync();
-
-            return new AccountResponseDTO
-            {
-                AccId = newAccount.AccId,
-                AccUsername = account.AccUsername,
-                AccPassword= account.AccPassword,
-                Email = newAccount.Email,
-                Fullname = newAccount.Fullname,
-                Dob = newAccount.Dob,
-                Gender = newAccount.Gender,
-                Roles = newAccount.Roles,
-                IsActive = newAccount.IsActive
-            };
+            return account;
         }
     }
 }
