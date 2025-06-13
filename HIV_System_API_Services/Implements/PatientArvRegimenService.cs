@@ -39,6 +39,7 @@ namespace HIV_System_API_Services.Implements
             {
                 throw new ArgumentException("RegimenLevel must be between 1 and 3");
             }
+            await Task.CompletedTask;
         }
 
         private async Task ValidateRegimenStatus(byte? regimenStatus)
@@ -47,6 +48,7 @@ namespace HIV_System_API_Services.Implements
             {
                 throw new ArgumentException("RegimenStatus must be between 0 and 2");
             }
+            await Task.CompletedTask;
         }
 
         private PatientArvRegimen MapToEntity(PatientArvRegimenRequestDTO requestDTO)
@@ -101,7 +103,7 @@ namespace HIV_System_API_Services.Implements
                 var createdEntity = await _patientArvRegimenRepo.CreatePatientArvRegimenAsync(entity);
                 return MapToResponseDTO(createdEntity);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 throw; // Re-throw validation exceptions
             }
@@ -155,7 +157,7 @@ namespace HIV_System_API_Services.Implements
                 var updatedEntity = await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, entity);
                 return MapToResponseDTO(updatedEntity);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 throw; // Re-throw validation exceptions
             }

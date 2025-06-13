@@ -13,7 +13,7 @@ namespace HIV_System_API_DAOs.Implements
     public class PatientMedicalRecordDAO : IPatientMedicalRecordDAO
     {
         private readonly HivSystemContext _context;
-        private static PatientMedicalRecordDAO _instance;
+        private static PatientMedicalRecordDAO? _instance;
 
         public PatientMedicalRecordDAO()
         {
