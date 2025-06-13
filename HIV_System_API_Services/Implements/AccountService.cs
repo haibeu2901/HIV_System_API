@@ -133,16 +133,16 @@ namespace HIV_System_API_Services.Implements
             var existingAccount = await _accountRepo.GetAccountByLoginAsync(patient.AccUsername, patient.AccPassword);
             if (existingAccount != null)
                 throw new InvalidOperationException($"Account with username '{patient.AccUsername}' already exists.");
-
+            // Map PatientAccountRequestDTO to AccountRequestDTO
             var accountDto = new AccountRequestDTO
             {
-                AccUsername = patient.AccUsername,
-                AccPassword = patient.AccPassword,
+                AccUsername = patient.AccUsername ?? throw new ArgumentNullException(nameof(patient.AccUsername)),
+                AccPassword = patient.AccPassword ?? throw new ArgumentNullException(nameof(patient.AccPassword)),
                 Email = patient.Email,
                 Fullname = patient.Fullname,
                 Dob = patient.Dob.HasValue ? DateOnly.FromDateTime(patient.Dob.Value) : null,
                 Gender = patient.Gender,
-                Roles = 3, // Patient role
+                Roles = 3, // Assuming 3 is the role for Patient
                 IsActive = true
             };
 
@@ -154,7 +154,6 @@ namespace HIV_System_API_Services.Implements
             {
                 PtnId = createdAccount.AccId
             };
-
             // Create Patient entity
             var patientEntity = new Patient
             {
@@ -165,6 +164,7 @@ namespace HIV_System_API_Services.Implements
             };
 
             // Save Patient entity
+
             var patientRepo = new PatientRepo();
             var createdPatient = await patientRepo.CreatePatientAsync(patientEntity);
 

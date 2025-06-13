@@ -38,7 +38,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             return await _context.Doctors
                 .Include(d => d.Account)
-                .Include(d => d.DoctorWorkSchedules)
+                .Include(d => d.Doct  orWorkSchedules)
                 .ToListAsync();
         }
 
