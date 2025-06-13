@@ -13,50 +13,107 @@ namespace HIV_System_API_Services.Implements
 {
     public class NotificationService : INotificationService
     {
-        private readonly INotificationRepo NotificationRepo;
+        private readonly INotificationRepo _notificationRepo;
 
         public NotificationService()
         {
-            NotificationRepo = new NotificationRepo();
+            _notificationRepo = new NotificationRepo();
         }
-        public Task<Notification> CreateNotificationAsync(Notification notification)
+
+        public async Task<NotificationResponseDTO> CreateNotificationAsync(CreateNotificationRequestDTO notificationDto)
         {
-            return NotificationRepo.CreateNotificationAsync(notification);
+            var notification = new Notification
+            {
+                NotiType = notificationDto.NotiType,
+                NotiMessage = notificationDto.NotiMessage,
+                SendAt = notificationDto.SendAt
+            };
+
+            var created = await _notificationRepo.CreateNotificationAsync(notification);
+            return MapToResponseDTO(created);
         }
 
         public Task<bool> DeleteNotificationByIdAsync(int id)
         {
-            return NotificationRepo.DeleteNotificationByIdAsync(id);
+            return _notificationRepo.DeleteNotificationByIdAsync(id);
         }
 
-        public Task<List<NotificationDTO>> GetAllNotifications()
+        public async Task<List<NotificationResponseDTO>> GetAllNotifications()
         {
-            return NotificationRepo.GetAllNotification();
+            var notifications = await _notificationRepo.GetAllNotification();
+            return notifications.Select(MapToResponseDTO).ToList();
         }
 
-        public Task<NotificationDTO> GetNotificationByAccId(int accId)
+        public async Task<NotificationResponseDTO> GetNotificationByIdAsync(int id)
         {
-            return NotificationRepo.GetNotificationByAccId(accId);
+            var notification = await _notificationRepo.GetNotificationByIdAsync(id);
+            return MapToResponseDTO(notification);
         }
 
-        public Task<NotificationDTO> GetNotificationByIdAsync(int id)
+        public async Task<NotificationDetailResponseDTO> GetNotificationDetailsByIdAsync(int id)
         {
-            return NotificationRepo.GetNotificationByIdAsync(id);
+            var notification = await _notificationRepo.GetNotificationByIdAsync(id);
+            var recipients = await _notificationRepo.GetNotificationRecipientsAsync(id);
+
+            var detailsDto = new NotificationDetailResponseDTO
+            {
+                NtfId = notification.NtfId,
+                NotiType = notification.NotiType,
+                NotiMessage = notification.NotiMessage,
+                SendAt = notification.SendAt ?? DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                Recipients = recipients.Select(r => new NotificationRecipientDTO
+                {
+                    AccId = r.AccId,
+                    Fullname = r.Acc?.Fullname,
+                    Role = r.Acc?.Roles ?? 0
+                }).ToList()
+            };
+
+            return detailsDto;
         }
 
-        public Task<NotificationDTO> SendNotificationByAccIdAsync(int ntfId, int accId)
+        public async Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId)
         {
-            return NotificationRepo.SendNotificationByAccIdAsync(ntfId, accId);
+            var notifications = await _notificationRepo.GetNotificationsByRecipientAsync(accId);
+            return notifications.Select(MapToResponseDTO).ToList();
         }
 
-        public Task<NotificationDTO> SendNotificationByRoleAsync(int ntfId, byte role)
+        public async Task<NotificationDetailResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId)
         {
-            return NotificationRepo.SendNotificationByRoleAsync(ntfId, role);
+            var notification = await _notificationRepo.SendNotificationToAccIdAsync(ntfId, accId);
+            return await GetNotificationDetailsByIdAsync(notification.NtfId);
         }
 
-        public Task<bool> UpdateNotificationByIdAsync(Notification notification)
+        public async Task<NotificationDetailResponseDTO> SendNotificationToRoleAsync(int ntfId, byte role)
         {
-            return NotificationRepo.UpdateNotificationByIdAsync(notification);
+            var notification = await _notificationRepo.SendNotificationToRoleAsync(ntfId, role);
+            return await GetNotificationDetailsByIdAsync(notification.NtfId);
+        }
+
+        public async Task<bool> UpdateNotificationByIdAsync(int id, UpdateNotificationRequestDTO notificationDto)
+        {
+            var notification = new Notification
+            {
+                NtfId = id,
+                NotiType = notificationDto.NotiType,
+                NotiMessage = notificationDto.NotiMessage,
+                SendAt = notificationDto.SendAt
+            };
+
+            return await _notificationRepo.UpdateNotificationByIdAsync(notification);
+        }
+
+        private static NotificationResponseDTO MapToResponseDTO(Notification notification)
+        {
+            return new NotificationResponseDTO
+            {
+                NtfId = notification.NtfId,
+                NotiType = notification.NotiType,
+                NotiMessage = notification.NotiMessage,
+                SendAt = notification.SendAt ?? DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            };
         }
     }
 }

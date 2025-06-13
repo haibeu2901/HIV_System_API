@@ -2,6 +2,7 @@
 using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV_System_API_Backend.Controllers
@@ -11,12 +12,14 @@ namespace HIV_System_API_Backend.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService _notificationService;
+
         public NotificationController(INotificationService notificationService)
         {
             _notificationService = notificationService;
         }
+
         [HttpGet("GetAllNoti")]
-        public async Task<IActionResult> GetAllNotification()
+        public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllNotifications()
         {
             try
             {
@@ -28,8 +31,9 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpGet("GetNotificationById/{id:int}")]
-        public async Task<ActionResult<NotificationDTO>> GetNotificationByIdAsync(int id)
+        public async Task<ActionResult<NotificationResponseDTO>> GetNotificationByIdAsync(int id)
         {
             if (id <= 0)
             {
@@ -50,8 +54,30 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
+        [HttpGet("GetNotificationDetails/{id:int}")]
+        public async Task<ActionResult<NotificationDetailResponseDTO>> GetNotificationDetailsAsync(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid notification ID.");
+            }
+            try
+            {
+                var notification = await _notificationService.GetNotificationDetailsByIdAsync(id);
+                return Ok(notification);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
+
         [HttpPost("CreateNotification")]
-        public async Task<ActionResult<NotificationDTO>> CreateNotificationAsync([FromBody] CreateNotificationDTO dto)
+        public async Task<ActionResult<NotificationResponseDTO>> CreateNotificationAsync([FromBody] CreateNotificationRequestDTO dto)
         {
             if (dto == null)
             {
@@ -59,35 +85,18 @@ namespace HIV_System_API_Backend.Controllers
             }
             try
             {
-                var notification = new Notification
-                {
-                    NotiType = dto.NotiType,
-                    NotiMessage = dto.NotiMessage,
-                    SendAt = dto.SendAt,
-                };
-
-                var createdNotification = await _notificationService.CreateNotificationAsync(notification);
-                if (createdNotification == null || createdNotification.NtfId <= 0)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create notification with a valid ID.");
-                }
-
-                var result = await _notificationService.GetNotificationByIdAsync(createdNotification.NtfId);
-                if (result == null)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to retrieve created notification.");
-                }
-
-                // Return Created response with the correct route
-                return Created($"/api/Notification/GetNotificationById/{createdNotification.NtfId}", result);
+                var notification = await _notificationService.CreateNotificationAsync(dto);
+                var createdNotification = await _notificationService.GetNotificationByIdAsync(notification.NtfId);
+                return Created($"/api/Notification/GetNotificationById/{notification.NtfId}", createdNotification);
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpPut("UpdateNotibyId")]
-        public async Task<IActionResult> UpdateNotificationByIdAsync(int id, [FromBody] UpdateNotificationDTO dto)
+
+        [HttpPut("UpdateNotibyId/{id:int}")]
+        public async Task<IActionResult> UpdateNotificationByIdAsync(int id, [FromBody] UpdateNotificationRequestDTO dto)
         {
             if (id <= 0 || dto == null)
             {
@@ -95,22 +104,12 @@ namespace HIV_System_API_Backend.Controllers
             }
             try
             {
-                // Create Notification object with updated values
-                var notification = new Notification
-                {
-                    NtfId = id,  // Important: Include the ID
-                    NotiType = dto.NotiType,
-                    NotiMessage = dto.NotiMessage,
-                    SendAt = dto.SendAt
-                };
-
-                var result = await _notificationService.UpdateNotificationByIdAsync(notification);
+                var result = await _notificationService.UpdateNotificationByIdAsync(id, dto);
                 if (!result)
                 {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update the notification.");
+                    return NotFound($"Notification with ID {id} not found.");
                 }
-                
-                // Get updated notification to return
+
                 var updatedNotification = await _notificationService.GetNotificationByIdAsync(id);
                 return Ok(updatedNotification);
             }
@@ -119,48 +118,82 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpDelete("DeleteNotibyId")]
+
+        [HttpDelete("DeleteNotibyId/{id:int}")]
         public async Task<IActionResult> DeleteNotificationByIdAsync(int id)
         {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid notification ID.");
+            }
             var deleted = await _notificationService.DeleteNotificationByIdAsync(id);
             if (!deleted)
             {
-                return NotFound();
+                return NotFound($"Notification with ID {id} not found.");
             }
             return NoContent();
         }
-        [HttpGet("SendtoAccId")]
-        public async Task<IActionResult> GetNotificationByAccId(int accId)
+
+        [HttpGet("GetByRecipient/{accId:int}")]
+        public async Task<ActionResult<List<NotificationResponseDTO>>> GetNotificationsByRecipientAsync(int accId)
         {
-            var notification = await _notificationService.GetNotificationByAccId(accId);
-            if (notification == null)
+            if (accId <= 0)
             {
-                return NotFound();
+                return BadRequest("Invalid account ID.");
             }
-            return Ok(notification);
-        }
-        [HttpPost("sendByRole")]
-        public async Task<IActionResult> SendNotificationByRoleAsync(int ntfId, byte role)
-        {
-            var notification = await _notificationService.SendNotificationByRoleAsync(ntfId, role);
-            if (notification == null)
+            try
             {
-                return NotFound();
+                var notifications = await _notificationService.GetNotificationsByRecipientAsync(accId);
+                return Ok(notifications);
             }
-            return Ok(notification);
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
         }
 
-        [HttpPost("sendByAccId/{ntfId}/{accId}")]
-        public async Task<IActionResult> SendNotificationByAccIdAsync(int ntfId, int accId)
+        [HttpPost("sendToRole/{ntfId:int}/{role}")]
+        public async Task<ActionResult<NotificationDetailResponseDTO>> SendNotificationToRoleAsync(int ntfId, byte role)
         {
-            var notification = await _notificationService.SendNotificationByAccIdAsync(ntfId, accId);
-            if (notification == null)
+            if (ntfId <= 0)
             {
-                return NotFound();
+                return BadRequest("Invalid notification ID.");
             }
-            return Ok(notification);
+            try
+            {
+                var notification = await _notificationService.SendNotificationToRoleAsync(ntfId, role);
+                return Ok(notification);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
 
-
+        [HttpPost("sendToAccId/{ntfId:int}/{accId:int}")]
+        public async Task<ActionResult<NotificationDetailResponseDTO>> SendNotificationToAccIdAsync(int ntfId, int accId)
+        {
+            if (ntfId <= 0 || accId <= 0)
+            {
+                return BadRequest("Invalid notification ID or account ID.");
+            }
+            try
+            {
+                var notification = await _notificationService.SendNotificationToAccIdAsync(ntfId, accId);
+                return Ok(notification);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }

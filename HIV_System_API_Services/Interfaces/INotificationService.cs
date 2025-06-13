@@ -10,13 +10,14 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface INotificationService
     {
-        Task<List<NotificationDTO>> GetAllNotifications();
-        Task<NotificationDTO> GetNotificationByIdAsync(int id);
-        Task<Notification> CreateNotificationAsync(Notification notification);
-        Task<NotificationDTO> GetNotificationByAccId(int accId);
-        Task<bool> UpdateNotificationByIdAsync(Notification notification);
+        Task<List<NotificationResponseDTO>> GetAllNotifications();
+        Task<NotificationResponseDTO> GetNotificationByIdAsync(int id);
+        Task<NotificationDetailResponseDTO> GetNotificationDetailsByIdAsync(int id);  // New method
+        Task<NotificationResponseDTO> CreateNotificationAsync(CreateNotificationRequestDTO notification);
+        Task<bool> UpdateNotificationByIdAsync(int id, UpdateNotificationRequestDTO notification);
         Task<bool> DeleteNotificationByIdAsync(int id);
-        Task<NotificationDTO> SendNotificationByRoleAsync(int ntfId, byte role);
-        Task<NotificationDTO> SendNotificationByAccIdAsync(int ntfId, int accId);
+        Task<NotificationDetailResponseDTO> SendNotificationToRoleAsync(int ntfId, byte role);  // Changed return type
+        Task<NotificationDetailResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId);  // Changed return type
+        Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId);  // New method
     }
 }

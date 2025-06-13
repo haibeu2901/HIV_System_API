@@ -23,29 +23,34 @@ namespace HIV_System_API_Repositories.Implements
             return NotificationDAO.Instance.DeleteNotificationByIdAsync(id);
         }
 
-        public Task<List<NotificationDTO>> GetAllNotification()
+        public Task<List<Notification>> GetAllNotification()
         {
             return NotificationDAO.Instance.GetAllNotification(); 
         }
 
-        public Task<NotificationDTO> GetNotificationByAccId(int accId)
-        {
-            return NotificationDAO.Instance.GetNotificationByAccId(accId);
-        }
-
-        public Task<NotificationDTO> GetNotificationByIdAsync(int id)
+        public Task<Notification> GetNotificationByIdAsync(int id)
         {
             return NotificationDAO.Instance.GetNotificationByIdAsync(id);
         }
 
-        public Task<NotificationDTO> SendNotificationByAccIdAsync(int ntfId, int accId)
+        public Task<List<NotificationAccount>> GetNotificationRecipientsAsync(int ntfId)
         {
-            return NotificationDAO.Instance.SendNotificationByAccIdAsync(ntfId, accId);
+            return NotificationDAO.Instance.GetNotificationRecipientsAsync(ntfId);
         }
 
-        public Task<NotificationDTO> SendNotificationByRoleAsync(int ntfId, byte role)
+        public Task<List<Notification>> GetNotificationsByRecipientAsync(int accId)
         {
-            return NotificationDAO.Instance.SendNotificationByRoleAsync(ntfId, role);
+            return NotificationDAO.Instance.GetNotificationsByRecipientAsync(accId);
+        }
+
+        public Task<Notification> SendNotificationToAccIdAsync(int ntfId, int accId)
+        {
+            return NotificationDAO.Instance.SendNotificationToAccIdAsync(ntfId, accId);
+        }
+
+        public Task<Notification> SendNotificationToRoleAsync(int ntfId, byte role)
+        {
+            return NotificationDAO.Instance.SendNotificationToRoleAsync(ntfId, role);
         }
 
         public Task<bool> UpdateNotificationByIdAsync(Notification notification)
