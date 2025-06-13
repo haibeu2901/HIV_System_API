@@ -1,14 +1,13 @@
 ﻿using HIV_System_API_BOs;
-using HIV_System_API_DTOs.DoctorDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HIV_System_API_DAOs.Interfaces
+namespace HIV_System_API_Repositories.Interfaces
 {
-    public interface IDoctorDAO
+    public interface IDoctorRepo
     {
         Task<List<Doctor>> GetAllDoctorsAsync();
         Task<Doctor?> GetDoctorByIdAsync(int id);
