@@ -264,7 +264,9 @@ public partial class HivSystemContext : DbContext
             entity.HasOne(d => d.Ptn).WithOne(p => p.PatientMedicalRecord)
                 .HasForeignKey<PatientMedicalRecord>(d => d.PtnId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PatientMedicalRecord_Patient");
+                .HasConstraintName("FK_PatientMedicalRecord_Patient")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<SocialBlog>(entity =>

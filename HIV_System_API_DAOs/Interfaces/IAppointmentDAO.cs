@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.Appointment;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +10,10 @@ namespace HIV_System_API_DAOs.Interfaces
 {
     public interface IAppointmentDAO
     {
-        Task<List<Appointment>> GetAllAppointmentsAsync();
+        Task<List<AppointmentDTO>> GetAllAppointmentsAsync();
         Task<Appointment> CreateAppointmentAsync(Appointment appointment);
-        Task<Appointment> GetAppointmentByIdAsync(int id);
-        Task<bool> UpdateAppointmentByIdAsync(int id);
+        Task<AppointmentDTO> GetAppointmentByIdAsync(int id);
+        Task<bool> UpdateAppointmentByIdAsync(Appointment appointment);
         Task<bool> DeleteAppointmentByIdAsync(int id);
         Task<bool> ChangeAppointmentStatusAsync(int id, byte status);
     }

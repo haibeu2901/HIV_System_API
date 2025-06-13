@@ -17,7 +17,6 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IDoctorRepo _doctorRepo;
         private readonly IDoctorWorkScheduleRepo _workScheduleRepo;
-
         public DoctorService()
         {
             _doctorRepo = new DoctorRepo();

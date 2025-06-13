@@ -1,5 +1,4 @@
 ﻿using HIV_System_API_BOs;
-using HIV_System_API_DTOs;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_Services.Implements;

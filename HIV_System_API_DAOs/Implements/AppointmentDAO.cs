@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Interfaces;
+using HIV_System_API_DTOs.Appointment;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -36,37 +37,102 @@ namespace HIV_System_API_DAOs.Implements
             if (appointment == null)
                 throw new ArgumentNullException(nameof(appointment));
 
-            if (appointment.Dct == null)
-                throw new ArgumentException("The Dct field is required.", nameof(appointment.Dct));
-            if (appointment.PmrId == null)
-                throw new ArgumentException("The Dpm field is required.", nameof(appointment.PmrId));
+            // Validate that DctId and PmrId exist in their respective tables
+            var doctorExists = await _context.Doctors.AnyAsync(d => d.DctId == appointment.DctId);
+            if (!doctorExists)
+                throw new ArgumentException("The specified doctor does not exist.", nameof(appointment.DctId));
+
+            var patientRecordExists = await _context.PatientMedicalRecords.AnyAsync(p => p.PmrId == appointment.PmrId);
+            if (!patientRecordExists)
+                throw new ArgumentException("The specified patient medical record does not exist.", nameof(appointment.PmrId));
+
+            // Set navigation properties to null to avoid validation errors
+            appointment.Dct = null;
+            appointment.Pmr = null;
 
             await _context.Appointments.AddAsync(appointment);
             await _context.SaveChangesAsync();
             return appointment;
         }
 
-        public async Task<List<Appointment>> GetAllAppointmentsAsync()
+        public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
         {
-            return await _context.Appointments.ToListAsync();
+            var appointments = await _context.Appointments
+                .Include(a => a.Dct)
+                    .ThenInclude(d => d.Account)
+                .Include(a => a.Pmr)
+                    .ThenInclude(p => p.Ptn)
+                    .ThenInclude(pt => pt.Account) // Fixed: Changed 'Acc' to 'Account'
+                .Select(a => new AppointmentDTO
+                {
+                    ApmId = a.ApmId,
+                    PmrId = a.PmrId,
+                    PatientName = a.Pmr.Ptn.Account.Fullname, // Fixed: Changed 'Acc' to 'Account'
+                    DctId = a.DctId,
+                    DoctorName = a.Dct.Account.Fullname,
+                    ApmtDate = a.ApmtDate,
+                    ApmTime = a.ApmTime,
+                    ApmStatus = a.ApmStatus,
+                    Notes = a.Notes
+                })
+                .ToListAsync();
+
+            return appointments;
         }
 
-        public async Task<Appointment> GetAppointmentByIdAsync(int id)
+        public async Task<AppointmentDTO> GetAppointmentByIdAsync(int id)
         {
-            return await _context.Appointments.FirstOrDefaultAsync(a => a.ApmId == id);
-        }
+            var appointment = await _context.Appointments
+                .Include(a => a.Dct)
+                    .ThenInclude(d => d.Account)
+                .Include(a => a.Pmr)
+                    .ThenInclude(p => p.Ptn)
+                    .ThenInclude(pt => pt.Account)
+                .FirstOrDefaultAsync(a => a.ApmId == id);
 
-        public async Task<bool> UpdateAppointmentByIdAsync(int id)
-        {
-            var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.ApmId == id);
             if (appointment == null)
-                return false;
+                return null;
 
-            // Attach and mark as modified (if using DTO, map properties here)
-            appointment.ApmId = id; // Assuming you want to keep the same ID
-            _context.Appointments.Update(appointment);
-            await _context.SaveChangesAsync();
-            return true;
+            return new AppointmentDTO
+            {
+                ApmId = appointment.ApmId,
+                PmrId = appointment.PmrId,
+                PatientName = appointment.Pmr?.Ptn?.Account?.Fullname,
+                DctId = appointment.DctId,
+                DoctorName = appointment.Dct?.Account?.Fullname,
+                ApmtDate = appointment.ApmtDate,
+                ApmTime = appointment.ApmTime,
+                ApmStatus = appointment.ApmStatus,
+                Notes = appointment.Notes
+            };
+        }
+
+        public async Task<bool> UpdateAppointmentByIdAsync(Appointment appointment)
+        {
+            try
+            {
+                var existingAppointment = await _context.Appointments
+                    .FirstOrDefaultAsync(a => a.ApmId == appointment.ApmId);
+
+                if (existingAppointment == null)
+                    return false;
+
+                // Update all properties
+                existingAppointment.PmrId = appointment.PmrId;
+                existingAppointment.DctId = appointment.DctId;
+                existingAppointment.ApmtDate = appointment.ApmtDate;
+                existingAppointment.ApmTime = appointment.ApmTime;
+                existingAppointment.ApmStatus = appointment.ApmStatus;
+                existingAppointment.Notes = appointment.Notes;
+
+                _context.Appointments.Update(existingAppointment);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<bool> DeleteAppointmentByIdAsync(int id)
