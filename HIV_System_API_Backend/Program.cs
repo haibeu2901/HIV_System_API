@@ -23,6 +23,7 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorWorkScheduleService, DoctorWorkScheduleService>();
+builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordService>();
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.PatientDTO;
+using HIV_System_API_DTOs.PatientMedicalRecordDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -56,6 +57,11 @@ namespace HIV_System_API_Services.Implements
         {
             if (account == null)
                 throw new ArgumentNullException(nameof(account));
+
+            // Check for duplicate username
+            var existing = await _accountRepo.GetAccountByLoginAsync(account.AccUsername, account.AccPassword);
+            if (existing != null)
+                throw new InvalidOperationException($"Account with username '{account.AccUsername}' already exists.");
 
             var entity = MapToEntity(account);
             var createdAccount = await _accountRepo.CreateAccountAsync(entity);
@@ -118,32 +124,47 @@ namespace HIV_System_API_Services.Implements
             if (patient == null)
                 throw new ArgumentNullException(nameof(patient));
 
-            // Map PatientAccountRequestDTO to AccountRequestDTO
+            if (string.IsNullOrWhiteSpace(patient.AccUsername))
+                throw new ArgumentNullException(nameof(patient.AccUsername));
+            if (string.IsNullOrWhiteSpace(patient.AccPassword))
+                throw new ArgumentNullException(nameof(patient.AccPassword));
+
+            // Check for duplicate username
+            var existingAccount = await _accountRepo.GetAccountByLoginAsync(patient.AccUsername, patient.AccPassword);
+            if (existingAccount != null)
+                throw new InvalidOperationException($"Account with username '{patient.AccUsername}' already exists.");
+
             var accountDto = new AccountRequestDTO
             {
-                AccUsername = patient.AccUsername ?? throw new ArgumentNullException(nameof(patient.AccUsername)),
-                AccPassword = patient.AccPassword ?? throw new ArgumentNullException(nameof(patient.AccPassword)),
+                AccUsername = patient.AccUsername,
+                AccPassword = patient.AccPassword,
                 Email = patient.Email,
                 Fullname = patient.Fullname,
                 Dob = patient.Dob.HasValue ? DateOnly.FromDateTime(patient.Dob.Value) : null,
                 Gender = patient.Gender,
-                Roles = 3, // Assuming 3 is the role for Patient
+                Roles = 3, // Patient role
                 IsActive = true
             };
 
             // Create Account
             var createdAccount = await _accountRepo.CreateAccountAsync(MapToEntity(accountDto));
 
+            // Create PatientMedicalRecord
+            var patientMedicalRecord = new PatientMedicalRecord
+            {
+                PtnId = createdAccount.AccId
+            };
+
             // Create Patient entity
             var patientEntity = new Patient
             {
                 PtnId = createdAccount.AccId,
                 AccId = createdAccount.AccId,
-                Account = createdAccount
+                Account = createdAccount,
+                PatientMedicalRecord = patientMedicalRecord
             };
 
-            // Save Patient entity (assuming _accountRepo has a method for this, otherwise you need a PatientRepo)
-            // For this example, let's assume you have a PatientRepo:
+            // Save Patient entity
             var patientRepo = new PatientRepo();
             var createdPatient = await patientRepo.CreatePatientAsync(patientEntity);
 
@@ -152,7 +173,37 @@ namespace HIV_System_API_Services.Implements
             {
                 PtnId = createdPatient.PtnId,
                 AccId = createdPatient.AccId,
-                Account = MapToResponseDTO(createdAccount)
+                Account = MapToResponseDTO(createdAccount),
+                MedicalRecord = new PatientMedicalRecordResponseDTO
+                {
+
+                }
+            };
+        }
+        private PatientMedicalRecordResponseDTO MapToPatientMedicalRecordResponseDTO(PatientMedicalRecord? record)
+        {
+            if (record == null)
+                return new PatientMedicalRecordResponseDTO();
+            return new PatientMedicalRecordResponseDTO
+            {
+                PtnId = record.PtnId
+                // Add more mappings if PatientMedicalRecordResponseDTO has more properties
+            };
+        }
+
+        public async Task<PatientResponseDTO?> GetPatientAccountByIdAsync(int patientId)
+        {
+            var patientRepo = new PatientRepo();
+            var patient = await patientRepo.GetPatientByIdAsync(patientId);
+            if (patient == null)
+                return null;
+
+            return new PatientResponseDTO
+            {
+                PtnId = patient.PtnId,
+                AccId = patient.AccId,
+                Account = MapToResponseDTO(patient.Account),
+                MedicalRecord = MapToPatientMedicalRecordResponseDTO(patient.PatientMedicalRecord)
             };
         }
     }
