@@ -40,6 +40,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             return await _context.Patients
                 .Include(p => p.Account)
+                .Include(p => p.PatientMedicalRecord)
                 .ToListAsync();
         }
 
@@ -47,6 +48,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             return await _context.Patients
                 .Include(p => p.Account)
+                .Include(p => p.PatientMedicalRecord)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
         }
 
