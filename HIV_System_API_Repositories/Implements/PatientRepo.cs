@@ -13,9 +13,9 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class PatientRepo : IPatientRepo
     {
-        public async Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patientRequest)
+        public async Task<Patient> CreatePatientAsync(Patient patient)
         {
-            return await PatientDAO.Instance.CreatePatientAsync(patientRequest);
+            return await PatientDAO.Instance.CreatePatientAsync(patient);
         }
 
         public async Task<bool> DeletePatientAsync(int patientId)
@@ -23,19 +23,19 @@ namespace HIV_System_API_Repositories.Implements
             return await PatientDAO.Instance.DeletePatientAsync(patientId);
         }
 
-        public async Task<List<PatientResponseDTO>> GetAllPatientsAsync()
+        public async Task<List<Patient>> GetAllPatientsAsync()
         {
             return await PatientDAO.Instance.GetAllPatientsAsync();
         }
 
-        public async Task<PatientResponseDTO> GetPatientByIdAsync(int patientId)
+        public async Task<Patient?> GetPatientByIdAsync(int patientId)
         {
             return await PatientDAO.Instance.GetPatientByIdAsync(patientId);
         }
 
-        public async Task<PatientResponseDTO> UpdatePatientAsync(int patientId, PatientRequestDTO patientRequest)
+        public async Task<Patient> UpdatePatientAsync(int patientId, Patient patient)
         {
-            return await PatientDAO.Instance.UpdatePatientAsync(patientId, patientRequest);
+            return await PatientDAO.Instance.UpdatePatientAsync(patientId, patient);
         }
     }
 }

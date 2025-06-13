@@ -28,154 +28,127 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
         [HttpPost("CreateAppointment")]
-        public async Task<ActionResult<AppointmentDTO>> CreateAppointment([FromBody] AppointmentCreateDTO dto)
+        public async Task<ActionResult> CreateAppointment([FromBody] AppointmentRequestDTO dto)
         {
-            if(dto == null)
-            {
+            if (dto == null)
                 return BadRequest("Appointment data is required.");
-            }
+
             try
             {
-                var appointment = new Appointment
-                {
-                    PmrId = dto.PmrId,
-                    DctId = dto.DctId,
-                    ApmtDate = dto.ApmtDate,
-                    ApmTime = dto.ApmTime,
-                    ApmStatus = dto.ApmStatus,
-                    Notes = dto.Notes,
-                    Dct = null,
-                    Pmr = null
-                };
-                
-                var createdAppointment = await _appointmentService.CreateAppointmentAsync(appointment);
-                var result = await _appointmentService.GetAppointmentByIdAsync(createdAppointment.ApmId);
-                
-                return CreatedAtAction(
-                    actionName: "GetAppointmentById",
-                    routeValues: new { id = createdAppointment.ApmId },
-                    value: result
-                );
+                var createdAppointment = await _appointmentService.CreateAppointmentAsync(dto);
+                return CreatedAtAction(nameof(GetAppointmentById), new { id = createdAppointment.ApmId }, createdAppointment);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
         [HttpDelete("DeleteAppointment/{id}")]
         public async Task<IActionResult> DeleteAppointmentByIdAsync(int id)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Invalid appointment ID.");
-            }
-
             try
             {
-                var appointment = await _appointmentService.GetAppointmentByIdAsync(id);
-                if (appointment == null)
-                {
+                var deleted = await _appointmentService.DeleteAppointmentByIdAsync(id);
+                if (!deleted)
                     return NotFound($"Appointment with ID {id} not found.");
-                }
-
-                var result = await _appointmentService.DeleteAppointmentByIdAsync(id);
-                if (!result)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to delete the appointment.");
-                }
 
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
         [HttpGet("GetAppointmentById/{id}")]
-        public async Task<ActionResult<AppointmentDTO>> GetAppointmentById(int id)
+        public async Task<ActionResult> GetAppointmentById(int id)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Invalid appointment ID.");
-            }
             try
             {
                 var appointment = await _appointmentService.GetAppointmentByIdAsync(id);
                 if (appointment == null)
-                {
                     return NotFound($"Appointment with ID {id} not found.");
-                }
+
                 return Ok(appointment);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
         [HttpPut("UpdateAppointment/{id}")]
-        public async Task<IActionResult> UpdateAppointmentByIdAsync(int id, [FromBody] AppointmentUpdateDTO dto)
+        public async Task<IActionResult> UpdateAppointmentByIdAsync(int id, [FromBody] AppointmentRequestDTO dto)
         {
-            if (id <= 0 || dto == null)
-            {
-                return BadRequest("Invalid appointment ID or data.");
-            }
+            if (dto == null)
+                return BadRequest("Appointment data is required.");
+
             try
             {
-                // Create Appointment object with updated values
-                var appointment = new Appointment
-                {
-                    ApmId = id,  // Important: Include the ID
-                    PmrId = dto.PmrId,
-                    DctId = dto.DctId,
-                    ApmtDate = dto.ApmtDate,
-                    ApmTime = dto.ApmTime,
-                    ApmStatus = dto.ApmStatus,
-                    Notes = dto.Notes
-                };
-
-                var result = await _appointmentService.UpdateAppointmentByIdAsync(appointment);
-                if (!result)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update the appointment.");
-                }
-                
-                // Get updated appointment to return
-                var updatedAppointment = await _appointmentService.GetAppointmentByIdAsync(id);
+                var updatedAppointment = await _appointmentService.UpdateAppointmentByIdAsync(id, dto);
                 return Ok(updatedAppointment);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
         [HttpPatch("ChangeAppointmentStatus/{id}/{status}")]
         public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Invalid appointment ID.");
-            }
             try
             {
-                var result = await _appointmentService.ChangeAppointmentStatusAsync(id, status);
-                if (!result)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to change the appointment status.");
-                }
-                return NoContent();
+                var updatedAppointment = await _appointmentService.ChangeAppointmentStatusAsync(id, status);
+                return Ok(updatedAppointment);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("GetAppointmentsByDoctorId/{id}")]
+        public async Task<IActionResult> GetAppointmentsByDoctorId(int id)
+        {
+            try
+            {
+                var appointments = await _appointmentService.GetAppointmentsByDoctorIdAsync(id);
+                return Ok(appointments);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
     }

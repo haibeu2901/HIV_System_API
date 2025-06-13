@@ -2,6 +2,7 @@
 using HIV_System_API_DAOs.Interfaces;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.DoctorDTO;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,69 +34,114 @@ namespace HIV_System_API_DAOs.Implements
 
         }
 
-        public async Task<DoctorResponseDTO> CreateDoctorAsync(DoctorRequestDTO doctorRequest)
+        public async Task<List<Doctor>> GetAllDoctorsAsync()
         {
-            if (doctorRequest == null)
-                throw new ArgumentNullException(nameof(doctorRequest));
+            return await _context.Doctors
+                .Include(d => d.Account)
+                .Include(d => d.DoctorWorkSchedules)
+                .ToListAsync();
+        }
 
-            // Find the related Account
-            var account = await _context.Accounts.FindAsync(doctorRequest.AccId);
-            if (account == null)
-                throw new InvalidOperationException($"Account with ID {doctorRequest.AccId} not found.");
+        public async Task<Doctor?> GetDoctorByIdAsync(int id)
+        {
+            return await _context.Doctors
+                .Include(d => d.Account)
+                .Include(d => d.DoctorWorkSchedules)
+                .FirstOrDefaultAsync(d => d.DctId == id);
+        }
 
-            // Create Doctor entity
-            var doctor = new Doctor
+        public async Task<Doctor> CreateDoctorAsync(Doctor doctor)
+        {
+            if (doctor == null)
+                throw new ArgumentNullException(nameof(doctor));
+
+            // Attach Account if not tracked
+            if (doctor.Account != null)
             {
-                AccId = doctorRequest.AccId,
-                Degree = doctorRequest.Degree,
-                Bio = doctorRequest.Bio
-            };
-
-            _context.Doctors.Add(doctor);
-            await _context.SaveChangesAsync();
-
-            // Prepare response DTO
-            var response = new DoctorResponseDTO
-            {
-                DctId = doctor.DctId,
-                AccId = doctor.AccId,
-                Degree = doctor.Degree,
-                Bio = doctor.Bio,
-                Account = new AccountResponseDTO
+                var existingAccount = await _context.Accounts
+                    .FirstOrDefaultAsync(a => a.AccId == doctor.Account.AccId);
+                if (existingAccount != null)
                 {
-                    AccId = account.AccId,
-                    AccUsername = account.AccUsername,
-                    AccPassword = account.AccPassword,
-                    Email = account.Email,
-                    Fullname = account.Fullname,
-                    Dob = account.Dob,
-                    Gender = account.Gender,
-                    Roles = account.Roles,
-                    IsActive = account.IsActive
+                    doctor.Account = existingAccount;
                 }
-            };
+                else
+                {
+                    _context.Accounts.Attach(doctor.Account);
+                }
+            }
 
-            return response;
+            await _context.Doctors.AddAsync(doctor);
+            await _context.SaveChangesAsync();
+            // Load related Account after save
+            await _context.Entry(doctor).Reference(d => d.Account).LoadAsync();
+            return doctor;
         }
 
-        public Task<bool> DeleteDoctorAsync(int id)
+        public async Task<Doctor?> UpdateDoctorAsync(int id, Doctor doctor)
         {
-            throw new NotImplementedException();
+            if (doctor == null)
+                throw new ArgumentNullException(nameof(doctor));
+
+            var existingDoctor = await _context.Doctors
+                .Include(d => d.Account)
+                .FirstOrDefaultAsync(d => d.DctId == id);
+
+            if (existingDoctor == null)
+                return null;
+
+            // Update Doctor fields
+            existingDoctor.Degree = doctor.Degree;
+            existingDoctor.Bio = doctor.Bio;
+
+            // Update Account if provided
+            if (doctor.Account != null)
+            {
+                if (existingDoctor.Account == null || existingDoctor.Account.AccId != doctor.Account.AccId)
+                {
+                    var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == doctor.Account.AccId);
+                    if (account != null)
+                    {
+                        existingDoctor.Account = account;
+                        existingDoctor.AccId = account.AccId;
+                    }
+                }
+                else
+                {
+                    existingDoctor.Account.Email = doctor.Account.Email;
+                    existingDoctor.Account.Fullname = doctor.Account.Fullname;
+                    existingDoctor.Account.Dob = doctor.Account.Dob;
+                    existingDoctor.Account.Gender = doctor.Account.Gender;
+                    existingDoctor.Account.Roles = doctor.Account.Roles;
+                    existingDoctor.Account.IsActive = doctor.Account.IsActive;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await _context.Entry(existingDoctor).Reference(d => d.Account).LoadAsync();
+            return existingDoctor;
         }
 
-        public Task<List<DoctorResponseDTO>> GetAllDoctorsAsync()
+        public async Task<bool> DeleteDoctorAsync(int id)
         {
-            throw new NotImplementedException();
-        }
+            var doctor = await _context.Doctors
+                .Include(d => d.Account)
+                .FirstOrDefaultAsync(d => d.DctId == id);
 
-        public Task<DoctorResponseDTO?> GetDoctorByIdAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
+            if (doctor == null)
+                return false;
 
-        public Task<DoctorResponseDTO?> UpdateDoctorAsync(int id, DoctorRequestDTO doctorRequest)
-        {
-            throw new NotImplementedException();
+            // Optionally, handle related entities (e.g., DoctorWorkSchedules) if cascade delete is not configured
+            var workSchedules = await _context.DoctorWorkSchedules
+                .Where(ws => ws.DoctorId == id)
+                .ToListAsync();
+            if (workSchedules.Any())
+            {
+                _context.DoctorWorkSchedules.RemoveRange(workSchedules);
+            }
+
+            _context.Doctors.Remove(doctor);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

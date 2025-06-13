@@ -37,7 +37,7 @@ public partial class HivSystemContext : DbContext
 
     public virtual DbSet<PatientArvMedication> PatientArvMedications { get; set; }
 
-    public virtual DbSet<PatientArvRegiman> PatientArvRegimen { get; set; }
+    public virtual DbSet<PatientArvRegimen> PatientArvRegimen { get; set; }
 
     public virtual DbSet<PatientMedicalRecord> PatientMedicalRecords { get; set; }
 
@@ -136,7 +136,7 @@ public partial class HivSystemContext : DbContext
             entity.Property(e => e.Bio).HasMaxLength(500);
             entity.Property(e => e.Degree).HasMaxLength(100);
 
-            entity.HasOne(d => d.Acc).WithOne(p => p.Doctor)
+            entity.HasOne(d => d.Account).WithOne(p => p.Doctor)
                 .HasForeignKey<Doctor>(d => d.AccId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Doctor_Account");
@@ -216,7 +216,9 @@ public partial class HivSystemContext : DbContext
             entity.HasOne(d => d.Account).WithOne(p => p.Patient)
                 .HasForeignKey<Patient>(d => d.AccId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Patient_Account");
+                .HasConstraintName("FK_Patient_Account")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PatientArvMedication>(entity =>
@@ -236,7 +238,7 @@ public partial class HivSystemContext : DbContext
                 .HasConstraintName("FK_PatientARVMedication_PatientARVRegimen");
         });
 
-        modelBuilder.Entity<PatientArvRegiman>(entity =>
+        modelBuilder.Entity<PatientArvRegimen>(entity =>
         {
             entity.HasKey(e => e.ParId).HasName("PK__Patient___F35E4C972A0C8197");
 
@@ -264,7 +266,9 @@ public partial class HivSystemContext : DbContext
             entity.HasOne(d => d.Ptn).WithOne(p => p.PatientMedicalRecord)
                 .HasForeignKey<PatientMedicalRecord>(d => d.PtnId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PatientMedicalRecord_Patient");
+                .HasConstraintName("FK_PatientMedicalRecord_Patient")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<SocialBlog>(entity =>
