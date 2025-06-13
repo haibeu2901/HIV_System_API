@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace HIV_System_API_BOs;
 
-public partial class PatientArvRegiman
+public partial class PatientArvRegimen
 {
     public int ParId { get; set; }
 

@@ -59,7 +59,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             var appointments = await _context.Appointments
                 .Include(a => a.Dct)
-                    .ThenInclude(d => d.Acc)
+                    .ThenInclude(d => d.Account)
                 .Include(a => a.Pmr)
                     .ThenInclude(p => p.Ptn)
                     .ThenInclude(pt => pt.Account) // Fixed: Changed 'Acc' to 'Account'
@@ -69,7 +69,7 @@ namespace HIV_System_API_DAOs.Implements
                     PmrId = a.PmrId,
                     PatientName = a.Pmr.Ptn.Account.Fullname, // Fixed: Changed 'Acc' to 'Account'
                     DctId = a.DctId,
-                    DoctorName = a.Dct.Acc.Fullname,
+                    DoctorName = a.Dct.Account.Fullname,
                     ApmtDate = a.ApmtDate,
                     ApmTime = a.ApmTime,
                     ApmStatus = a.ApmStatus,
@@ -84,7 +84,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             var appointment = await _context.Appointments
                 .Include(a => a.Dct)
-                    .ThenInclude(d => d.Acc)
+                    .ThenInclude(d => d.Account)
                 .Include(a => a.Pmr)
                     .ThenInclude(p => p.Ptn)
                     .ThenInclude(pt => pt.Account)
@@ -99,7 +99,7 @@ namespace HIV_System_API_DAOs.Implements
                 PmrId = appointment.PmrId,
                 PatientName = appointment.Pmr?.Ptn?.Account?.Fullname,
                 DctId = appointment.DctId,
-                DoctorName = appointment.Dct?.Acc?.Fullname,
+                DoctorName = appointment.Dct?.Account?.Fullname,
                 ApmtDate = appointment.ApmtDate,
                 ApmTime = appointment.ApmTime,
                 ApmStatus = appointment.ApmStatus,
