@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CareFirst HIV Clinic - Comprehensive HIV Care & Support</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+
+    <!-- Header -->
+    <header class="header">
+      <nav class="navbar">
+        <div class="nav-container">
+          <div class="nav-logo">
+            <i class="fas fa-heartbeat"></i>
+            <span>CareFirst HIV Clinic</span>
+          </div>
+          <ul class="nav-menu">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li>
+              <button class="btn-login" onclick="openModal('loginModal')">
+                Login
+              </button>
+            </li>
+            <li>
+              <button class="btn-register" onclick="openModal('registerModal')">
+                Register
+              </button>
+            </li>
+          </ul>
+          <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+      <div class="hero-content">
+        <h1>Comprehensive HIV Care & Support</h1>
+        <p>
+          Providing compassionate, confidential, and comprehensive HIV care for
+          everyone. Your health, your dignity, our commitment.
+        </p>
+        <div class="hero-buttons">
+          <button class="btn-primary" onclick="openModal('registerModal')">
+            Get Started
+          </button>
+          <button class="btn-secondary" onclick="scrollToSection('services')">
+            Our Services
+          </button>
+        </div>
+      </div>
+      <div class="hero-image">
+        <i class="fas fa-user-md"></i>
+      </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="services">
+      <div class="container">
+        <h2>Our Services</h2>
+        <div class="services-grid">
+          <div class="service-card">
+            <i class="fas fa-stethoscope"></i>
+            <h3>HIV Testing</h3>
+            <p>
+              Confidential and rapid HIV testing with same-day results and
+              counseling support.
+            </p>
+          </div>
+          <div class="service-card">
+            <i class="fas fa-pills"></i>
+            <h3>Treatment & Care</h3>
+            <p>
+              Comprehensive HIV treatment plans with the latest antiretroviral
+              therapies.
+            </p>
+          </div>
+          <div class="service-card">
+            <i class="fas fa-heart"></i>
+            <h3>Support Services</h3>
+            <p>
+              Counseling, support groups, and mental health services for
+              patients and families.
+            </p>
+          </div>
+          <div class="service-card">
+            <i class="fas fa-shield-alt"></i>
+            <h3>Prevention</h3>
+            <p>
+              PrEP, education programs, and prevention strategies to reduce HIV
+              transmission.
+            </p>
+          </div>
+          <div class="service-card">
+            <i class="fas fa-users"></i>
+            <h3>Community Outreach</h3>
+            <p>
+              Community education and outreach programs to raise awareness and
+              reduce stigma.
+            </p>
+          </div>
+          <div class="service-card">
+            <i class="fas fa-calendar-check"></i>
+            <h3>Appointment Booking</h3>
+            <p>
+              Easy online appointment scheduling and telemedicine consultations.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+      <div class="container">
+        <div class="about-content">
+          <div class="about-text">
+            <h2>About CareFirst HIV Clinic</h2>
+            <p>
+              For over 15 years, CareFirst HIV Clinic has been at the forefront
+              of HIV care, providing comprehensive medical services, support,
+              and education to our community. We believe that everyone deserves
+              access to quality healthcare, regardless of their background or
+              circumstances.
+            </p>
+            <div class="stats">
+              <div class="stat">
+                <h3>5,000+</h3>
+                <p>Patients Served</p>
+              </div>
+              <div class="stat">
+                <h3>15+</h3>
+                <p>Years of Service</p>
+              </div>
+              <div class="stat">
+                <h3>24/7</h3>
+                <p>Support Available</p>
+              </div>
+            </div>
+          </div>
+          <div class="about-image">
+            <i class="fas fa-hospital"></i>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+      <div class="container">
+        <h2>Contact Us</h2>
+        <div class="contact-grid">
+          <div class="contact-info">
+            <div class="contact-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <div>
+                <h3>Address</h3>
+                <p>Khu CNC<br />Tp Thu Duc</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <i class="fas fa-phone"></i>
+              <div>
+                <h3>Phone</h3>
+                <p>0965420205</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <i class="fas fa-envelope"></i>
+              <div>
+                <h3>Email</h3>
+                <p>ngovanminhtri05@gmail.com</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <i class="fas fa-clock"></i>
+              <div>
+                <h3>Hours</h3>
+                <p>
+                  Mon-Fri: 8AM-6PM<br />Sat: 9AM-4PM<br />Sun: Emergency Only
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="contact-form">
+            <form id="contactForm">
+              <input type="text" placeholder="Your Name" required />
+              <input type="email" placeholder="Your Email" required />
+              <input type="tel" placeholder="Your Phone" />
+              <textarea placeholder="Your Message" rows="5" required></textarea>
+              <button type="submit" class="btn-primary">Send Message</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <div class="footer-logo">
+              <i class="fas fa-heartbeat"></i>
+              <span>CareFirst HIV Clinic</span>
+            </div>
+            <p>
+              Providing compassionate HIV care and support for everyone in our
+              community.
+            </p>
+          </div>
+          <div class="footer-section">
+            <h3>Quick Links</h3>
+            <ul>
+              <li><a href="#home">Home</a></li>
+              <li><a href="#services">Services</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Services</h3>
+            <ul>
+              <li><a href="#">HIV Testing</a></li>
+              <li><a href="#">Treatment</a></li>
+              <li><a href="#">Support Groups</a></li>
+              <li><a href="#">Prevention</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Emergency</h3>
+            <p>24/7 Hotline: <strong>(555) 911-HIV1</strong></p>
+            <p>Crisis Support Available</p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>
+            &copy; 2025 CareFirst HIV Clinic. All rights reserved. | Privacy
+            Policy | Terms of Service
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Login to Your Account</h2>
+          <span class="close" onclick="closeModal('loginModal')">&times;</span>
+        </div>
+        <form id="loginForm" class="auth-form">
+          <div class="form-group">
+            <label for="loginUserName">Username</label>
+            <input type="text" id="loginUsername" name="username" required />
+            <span class="error-message" id="loginUsernameError"></span>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input
+              type="password"
+              id="loginPassword"
+              name="password"
+              required
+            />
+            <span class="error-message" id="loginPasswordError"></span>
+          </div>
+          <div class="form-options">
+            <label class="checkbox-container">
+              <input type="checkbox" name="remember" />
+              <span class="checkmark"></span>
+              Remember me
+            </label>
+            <a href="#" class="forgot-password">Forgot Password?</a>
+          </div>
+          <button type="submit" class="btn-primary btn-full">Login</button>
+          <div class="form-footer">
+            <p>
+              Don't have an account?
+              <a href="#" onclick="switchModal('loginModal', 'registerModal')"
+                >Register here</a
+              >
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Your Account</h2>
+                <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            </div>
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                    <span class="error-message" id="usernameError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                    <span class="error-message" id="fullNameError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email Address</label>
+                    <input type="email" id="registerEmail" name="email" required>
+                    <span class="error-message" id="registerEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                    <span class="error-message" id="dateOfBirthError"></span>
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <div class="radio-group">
+                        <label class="radio-container">
+                            <input type="radio" name="gender" value="male" required>
+                            <span class="radio-checkmark"></span>
+                            Male
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="gender" value="female">
+                            <span class="radio-checkmark"></span>
+                            Female
+                        </label>
+                      
+                    </div>
+                    <span class="error-message" id="genderError"></span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" name="password" required>
+                        <span class="error-message" id="registerPasswordError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        <span class="error-message" id="confirmPasswordError"></span>
+                    </div>
+                </div>
+                <!-- Hidden fields -->
+                <input type="hidden" name="role" value="0">
+                <input type="hidden" name="isActive" value="true">
+                
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terms" required>
+                        <span class="checkmark"></span>
+                        I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary btn-full">Create Account</button>
+                <div class="form-footer">
+                    <p>Already have an account? <a href="#" onclick="switchModal('registerModal', 'loginModal')">Login here</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content success-modal">
+            <div class="success-icon">
+                <i class="fas fa-smile"></i>
+            </div>
+            <h2>Registration Successful!</h2>
+            <p>Your account has been created successfully.</p>
+            <p>Welcome to CareFirst HIV Clinic!</p>
+            <button class="btn-primary btn-full" onclick="closeModal('successModal')">Continue</button>
+        </div>
+    </div>
+    <script src="landingpage-script.js"></script>
+  </body>
+</html>
