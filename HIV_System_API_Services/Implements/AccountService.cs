@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
+using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -110,6 +111,49 @@ namespace HIV_System_API_Services.Implements
             // Save changes
             var updatedEntity = await _accountRepo.UpdateAccountByIdAsync(id, existingAccount);
             return MapToResponseDTO(updatedEntity);
+        }
+
+        public async Task<PatientResponseDTO> CreatePatientAccountAsync(PatientAccountRequestDTO patient)
+        {
+            if (patient == null)
+                throw new ArgumentNullException(nameof(patient));
+
+            // Map PatientAccountRequestDTO to AccountRequestDTO
+            var accountDto = new AccountRequestDTO
+            {
+                AccUsername = patient.AccUsername ?? throw new ArgumentNullException(nameof(patient.AccUsername)),
+                AccPassword = patient.AccPassword ?? throw new ArgumentNullException(nameof(patient.AccPassword)),
+                Email = patient.Email,
+                Fullname = patient.Fullname,
+                Dob = patient.Dob.HasValue ? DateOnly.FromDateTime(patient.Dob.Value) : null,
+                Gender = patient.Gender,
+                Roles = 3, // Assuming 3 is the role for Patient
+                IsActive = true
+            };
+
+            // Create Account
+            var createdAccount = await _accountRepo.CreateAccountAsync(MapToEntity(accountDto));
+
+            // Create Patient entity
+            var patientEntity = new Patient
+            {
+                PtnId = createdAccount.AccId,
+                AccId = createdAccount.AccId,
+                Account = createdAccount
+            };
+
+            // Save Patient entity (assuming _accountRepo has a method for this, otherwise you need a PatientRepo)
+            // For this example, let's assume you have a PatientRepo:
+            var patientRepo = new PatientRepo();
+            var createdPatient = await patientRepo.CreatePatientAsync(patientEntity);
+
+            // Map to PatientResponseDTO
+            return new PatientResponseDTO
+            {
+                PtnId = createdPatient.PtnId,
+                AccId = createdPatient.AccId,
+                Account = MapToResponseDTO(createdAccount)
+            };
         }
     }
 }
