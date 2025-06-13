@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace HIV_System_API_DTOs.NotificationDTO
 {
-    public class CreateNotificationDTO
+    public class NotificationDTO
     {
+        public int NtfId { get; set; }
         public string? NotiType { get; set; }
         public string? NotiMessage { get; set; }
         public DateTime? SendAt { get; set; }
