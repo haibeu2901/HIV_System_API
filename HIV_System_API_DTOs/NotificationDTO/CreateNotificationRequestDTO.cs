@@ -8,8 +8,8 @@ namespace HIV_System_API_DTOs.NotificationDTO
 {
     public class CreateNotificationRequestDTO
     {
-        public string NotiType { get; set; }
-        public string NotiMessage { get; set; }
+        public string? NotiType { get; set; }
+        public string? NotiMessage { get; set; }
         public DateTime SendAt { get; set; }
     }
 }
