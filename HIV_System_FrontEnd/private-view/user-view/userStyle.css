@@ -102,9 +102,37 @@
     gap: 0.5rem;
 }
 
+.btn-home {
+    background: transparent;
+    color: #fff;
+    border: 2px solid transparent;
+    padding: 0.45rem 1.2rem;
+    border-radius: 22px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: 
+        background 0.2s,
+        color 0.2s,
+        border 0.2s,
+        box-shadow 0.2s;
+    outline: none;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .btn-profile:hover,
 .btn-regimen:hover,
 .btn-booking:hover {
+    background: #fff;
+    color: #e74c3c;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+}
+
+.btn-home:hover {
     background: #fff;
     color: #e74c3c;
     border: 2px solid #fff;
@@ -621,7 +649,68 @@
           background: #ccc;
         }
 
-        /* Responsive Design */
+        /* Dropdown Styles */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.btn-view {
+    background: transparent;
+    color: #fff;
+    border: 2px solid transparent;
+    padding: 0.45rem 1.2rem;
+    border-radius: 22px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.btn-view:hover,
+.dropdown:hover .btn-view {
+    background: #fff;
+    color: #e74c3c;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 190px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+    z-index: 1;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    right: 0;
+}
+.dropdown-content a {
+    color: #e74c3c;
+    padding: 0.8rem 1.2rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 1rem;
+    border-bottom: 1px solid #f2f2f2;
+    transition: background 0.2s, color 0.2s;
+}
+.dropdown-content a:last-child {
+    border-bottom: none;
+}
+.dropdown-content a:hover {
+    background-color: #f2f2f2;
+    color: #c0392b;
+}
+.dropdown.open .dropdown-content {
+    display: block;
+}
+
+/* Responsive Design */
         @media (max-width: 768px) {
             .nav-container {
                 flex-direction: column;

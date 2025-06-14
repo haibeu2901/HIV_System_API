@@ -9,43 +9,7 @@
 </head>
 <body>
     <!-- Header -->
-    <header class="header">
-        <nav class="navbar">
-            <div class="nav-container">
-                <div class="nav-logo">
-                    <i class="fas fa-heartbeat"></i>
-                    <span>CareFirst HIV Clinic</span>
-                </div>
-                <ul class="nav-menu">
-                    <li>
-                        <button class="btn-profile" onclick="window.location.href='profile.html'">
-                            View Profile
-                        </button>
-                    </li>
-                    <li>
-                        <button class="btn-regimen" onclick="window.location.href='regimen.html'">
-                            View Regimen
-                        </button>
-                    </li>
-                    <li>
-                        <button class="btn-booking" onclick="window.location.href='appointment-booking.html'">
-                            Booking Appointment
-                        </button>
-                    </li>
-                    <li>
-                        <button class="btn-logout" onclick="logout()">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </li>
-                </ul>
-                <div class="hamburger">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-        </nav>
-    </header>
+<div id="header-placeholder"></div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -184,35 +148,35 @@
         const doctors = [
             {
                 id: 1,
-                name: "Dr. Sarah Johnson",
+                name: "Dr. Tran Duc an",
                 specialty: "HIV Specialist",
                 experience: "15 years experience",
                 rating: 4.9,
-                avatar: "SJ"
+                avatar: "AnDuck"
             },
             {
                 id: 2,
-                name: "Dr. Michael Chen",
+                name: "Tri Minh",
                 specialty: "Infectious Disease",
                 experience: "12 years experience",
                 rating: 4.8,
-                avatar: "MC"
+                avatar: "TM"
             },
             {
                 id: 3,
-                name: "Dr. Emily Rodriguez",
+                name: "Doan Duc Hai",
                 specialty: "Internal Medicine",
                 experience: "10 years experience",
                 rating: 4.7,
-                avatar: "ER"
+                avatar: "DH"
             },
             {
                 id: 4,
-                name: "Dr. David Thompson",
+                name: "Hoang ba Khang",
                 specialty: "HIV Counselor",
                 experience: "8 years experience",
                 rating: 4.9,
-                avatar: "DT"
+                avatar: "BK"
             }
         ];
 
@@ -528,7 +492,12 @@
                 }
             }
         });
+        fetch('header.html')
+  .then(response => response.text())
+  .then(data => {
+    document.getElementById('header-placeholder').innerHTML = data;
+  });
     </script>
-    <script src="userScript.js" crossorigin="anonymous"></script>
+    
 </body>
 </html>

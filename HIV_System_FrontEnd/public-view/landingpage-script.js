@@ -194,8 +194,9 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         const data = await response.json();
         const fullName = data.fullName;
         const role = data.roles;
-        localStorage.setItem("fullName", fullName); // Store full name in localStorage
         console.log("Login successful:", data);
+        console.log("Role:", role);
+        localStorage.setItem("accId", data.accId); // Store account ID in localStorage
         if (role == 3) {
           window.location.href =
             "http://127.0.0.1:5500/private-view/user-view/appointment-booking.html"; // Redirect to the appointment booking page after successful login

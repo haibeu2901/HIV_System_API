@@ -5,3 +5,19 @@
 </div>
 
     <button id="submitBtn">Submit</button>
+
+     <button class="btn-logout" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+<script>
+                         function logout() {
+           
+                // Clear any stored data
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Redirect to login page
+                window.location.href = 'http://127.0.0.1:5500/public-view/landingpage.html'; // Change this to your login page
+            }
+            </script>
+
