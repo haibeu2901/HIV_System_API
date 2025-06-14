@@ -27,6 +27,7 @@ builder.Services.AddScoped<IDoctorWorkScheduleService, DoctorWorkScheduleService
 builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 builder.Services.AddScoped<IPatientArvMedicationService, PatientArvMedicationService>();
+builder.Services.AddScoped<IMedicalServiceService, MedicalServiceService>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
