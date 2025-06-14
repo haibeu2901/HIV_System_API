@@ -13,7 +13,7 @@ namespace HIV_System_API_DAOs.Implements
     public class ArvMedicationDetailDAO : IArvMedicationDetailDAO
     {
         private readonly HivSystemContext _context;
-        private static ArvMedicationDetailDAO _instance;
+        private static ArvMedicationDetailDAO? _instance;
 
         public ArvMedicationDetailDAO()
         {
@@ -36,7 +36,7 @@ namespace HIV_System_API_DAOs.Implements
             return await _context.ArvMedicationDetails.ToListAsync();
         }
 
-        public async Task<ArvMedicationDetail> GetArvMedicationDetailByIdAsync(int id)
+        public async Task<ArvMedicationDetail?> GetArvMedicationDetailByIdAsync(int id)
         {
             // Validate input parameter
             if (id <= 0)
