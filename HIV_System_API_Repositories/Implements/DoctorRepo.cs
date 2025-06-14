@@ -31,6 +31,11 @@ namespace HIV_System_API_Repositories.Implements
             return await DoctorDAO.Instance.GetDoctorByIdAsync(id);
         }
 
+        public async Task<List<Doctor>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
+        {
+            return await DoctorDAO.Instance.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
+        }
+
         public async Task<Doctor?> UpdateDoctorAsync(int id, Doctor doctor)
         {
             return await DoctorDAO.Instance.UpdateDoctorAsync(id, doctor);

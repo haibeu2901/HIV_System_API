@@ -8,7 +8,7 @@ namespace HIV_System_API_DTOs.Appointment
 {
     public class AppointmentRequestDTO
     {
-        public int PmrId { get; set; }
+        public int PtnId { get; set; }
         public int DctId { get; set; }
         public DateOnly ApmtDate { get; set; }
         public TimeOnly ApmTime { get; set; }

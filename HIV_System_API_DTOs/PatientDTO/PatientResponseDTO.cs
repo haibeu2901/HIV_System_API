@@ -12,7 +12,7 @@ namespace HIV_System_API_DTOs.PatientDTO
     {
         public int PtnId { get; set; }
         public int AccId { get; set; }
-        public AccountResponseDTO Account { get; set; }
-        public PatientMedicalRecordResponseDTO MedicalRecord { get; set; }
+        public AccountResponseDTO? Account { get; set; }
+        public PatientMedicalRecordResponseDTO? MedicalRecord { get; set; }
     }
 }

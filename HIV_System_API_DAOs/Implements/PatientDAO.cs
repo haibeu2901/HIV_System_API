@@ -17,12 +17,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class PatientDAO : IPatientDAO
     {
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
         private static PatientDAO? _instance;
 
         public PatientDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public static PatientDAO Instance
@@ -40,7 +40,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<List<Patient>> GetAllPatientsAsync()
         {
             return await _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.Acc)
                 .Include(p => p.PatientMedicalRecord)
                 .ToListAsync();
         }
@@ -48,7 +48,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Patient?> GetPatientByIdAsync(int patientId)
         {
             return await _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.Acc)
                 .Include(p => p.PatientMedicalRecord)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
         }
@@ -99,10 +99,10 @@ namespace HIV_System_API_DAOs.Implements
             if (patient == null)
                 throw new ArgumentNullException(nameof(patient));
 
-            // Attach Account if not tracked
-            if (patient.Account != null)
+            // Attach Acc if not tracked
+            if (patient.Acc != null)
             {
-                _context.Accounts.Attach(patient.Account);
+                _context.Accounts.Attach(patient.Acc);
             }
 
             await _context.Patients.AddAsync(patient);
@@ -116,7 +116,7 @@ namespace HIV_System_API_DAOs.Implements
                 throw new ArgumentNullException(nameof(patient));
 
             var existingPatient = await _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.Acc)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
 
             if (existingPatient == null)
@@ -125,17 +125,17 @@ namespace HIV_System_API_DAOs.Implements
             // Update Patient properties
             existingPatient.AccId = patient.AccId;
 
-            // Update Account if provided
-            if (patient.Account != null && existingPatient.Account != null)
+            // Update Acc if provided
+            if (patient.Acc != null && existingPatient.Acc != null)
             {
-                existingPatient.Account.AccUsername = patient.Account.AccUsername;
-                existingPatient.Account.AccPassword = patient.Account.AccPassword;
-                existingPatient.Account.Email = patient.Account.Email;
-                existingPatient.Account.Fullname = patient.Account.Fullname;
-                existingPatient.Account.Dob = patient.Account.Dob;
-                existingPatient.Account.Gender = patient.Account.Gender;
-                existingPatient.Account.Roles = patient.Account.Roles;
-                existingPatient.Account.IsActive = patient.Account.IsActive;
+                existingPatient.Acc.AccUsername = patient.Acc.AccUsername;
+                existingPatient.Acc.AccPassword = patient.Acc.AccPassword;
+                existingPatient.Acc.Email = patient.Acc.Email;
+                existingPatient.Acc.Fullname = patient.Acc.Fullname;
+                existingPatient.Acc.Dob = patient.Acc.Dob;
+                existingPatient.Acc.Gender = patient.Acc.Gender;
+                existingPatient.Acc.Roles = patient.Acc.Roles;
+                existingPatient.Acc.IsActive = patient.Acc.IsActive;
             }
 
             // Update PatientMedicalRecord if needed (not shown here)

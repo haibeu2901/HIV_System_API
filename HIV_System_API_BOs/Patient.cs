@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HIV_System_API_BOs;
+using System;
 using System.Collections.Generic;
 
 namespace HIV_System_API_BOs;
@@ -9,7 +10,9 @@ public partial class Patient
 
     public int AccId { get; set; }
 
-    public virtual Account Account { get; set; } = null!;
+    public virtual Account Acc { get; set; } = null!;
+
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
     public virtual PatientMedicalRecord? PatientMedicalRecord { get; set; }
 }
