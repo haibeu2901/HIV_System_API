@@ -1,20 +1,50 @@
 using HIV_System_API_BOs;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//Add DB Context
+// Add DB Context
 builder.Services.AddDbContext<HivSystemContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("HIVSystemDatabase")));
+
+// Configure JWT Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured")))
+    };
+});
+
+// Add Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("1"));
+    options.AddPolicy("StaffAndAbove", policy => policy.RequireRole("1", "2", "3", "4"));
+    options.AddPolicy("PatientOnly", policy => policy.RequireRole("5"));
+});
 
 // Add Services
 builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailService>();
@@ -34,7 +64,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // No trailing slash
+            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500")
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
@@ -50,6 +80,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Add authentication middleware before authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseCors("AllowReactApp");

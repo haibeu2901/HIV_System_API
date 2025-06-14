@@ -18,7 +18,7 @@ namespace HIV_System_API_DAOs.Implements
     public class PatientDAO : IPatientDAO
     {
         private readonly HivSystemContext _context;
-        private static PatientDAO _instance;
+        private static PatientDAO? _instance;
 
         public PatientDAO()
         {
@@ -57,20 +57,20 @@ namespace HIV_System_API_DAOs.Implements
         {
             Debug.WriteLine($"Attempting to delete patient with PtnId: {patientId}");
             var patient = await _context.Patients
+                .Include(p => p.PatientMedicalRecord)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
+
+            if (patient == null)
+            {
+                Debug.WriteLine($"Patient with PtnId: {patientId} not found.");
+                return false; // Return false if the patient does not exist
+            }
 
             // Delete PatientMedicalRecord first if exists
             if (patient.PatientMedicalRecord != null)
             {
                 _context.PatientMedicalRecords.Remove(patient.PatientMedicalRecord);
                 await _context.SaveChangesAsync();
-                // Reload patient to ensure it's still tracked and not deleted by cascade
-                patient = await _context.Patients.FirstOrDefaultAsync(p => p.PtnId == patientId);
-                if (patient == null)
-                {
-                    Debug.WriteLine($"Patient with PtnId: {patientId} was deleted by cascade after removing PatientMedicalRecord.");
-                    return true;
-                }
             }
 
             try
