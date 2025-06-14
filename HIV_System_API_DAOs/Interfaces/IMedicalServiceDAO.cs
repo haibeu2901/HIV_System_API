@@ -9,5 +9,6 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<MedicalService> CreateMedicalServiceAsync(MedicalService medicalService);
         Task<MedicalService> UpdateMedicalServiceAsync(int srvId, MedicalService medicalService);
         Task<bool> DeleteMedicalServiceAsync(int srvId);
+        Task<MedicalService> DisableMedicalServiceAsync(int srvId);
     }
 }

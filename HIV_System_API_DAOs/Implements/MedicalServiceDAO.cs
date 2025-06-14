@@ -66,6 +66,17 @@ namespace HIV_System_API_DAOs.Implements
             return existingService;
         }
 
+        public async Task<MedicalService> DisableMedicalServiceAsync(int srvId)
+        {
+            var service = await _context.MedicalServices.FindAsync(srvId);
+            if (service == null)
+                throw new KeyNotFoundException($"Medical Service with ID {srvId} not found.");
+            service.IsAvailable = false;
+            _context.MedicalServices.Update(service);
+            await _context.SaveChangesAsync();
+            return service;
+        }
+
         public async Task<bool> DeleteMedicalServiceAsync(int srvId)
         {
             var service = await _context.MedicalServices.FindAsync(srvId);
