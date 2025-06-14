@@ -30,5 +30,9 @@ namespace HIV_System_API_Repositories.Implements
         {
             return await MedicalServiceDAO.Instance.DeleteMedicalServiceAsync(srvId);
         }
+        public async Task<MedicalService> DisableMedicalServiceAsync(int srvId)
+        {
+            return await MedicalServiceDAO.Instance.DisableMedicalServiceAsync(srvId);
+        }
     }
 }

@@ -1,12 +1,14 @@
 using HIV_System_API_DTOs.MedicalServiceDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV_System_API_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // This makes all endpoints require authentication by default
     public class MedicalServiceController : ControllerBase
     {
         private readonly IMedicalServiceService _medicalServiceService;
@@ -23,6 +25,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="200">Returns the list of services</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpGet("GetAllMedicalServices")]
+        [AllowAnonymous] // Allow anyone to view services
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<MedicalServiceResponseDTO>>> GetAllMedicalServices()
@@ -47,6 +50,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="404">If the service was not found</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpGet("GetMedicalServiceById/{id}")]
+        [AllowAnonymous] // Allow anyone to view service details
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -76,6 +80,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="400">If the service data is invalid</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpPost("CreateMedicalService")]
+        [Authorize(Roles = "1,4")] // Only admin and staff can create services
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -111,6 +116,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="404">If the service was not found</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpPut("UpdateMedicalService/{id}")]
+        [Authorize(Roles = "1,4")] // Only admin and staff can update services
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -149,6 +155,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="404">If the service was not found</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpDelete("DeleteMedicalService/{id}")]
+        [Authorize(Roles = "1")] // Only admin can delete services
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -162,6 +169,27 @@ namespace HIV_System_API_Backend.Controllers
                     return NotFound($"Medical service with ID {id} not found.");
                 }
                 return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpPost("DisableMedicalService/{id}")]
+        [Authorize(Roles = "1,4")] // Only admin and staff can disable services
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<MedicalServiceResponseDTO>> DisableMedicalService(int id)
+        {
+            try
+            {
+                var disabledService = await _medicalServiceService.DisableMedicalServiceAsync(id);
+                if (disabledService == null)
+                {
+                    return NotFound($"Medical service with ID {id} not found.");
+                }
+                return Ok(disabledService);
             }
             catch (Exception ex)
             {
