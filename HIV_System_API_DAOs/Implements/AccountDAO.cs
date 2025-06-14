@@ -13,7 +13,7 @@ namespace HIV_System_API_DAOs.Implements
     public class AccountDAO : IAccountDAO
     {
         private readonly HivSystemApiContext _context;
-        private static AccountDAO _instance;
+        private static AccountDAO? _instance;
 
         public AccountDAO()
         {
