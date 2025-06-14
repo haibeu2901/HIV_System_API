@@ -144,5 +144,11 @@ namespace HIV_System_API_Services.Implements
                 throw new InvalidOperationException($"Unexpected error updating medical service: {ex.Message}");
             }
         }
+
+        public async Task<MedicalServiceResponseDTO> DisableMedicalServiceAsync(int srvId)
+        {
+            var entity = await _medicalServiceRepo.DisableMedicalServiceAsync(srvId);
+            return MapToResponseDTO(entity);
+        }
     }
 }

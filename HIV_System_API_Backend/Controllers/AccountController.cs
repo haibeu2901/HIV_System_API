@@ -1,11 +1,20 @@
-﻿using HIV_System_API_BOs;
+﻿using Azure;
+using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace HIV_System_API_Backend.Controllers
 {
@@ -14,8 +23,10 @@ namespace HIV_System_API_Backend.Controllers
     public class AccountController : ControllerBase
     {
         private IAccountService _accountService;
-        public AccountController()
+        private readonly IConfiguration _configuration;
+        public AccountController( IConfiguration configuration)
         {
+            _configuration = configuration;
             _accountService = new AccountService();
         }
 
@@ -31,6 +42,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("GetAccountByLogin")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAccountByLogin([FromBody] LoginRequestDTO loginRequest)
         {
             if (loginRequest == null || string.IsNullOrWhiteSpace(loginRequest.AccUsername) || string.IsNullOrWhiteSpace(loginRequest.AccPassword))
@@ -43,10 +55,44 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return NotFound("Account not found or invalid credentials.");
             }
-            return Ok(account);
+            
+            var tokenString = GenerateJSONWebToken(account);
+            return Ok(new { 
+                token = tokenString,
+                username = account.AccUsername,
+                email = account.Email,
+                role = account.Roles,
+                accountId = account.AccId
+            });
+        }
+
+        private string GenerateJSONWebToken(AccountResponseDTO account)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, account.AccUsername),
+                new Claim(JwtRegisteredClaimNames.Email, account.Email ?? ""),
+                new Claim("AccountId", account.AccId.ToString()),
+                new Claim(ClaimTypes.Role, account.Roles.ToString()), // This will store the byte value
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(2),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         [HttpGet("GetAccountById/{id}")]
+        [Authorize(Roles ="1")]
         public async Task<IActionResult> GetAccountById(int id)
         {
             var account = await _accountService.GetAccountByIdAsync(id);
