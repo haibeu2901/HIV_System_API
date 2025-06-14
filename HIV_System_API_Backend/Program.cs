@@ -21,6 +21,7 @@ builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailServi
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorWorkScheduleService, DoctorWorkScheduleService>();
 builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordService>();

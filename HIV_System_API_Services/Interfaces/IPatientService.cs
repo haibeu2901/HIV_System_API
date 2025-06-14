@@ -13,7 +13,7 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<PatientResponseDTO>> GetAllPatientsAsync();
         Task<PatientResponseDTO?> GetPatientByIdAsync(int patientId);
         Task<bool> DeletePatientAsync(int patientId);
-        Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patient);
+        Task<PatientResponseDTO?> CreatePatientAsync(PatientRequestDTO patient);
         Task<PatientResponseDTO> UpdatePatientAsync(int patientId, PatientRequestDTO patient);
     }
 }
