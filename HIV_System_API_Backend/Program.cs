@@ -13,7 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //Add DB Context
-builder.Services.AddDbContext<HivSystemContext>(options =>
+builder.Services.AddDbContext<HivSystemApiContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("HIVSystemDatabase")));
 
 // Add Services

@@ -13,7 +13,7 @@ public partial class Doctor
 
     public string? Bio { get; set; }
 
-    public virtual Account Account { get; set; } = null!;
+    public virtual Account Acc { get; set; } = null!;
 
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 

@@ -17,19 +17,19 @@ namespace HIV_System_API_Services.Implements
     public class AppointmentService : IAppointmentService
     {
         private readonly IAppointmentRepo _appointmentRepo;
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
 
         public AppointmentService()
         {
             _appointmentRepo = new AppointmentRepo();
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         private Appointment MapToEntity(AppointmentRequestDTO requestDTO)
         {
             return new Appointment
             {
-                PmrId = requestDTO.PmrId,
+                PtnId = requestDTO.PtnId,
                 DctId = requestDTO.DctId,
                 ApmtDate = requestDTO.ApmtDate, 
                 ApmTime = requestDTO.ApmTime,
@@ -42,27 +42,27 @@ namespace HIV_System_API_Services.Implements
         {
             // Fetch patient name
             var patientMedicalRecord = _context.PatientMedicalRecords
-                .FirstOrDefault(r => r.PmrId == appointment.PmrId)
+                .FirstOrDefault(r => r.PmrId == appointment.PtnId)
                 ?? throw new InvalidOperationException("Associated patient medical record not found.");
 
             var patient = _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.Acc)
                 .FirstOrDefault(p => p.PtnId == patientMedicalRecord.PtnId)
                 ?? throw new InvalidOperationException("Associated patient not found.");
 
             // Fetch doctor name
             var doctor = _context.Doctors
-                .Include(d => d.Account)
+                .Include(d => d.Acc)
                 .FirstOrDefault(d => d.DctId == appointment.DctId)
                 ?? throw new InvalidOperationException("Associated doctor not found.");
 
             return new AppointmentResponseDTO
             {
                 ApmId = appointment.ApmId,
-                PmrId = appointment.PmrId,
-                PatientName = patient.Account.Fullname,
+                PtnId = appointment.PtnId,
+                PatientName = patient.Acc.Fullname,
                 DctId = appointment.DctId,
-                DoctorName = doctor.Account.Fullname,
+                DoctorName = doctor.Acc.Fullname,
                 ApmtDate = appointment.ApmtDate, 
                 ApmTime = appointment.ApmTime, 
                 Notes = appointment.Notes,
@@ -73,7 +73,7 @@ namespace HIV_System_API_Services.Implements
         private async Task ValidateAppointmentAsync(AppointmentRequestDTO request, bool validateStatus, int? apmId = null)
         {
             // Validate PmrId
-            if (!await _context.PatientMedicalRecords.AnyAsync(r => r.PmrId == request.PmrId))
+            if (!await _context.PatientMedicalRecords.AnyAsync(r => r.PtnId == request.PtnId))
                 throw new ArgumentException("Patient medical record does not exist.");
 
             // Validate DctId
@@ -149,7 +149,7 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<AppointmentResponseDTO> CreateAppointmentAsync(AppointmentRequestDTO request)
         {
-            Debug.WriteLine($"Creating appointment for PmrId: {request.PmrId}, DctId: {request.DctId}");
+            Debug.WriteLine($"Creating appointment for PmrId: {request.PtnId}, DctId: {request.DctId}");
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Request DTO is required.");
 

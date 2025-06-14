@@ -11,7 +11,7 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class DoctorWorkScheduleDAO : IDoctorWorkScheduleDAO
     {
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
         private static DoctorWorkScheduleDAO _instance;
 
         public static DoctorWorkScheduleDAO Instance
@@ -28,7 +28,7 @@ namespace HIV_System_API_DAOs.Implements
 
         public DoctorWorkScheduleDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public async Task<DoctorWorkSchedule> CreateDoctorWorkScheduleAsync(DoctorWorkSchedule doctorWorkSchedule)

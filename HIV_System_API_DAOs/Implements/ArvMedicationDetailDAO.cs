@@ -12,12 +12,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class ArvMedicationDetailDAO : IArvMedicationDetailDAO
     {
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
         private static ArvMedicationDetailDAO _instance;
 
         public ArvMedicationDetailDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
         public static ArvMedicationDetailDAO Instance
         {

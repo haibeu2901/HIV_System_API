@@ -15,5 +15,6 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<Doctor> CreateDoctorAsync(Doctor doctor);
         Task<Doctor?> UpdateDoctorAsync(int id, Doctor doctor);
         Task<bool> DeleteDoctorAsync(int id);
+        Task<List<Doctor>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime);
     }
 }

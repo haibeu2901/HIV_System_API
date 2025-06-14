@@ -13,12 +13,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class AppointmentDAO : IAppointmentDAO
     {
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
         private static AppointmentDAO _instance;
 
         public AppointmentDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public static AppointmentDAO Instance
@@ -35,61 +35,22 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<List<Appointment>> GetAllAppointmentsAsync()
         {
-            return await _context.Appointments
-                .Include(a => a.Pmr).ThenInclude(pmr => pmr.Ptn).ThenInclude(ptn => ptn.Account)
-                .Include(a => a.Dct).ThenInclude(dct => dct.Account)
-                .ToListAsync();
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
 
         public async Task<Appointment> CreateAppointmentAsync(Appointment appointment)
         {
-            Debug.WriteLine($"Creating appointment for PmrId: {appointment.PmrId}, DctId: {appointment.DctId}");
-            _context.Appointments.Add(appointment);
-            try
-            {
-                await _context.SaveChangesAsync();
-                Debug.WriteLine($"Created appointment with ApmId: {appointment.ApmId}");
-                return appointment;
-            }
-            catch (DbUpdateException ex)
-            {
-                Debug.WriteLine($"Failed to create appointment: {ex.Message}, InnerException: {ex.InnerException?.Message}");
-                throw new InvalidOperationException("Failed to create appointment due to database error.", ex);
-            }
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
 
         public async Task<Appointment?> GetAppointmentByIdAsync(int id)
         {
-            return await _context.Appointments
-            .Include(a => a.Pmr).ThenInclude(pmr => pmr.Ptn).ThenInclude(p => p.Account)
-            .Include(a => a.Dct).ThenInclude(d => d.Account)
-            .FirstOrDefaultAsync(a => a.ApmId == id);
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
 
         public async Task<Appointment> UpdateAppointmentByIdAsync(int id, Appointment appointment)
         {
-            var existingAppointment = await _context.Appointments
-            .FirstOrDefaultAsync(a => a.ApmId == id)
-            ?? throw new InvalidOperationException($"Appointment with ApmId: {appointment.ApmId} not found.");
-
-            existingAppointment.PmrId = appointment.PmrId;
-            existingAppointment.DctId = appointment.DctId;
-            existingAppointment.ApmtDate = appointment.ApmtDate;
-            existingAppointment.ApmTime = appointment.ApmTime;
-            existingAppointment.Notes = appointment.Notes;
-            existingAppointment.ApmStatus = appointment.ApmStatus;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                Debug.WriteLine($"Updated appointment with ApmId: {appointment.ApmId}");
-                return existingAppointment;
-            }
-            catch (DbUpdateException ex)
-            {
-                Debug.WriteLine($"Failed to update appointment: {ex.Message}, InnerException: {ex.InnerException?.Message}");
-                throw new InvalidOperationException("Failed to update appointment due to database error.", ex);
-            }
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
 
         public async Task<bool> DeleteAppointmentByIdAsync(int id)
@@ -138,11 +99,7 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<List<Appointment>> GetAppointmentsByDoctorIdAsync(int doctorId)
         {
-            return await _context.Appointments
-            .Include(a => a.Pmr).ThenInclude(pmr => pmr.Ptn).ThenInclude(p => p.Account)
-            .Include(a => a.Dct).ThenInclude(d => d.Account)
-            .Where(a => a.DctId == doctorId)
-            .ToListAsync();
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
     }
 }

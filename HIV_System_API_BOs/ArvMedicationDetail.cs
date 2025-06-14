@@ -17,5 +17,7 @@ public partial class ArvMedicationDetail
 
     public string? Manufactorer { get; set; }
 
+    public virtual ICollection<ArvMedicationTemplate> ArvMedicationTemplates { get; set; } = new List<ArvMedicationTemplate>();
+
     public virtual ICollection<PatientArvMedication> PatientArvMedications { get; set; } = new List<PatientArvMedication>();
 }

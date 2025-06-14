@@ -10,12 +10,12 @@ namespace HIV_System_API_Services.Implements
     public class MedicalServiceService : IMedicalServiceService
     {
         private readonly IMedicalServiceRepo _medicalServiceRepo;
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
 
         public MedicalServiceService()
         {
             _medicalServiceRepo = new MedicalServiceRepo();
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         private async Task ValidateAccountExists(int accId)
