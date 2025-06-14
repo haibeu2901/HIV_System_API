@@ -26,6 +26,16 @@ builder.Services.AddScoped<IDoctorWorkScheduleService, DoctorWorkScheduleService
 builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy => policy
+            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // No trailing slash
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -39,6 +49,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.UseCors("AllowReactApp");
 app.MapControllers();
 
 app.Run();
