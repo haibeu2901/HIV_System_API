@@ -81,5 +81,12 @@ namespace HIV_System_API_DAOs.Implements
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<PatientMedicalRecord?> GetPersonalMedicalRecordAsync(int accId)
+        {
+            return await _context.PatientMedicalRecords
+                .Include(pmr => pmr.Ptn)
+                .FirstOrDefaultAsync(pmr => pmr.Ptn.AccId == accId);
+        }
     }
 }

@@ -95,5 +95,37 @@ namespace HIV_System_API_DAOs.Implements
             await _context.SaveChangesAsync();
             return account;
         }
+
+        public async Task<Patient> CreatePatientAccountAsync(Patient patient)
+        {
+            if (patient == null)
+            {
+                throw new ArgumentNullException(nameof(patient));
+            }
+
+            // Ensure the Account object is present
+            if (patient.Acc == null)
+            {
+                throw new ArgumentException("Patient must have an associated Account object.", nameof(patient));
+            }
+
+            // Add Account first
+            _context.Accounts.Add(patient.Acc);
+            await _context.SaveChangesAsync();
+
+            // Set the foreign key
+            patient.AccId = patient.Acc.AccId;
+
+            // Add Patient
+            _context.Set<Patient>().Add(patient);
+            await _context.SaveChangesAsync();
+
+            return patient;
+        }
+
+        public Task<bool> IsEmailUsedAsync(string mail)
+        {
+            return _context.Accounts.AnyAsync(a => a.Email == mail);
+        }
     }
 }

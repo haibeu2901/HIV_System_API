@@ -17,6 +17,11 @@ namespace HIV_System_API_Repositories.Implements
             return await AccountDAO.Instance.CreateAccountAsync(account);
         }
 
+        public async Task<Patient> CreatePatientAccountAsync(Patient patient)
+        {
+            return await AccountDAO.Instance.CreatePatientAccountAsync(patient);
+        }
+
         public async Task<bool> DeleteAccountAsync(int accId)
         {
             return await AccountDAO.Instance.DeleteAccountAsync(accId);
@@ -35,6 +40,11 @@ namespace HIV_System_API_Repositories.Implements
         public async Task<List<Account>> GetAllAccountsAsync()
         {
             return await AccountDAO.Instance.GetAllAccountsAsync();
+        }
+
+        public async Task<bool> IsEmailUsedAsync(string mail)
+        {
+            return await AccountDAO.Instance.IsEmailUsedAsync(mail);
         }
 
         public async Task<Account> UpdateAccountByIdAsync(int id, Account updatedAccount)

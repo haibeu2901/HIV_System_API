@@ -6,6 +6,7 @@ using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllAccounts")]
+        [Authorize(Roles = "1, 5")]
         public async Task<IActionResult> GetAllAccounts()
         {
             var accounts = await _accountService.GetAllAccountsAsync();
@@ -55,14 +57,23 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return NotFound("Account not found or invalid credentials.");
             }
-            
+
             var tokenString = GenerateJSONWebToken(account);
-            return Ok(new { 
+            return Ok(new
+            {
                 token = tokenString,
-                username = account.AccUsername,
-                email = account.Email,
-                role = account.Roles,
-                accountId = account.AccId
+                account = new AccountResponseDTO
+                {
+                    AccId = account.AccId,
+                    AccUsername = account.AccUsername,
+                    AccPassword = account.AccPassword,
+                    Email = account.Email,
+                    Fullname = account.Fullname,
+                    Dob = account.Dob,
+                    Gender = account.Gender,
+                    Roles = account.Roles,
+                    IsActive = account.IsActive
+                }
             });
         }
 
@@ -76,6 +87,8 @@ namespace HIV_System_API_Backend.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, account.AccUsername),
                 new Claim(JwtRegisteredClaimNames.Email, account.Email ?? ""),
                 new Claim("AccountId", account.AccId.ToString()),
+                new Claim("AccUsername", account.AccUsername),
+                new Claim("AccPassword", account.AccPassword),
                 new Claim(ClaimTypes.Role, account.Roles.ToString()), // This will store the byte value
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
@@ -92,7 +105,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAccountById/{id}")]
-        [Authorize(Roles ="1")]
+        [Authorize(Roles ="1, 5")]
         public async Task<IActionResult> GetAccountById(int id)
         {
             var account = await _accountService.GetAccountByIdAsync(id);
@@ -104,6 +117,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAccount")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> CreateAccount([FromBody] AccountRequestDTO accountDTO)
         {
             if (accountDTO == null ||
@@ -133,6 +147,7 @@ namespace HIV_System_API_Backend.Controllers
         }
         
         [HttpPut("UpdateAccount/{id}")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> UpdateAccount(int id, [FromBody] AccountRequestDTO accountDTO)
         {
             if (accountDTO == null ||
@@ -162,6 +177,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteAccount/{id}")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> DeleteAccount(int id)
         {
             try
@@ -184,6 +200,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreatePatientAccount")]
+        [AllowAnonymous]
         public async Task<IActionResult> CreatePatientAccount([FromBody] PatientAccountRequestDTO request)
         {
             if (request == null ||

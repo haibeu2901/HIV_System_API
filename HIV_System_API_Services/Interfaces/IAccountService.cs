@@ -18,6 +18,5 @@ namespace HIV_System_API_Services.Interfaces
         Task<bool> DeleteAccountAsync(int accId);
         Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account);
         Task<PatientResponseDTO> CreatePatientAccountAsync(PatientAccountRequestDTO patient);
-
     }
 }

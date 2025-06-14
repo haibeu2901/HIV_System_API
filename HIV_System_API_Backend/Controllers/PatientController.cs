@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,13 +12,16 @@ namespace HIV_System_API_Backend.Controllers
     public class PatientController : ControllerBase
     {
         private IPatientService _patientService;
+        private readonly IConfiguration _configuration;
 
-        public PatientController()
+        public PatientController(IConfiguration configuration)
         {
             _patientService = new PatientService();
+            _configuration = configuration;
         }
 
         [HttpGet("GetAllPatients")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> GetAllPatients()
         {
             try
@@ -32,6 +36,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetPatientById/{patientId}")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> GetPatientById(int patientId)
         {
             try
@@ -54,6 +59,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreatePatient")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> CreatePatient([FromBody] PatientRequestDTO patientRequest)
         {
             try
@@ -78,6 +84,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdatePatient/{patientId}")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> UpdatePatient(int patientId, [FromBody] PatientRequestDTO patientRequest)
         {
             try
@@ -106,6 +113,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeletePatient/{patientId}")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> DeletePatient(int patientId)
         {
             try

@@ -2,6 +2,7 @@
 using HIV_System_API_DTOs.Appointment;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,13 +13,16 @@ namespace HIV_System_API_Backend.Controllers
     public class AppointmentController : ControllerBase
     {
         private IAppointmentService _appointmentService;
+        private readonly IConfiguration _configuration;
 
-        public AppointmentController()
+        public AppointmentController(IConfiguration configuration)
         {
             _appointmentService = new AppointmentService();
+            _configuration = configuration;
         }
 
         [HttpGet("GetAllAppointments")]
+        //[Authorize(Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> GetAllAppointments()
         {
             try
@@ -33,6 +37,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAppointment")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
         public async Task<ActionResult> CreateAppointment([FromBody] AppointmentRequestDTO dto)
         {
             if (dto == null)
@@ -58,6 +63,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteAppointment/{id}")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> DeleteAppointmentByIdAsync(int id)
         {
             try
@@ -75,6 +81,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAppointmentById/{id}")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<ActionResult> GetAppointmentById(int id)
         {
             try
@@ -92,6 +99,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateAppointment/{id}")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> UpdateAppointmentByIdAsync(int id, [FromBody] AppointmentRequestDTO dto)
         {
             if (dto == null)
@@ -117,6 +125,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPatch("ChangeAppointmentStatus/{id}/{status}")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
         public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
         {
             try
@@ -138,12 +147,13 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetAppointmentsByDoctorId/{id}")]
-        public async Task<IActionResult> GetAppointmentsByDoctorId(int id)
+        [HttpGet("GetAppointmentsByAccountId/{id}")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        public async Task<IActionResult> GetAppointmentsByAccountId(int id)
         {
             try
             {
-                var appointments = await _appointmentService.GetAppointmentsByDoctorIdAsync(id);
+                var appointments = await _appointmentService.GetAppointmentsByAccountIdAsync(id);
                 return Ok(appointments);
             }
             catch (Exception ex)
