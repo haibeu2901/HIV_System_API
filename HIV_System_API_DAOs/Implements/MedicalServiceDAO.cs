@@ -6,8 +6,8 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class MedicalServiceDAO : IMedicalServiceDAO
     {
+        private readonly HivSystemApiContext _context;
         private static MedicalServiceDAO? _instance;
-        private readonly HivSystemContext _context;
 
         public static MedicalServiceDAO Instance
         {
@@ -23,7 +23,7 @@ namespace HIV_System_API_DAOs.Implements
 
         public MedicalServiceDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public async Task<List<MedicalService>> GetAllMedicalServicesAsync()

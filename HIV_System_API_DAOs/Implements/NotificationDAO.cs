@@ -6,12 +6,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class NotificationDAO : INotificationDAO
     {
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
         private static NotificationDAO? _instance;
 
         public NotificationDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public static NotificationDAO Instance

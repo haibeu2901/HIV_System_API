@@ -102,5 +102,23 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
             }
         }
+
+        [HttpGet("GetDoctorByDateAndTime/{Date}/{Time}")]
+        public async Task<IActionResult> GetDoctorByDateAndTime(DateOnly Date, TimeOnly Time)
+        {
+            try
+            {
+                var doctors = await _doctorService.GetDoctorsByDateAndTimeAsync(Date, Time);
+                if (doctors == null || doctors.Count == 0)
+                {
+                    return NotFound("No doctors available at the specified date and time.");
+                }
+                return Ok(doctors);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
     }
 }

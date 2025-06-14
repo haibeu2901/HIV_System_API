@@ -19,11 +19,11 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IPatientRepo _patientRepo;
         private readonly IPatientMedicalRecordRepo _patientMedicalRecordRepo;
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
 
         public PatientService()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
             _patientRepo = new PatientRepo();
             _patientMedicalRecordRepo = new PatientMedicalRecordRepo();
         }

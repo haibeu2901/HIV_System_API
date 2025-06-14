@@ -13,13 +13,13 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class DoctorDAO : IDoctorDAO
     {
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
         private static DoctorDAO? _instance;
 
 
         public DoctorDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
         public static DoctorDAO Instance
         {
@@ -37,7 +37,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<List<Doctor>> GetAllDoctorsAsync()
         {
             return await _context.Doctors
-                .Include(d => d.Account)
+                .Include(d => d.Acc)
                 .Include(d => d.DoctorWorkSchedules)
                 .ToListAsync();
         }
@@ -45,7 +45,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Doctor?> GetDoctorByIdAsync(int id)
         {
             return await _context.Doctors
-                .Include(d => d.Account)
+                .Include(d => d.Acc)
                 .Include(d => d.DoctorWorkSchedules)
                 .FirstOrDefaultAsync(d => d.DctId == id);
         }
@@ -55,25 +55,25 @@ namespace HIV_System_API_DAOs.Implements
             if (doctor == null)
                 throw new ArgumentNullException(nameof(doctor));
 
-            // Attach Account if not tracked
-            if (doctor.Account != null)
+            // Attach Acc if not tracked
+            if (doctor.Acc != null)
             {
-                var existingAccount = await _context.Accounts
-                    .FirstOrDefaultAsync(a => a.AccId == doctor.Account.AccId);
-                if (existingAccount != null)
+                var existingAcc = await _context.Accounts
+                    .FirstOrDefaultAsync(a => a.AccId == doctor.Acc.AccId);
+                if (existingAcc != null)
                 {
-                    doctor.Account = existingAccount;
+                    doctor.Acc = existingAcc;
                 }
                 else
                 {
-                    _context.Accounts.Attach(doctor.Account);
+                    _context.Accounts.Attach(doctor.Acc);
                 }
             }
 
             await _context.Doctors.AddAsync(doctor);
             await _context.SaveChangesAsync();
-            // Load related Account after save
-            await _context.Entry(doctor).Reference(d => d.Account).LoadAsync();
+            // Load related Acc after save
+            await _context.Entry(doctor).Reference(d => d.Acc).LoadAsync();
             return doctor;
         }
 
@@ -83,7 +83,7 @@ namespace HIV_System_API_DAOs.Implements
                 throw new ArgumentNullException(nameof(doctor));
 
             var existingDoctor = await _context.Doctors
-                .Include(d => d.Account)
+                .Include(d => d.Acc)
                 .FirstOrDefaultAsync(d => d.DctId == id);
 
             if (existingDoctor == null)
@@ -93,38 +93,38 @@ namespace HIV_System_API_DAOs.Implements
             existingDoctor.Degree = doctor.Degree;
             existingDoctor.Bio = doctor.Bio;
 
-            // Update Account if provided
-            if (doctor.Account != null)
+            // Update Acc if provided
+            if (doctor.Acc != null)
             {
-                if (existingDoctor.Account == null || existingDoctor.Account.AccId != doctor.Account.AccId)
+                if (existingDoctor.Acc == null || existingDoctor.Acc.AccId != doctor.Acc.AccId)
                 {
-                    var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == doctor.Account.AccId);
-                    if (account != null)
+                    var Acc = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == doctor.Acc.AccId);
+                    if (Acc != null)
                     {
-                        existingDoctor.Account = account;
-                        existingDoctor.AccId = account.AccId;
+                        existingDoctor.Acc = Acc;
+                        existingDoctor.AccId = Acc.AccId;
                     }
                 }
                 else
                 {
-                    existingDoctor.Account.Email = doctor.Account.Email;
-                    existingDoctor.Account.Fullname = doctor.Account.Fullname;
-                    existingDoctor.Account.Dob = doctor.Account.Dob;
-                    existingDoctor.Account.Gender = doctor.Account.Gender;
-                    existingDoctor.Account.Roles = doctor.Account.Roles;
-                    existingDoctor.Account.IsActive = doctor.Account.IsActive;
+                    existingDoctor.Acc.Email = doctor.Acc.Email;
+                    existingDoctor.Acc.Fullname = doctor.Acc.Fullname;
+                    existingDoctor.Acc.Dob = doctor.Acc.Dob;
+                    existingDoctor.Acc.Gender = doctor.Acc.Gender;
+                    existingDoctor.Acc.Roles = doctor.Acc.Roles;
+                    existingDoctor.Acc.IsActive = doctor.Acc.IsActive;
                 }
             }
 
             await _context.SaveChangesAsync();
-            await _context.Entry(existingDoctor).Reference(d => d.Account).LoadAsync();
+            await _context.Entry(existingDoctor).Reference(d => d.Acc).LoadAsync();
             return existingDoctor;
         }
 
         public async Task<bool> DeleteDoctorAsync(int id)
         {
             var doctor = await _context.Doctors
-                .Include(d => d.Account)
+                .Include(d => d.Acc)
                 .FirstOrDefaultAsync(d => d.DctId == id);
 
             if (doctor == null)
@@ -142,6 +142,40 @@ namespace HIV_System_API_DAOs.Implements
             _context.Doctors.Remove(doctor);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<Doctor>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
+        {
+            // Convert DateOnly and TimeOnly to DateTime for querying
+            var dayOfWeek = (int)apmtDate.ToDateTime(TimeOnly.MinValue).DayOfWeek;
+            if (dayOfWeek == 0) // Sunday
+            {
+                dayOfWeek = 7; // Adjust to 7 for Sunday
+            }
+
+            // Assume 30-minute appointment duration, consistent with AppointmentService
+            var appointmentDuration = TimeSpan.FromMinutes(30);
+            var apmTimeSpan = apmTime.ToTimeSpan();
+            var apmEndTime = TimeOnly.FromTimeSpan(apmTimeSpan + appointmentDuration);
+
+            // Query doctors who have a schedule matching the day and time
+            var availableDoctors = await _context.Doctors
+                .Include(d => d.Acc)
+                .Include(d => d.DoctorWorkSchedules)
+                .Where(d => d.DoctorWorkSchedules.Any(ws =>
+                    ws.DayOfWeek == dayOfWeek &&
+                    ws.StartTime <= apmTime &&
+                    ws.EndTime >= apmEndTime))
+                // Exclude doctors with conflicting appointments
+                .Where(d => !_context.Appointments.Any(a =>
+                    a.DctId == d.DctId &&
+                    a.ApmtDate == apmtDate &&
+                    a.ApmTime < apmEndTime &&
+                    a.ApmTime >= apmTime &&
+                    a.ApmStatus != 4)) // Exclude cancelled appointments
+                .ToListAsync();
+
+            return availableDoctors;
         }
     }
 }

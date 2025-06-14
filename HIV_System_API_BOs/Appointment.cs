@@ -7,7 +7,7 @@ public partial class Appointment
 {
     public int ApmId { get; set; }
 
-    public int PmrId { get; set; }
+    public int PtnId { get; set; }
 
     public int DctId { get; set; }
 
@@ -21,5 +21,5 @@ public partial class Appointment
 
     public virtual Doctor Dct { get; set; } = null!;
 
-    public virtual PatientMedicalRecord Pmr { get; set; } = null!;
+    public virtual Patient Ptn { get; set; } = null!;
 }

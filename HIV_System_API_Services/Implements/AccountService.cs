@@ -161,7 +161,7 @@ namespace HIV_System_API_Services.Implements
             {
                 PtnId = createdAccount.AccId,
                 AccId = createdAccount.AccId,
-                Account = createdAccount,
+                Acc = createdAccount,
                 PatientMedicalRecord = patientMedicalRecord
             };
 
