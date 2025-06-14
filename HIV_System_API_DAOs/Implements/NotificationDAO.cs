@@ -39,10 +39,20 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<bool> DeleteNotificationByIdAsync(int id)
         {
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.NtfId == id);
+            var notification = await _context.Notifications
+                .Include(n => n.NotificationAccounts)
+                .FirstOrDefaultAsync(n => n.NtfId == id);
+            
             if (notification == null)
                 return false;
 
+            // Remove related Notification_Account records first
+            if (notification.NotificationAccounts != null)
+            {
+                _context.NotificationAccounts.RemoveRange(notification.NotificationAccounts);
+            }
+
+            // Then remove the notification
             _context.Notifications.Remove(notification);
             await _context.SaveChangesAsync();
             return true;
@@ -119,17 +129,26 @@ namespace HIV_System_API_DAOs.Implements
             {
                 if (notification == null)
                     throw new ArgumentNullException(nameof(notification));
-                var existingNotification = await _context.Notifications.FirstOrDefaultAsync(n => n.NtfId == notification.NtfId);
+
+                var existingNotification = await _context.Notifications
+                    .FirstOrDefaultAsync(n => n.NtfId == notification.NtfId);
+                
                 if (existingNotification == null)
                     return false;
+
+                // Update properties
                 existingNotification.NotiMessage = notification.NotiMessage;
                 existingNotification.SendAt = notification.SendAt;
                 existingNotification.NotiType = notification.NotiType;
-                _context.Notifications.Update(existingNotification);
+
                 await _context.SaveChangesAsync();
+                
+                // Detach the entity from the context to prevent tracking issues
+                _context.Entry(existingNotification).State = EntityState.Detached;
+                
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
