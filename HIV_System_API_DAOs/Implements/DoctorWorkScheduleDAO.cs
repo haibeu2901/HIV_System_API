@@ -12,7 +12,7 @@ namespace HIV_System_API_DAOs.Implements
     public class DoctorWorkScheduleDAO : IDoctorWorkScheduleDAO
     {
         private readonly HivSystemApiContext _context;
-        private static DoctorWorkScheduleDAO _instance;
+        private static DoctorWorkScheduleDAO? _instance;
 
         public static DoctorWorkScheduleDAO Instance
         {

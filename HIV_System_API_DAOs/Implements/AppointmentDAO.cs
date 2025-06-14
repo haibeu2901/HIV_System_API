@@ -14,7 +14,7 @@ namespace HIV_System_API_DAOs.Implements
     public class AppointmentDAO : IAppointmentDAO
     {
         private readonly HivSystemApiContext _context;
-        private static AppointmentDAO _instance;
+        private static AppointmentDAO? _instance;
 
         public AppointmentDAO()
         {

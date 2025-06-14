@@ -11,8 +11,8 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class PatientArvRegimenDAO : IPatientArvRegimenDAO
     {
-        private static PatientArvRegimenDAO _instance;
         private readonly HivSystemApiContext _context;
+        private static PatientArvRegimenDAO? _instance;
 
         public static PatientArvRegimenDAO Instance
         {

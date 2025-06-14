@@ -18,7 +18,7 @@ namespace HIV_System_API_DAOs.Implements
     public class PatientDAO : IPatientDAO
     {
         private readonly HivSystemApiContext _context;
-        private static PatientDAO _instance;
+        private static PatientDAO? _instance;
 
         public PatientDAO()
         {
@@ -57,7 +57,14 @@ namespace HIV_System_API_DAOs.Implements
         {
             Debug.WriteLine($"Attempting to delete patient with PtnId: {patientId}");
             var patient = await _context.Patients
+                .Include(p => p.PatientMedicalRecord)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
+
+            if (patient == null)
+            {
+                Debug.WriteLine($"Patient with PtnId: {patientId} not found.");
+                return false; // Return false if the patient does not exist
+            }
 
             // Delete PatientMedicalRecord first if exists
             if (patient.PatientMedicalRecord != null)
