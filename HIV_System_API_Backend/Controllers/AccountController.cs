@@ -31,6 +31,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllAccounts")]
+        [Authorize(Roles ="1")]
         public async Task<IActionResult> GetAllAccounts()
         {
             var accounts = await _accountService.GetAllAccountsAsync();
@@ -109,6 +110,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAccount")]
+        [Authorize(Roles ="1")]
         public async Task<IActionResult> CreateAccount([FromBody] AccountRequestDTO accountDTO)
         {
             if (accountDTO == null ||
@@ -138,23 +140,29 @@ namespace HIV_System_API_Backend.Controllers
         }
         
         [HttpPut("UpdateAccount/{id}")]
-        public async Task<IActionResult> UpdateAccount(int id, [FromBody] AccountRequestDTO accountDTO)
+        [Authorize]
+        public async Task<IActionResult> UpdateAccount(int id, [FromBody] UpdateAccountRequestDTO accountDTO)
         {
-            if (accountDTO == null ||
-                string.IsNullOrWhiteSpace(accountDTO.AccUsername) ||
-                string.IsNullOrWhiteSpace(accountDTO.AccPassword))
-            {
-                return BadRequest("Username and password are required.");
-            }
-
             try
             {
+                //get account roles
+                var currrentAccountRoles = byte.Parse(User.FindFirst(ClaimTypes.Role)?.Value ?? "0");
+                var currentAccountId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+
                 var updatedAccount = await _accountService.UpdateAccountByIdAsync(id, accountDTO);
                 if (updatedAccount == null)
                 {
                     return NotFound($"Account with ID {id} not found.");
                 }
                 return Ok(updatedAccount);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (DbUpdateException ex)
             {
@@ -167,20 +175,24 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteAccount/{id}")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> DeleteAccount(int id)
         {
             try
             {
-                var deleted = await _accountService.DeleteAccountAsync(id);
-                if (!deleted)
+                var currentUserRole = byte.Parse(User.FindFirst(ClaimTypes.Role)?.Value ?? "0");
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+
+                var deactivated = await _accountService.DeleteAccountAsync(id);
+                if (!deactivated)
                 {
                     return NotFound($"Account with ID {id} not found.");
                 }
-                return NoContent();
+                return Ok("Account has been successfully deactivated.");
             }
-            catch (DbUpdateException ex)
+            catch (UnauthorizedAccessException ex)
             {
-                return Conflict($"Account deletion failed: {ex.Message}");
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -189,6 +201,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreatePatientAccount")]
+        [AllowAnonymous]
         public async Task<IActionResult> CreatePatientAccount([FromBody] PatientAccountRequestDTO request)
         {
             if (request == null ||
@@ -210,6 +223,65 @@ namespace HIV_System_API_Backend.Controllers
             catch (DbUpdateException ex)
             {
                 return Conflict($"Patient account creation failed: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+        [HttpPut("UpdatePatientProfile")]
+        [Authorize(Roles = "3")] // Patient role
+        public async Task<IActionResult> UpdatePatientProfile([FromBody] PatientProfileUpdateDTO profileDTO)
+        {
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+
+                if (currentUserId == 0)
+                {
+                    return Unauthorized("Invalid user session.");
+                }
+
+                var updatedProfile = await _accountService.UpdatePatientProfileAsync(currentUserId, profileDTO);
+                return Ok(updatedProfile);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPut("UpdateDoctorProfile")]
+        [Authorize(Roles = "2")] // Doctor role
+        public async Task<IActionResult> UpdateDoctorProfile([FromBody] DoctorProfileUpdateDTO profileDTO)
+        {
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+
+                if (currentUserId == 0)
+                {
+                    return Unauthorized("Invalid user session.");
+                }
+
+                var updatedProfile = await _accountService.UpdateDoctorProfileAsync(currentUserId, profileDTO);
+                return Ok(updatedProfile);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {

@@ -25,7 +25,7 @@ namespace HIV_System_API_Services.Implements
         {
             return new DoctorWorkSchedule
             {
-                DoctorId = requestDTO.DctId,
+                DoctorId = requestDTO.DoctorId,
                 DayOfWeek = (byte)requestDTO.DayOfWeek,
                 StartTime = requestDTO.StartTime,
                 EndTime = requestDTO.EndTime
@@ -36,8 +36,8 @@ namespace HIV_System_API_Services.Implements
         {
             return new DoctorWorkScheduleResponseDTO
             {
-                DwsId = doctorWorkSchedule.DwsId,
-                DctId = doctorWorkSchedule.DoctorId,
+                DocWorkScheduleId = doctorWorkSchedule.DwsId,
+                DoctorId = doctorWorkSchedule.DoctorId,
                 DayOfWeek = doctorWorkSchedule.DayOfWeek.HasValue ? doctorWorkSchedule.DayOfWeek.Value : 0,
                 StartTime = doctorWorkSchedule.StartTime,
                 EndTime = doctorWorkSchedule.EndTime

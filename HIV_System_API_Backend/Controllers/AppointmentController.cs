@@ -2,8 +2,10 @@
 using HIV_System_API_DTOs.Appointment;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HIV_System_API_Backend.Controllers
 {
@@ -19,6 +21,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllAppointments")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> GetAllAppointments()
         {
             try
@@ -33,6 +36,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAppointment")]
+        [Authorize]
         public async Task<ActionResult> CreateAppointment([FromBody] AppointmentRequestDTO dto)
         {
             if (dto == null)
@@ -41,7 +45,7 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var createdAppointment = await _appointmentService.CreateAppointmentAsync(dto);
-                return CreatedAtAction(nameof(GetAppointmentById), new { id = createdAppointment.ApmId }, createdAppointment);
+                return CreatedAtAction(nameof(GetAppointmentById), new { id = createdAppointment.AppointmentId }, createdAppointment);
             }
             catch (ArgumentException ex)
             {
@@ -58,6 +62,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteAppointment/{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteAppointmentByIdAsync(int id)
         {
             try
@@ -75,6 +80,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAppointmentById/{id}")]
+        [Authorize(Roles = "1,2")]
         public async Task<ActionResult> GetAppointmentById(int id)
         {
             try
@@ -138,13 +144,31 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetAppointmentsByDoctorId/{id}")]
-        public async Task<IActionResult> GetAppointmentsByDoctorId(int id)
+        [HttpGet("my-appointments")]
+        [Authorize(Roles = "2,3")] // Only doctors and patients
+        public async Task<ActionResult<List<AppointmentResponseDTO>>> GetMyAppointments()
         {
             try
             {
-                var appointments = await _appointmentService.GetAppointmentsByDoctorIdAsync(id);
+                // Get current user's role and ID from the token
+                var currentUserRole = byte.Parse(User.FindFirst(ClaimTypes.Role)?.Value ?? "0");
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+
+                if (currentUserId == 0)
+                {
+                    return Unauthorized("Invalid user session.");
+                }
+
+                var appointments = await _appointmentService.GetAppointmentsByAccountIdAsync(currentUserId, currentUserRole);
                 return Ok(appointments);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {

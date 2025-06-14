@@ -89,7 +89,7 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var createdService = await _medicalServiceService.CreateMedicalServiceAsync(serviceDTO);
-                return CreatedAtAction(nameof(GetMedicalServiceById), new { id = createdService.SrvId }, createdService);
+                return CreatedAtAction(nameof(GetMedicalServiceById), new { id = createdService.ServiceId }, createdService);
             }
             catch (ArgumentException ex)
             {

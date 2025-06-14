@@ -8,8 +8,8 @@ namespace HIV_System_API_DTOs.Appointment
 {
     public class AppointmentRequestDTO
     {
-        public int PtnId { get; set; }
-        public int DctId { get; set; }
+        public int PatientId { get; set; }
+        public int DoctorId { get; set; }
         public DateOnly ApmtDate { get; set; }
         public TimeOnly ApmTime { get; set; }
         public string? Notes { get; set; }
