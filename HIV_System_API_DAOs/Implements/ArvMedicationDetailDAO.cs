@@ -13,7 +13,7 @@ namespace HIV_System_API_DAOs.Implements
     public class ArvMedicationDetailDAO : IArvMedicationDetailDAO
     {
         private readonly HivSystemContext _context;
-        private static ArvMedicationDetailDAO? _instance;
+        private static ArvMedicationDetailDAO _instance;
 
         public ArvMedicationDetailDAO()
         {
@@ -47,10 +47,6 @@ namespace HIV_System_API_DAOs.Implements
             var arvMedicationDetail = await _context.ArvMedicationDetails
                 .FirstOrDefaultAsync(a => a.AmdId == id);
             // Return the ARV medication detail or null if not found
-            if (arvMedicationDetail == null)
-            {
-                throw new KeyNotFoundException($"No ARV medication detail found with ID {id}.");
-            }
             return arvMedicationDetail;
         }
 
