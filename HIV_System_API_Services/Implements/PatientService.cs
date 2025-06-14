@@ -65,11 +65,11 @@ namespace HIV_System_API_Services.Implements
                 {
                     PmrId = medicalRecord.PmrId,
                     PtnId = medicalRecord.PtnId
-                } : null
+                } : new PatientMedicalRecordResponseDTO()
             };
         }
 
-        public async Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patient)
+        public async Task<PatientResponseDTO?> CreatePatientAsync(PatientRequestDTO patient)
         {
             // Map DTO to entity
             var patientEntity = MapToEntity(patient);
@@ -79,7 +79,10 @@ namespace HIV_System_API_Services.Implements
 
             // Re-fetch patient from database to ensure PatientMedicalRecord is loaded and IDs are correct
             var patientWithRecord = await _patientRepo.GetPatientByIdAsync(createdPatient.PtnId);
-
+            if(patientWithRecord == null)
+            {
+                return null;
+            }
             // Map entity to response DTO
             var responseDto = MapToResponseDTO(patientWithRecord);
 
@@ -124,7 +127,10 @@ namespace HIV_System_API_Services.Implements
         {
             // Retrieve the patient entity from the repository
             var patient = await _patientRepo.GetPatientByIdAsync(patientId);
-
+            if (patient == null)
+            {
+                return null;
+            }
             // Map the entity to a response DTO (returns null if patient is null)
             var responseDto = MapToResponseDTO(patient);
 

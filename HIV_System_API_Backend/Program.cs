@@ -21,10 +21,22 @@ builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailServi
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorWorkScheduleService, DoctorWorkScheduleService>();
 builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
+builder.Services.AddScoped<IPatientArvMedicationService, PatientArvMedicationService>();
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy => policy
+            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // No trailing slash
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
 var app = builder.Build();
 
@@ -39,6 +51,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.UseCors("AllowReactApp");
 app.MapControllers();
 
 app.Run();
