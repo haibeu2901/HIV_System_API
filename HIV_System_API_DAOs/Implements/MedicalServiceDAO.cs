@@ -6,7 +6,7 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class MedicalServiceDAO : IMedicalServiceDAO
     {
-        private static MedicalServiceDAO _instance;
+        private static MedicalServiceDAO? _instance;
         private readonly HivSystemContext _context;
 
         public static MedicalServiceDAO Instance

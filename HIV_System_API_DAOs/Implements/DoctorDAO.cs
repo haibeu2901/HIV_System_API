@@ -14,7 +14,7 @@ namespace HIV_System_API_DAOs.Implements
     public class DoctorDAO : IDoctorDAO
     {
         private readonly HivSystemContext _context;
-        private static DoctorDAO _instance;
+        private static DoctorDAO? _instance;
 
 
         public DoctorDAO()
