@@ -71,7 +71,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //Add DB Context
-builder.Services.AddDbContext<HivSystemContext>(options =>
+builder.Services.AddDbContext<HivSystemApiContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("HIVSystemDatabase")));
 
 // Add Services
@@ -79,12 +79,23 @@ builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailServi
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorWorkScheduleService, DoctorWorkScheduleService>();
 builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 builder.Services.AddScoped<IPatientArvMedicationService, PatientArvMedicationService>();
 builder.Services.AddScoped<IMedicalServiceService, MedicalServiceService>();
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy => policy
+            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // No trailing slash
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
 var app = builder.Build();
 
@@ -101,6 +112,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseCors("AllowReactApp");
 app.MapControllers();
 
 app.Run();

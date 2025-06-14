@@ -15,12 +15,12 @@ namespace HIV_System_API_Services.Implements
     public class PatientArvRegimenService : IPatientArvRegimenService
     {
         private readonly IPatientArvRegimenRepo _patientArvRegimenRepo;
-        private readonly HivSystemContext _context; // Add this field
+        private readonly HivSystemApiContext _context; // Add this field
 
         public PatientArvRegimenService()
         {
             _patientArvRegimenRepo = new PatientArvRegimenRepo();
-            _context = new HivSystemContext(); // Initialize context
+            _context = new HivSystemApiContext(); // Initialize context
         }
 
         private async Task ValidatePatientMedicalRecordExists(int pmrId)
@@ -39,6 +39,7 @@ namespace HIV_System_API_Services.Implements
             {
                 throw new ArgumentException("RegimenLevel must be between 1 and 3");
             }
+            await Task.CompletedTask;
         }
 
         private async Task ValidateRegimenStatus(byte? regimenStatus)
@@ -47,6 +48,7 @@ namespace HIV_System_API_Services.Implements
             {
                 throw new ArgumentException("RegimenStatus must be between 0 and 2");
             }
+            await Task.CompletedTask;
         }
 
         private PatientArvRegimen MapToEntity(PatientArvRegimenRequestDTO requestDTO)
@@ -101,7 +103,7 @@ namespace HIV_System_API_Services.Implements
                 var createdEntity = await _patientArvRegimenRepo.CreatePatientArvRegimenAsync(entity);
                 return MapToResponseDTO(createdEntity);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 throw; // Re-throw validation exceptions
             }
@@ -155,7 +157,7 @@ namespace HIV_System_API_Services.Implements
                 var updatedEntity = await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, entity);
                 return MapToResponseDTO(updatedEntity);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 throw; // Re-throw validation exceptions
             }

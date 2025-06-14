@@ -4,6 +4,7 @@ using HIV_System_API_DTOs.Appointment;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,12 +13,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class AppointmentDAO : IAppointmentDAO
     {
-        private readonly HivSystemContext _context;
-        private static AppointmentDAO _instance;
+        private readonly HivSystemApiContext _context;
+        private static AppointmentDAO? _instance;
 
         public AppointmentDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public static AppointmentDAO Instance
@@ -32,130 +33,73 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
+        public async Task<List<Appointment>> GetAllAppointmentsAsync()
+        {
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
+        }
+
         public async Task<Appointment> CreateAppointmentAsync(Appointment appointment)
         {
-            if (appointment == null)
-                throw new ArgumentNullException(nameof(appointment));
-
-            // Validate that DctId and PmrId exist in their respective tables
-            var doctorExists = await _context.Doctors.AnyAsync(d => d.DctId == appointment.DctId);
-            if (!doctorExists)
-                throw new ArgumentException("The specified doctor does not exist.", nameof(appointment.DctId));
-
-            var patientRecordExists = await _context.PatientMedicalRecords.AnyAsync(p => p.PmrId == appointment.PmrId);
-            if (!patientRecordExists)
-                throw new ArgumentException("The specified patient medical record does not exist.", nameof(appointment.PmrId));
-
-            // Set navigation properties to null to avoid validation errors
-            appointment.Dct = null;
-            appointment.Pmr = null;
-
-            await _context.Appointments.AddAsync(appointment);
-            await _context.SaveChangesAsync();
-            return appointment;
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
 
-        public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
+        public async Task<Appointment?> GetAppointmentByIdAsync(int id)
         {
-            var appointments = await _context.Appointments
-                .Include(a => a.Dct)
-                    .ThenInclude(d => d.Account)
-                .Include(a => a.Pmr)
-                    .ThenInclude(p => p.Ptn)
-                    .ThenInclude(pt => pt.Account) // Fixed: Changed 'Acc' to 'Account'
-                .Select(a => new AppointmentDTO
-                {
-                    ApmId = a.ApmId,
-                    PmrId = a.PmrId,
-                    PatientName = a.Pmr.Ptn.Account.Fullname, // Fixed: Changed 'Acc' to 'Account'
-                    DctId = a.DctId,
-                    DoctorName = a.Dct.Account.Fullname,
-                    ApmtDate = a.ApmtDate,
-                    ApmTime = a.ApmTime,
-                    ApmStatus = a.ApmStatus,
-                    Notes = a.Notes
-                })
-                .ToListAsync();
-
-            return appointments;
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
 
-        public async Task<AppointmentDTO> GetAppointmentByIdAsync(int id)
+        public async Task<Appointment> UpdateAppointmentByIdAsync(int id, Appointment appointment)
         {
-            var appointment = await _context.Appointments
-                .Include(a => a.Dct)
-                    .ThenInclude(d => d.Account)
-                .Include(a => a.Pmr)
-                    .ThenInclude(p => p.Ptn)
-                    .ThenInclude(pt => pt.Account)
-                .FirstOrDefaultAsync(a => a.ApmId == id);
-
-            if (appointment == null)
-                return null;
-
-            return new AppointmentDTO
-            {
-                ApmId = appointment.ApmId,
-                PmrId = appointment.PmrId,
-                PatientName = appointment.Pmr?.Ptn?.Account?.Fullname,
-                DctId = appointment.DctId,
-                DoctorName = appointment.Dct?.Account?.Fullname,
-                ApmtDate = appointment.ApmtDate,
-                ApmTime = appointment.ApmTime,
-                ApmStatus = appointment.ApmStatus,
-                Notes = appointment.Notes
-            };
-        }
-
-        public async Task<bool> UpdateAppointmentByIdAsync(Appointment appointment)
-        {
-            try
-            {
-                var existingAppointment = await _context.Appointments
-                    .FirstOrDefaultAsync(a => a.ApmId == appointment.ApmId);
-
-                if (existingAppointment == null)
-                    return false;
-
-                // Update all properties
-                existingAppointment.PmrId = appointment.PmrId;
-                existingAppointment.DctId = appointment.DctId;
-                existingAppointment.ApmtDate = appointment.ApmtDate;
-                existingAppointment.ApmTime = appointment.ApmTime;
-                existingAppointment.ApmStatus = appointment.ApmStatus;
-                existingAppointment.Notes = appointment.Notes;
-
-                _context.Appointments.Update(existingAppointment);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
 
         public async Task<bool> DeleteAppointmentByIdAsync(int id)
         {
-            var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.ApmId == id);
+            Debug.WriteLine($"Attempting to delete appointment with ApmId: {id}");
+            var appointment = await _context.Appointments.FindAsync(id);
             if (appointment == null)
+            {
+                Debug.WriteLine($"Appointment with ApmId: {id} not found.");
                 return false;
+            }
 
             _context.Appointments.Remove(appointment);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                await _context.SaveChangesAsync();
+                Debug.WriteLine($"Successfully deleted appointment with ApmId: {id}");
+                return true;
+            }
+            catch (DbUpdateException ex)
+            {
+                Debug.WriteLine($"Failed to delete appointment: {ex.Message}, InnerException: {ex.InnerException?.Message}");
+                throw new InvalidOperationException("Failed to delete appointment due to database error.", ex);
+            }
         }
 
-        public async Task<bool> ChangeAppointmentStatusAsync(int id, byte status)
+        public async Task<Appointment> ChangeAppointmentStatusAsync(int id, byte status)
         {
-            var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.ApmId == id);
-            if (appointment == null)
-                return false;
+            var appointment = await _context.Appointments
+            .FirstOrDefaultAsync(a => a.ApmId == id)
+            ?? throw new InvalidOperationException($"Appointment with ApmId: {id} not found.");
 
             appointment.ApmStatus = status;
-            _context.Appointments.Update(appointment);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                await _context.SaveChangesAsync();
+                Debug.WriteLine($"Changed status of appointment with ApmId: {id} to {status}");
+                return appointment;
+            }
+            catch (DbUpdateException ex)
+            {
+                Debug.WriteLine($"Failed to change appointment status: {ex.Message}, InnerException: {ex.InnerException?.Message}");
+                throw new InvalidOperationException("Failed to change appointment status due to database error.", ex);
+            }
+        }
+
+        public async Task<List<Appointment>> GetAppointmentsByDoctorIdAsync(int doctorId)
+        {
+            throw new NotImplementedException("This method is not implemented yet. Please use GetAppointmentsByDoctorIdAsync instead.");
         }
     }
 }

@@ -6,8 +6,8 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class PatientArvMedicationDAO : IPatientArvMedicationDAO
     {
-        private static PatientArvMedicationDAO _instance;
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
+        private static PatientArvMedicationDAO? _instance;
 
         public static PatientArvMedicationDAO Instance
         {
@@ -23,7 +23,7 @@ namespace HIV_System_API_DAOs.Implements
 
         public PatientArvMedicationDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public async Task<List<PatientArvMedication>> GetAllPatientArvMedicationsAsync()

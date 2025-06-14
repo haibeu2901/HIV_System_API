@@ -10,11 +10,12 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface IAppointmentService
     {
-        Task<List<AppointmentDTO>> GetAllAppointmentsAsync();
-        Task<Appointment> CreateAppointmentAsync(Appointment appointment);
-        Task<AppointmentDTO> GetAppointmentByIdAsync(int id);
-        Task<bool> UpdateAppointmentByIdAsync(Appointment appointment); 
+        Task<List<AppointmentResponseDTO>> GetAllAppointmentsAsync();
+        Task<AppointmentResponseDTO> CreateAppointmentAsync(AppointmentRequestDTO appointment);
+        Task<AppointmentResponseDTO?> GetAppointmentByIdAsync(int id);
+        Task<AppointmentResponseDTO> UpdateAppointmentByIdAsync(int id, AppointmentRequestDTO appointment);
         Task<bool> DeleteAppointmentByIdAsync(int id);
-        Task<bool> ChangeAppointmentStatusAsync(int id, byte status);
+        Task<AppointmentResponseDTO> ChangeAppointmentStatusAsync(int id, byte status);
+        Task<List<AppointmentResponseDTO>> GetAppointmentsByDoctorIdAsync(int doctorId);
     }
 }

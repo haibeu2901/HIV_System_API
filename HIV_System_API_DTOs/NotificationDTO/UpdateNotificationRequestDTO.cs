@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 
 namespace HIV_System_API_DTOs.NotificationDTO
 {
-    public class CreateNotificationDTO
+    public class UpdateNotificationRequestDTO
     {
-        public string Title { get; set; }
-        public string Message { get; set; }
-        public string NotificationType { get; set; }
+        public string? NotiType { get; set; }
+        public string? NotiMessage { get; set; }
         public DateTime SendAt { get; set; }
     }
 }

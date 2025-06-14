@@ -10,12 +10,12 @@ namespace HIV_System_API_Services.Implements
     public class PatientArvMedicationService : IPatientArvMedicationService
     {
         private readonly IPatientArvMedicationRepo _patientArvMedicationRepo;
-        private readonly HivSystemContext _context;
+        private readonly HivSystemApiContext _context;
 
         public PatientArvMedicationService()
         {
             _patientArvMedicationRepo = new PatientArvMedicationRepo();
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         private async Task ValidatePatientArvRegimenExists(int parId)

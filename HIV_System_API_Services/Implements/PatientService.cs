@@ -5,8 +5,10 @@ using HIV_System_API_DTOs.PatientMedicalRecordDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,10 +18,14 @@ namespace HIV_System_API_Services.Implements
     public class PatientService : IPatientService
     {
         private readonly IPatientRepo _patientRepo;
+        private readonly IPatientMedicalRecordRepo _patientMedicalRecordRepo;
+        private readonly HivSystemApiContext _context;
 
         public PatientService()
         {
+            _context = new HivSystemApiContext();
             _patientRepo = new PatientRepo();
+            _patientMedicalRecordRepo = new PatientMedicalRecordRepo();
         }
 
         private Patient MapToEntity(PatientRequestDTO patientRequest)
@@ -33,21 +39,12 @@ namespace HIV_System_API_Services.Implements
 
         private PatientResponseDTO MapToResponseDTO(Patient patient)
         {
-            if (patient == null || patient.Account == null)
-                return null!;
+            var account = _context.Accounts
+           .FirstOrDefault(a => a.AccId == patient.AccId)
+           ?? throw new InvalidOperationException("Associated account not found.");
 
-            PatientMedicalRecordResponseDTO? medicalRecordDto = null;
-            // Only map medical record if it exists and is not deleted (assuming null means deleted)
-            if (patient.PatientMedicalRecord != null
-                && patient.PatientMedicalRecord.PmrId > 0
-                && patient.PatientMedicalRecord.PtnId == patient.PtnId)
-            {
-                medicalRecordDto = new PatientMedicalRecordResponseDTO
-                {
-                    PmrId = patient.PatientMedicalRecord.PmrId,
-                    PtnId = patient.PatientMedicalRecord.PtnId
-                };
-            }
+            var medicalRecord = _context.PatientMedicalRecords
+                .FirstOrDefault(r => r.PtnId == patient.PtnId);
 
             return new PatientResponseDTO
             {
@@ -55,21 +52,24 @@ namespace HIV_System_API_Services.Implements
                 AccId = patient.AccId,
                 Account = new AccountResponseDTO
                 {
-                    AccId = patient.Account.AccId,
-                    AccUsername = patient.Account.AccUsername,
-                    AccPassword = patient.Account.AccPassword,
-                    Email = patient.Account.Email,
-                    Fullname = patient.Account.Fullname,
-                    Dob = patient.Account.Dob,
-                    Gender = patient.Account.Gender,
-                    Roles = patient.Account.Roles,
-                    IsActive = patient.Account.IsActive
+                    AccId = account.AccId,
+                    AccUsername = account.AccUsername,
+                    Email = account.Email,
+                    Fullname = account.Fullname,
+                    Dob = account.Dob,
+                    Gender = account.Gender,
+                    Roles = account.Roles,
+                    IsActive = account.IsActive
                 },
-                MedicalRecord = medicalRecordDto // Will be null if deleted
+                MedicalRecord = medicalRecord != null ? new PatientMedicalRecordResponseDTO
+                {
+                    PmrId = medicalRecord.PmrId,
+                    PtnId = medicalRecord.PtnId
+                } : new PatientMedicalRecordResponseDTO()
             };
         }
 
-        public async Task<PatientResponseDTO> CreatePatientAsync(PatientRequestDTO patient)
+        public async Task<PatientResponseDTO?> CreatePatientAsync(PatientRequestDTO patient)
         {
             // Map DTO to entity
             var patientEntity = MapToEntity(patient);
@@ -77,16 +77,37 @@ namespace HIV_System_API_Services.Implements
             // Create patient in repository
             var createdPatient = await _patientRepo.CreatePatientAsync(patientEntity);
 
+            // Re-fetch patient from database to ensure PatientMedicalRecord is loaded and IDs are correct
+            var patientWithRecord = await _patientRepo.GetPatientByIdAsync(createdPatient.PtnId);
+            if(patientWithRecord == null)
+            {
+                return null;
+            }
             // Map entity to response DTO
-            var responseDto = MapToResponseDTO(createdPatient);
+            var responseDto = MapToResponseDTO(patientWithRecord);
 
             return responseDto;
         }
 
         public async Task<bool> DeletePatientAsync(int patientId)
         {
-            // Call the repository to delete the patient by ID
-            return await _patientRepo.DeletePatientAsync(patientId);
+            // Retrieve the patient entity
+            var patient = await _patientRepo.GetPatientByIdAsync(patientId);
+            if (patient == null)
+            {
+                return false;
+            }
+
+            // Delete associated PatientMedicalRecord if exists
+            var medicalRecord = await _patientMedicalRecordRepo.GetPatientMedicalRecordByIdAsync(patientId);
+            if (medicalRecord != null)
+            {
+                await _patientMedicalRecordRepo.DeletePatientMedicalRecordAsync(medicalRecord.PmrId);
+            }
+
+            // Delete the patient
+            var result = await _patientRepo.DeletePatientAsync(patientId);
+            return result;
         }
 
         public async Task<List<PatientResponseDTO>> GetAllPatientsAsync()
@@ -106,7 +127,10 @@ namespace HIV_System_API_Services.Implements
         {
             // Retrieve the patient entity from the repository
             var patient = await _patientRepo.GetPatientByIdAsync(patientId);
-
+            if (patient == null)
+            {
+                return null;
+            }
             // Map the entity to a response DTO (returns null if patient is null)
             var responseDto = MapToResponseDTO(patient);
 

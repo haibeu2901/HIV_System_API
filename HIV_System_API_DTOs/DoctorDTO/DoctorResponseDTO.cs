@@ -14,7 +14,7 @@ namespace HIV_System_API_DTOs.DoctorDTO
         public string? Degree { get; set; }
         public string? Bio {  get; set; }
         public int AccId { get; set; }
-        public AccountResponseDTO Account {  get; set; }
-        public List<DoctorWorkScheduleResponseDTO> WorkSchedule { get; set; }
+        public AccountResponseDTO? Account {  get; set; }
+        public List<DoctorWorkScheduleResponseDTO>? WorkSchedule { get; set; }
     }
 }
