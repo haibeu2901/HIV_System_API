@@ -12,12 +12,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class AccountDAO : IAccountDAO
     {
-        private readonly HivSystemContext _context;
-        private static AccountDAO _instance;
+        private readonly HivSystemApiContext _context;
+        private static AccountDAO? _instance;
 
         public AccountDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public static AccountDAO Instance
@@ -94,6 +94,62 @@ namespace HIV_System_API_DAOs.Implements
             _context.Accounts.Add(account);
             await _context.SaveChangesAsync();
             return account;
+        }
+
+        public async Task<Patient> CreatePatientAccountAsync(Patient patient)
+        {
+            if (patient == null)
+            {
+                throw new ArgumentNullException(nameof(patient));
+            }
+
+            // Ensure the Account object is present
+            if (patient.Acc == null)
+            {
+                throw new ArgumentException("Patient must have an associated Account object.", nameof(patient));
+            }
+
+            // Add Account first
+            _context.Accounts.Add(patient.Acc);
+            await _context.SaveChangesAsync();
+
+            // Set the foreign key
+            patient.AccId = patient.Acc.AccId;
+
+            // Add Patient
+            _context.Set<Patient>().Add(patient);
+            await _context.SaveChangesAsync();
+
+            return patient;
+        }
+
+        public Task<bool> IsEmailUsedAsync(string mail)
+        {
+            return _context.Accounts.AnyAsync(a => a.Email == mail);
+        }
+            
+        public async Task<Account> UpdateAccountProfileAsync(int id, Account updatedAccount)
+        {
+            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
+            if (existingAccount == null)
+            {
+                throw new KeyNotFoundException($"Account with id {id} not found.");
+            }
+
+            // Update only profile fields
+            existingAccount.AccPassword = updatedAccount.AccPassword ?? existingAccount.AccPassword;
+            existingAccount.Email = updatedAccount.Email ?? existingAccount.Email;
+            existingAccount.Fullname = updatedAccount.Fullname ?? existingAccount.Fullname;
+            existingAccount.Dob = updatedAccount.Dob ?? existingAccount.Dob;
+            existingAccount.Gender = updatedAccount.Gender ?? existingAccount.Gender;
+
+            await _context.SaveChangesAsync();
+            return existingAccount;
+        }
+
+        public async Task<Account?> GetAccountByUsernameAsync(string username)
+        {
+            return await _context.Accounts.FirstOrDefaultAsync(a => a.AccUsername == username);
         }
     }
 }

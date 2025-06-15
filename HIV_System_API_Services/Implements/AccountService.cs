@@ -61,7 +61,7 @@ namespace HIV_System_API_Services.Implements
             // Check for duplicate username
             var existing = await _accountRepo.GetAccountByLoginAsync(account.AccUsername, account.AccPassword);
             if (existing != null)
-                throw new InvalidOperationException($"Account with username '{account.AccUsername}' already exists.");
+                throw new InvalidOperationException($"Account already exists.");
 
             var entity = MapToEntity(account);
             var createdAccount = await _accountRepo.CreateAccountAsync(entity);
@@ -95,10 +95,21 @@ namespace HIV_System_API_Services.Implements
             return accounts.Select(MapToResponseDTO).ToList();
         }
 
-        public async Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
+        public async Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, UpdateAccountRequestDTO updatedAccount)
         {
             if (updatedAccount == null)
                 throw new ArgumentNullException(nameof(updatedAccount));
+            //check authorization
+            if(updatedAccount.Roles != 1)
+            {
+                if(updatedAccount.Roles == 4 && updatedAccount.Roles == 5)
+                {
+                    var currentAccount = await _accountRepo.GetAccountByIdAsync(id);
+                    if(currentAccount?.Roles == 1)
+                        throw new UnauthorizedAccessException("You do not have permission to update this account.");
+                }
+            }
+
 
             // Fetch the existing account
             var existingAccount = await _accountRepo.GetAccountByIdAsync(id);
@@ -107,6 +118,10 @@ namespace HIV_System_API_Services.Implements
 
             // Update fields
             existingAccount.AccPassword = updatedAccount.AccPassword;
+            if (!string.IsNullOrWhiteSpace(updatedAccount.Email) && await _accountRepo.IsEmailUsedAsync(updatedAccount.Email))
+            {
+                throw new InvalidOperationException($"Email '{updatedAccount.Email}' is already in use.");
+            }
             existingAccount.Email = updatedAccount.Email;
             existingAccount.Fullname = updatedAccount.Fullname;
             existingAccount.Dob = updatedAccount.Dob;
@@ -129,11 +144,18 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(patient.AccPassword))
                 throw new ArgumentNullException(nameof(patient.AccPassword));
 
-            // Check for duplicate username
+            // Check for duplicate username (by username only, not password)
             var existingAccount = await _accountRepo.GetAccountByLoginAsync(patient.AccUsername, patient.AccPassword);
             if (existingAccount != null)
-                throw new InvalidOperationException($"Account with username '{patient.AccUsername}' already exists.");
+                throw new InvalidOperationException($"Account already exists.");
 
+            //Check if email is already used
+            if (!string.IsNullOrWhiteSpace(patient.Email) && await _accountRepo.IsEmailUsedAsync(patient.Email))
+            {
+                throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
+            }
+
+            // Map PatientAccountRequestDTO to AccountRequestDTO
             var accountDto = new AccountRequestDTO
             {
                 AccUsername = patient.AccUsername,
@@ -141,27 +163,20 @@ namespace HIV_System_API_Services.Implements
                 Email = patient.Email,
                 Fullname = patient.Fullname,
                 Dob = patient.Dob.HasValue ? DateOnly.FromDateTime(patient.Dob.Value) : null,
-                Gender = patient.Gender,
-                Roles = 3, // Patient role
+                Gender = patient.Gender, // PatientAccountRequestDTO does not have Gender, set to null or default
+                Roles = 3, // Assuming 3 is the role for Patient
                 IsActive = true
             };
 
             // Create Account
             var createdAccount = await _accountRepo.CreateAccountAsync(MapToEntity(accountDto));
 
-            // Create PatientMedicalRecord
-            var patientMedicalRecord = new PatientMedicalRecord
-            {
-                PtnId = createdAccount.AccId
-            };
-
             // Create Patient entity
             var patientEntity = new Patient
             {
                 PtnId = createdAccount.AccId,
                 AccId = createdAccount.AccId,
-                Account = createdAccount,
-                PatientMedicalRecord = patientMedicalRecord
+                Acc = createdAccount,
             };
 
             // Save Patient entity
@@ -171,40 +186,83 @@ namespace HIV_System_API_Services.Implements
             // Map to PatientResponseDTO
             return new PatientResponseDTO
             {
-                PtnId = createdPatient.PtnId,
+                PatientId = createdPatient.PtnId,
                 AccId = createdPatient.AccId,
                 Account = MapToResponseDTO(createdAccount),
-                MedicalRecord = new PatientMedicalRecordResponseDTO
+            };
+        }
+
+        public async Task<AccountResponseDTO> UpdatePatientProfileAsync(int accountId, PatientProfileUpdateDTO profileDTO)
+        {
+            if (profileDTO == null)
+                throw new ArgumentNullException(nameof(profileDTO));
+
+            var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
+            if (existingAccount == null)
+                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+
+            if (existingAccount.Roles != 3)
+                throw new UnauthorizedAccessException("This account is not a patient account.");
+
+            var accountToUpdate = new Account
+            {
+                AccId = accountId,
+                AccUsername = existingAccount.AccUsername, // preserve username
+                AccPassword = profileDTO.AccPassword ?? existingAccount.AccPassword,
+                Email = profileDTO.Email ?? existingAccount.Email,
+                Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
+                Dob = profileDTO.Dob ?? existingAccount.Dob,
+                Gender = profileDTO.Gender ?? existingAccount.Gender,
+                Roles = existingAccount.Roles, // preserve role
+                IsActive = existingAccount.IsActive // preserve status
+            };
+
+            var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
+            return MapToResponseDTO(updatedAccount);
+        }
+
+        public async Task<AccountResponseDTO> UpdateDoctorProfileAsync(int accountId, DoctorProfileUpdateDTO profileDTO)
+        {
+            if (profileDTO == null)
+                throw new ArgumentNullException(nameof(profileDTO));
+
+            var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
+            if (existingAccount == null)
+                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+
+            if (existingAccount.Roles != 2)
+                throw new UnauthorizedAccessException("This account is not a doctor account.");
+
+            var accountToUpdate = new Account
+            {
+                AccId = accountId,
+                AccUsername = existingAccount.AccUsername, // preserve username
+                AccPassword = profileDTO.AccPassword ?? existingAccount.AccPassword,
+                Email = profileDTO.Email ?? existingAccount.Email,
+                Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
+                Dob = profileDTO.Dob ?? existingAccount.Dob,
+                Gender = profileDTO.Gender ?? existingAccount.Gender,
+                Roles = existingAccount.Roles, // preserve role
+                IsActive = existingAccount.IsActive // preserve status
+            };
+
+            // Update account profile
+            var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
+
+            // Update doctor-specific information
+            if (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio))
+            {
+                var doctorRepo = new DoctorRepo();
+                var doctor = await doctorRepo.GetDoctorByIdAsync(accountId);
+                if (doctor != null)
                 {
-
+                    doctor.Degree = profileDTO.Degree ?? doctor.Degree;
+                    doctor.Bio = profileDTO.Bio ?? doctor.Bio;
+                    await doctorRepo.UpdateDoctorAsync(doctor.DctId, doctor);
                 }
-            };
-        }
-        private PatientMedicalRecordResponseDTO MapToPatientMedicalRecordResponseDTO(PatientMedicalRecord? record)
-        {
-            if (record == null)
-                return new PatientMedicalRecordResponseDTO();
-            return new PatientMedicalRecordResponseDTO
-            {
-                PtnId = record.PtnId
-                // Add more mappings if PatientMedicalRecordResponseDTO has more properties
-            };
-        }
+            }
 
-        public async Task<PatientResponseDTO?> GetPatientAccountByIdAsync(int patientId)
-        {
-            var patientRepo = new PatientRepo();
-            var patient = await patientRepo.GetPatientByIdAsync(patientId);
-            if (patient == null)
-                return null;
-
-            return new PatientResponseDTO
-            {
-                PtnId = patient.PtnId,
-                AccId = patient.AccId,
-                Account = MapToResponseDTO(patient.Account),
-                MedicalRecord = MapToPatientMedicalRecordResponseDTO(patient.PatientMedicalRecord)
-            };
+            return MapToResponseDTO(updatedAccount);
         }
     }
 }

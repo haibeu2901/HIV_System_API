@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,12 +17,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class PatientDAO : IPatientDAO
     {
-        private readonly HivSystemContext _context;
-        private static PatientDAO _instance;
+        private readonly HivSystemApiContext _context;
+        private static PatientDAO? _instance;
 
         public PatientDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public static PatientDAO Instance
@@ -39,7 +40,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<List<Patient>> GetAllPatientsAsync()
         {
             return await _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.Acc)
                 .Include(p => p.PatientMedicalRecord)
                 .ToListAsync();
         }
@@ -47,31 +48,50 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Patient?> GetPatientByIdAsync(int patientId)
         {
             return await _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.Acc)
                 .Include(p => p.PatientMedicalRecord)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
         }
 
         public async Task<bool> DeletePatientAsync(int patientId)
         {
+            Debug.WriteLine($"Attempting to delete patient with PtnId: {patientId}");
             var patient = await _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.PatientMedicalRecord)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
 
             if (patient == null)
             {
-                return false;
+                Debug.WriteLine($"Patient with PtnId: {patientId} not found.");
+                return false; // Return false if the patient does not exist
             }
 
-            //// Remove related Account if needed
-            //if (patient.Account != null)
-            //{
-            //    _context.Accounts.Remove(patient.Account);
-            //}
+            // Delete PatientMedicalRecord first if exists
+            if (patient.PatientMedicalRecord != null)
+            {
+                _context.PatientMedicalRecords.Remove(patient.PatientMedicalRecord);
+                await _context.SaveChangesAsync();
+                // Reload patient to ensure it's still tracked and not deleted by cascade
+                patient = await _context.Patients.FirstOrDefaultAsync(p => p.PtnId == patientId);
+                if (patient == null)
+                {
+                    Debug.WriteLine($"Patient with PtnId: {patientId} was deleted by cascade after removing PatientMedicalRecord.");
+                    return true;
+                }
+            }
 
-            _context.Patients.Remove(patient);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                _context.Patients.Remove(patient);
+                await _context.SaveChangesAsync();
+                Debug.WriteLine($"Successfully deleted patient with PtnId: {patientId}");
+                return true;
+            }
+            catch (DbUpdateException ex)
+            {
+                Debug.WriteLine($"Failed to delete patient with PtnId: {patientId}. Error: {ex.Message}, InnerException: {ex.InnerException?.Message}");
+                throw new InvalidOperationException($"Failed to delete patient: {ex.Message}", ex);
+            }
         }
 
         public async Task<Patient> CreatePatientAsync(Patient patient)
@@ -79,10 +99,10 @@ namespace HIV_System_API_DAOs.Implements
             if (patient == null)
                 throw new ArgumentNullException(nameof(patient));
 
-            // Attach Account if not tracked
-            if (patient.Account != null)
+            // Attach Acc if not tracked
+            if (patient.Acc != null)
             {
-                _context.Accounts.Attach(patient.Account);
+                _context.Accounts.Attach(patient.Acc);
             }
 
             await _context.Patients.AddAsync(patient);
@@ -96,7 +116,7 @@ namespace HIV_System_API_DAOs.Implements
                 throw new ArgumentNullException(nameof(patient));
 
             var existingPatient = await _context.Patients
-                .Include(p => p.Account)
+                .Include(p => p.Acc)
                 .FirstOrDefaultAsync(p => p.PtnId == patientId);
 
             if (existingPatient == null)
@@ -105,17 +125,17 @@ namespace HIV_System_API_DAOs.Implements
             // Update Patient properties
             existingPatient.AccId = patient.AccId;
 
-            // Update Account if provided
-            if (patient.Account != null && existingPatient.Account != null)
+            // Update Acc if provided
+            if (patient.Acc != null && existingPatient.Acc != null)
             {
-                existingPatient.Account.AccUsername = patient.Account.AccUsername;
-                existingPatient.Account.AccPassword = patient.Account.AccPassword;
-                existingPatient.Account.Email = patient.Account.Email;
-                existingPatient.Account.Fullname = patient.Account.Fullname;
-                existingPatient.Account.Dob = patient.Account.Dob;
-                existingPatient.Account.Gender = patient.Account.Gender;
-                existingPatient.Account.Roles = patient.Account.Roles;
-                existingPatient.Account.IsActive = patient.Account.IsActive;
+                existingPatient.Acc.AccUsername = patient.Acc.AccUsername;
+                existingPatient.Acc.AccPassword = patient.Acc.AccPassword;
+                existingPatient.Acc.Email = patient.Acc.Email;
+                existingPatient.Acc.Fullname = patient.Acc.Fullname;
+                existingPatient.Acc.Dob = patient.Acc.Dob;
+                existingPatient.Acc.Gender = patient.Acc.Gender;
+                existingPatient.Acc.Roles = patient.Acc.Roles;
+                existingPatient.Acc.IsActive = patient.Acc.IsActive;
             }
 
             // Update PatientMedicalRecord if needed (not shown here)

@@ -12,12 +12,12 @@ namespace HIV_System_API_DAOs.Implements
 {
     public class PatientMedicalRecordDAO : IPatientMedicalRecordDAO
     {
-        private readonly HivSystemContext _context;
-        private static PatientMedicalRecordDAO _instance;
+        private readonly HivSystemApiContext _context;
+        private static PatientMedicalRecordDAO? _instance;
 
         public PatientMedicalRecordDAO()
         {
-            _context = new HivSystemContext();
+            _context = new HivSystemApiContext();
         }
 
         public static PatientMedicalRecordDAO Instance
@@ -80,6 +80,13 @@ namespace HIV_System_API_DAOs.Implements
             _context.PatientMedicalRecords.Remove(record);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<PatientMedicalRecord?> GetPersonalMedicalRecordAsync(int accId)
+        {
+            return await _context.PatientMedicalRecords
+                .Include(pmr => pmr.Ptn)
+                .FirstOrDefaultAsync(pmr => pmr.Ptn.AccId == accId);
         }
     }
 }
