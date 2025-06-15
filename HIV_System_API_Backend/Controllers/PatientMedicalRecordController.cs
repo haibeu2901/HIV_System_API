@@ -1,4 +1,5 @@
-﻿using HIV_System_API_DTOs.AccountDTO;
+﻿using HIV_System_API_Backend.Common;
+using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.PatientMedicalRecordDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
@@ -119,7 +120,7 @@ namespace HIV_System_API_Backend.Controllers
         [Authorize(Roles = "3")]
         public async Task<IActionResult> GetPersonalMedicalRecord()
         {
-            var accId = ExtractAccountIdFromClaims(User);
+            var accId = ClaimsHelper.ExtractAccountIdFromClaims(User);
             if (accId == null)
             {
                 return Unauthorized("Account ID not found in token.");
@@ -131,23 +132,6 @@ namespace HIV_System_API_Backend.Controllers
                 return NotFound("Personal medical record not found.");
             }
             return Ok(record);
-        }
-
-        private int? ExtractAccountIdFromClaims(ClaimsPrincipal user)
-        {
-            if (user == null || user.Identity == null || !user.Identity.IsAuthenticated)
-                return null;
-
-            var accIdClaim = user.Claims.FirstOrDefault(c =>
-                c.Type == "AccountId");
-
-            if (accIdClaim == null)
-                return null;
-
-            if (int.TryParse(accIdClaim.Value, out int accId))
-                return accId;
-
-            return null;
         }
     }
 }
