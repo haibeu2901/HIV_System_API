@@ -42,10 +42,10 @@ namespace HIV_System_API_Services.Implements
                 .Where(a => a.PtnId == record.PtnId)
                 .Select(a => new AppointmentResponseDTO
                 {
-                    ApmId = a.ApmId,
-                    PtnId = a.PtnId,
+                    AppointmentId = a.ApmId,
+                    PatientId = a.PtnId,
                     PatientName = a.Ptn.Acc.Fullname,
-                    DctId = a.DctId,
+                    DoctorId = a.DctId,
                     DoctorName = a.Dct.Acc.Fullname,
                     ApmtDate = a.ApmtDate,
                     ApmTime = a.ApmTime,

@@ -29,8 +29,8 @@ namespace HIV_System_API_Services.Implements
         {
             return new Appointment
             {
-                PtnId = requestDTO.PtnId,
-                DctId = requestDTO.DctId,
+                PtnId = requestDTO.PatientId,
+                DctId = requestDTO.DoctorId,
                 ApmtDate = requestDTO.ApmtDate,
                 ApmTime = requestDTO.ApmTime,
                 Notes = requestDTO.Notes,
@@ -161,25 +161,25 @@ namespace HIV_System_API_Services.Implements
             // Validate patient existence
             var patient = await _context.Patients
                 .Include(p => p.Acc)
-                .FirstOrDefaultAsync(p => p.PtnId == request.PtnId);
+                .FirstOrDefaultAsync(p => p.PtnId == request.PatientId);
             if (patient == null)
                 throw new ArgumentException("Patient does not exist.");
 
             // Validate doctor existence
             var doctor = await _context.Doctors
                 .Include(d => d.Acc)
-                .FirstOrDefaultAsync(d => d.DctId == request.DctId);
+                .FirstOrDefaultAsync(d => d.DctId == request.DoctorId);
             if (doctor == null)
                 throw new ArgumentException("Doctor does not exist.");
 
             // Check for patient medical record, create if missing
             var patientMedicalRecord = await _context.PatientMedicalRecords
-                .FirstOrDefaultAsync(r => r.PtnId == request.PtnId);
+                .FirstOrDefaultAsync(r => r.PtnId == request.PatientId);
             if (patientMedicalRecord == null)
             {
                 patientMedicalRecord = new PatientMedicalRecord
                 {
-                    PtnId = request.PtnId
+                    PtnId = request.PatientId
                 };
                 _context.PatientMedicalRecords.Add(patientMedicalRecord);
                 await _context.SaveChangesAsync();
