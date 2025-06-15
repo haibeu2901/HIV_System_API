@@ -56,7 +56,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateArvMedicationDetail")]
-        [Authorize(Roles = "1,2,4.5")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> CreateArvMedicationDetail([FromBody] ArvMedicationDetail arvMedicationDetail)
         {
             try
@@ -79,7 +79,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateArvMedicationDetail/{id}")]
-        [Authorize(Roles = "1,2,4.5")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> UpdateArvMedicationDetail(int id, [FromBody] ArvMedicationDetail arvMedicationDetail)
         {
             try

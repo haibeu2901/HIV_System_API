@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,7 @@ namespace HIV_System_API_Backend.Controllers
             _patientArvRegimenService = new PatientArvRegimenService();
         }
         [HttpGet("GetAllPatientArvRegimens")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetAllPatientArvRegimens()
         {
             var regimens = await _patientArvRegimenService.GetAllPatientArvRegimensAsync();
@@ -26,6 +28,7 @@ namespace HIV_System_API_Backend.Controllers
             return Ok(regimens);
         }
         [HttpGet("GetPatientArvRegimenById/{parId}")]
+        [Authorize(Roles = "1,2,4")]
         public async Task<IActionResult> GetPatientArvRegimenById(int parId)
         {
             var regimen = await _patientArvRegimenService.GetPatientArvRegimenByIdAsync(parId);
@@ -36,6 +39,7 @@ namespace HIV_System_API_Backend.Controllers
             return Ok(regimen);
         }
         [HttpPost("CreatePatientArvRegimen")]
+        [Authorize(Roles = "1,2,4")]
         public async Task<IActionResult> CreatePatientArvRegimen([FromBody] PatientArvRegimenRequestDTO patientArvRegimen)
         {
             if (patientArvRegimen == null)
@@ -67,6 +71,7 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
         [HttpDelete("DeletePatientArvRegimen/{parId}")]
+        [Authorize (Roles = "1,2,4")]
         public async Task<IActionResult> DeletePatientArvRegimen(int parId)
         {
             if (parId <= 0)
@@ -81,6 +86,7 @@ namespace HIV_System_API_Backend.Controllers
             return NoContent(); // 204 No Content
         }
         [HttpPut("UpdatePatientArvRegimen/{parId}")]
+        [Authorize (Roles = "1,2,4")]
         public async Task<IActionResult> UpdatePatientArvRegimen(int parId, [FromBody] PatientArvRegimenRequestDTO patientArvRegimen)
         {
             if (patientArvRegimen == null)

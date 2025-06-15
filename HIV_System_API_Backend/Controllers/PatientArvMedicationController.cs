@@ -1,6 +1,7 @@
 using HIV_System_API_DTOs.PatientArvMedicationDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV_System_API_Backend.Controllers
@@ -23,6 +24,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="200">Returns the list of medications</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpGet("GetAllPatientArvMedications")]
+        [Authorize (Roles = "1,2,4,5")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<PatientArvMedicationResponseDTO>>> GetAllPatientArvMedications()
@@ -47,6 +49,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="404">If the medication was not found</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpGet("GetPatientArvMedicationById/{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -76,6 +79,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="400">If the medication data is invalid</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpPost("CreatePatientArvMedication")]
+        [Authorize (Roles = "1, 2, 4")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -111,6 +115,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="404">If the medication was not found</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpPut("UpdatePatientArvMedication/{id}")]
+        [Authorize (Roles = "1,2,4")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -149,6 +154,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="404">If the medication was not found</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpDelete("DeletePatientArvMedication/{id}")]
+        [Authorize (Roles = "1,2,4")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
