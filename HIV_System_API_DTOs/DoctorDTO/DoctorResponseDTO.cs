@@ -10,7 +10,7 @@ namespace HIV_System_API_DTOs.DoctorDTO
 {
     public class DoctorResponseDTO
     {
-        public int DctId { get; set; }
+        public int DoctorId { get; set; }
         public string? Degree { get; set; }
         public string? Bio {  get; set; }
         public int AccId { get; set; }

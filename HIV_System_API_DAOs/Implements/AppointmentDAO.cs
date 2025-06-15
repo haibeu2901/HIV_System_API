@@ -38,6 +38,9 @@ namespace HIV_System_API_DAOs.Implements
             return await _context.Appointments
                 .Include(a => a.Dct)
                 .Include(a => a.Ptn)
+                    .ThenInclude(d => d.Acc)
+                .Include(a => a.Ptn)
+                    .ThenInclude(p => p.Acc)
                 .ToListAsync();
         }
 
@@ -45,12 +48,25 @@ namespace HIV_System_API_DAOs.Implements
         {
             if (appointment == null)
                 throw new ArgumentNullException(nameof(appointment), "Appointment cannot be null.");
+
+            // Verify that the Doctor exists
+            var doctor = await _context.Doctors.FindAsync(appointment.DctId);
+            if (doctor == null)
+                throw new InvalidOperationException($"Doctor with ID {appointment.DctId} not found.");
+
+            // Verify that the Patient exists
+            var patient = await _context.Patients.FindAsync(appointment.PtnId);
+            if (patient == null)
+                throw new InvalidOperationException($"Patient with ID {appointment.PtnId} not found.");
+
             try
             {
-                _context.Appointments.Add(appointment);
+                await _context.Appointments.AddAsync(appointment);
                 await _context.SaveChangesAsync();
-                Debug.WriteLine($"Successfully created appointment with ApmId: {appointment.ApmId}");
-                return appointment;
+
+                // Reload the appointment with related entities
+                return await GetAppointmentByIdAsync(appointment.ApmId)
+                    ?? throw new InvalidOperationException("Failed to retrieve created appointment.");
             }
             catch (DbUpdateException ex)
             {
@@ -85,21 +101,39 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(a => a.Ptn)
                 .FirstOrDefaultAsync(a => a.ApmId == id);
             if (existingAppointment == null)
-            {
-                Debug.WriteLine($"Appointment with ApmId: {id} not found.");
-                throw new KeyNotFoundException($"Appointment with ApmId: {id} not found.");
-            }
+                throw new KeyNotFoundException($"Appointment with id {id} not found.");
+
             // Update fields
             existingAppointment.ApmtDate = appointment.ApmtDate;
             existingAppointment.ApmTime = appointment.ApmTime;
+            existingAppointment.Notes = appointment.Notes;
             existingAppointment.ApmStatus = appointment.ApmStatus;
-            existingAppointment.DctId = appointment.DctId;
-            existingAppointment.PtnId = appointment.PtnId;
+
+            // Only update DctId if it's different and the new doctor exists
+            if (appointment.DctId != existingAppointment.DctId)
+            {
+                var newDoctor = await _context.Doctors.FindAsync(appointment.DctId);
+                if (newDoctor == null)
+                    throw new InvalidOperationException($"Doctor with ID {appointment.DctId} not found.");
+                existingAppointment.DctId = appointment.DctId;
+            }
+
+            // Only update PtnId if it's different and the new patient exists
+            if (appointment.PtnId != existingAppointment.PtnId)
+            {
+                var newPatient = await _context.Patients.FindAsync(appointment.PtnId);
+                if (newPatient == null)
+                    throw new InvalidOperationException($"Patient with ID {appointment.PtnId} not found.");
+                existingAppointment.PtnId = appointment.PtnId;
+            }
+
             try
             {
                 await _context.SaveChangesAsync();
-                Debug.WriteLine($"Successfully updated appointment with ApmId: {id}");
-                return existingAppointment;
+
+                // Reload the appointment with related entities
+                return await GetAppointmentByIdAsync(id)
+                    ?? throw new InvalidOperationException("Failed to retrieve updated appointment.");
             }
             catch (DbUpdateException ex)
             {
@@ -152,14 +186,51 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<List<Appointment>> GetAppointmentsByAccountIdAsync(int accId)
+        public async Task<List<Appointment>> GetAppointmentsByAccountIdAsync(int accountId, byte role)
         {
-            Debug.WriteLine($"Attempting to retrieve appointments for account with AccId: {accId}");
-            return await _context.Appointments
-                .Include(a => a.Dct)
-                .Include(a => a.Ptn)
-                .Where(a => a.Ptn.AccId == accId || a.Dct.AccId == accId)
-                .ToListAsync();
+            try
+            {
+                var query = _context.Appointments
+                    .Include(a => a.Dct)
+                        .ThenInclude(d => d.Acc)
+                    .Include(a => a.Ptn)
+                        .ThenInclude(p => p.Acc)
+                    .AsQueryable();
+
+                if (role == 2) // Doctor
+                {
+                    // Get doctor's ID from account ID
+                    var doctor = await _context.Doctors
+                        .FirstOrDefaultAsync(d => d.AccId == accountId);
+
+                    if (doctor == null)
+                        throw new KeyNotFoundException($"Doctor not found for account ID {accountId}");
+
+                    query = query.Where(a => a.DctId == doctor.DctId);
+                }
+                else if (role == 3) // Patient
+                {
+                    // Get patient's ID from account ID
+                    var patient = await _context.Patients
+                        .FirstOrDefaultAsync(p => p.AccId == accountId);
+
+                    if (patient == null)
+                        throw new KeyNotFoundException($"Patient not found for account ID {accountId}");
+
+                    query = query.Where(a => a.PtnId == patient.PtnId);
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException("Invalid role for appointment access");
+                }
+
+                return await query.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in GetAppointmentsByAccountIdAsync: {ex.Message}");
+                throw;
+            }
         }
     }
 }

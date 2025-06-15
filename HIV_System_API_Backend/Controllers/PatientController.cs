@@ -75,7 +75,7 @@ namespace HIV_System_API_Backend.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create patient.");
                 }
 
-                return CreatedAtAction(nameof(GetPatientById), new { patientId = createdPatient.PtnId }, createdPatient);
+                return CreatedAtAction(nameof(GetPatientById), new { patientId = createdPatient.PatientId }, createdPatient);
             }
             catch (Exception ex)
             {

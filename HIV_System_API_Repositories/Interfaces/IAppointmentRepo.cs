@@ -17,5 +17,6 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<bool> DeleteAppointmentByIdAsync(int id);
         Task<Appointment> ChangeAppointmentStatusAsync(int id, byte status);
         Task<List<Appointment>> GetAppointmentsByAccountIdAsync(int accId);
+        Task<List<Appointment>> GetAppointmentsByAccountIdAsync(int accountId, byte role);
     }
 }

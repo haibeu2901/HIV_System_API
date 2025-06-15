@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllArvMedicationDetails")]
+        [Authorize]                    
         public async Task<IActionResult> GetAllArvMedicationDetails()
         {
             try
@@ -31,6 +33,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetArvMedicationDetailById/{id}")]
+        [Authorize]
         public async Task<IActionResult> GetArvMedicationDetailById(int id)
         {
             try
@@ -53,6 +56,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateArvMedicationDetail")]
+        [Authorize(Roles = "1,2,4.5")]
         public async Task<IActionResult> CreateArvMedicationDetail([FromBody] ArvMedicationDetail arvMedicationDetail)
         {
             try
@@ -75,6 +79,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateArvMedicationDetail/{id}")]
+        [Authorize(Roles = "1,2,4.5")]
         public async Task<IActionResult> UpdateArvMedicationDetail(int id, [FromBody] ArvMedicationDetail arvMedicationDetail)
         {
             try
@@ -120,6 +125,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteArvMedicationDetail/{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteArvMedicationDetail(int id)
         {
             try

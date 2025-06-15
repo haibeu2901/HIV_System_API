@@ -5,6 +5,7 @@ using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HIV_System_API_Backend.Controllers
 {
@@ -46,7 +47,7 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var createdAppointment = await _appointmentService.CreateAppointmentAsync(dto);
-                return CreatedAtAction(nameof(GetAppointmentById), new { id = createdAppointment.ApmId }, createdAppointment);
+                return CreatedAtAction(nameof(GetAppointmentById), new { id = createdAppointment.AppointmentId }, createdAppointment);
             }
             catch (ArgumentException ex)
             {
@@ -147,14 +148,31 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetAppointmentsByAccountId/{id}")]
         [Authorize(Roles = "1, 2, 3, 4, 5")]
-        public async Task<IActionResult> GetAppointmentsByAccountId(int id)
+        [HttpGet("my-appointments")]
+        public async Task<ActionResult<List<AppointmentResponseDTO>>> GetMyAppointments()
         {
             try
             {
-                var appointments = await _appointmentService.GetAppointmentsByAccountIdAsync(id);
+                // Get current user's role and ID from the token
+                var currentUserRole = byte.Parse(User.FindFirst(ClaimTypes.Role)?.Value ?? "0");
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+
+                if (currentUserId == 0)
+                {
+                    return Unauthorized("Invalid user session.");
+                }
+
+                var appointments = await _appointmentService.GetAppointmentsByAccountIdAsync(currentUserId, currentUserRole);
                 return Ok(appointments);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {

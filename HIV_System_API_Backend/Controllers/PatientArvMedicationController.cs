@@ -84,7 +84,7 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var createdMedication = await _patientArvMedicationService.CreatePatientArvMedicationAsync(medicationDTO);
-                return CreatedAtAction(nameof(GetPatientArvMedicationById), new { id = createdMedication.PamId }, createdMedication);
+                return CreatedAtAction(nameof(GetPatientArvMedicationById), new { id = createdMedication.PatientArvMedId }, createdMedication);
             }
             catch (ArgumentException ex)
             {

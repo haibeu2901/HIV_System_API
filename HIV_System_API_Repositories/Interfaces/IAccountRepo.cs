@@ -19,5 +19,7 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<Account> CreateAccountAsync(Account account);
         Task<Patient> CreatePatientAccountAsync(Patient patient);
         Task<bool> IsEmailUsedAsync(string mail);
+        Task<Account> UpdateAccountProfileAsync(int id, Account updatedAccount);
+        Task<Account?> GetAccountByUsernameAsync(string username);
     }
 }

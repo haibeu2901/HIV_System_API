@@ -48,7 +48,7 @@ namespace HIV_System_API_Backend.Controllers
                 var createdRegimen = await _patientArvRegimenService.CreatePatientArvRegimenAsync(patientArvRegimen);
                 return CreatedAtAction(
                     nameof(GetPatientArvRegimenById), 
-                    new { parId = createdRegimen.ParId }, 
+                    new { parId = createdRegimen.PatientMedRecordId }, 
                     createdRegimen);
             }
             catch (ArgumentException ex)

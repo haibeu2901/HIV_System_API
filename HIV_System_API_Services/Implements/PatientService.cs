@@ -48,7 +48,7 @@ namespace HIV_System_API_Services.Implements
 
             return new PatientResponseDTO
             {
-                PtnId = patient.PtnId,
+                PatientId = patient.PtnId,
                 AccId = patient.AccId,
                 Account = new AccountResponseDTO
                 {

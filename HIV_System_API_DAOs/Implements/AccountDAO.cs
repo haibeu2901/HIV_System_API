@@ -127,5 +127,29 @@ namespace HIV_System_API_DAOs.Implements
         {
             return _context.Accounts.AnyAsync(a => a.Email == mail);
         }
+            
+        public async Task<Account> UpdateAccountProfileAsync(int id, Account updatedAccount)
+        {
+            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
+            if (existingAccount == null)
+            {
+                throw new KeyNotFoundException($"Account with id {id} not found.");
+            }
+
+            // Update only profile fields
+            existingAccount.AccPassword = updatedAccount.AccPassword ?? existingAccount.AccPassword;
+            existingAccount.Email = updatedAccount.Email ?? existingAccount.Email;
+            existingAccount.Fullname = updatedAccount.Fullname ?? existingAccount.Fullname;
+            existingAccount.Dob = updatedAccount.Dob ?? existingAccount.Dob;
+            existingAccount.Gender = updatedAccount.Gender ?? existingAccount.Gender;
+
+            await _context.SaveChangesAsync();
+            return existingAccount;
+        }
+
+        public async Task<Account?> GetAccountByUsernameAsync(string username)
+        {
+            return await _context.Accounts.FirstOrDefaultAsync(a => a.AccUsername == username);
+        }
     }
 }

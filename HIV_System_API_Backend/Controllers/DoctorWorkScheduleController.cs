@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_DTOs.DoctorWorkScheduleDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +19,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorWorkSchedules")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetDoctorWorkSchedules()
         {
             var schedules = await _doctorWorkScheduleService.GetDoctorWorkSchedulesAsync();
@@ -29,6 +31,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorWorkScheduleById/{id}")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetDoctorWorkScheduleById(int id)
         {
             var schedule = await _doctorWorkScheduleService.GetDoctorWorkScheduleByIdAsync(id);
@@ -40,6 +43,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateDoctorWorkSchedule")]
+        [Authorize (Roles = "1,2,4,5")]
         public async Task<IActionResult> CreateDoctorWorkSchedule([FromBody] DoctorWorkScheduleRequestDTO requestDTO)
         {
             if (requestDTO == null)
@@ -60,7 +64,7 @@ namespace HIV_System_API_Backend.Controllers
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create doctor work schedule.");
                 }
-                return CreatedAtAction(nameof(GetDoctorWorkScheduleById), new { id = createdSchedule.DwsId }, createdSchedule);
+                return CreatedAtAction(nameof(GetDoctorWorkScheduleById), new { id = createdSchedule.DocWorkScheduleId }, createdSchedule);
             }
             catch (Exception ex)
             {
@@ -69,6 +73,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateDoctorWorkSchedule/{id}")]
+        [Authorize (Roles = "1,2,4,5")]
         public async Task<IActionResult> UpdateDoctorWorkSchedule(int id, [FromBody] DoctorWorkScheduleRequestDTO requestDTO)
         {
             if (requestDTO == null)
@@ -92,6 +97,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteDoctorWorkSchedule/{id}")]
+        [Authorize (Roles = "1,2,4,5")]
         public async Task<IActionResult> DeleteDoctorWorkSchedule(int id)
         {
             try
