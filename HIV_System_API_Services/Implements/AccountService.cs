@@ -61,7 +61,7 @@ namespace HIV_System_API_Services.Implements
             // Check for duplicate username
             var existing = await _accountRepo.GetAccountByLoginAsync(account.AccUsername, account.AccPassword);
             if (existing != null)
-                throw new InvalidOperationException($"Account with username '{account.AccUsername}' already exists.");
+                throw new InvalidOperationException($"Account already exists.");
 
             var entity = MapToEntity(account);
             var createdAccount = await _accountRepo.CreateAccountAsync(entity);
@@ -95,10 +95,21 @@ namespace HIV_System_API_Services.Implements
             return accounts.Select(MapToResponseDTO).ToList();
         }
 
-        public async Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, AccountRequestDTO updatedAccount)
+        public async Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, UpdateAccountRequestDTO updatedAccount)
         {
             if (updatedAccount == null)
                 throw new ArgumentNullException(nameof(updatedAccount));
+            //check authorization
+            if(updatedAccount.Roles != 1)
+            {
+                if(updatedAccount.Roles == 4 && updatedAccount.Roles == 5)
+                {
+                    var currentAccount = await _accountRepo.GetAccountByIdAsync(id);
+                    if(currentAccount?.Roles == 1)
+                        throw new UnauthorizedAccessException("You do not have permission to update this account.");
+                }
+            }
+
 
             // Fetch the existing account
             var existingAccount = await _accountRepo.GetAccountByIdAsync(id);
@@ -136,7 +147,7 @@ namespace HIV_System_API_Services.Implements
             // Check for duplicate username (by username only, not password)
             var existingAccount = await _accountRepo.GetAccountByLoginAsync(patient.AccUsername, patient.AccPassword);
             if (existingAccount != null)
-                throw new InvalidOperationException($"Account with username '{patient.AccUsername}' already exists.");
+                throw new InvalidOperationException($"Account already exists.");
 
             //Check if email is already used
             if (!string.IsNullOrWhiteSpace(patient.Email) && await _accountRepo.IsEmailUsedAsync(patient.Email))
@@ -175,10 +186,83 @@ namespace HIV_System_API_Services.Implements
             // Map to PatientResponseDTO
             return new PatientResponseDTO
             {
-                PtnId = createdPatient.PtnId,
+                PatientId = createdPatient.PtnId,
                 AccId = createdPatient.AccId,
                 Account = MapToResponseDTO(createdAccount),
             };
+        }
+
+        public async Task<AccountResponseDTO> UpdatePatientProfileAsync(int accountId, PatientProfileUpdateDTO profileDTO)
+        {
+            if (profileDTO == null)
+                throw new ArgumentNullException(nameof(profileDTO));
+
+            var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
+            if (existingAccount == null)
+                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+
+            if (existingAccount.Roles != 3)
+                throw new UnauthorizedAccessException("This account is not a patient account.");
+
+            var accountToUpdate = new Account
+            {
+                AccId = accountId,
+                AccUsername = existingAccount.AccUsername, // preserve username
+                AccPassword = profileDTO.AccPassword ?? existingAccount.AccPassword,
+                Email = profileDTO.Email ?? existingAccount.Email,
+                Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
+                Dob = profileDTO.Dob ?? existingAccount.Dob,
+                Gender = profileDTO.Gender ?? existingAccount.Gender,
+                Roles = existingAccount.Roles, // preserve role
+                IsActive = existingAccount.IsActive // preserve status
+            };
+
+            var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
+            return MapToResponseDTO(updatedAccount);
+        }
+
+        public async Task<AccountResponseDTO> UpdateDoctorProfileAsync(int accountId, DoctorProfileUpdateDTO profileDTO)
+        {
+            if (profileDTO == null)
+                throw new ArgumentNullException(nameof(profileDTO));
+
+            var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
+            if (existingAccount == null)
+                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+
+            if (existingAccount.Roles != 2)
+                throw new UnauthorizedAccessException("This account is not a doctor account.");
+
+            var accountToUpdate = new Account
+            {
+                AccId = accountId,
+                AccUsername = existingAccount.AccUsername, // preserve username
+                AccPassword = profileDTO.AccPassword ?? existingAccount.AccPassword,
+                Email = profileDTO.Email ?? existingAccount.Email,
+                Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
+                Dob = profileDTO.Dob ?? existingAccount.Dob,
+                Gender = profileDTO.Gender ?? existingAccount.Gender,
+                Roles = existingAccount.Roles, // preserve role
+                IsActive = existingAccount.IsActive // preserve status
+            };
+
+            // Update account profile
+            var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
+
+            // Update doctor-specific information
+            if (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio))
+            {
+                var doctorRepo = new DoctorRepo();
+                var doctor = await doctorRepo.GetDoctorByIdAsync(accountId);
+                if (doctor != null)
+                {
+                    doctor.Degree = profileDTO.Degree ?? doctor.Degree;
+                    doctor.Bio = profileDTO.Bio ?? doctor.Bio;
+                    await doctorRepo.UpdateDoctorAsync(doctor.DctId, doctor);
+                }
+            }
+
+            return MapToResponseDTO(updatedAccount);
         }
     }
 }

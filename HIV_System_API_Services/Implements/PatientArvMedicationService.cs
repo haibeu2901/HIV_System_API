@@ -50,8 +50,8 @@ namespace HIV_System_API_Services.Implements
         {
             return new PatientArvMedication
             {
-                ParId = requestDTO.ParId,
-                AmdId = requestDTO.AmdId,
+                ParId = requestDTO.PatientArvMedId,
+                AmdId = requestDTO.ArvMedDetailId,
                 Quantity = requestDTO.Quantity
             };
         }
@@ -60,9 +60,9 @@ namespace HIV_System_API_Services.Implements
         {
             return new PatientArvMedicationResponseDTO
             {
-                PamId = entity.PamId,
-                ParId = entity.ParId,
-                AmdId = entity.AmdId,
+                PatientArvMedId = entity.PamId,
+                PatientArvRegiId = entity.ParId,
+                ArvMedId = entity.AmdId,
                 Quantity = entity.Quantity
             };
         }
@@ -75,8 +75,8 @@ namespace HIV_System_API_Services.Implements
             try
             {
                 // Validate foreign keys exist
-                await ValidatePatientArvRegimenExists(patientArvMedication.ParId);
-                await ValidateArvMedicationDetailExists(patientArvMedication.AmdId);
+                await ValidatePatientArvRegimenExists(patientArvMedication.PatientArvMedId);
+                await ValidateArvMedicationDetailExists(patientArvMedication.ArvMedDetailId);
                 
                 // Validate quantity
                 ValidateQuantity(patientArvMedication.Quantity);
@@ -126,8 +126,8 @@ namespace HIV_System_API_Services.Implements
             try
             {
                 // Validate foreign keys exist
-                await ValidatePatientArvRegimenExists(patientArvMedication.ParId);
-                await ValidateArvMedicationDetailExists(patientArvMedication.AmdId);
+                await ValidatePatientArvRegimenExists(patientArvMedication.PatientArvMedId);
+                await ValidateArvMedicationDetailExists(patientArvMedication.ArvMedDetailId);
                 
                 // Validate quantity
                 ValidateQuantity(patientArvMedication.Quantity);

@@ -8,9 +8,9 @@ namespace HIV_System_API_DTOs.PatientARVRegimenDTO
 {
     public class PatientArvRegimenResponseDTO
     {
-        public int ParId { get; set; }
+        public int PatientArvRegiId { get; set; }
 
-        public int PmrId { get; set; }
+        public int PatientMedRecordId { get; set; }
 
         public string? Notes { get; set; }
 

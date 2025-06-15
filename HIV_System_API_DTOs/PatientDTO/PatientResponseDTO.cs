@@ -10,7 +10,7 @@ namespace HIV_System_API_DTOs.PatientDTO
 {
     public class PatientResponseDTO
     {
-        public int PtnId { get; set; }
+        public int PatientId { get; set; }
         public int AccId { get; set; }
         public AccountResponseDTO? Account { get; set; }
     }

@@ -59,7 +59,7 @@ namespace HIV_System_API_Services.Implements
         {
             return new MedicalServiceResponseDTO
             {
-                SrvId = entity.SrvId,
+                ServiceId = entity.SrvId,
                 AccId = entity.AccId,
                 ServiceName = entity.ServiceName,
                 ServiceDescription = entity.ServiceDescription,

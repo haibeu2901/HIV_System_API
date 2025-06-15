@@ -57,7 +57,7 @@ namespace HIV_System_API_Services.Implements
 
             var detailsDto = new NotificationDetailResponseDTO
             {
-                NtfId = notification.NtfId,
+                NotiId = notification.NtfId,
                 NotiType = notification.NotiType,
                 NotiMessage = notification.NotiMessage,
                 SendAt = notification.SendAt ?? DateTime.UtcNow,
@@ -108,7 +108,7 @@ namespace HIV_System_API_Services.Implements
         {
             return new NotificationResponseDTO
             {
-                NtfId = notification.NtfId,
+                NotiId = notification.NtfId,
                 NotiType = notification.NotiType,
                 NotiMessage = notification.NotiMessage,
                 SendAt = notification.SendAt ?? DateTime.UtcNow,
