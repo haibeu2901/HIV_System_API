@@ -63,18 +63,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 context.Response.ContentType = "application/json";
                 var result = System.Text.Json.JsonSerializer.Serialize("Authentication failed. Invalid or expired token.");
                 return context.Response.WriteAsync(result);
-            },
-            OnMessageReceived = context =>
-            {
-                // Optionally handle missing token
-                if (string.IsNullOrEmpty(context.Token))
-                {
-                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    context.Response.ContentType = "application/json";
-                    var result = System.Text.Json.JsonSerializer.Serialize("No JWT token found in the request.");
-                    return context.Response.WriteAsync(result);
-                }
-                return Task.CompletedTask;
             }
         };
     });
