@@ -55,7 +55,7 @@ namespace HIV_System_API_Services.Implements
         {
             return new PatientArvRegimen
             {
-                PmrId = requestDTO.PmrId,
+                PmrId = requestDTO.PatientMedRecordId,
                 Notes = requestDTO.Notes,
                 RegimenLevel = requestDTO.RegimenLevel,
                 CreatedAt = requestDTO.CreatedAt ?? DateTime.UtcNow,
@@ -70,8 +70,8 @@ namespace HIV_System_API_Services.Implements
         {
             return new PatientArvRegimenResponseDTO
             {
-                ParId = entity.ParId,
-                PmrId = entity.PmrId,
+                PatientArvRegiId = entity.ParId,
+                PatientMedRecordId = entity.PmrId,
                 Notes = entity.Notes,
                 RegimenLevel = entity.RegimenLevel,
                 CreatedAt = entity.CreatedAt,
@@ -88,13 +88,13 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(patientArvRegimen));
 
             // Validate PmrId
-            if (patientArvRegimen.PmrId <= 0)
+            if (patientArvRegimen.PatientMedRecordId <= 0)
                 throw new ArgumentException("Invalid Patient Medical Record ID");
 
             try
             {
                 // Validate that the PatientMedicalRecord exists before creating the regimen
-                await ValidatePatientMedicalRecordExists(patientArvRegimen.PmrId);
+                await ValidatePatientMedicalRecordExists(patientArvRegimen.PatientMedRecordId);
 
                 // Validate RegimenLevel
                 await ValidateRegimenLevel(patientArvRegimen.RegimenLevel);
@@ -142,13 +142,13 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(patientArvRegimen));
 
             // Validate PmrId
-            if (patientArvRegimen.PmrId <= 0)
+            if (patientArvRegimen.PatientMedRecordId <= 0)
                 throw new ArgumentException("Invalid Patient Medical Record ID");
 
             try
             {
                 // Validate that the PatientMedicalRecord exists before updating the regimen
-                await ValidatePatientMedicalRecordExists(patientArvRegimen.PmrId);
+                await ValidatePatientMedicalRecordExists(patientArvRegimen.PatientMedRecordId);
 
                 // Validate RegimenLevel
                 await ValidateRegimenLevel(patientArvRegimen.RegimenLevel);

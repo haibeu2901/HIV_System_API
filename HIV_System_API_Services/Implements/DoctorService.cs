@@ -44,8 +44,8 @@ namespace HIV_System_API_Services.Implements
             var workSchedules = doctor.DoctorWorkSchedules?
                 .Select(ws => new DoctorWorkScheduleResponseDTO
                 {
-                    DwsId = ws.DwsId,
-                    DctId = ws.DoctorId,
+                    DocWorkScheduleId = ws.DwsId,
+                    DoctorId = ws.DoctorId,
                     DayOfWeek = ws.DayOfWeek ?? 0,
                     StartTime = ws.StartTime,
                     EndTime = ws.EndTime
@@ -53,7 +53,7 @@ namespace HIV_System_API_Services.Implements
 
             return new DoctorResponseDTO
             {
-                DctId = doctor.DctId,
+                DoctorId = doctor.DctId,
                 Degree = doctor.Degree,
                 Bio = doctor.Bio,
                 AccId = doctor.AccId,

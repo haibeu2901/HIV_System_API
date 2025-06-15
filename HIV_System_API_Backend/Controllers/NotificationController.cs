@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllNoti")]
+        [Authorize (Roles = "1,4,5")]
         public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllNotifications()
         {
             try
@@ -33,6 +35,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetNotificationById/{id:int}")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<ActionResult<NotificationResponseDTO>> GetNotificationByIdAsync(int id)
         {
             if (id <= 0)
@@ -55,6 +58,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetNotificationDetails/{id:int}")]
+        [Authorize (Roles = "1,4,5")]
         public async Task<ActionResult<NotificationDetailResponseDTO>> GetNotificationDetailsAsync(int id)
         {
             if (id <= 0)
@@ -77,6 +81,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateNotification")]
+        [Authorize (Roles = "1,4,5")]
         public async Task<ActionResult<NotificationResponseDTO>> CreateNotificationAsync([FromBody] CreateNotificationRequestDTO dto)
         {
             if (dto == null)
@@ -86,8 +91,8 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var notification = await _notificationService.CreateNotificationAsync(dto);
-                var createdNotification = await _notificationService.GetNotificationByIdAsync(notification.NtfId);
-                return Created($"/api/Notification/GetNotificationById/{notification.NtfId}", createdNotification);
+                var createdNotification = await _notificationService.GetNotificationByIdAsync(notification.NotiId);
+                return Created($"/api/Notification/GetNotificationById/{notification.NotiId}", createdNotification);
             }
             catch (Exception ex)
             {
@@ -96,6 +101,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateNotibyId/{id:int}")]
+        [Authorize (Roles = "1,4,5")]
         public async Task<IActionResult> UpdateNotificationByIdAsync(int id, [FromBody] UpdateNotificationRequestDTO dto)
         {
             if (id <= 0 || dto == null)
@@ -120,6 +126,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteNotibyId/{id:int}")]
+        [Authorize (Roles = "1,4,5")]
         public async Task<IActionResult> DeleteNotificationByIdAsync(int id)
         {
             if (id <= 0)
@@ -135,6 +142,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetByRecipient/{accId:int}")]
+        [Authorize]
         public async Task<ActionResult<List<NotificationResponseDTO>>> GetNotificationsByRecipientAsync(int accId)
         {
             if (accId <= 0)
@@ -153,6 +161,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("sendToRole/{ntfId:int}/{role}")]
+        [Authorize (Roles = "1,4,5")]
         public async Task<ActionResult<NotificationDetailResponseDTO>> SendNotificationToRoleAsync(int ntfId, byte role)
         {
             if (ntfId <= 0)
@@ -175,6 +184,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("sendToAccId/{ntfId:int}/{accId:int}")]
+        [Authorize (Roles = "1,4,5")]
         public async Task<ActionResult<NotificationDetailResponseDTO>> SendNotificationToAccIdAsync(int ntfId, int accId)
         {
             if (ntfId <= 0 || accId <= 0)

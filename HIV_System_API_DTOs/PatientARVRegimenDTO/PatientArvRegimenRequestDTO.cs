@@ -9,7 +9,7 @@ namespace HIV_System_API_DTOs.PatientARVRegimenDTO
     public class PatientArvRegimenRequestDTO
     {
         // Remove ParId since it should be auto-generated
-        public int PmrId { get; set; }  // Required
+        public int PatientMedRecordId { get; set; }  // Required
         public string? Notes { get; set; }
         public byte? RegimenLevel { get; set; }
         public DateTime? CreatedAt { get; set; }

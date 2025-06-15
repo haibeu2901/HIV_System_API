@@ -29,8 +29,8 @@ namespace HIV_System_API_Services.Implements
         {
             return new Appointment
             {
-                PtnId = requestDTO.PtnId,
-                DctId = requestDTO.DctId,
+                PtnId = requestDTO.PatientId,
+                DctId = requestDTO.DoctorId,
                 ApmtDate = requestDTO.ApmtDate, 
                 ApmTime = requestDTO.ApmTime,
                 Notes = requestDTO.Notes,
@@ -58,10 +58,10 @@ namespace HIV_System_API_Services.Implements
 
             return new AppointmentResponseDTO
             {
-                ApmId = appointment.ApmId,
-                PtnId = appointment.PtnId,
+                AppointmentId = appointment.ApmId,
+                PatientId = appointment.PtnId,
                 PatientName = patient.Acc.Fullname,
-                DctId = appointment.DctId,
+                DoctorId = appointment.DctId,
                 DoctorName = doctor.Acc.Fullname,
                 ApmtDate = appointment.ApmtDate, 
                 ApmTime = appointment.ApmTime, 
@@ -73,11 +73,11 @@ namespace HIV_System_API_Services.Implements
         private async Task ValidateAppointmentAsync(AppointmentRequestDTO request, bool validateStatus, int? apmId = null)
         {
             // Validate PmrId
-            if (!await _context.PatientMedicalRecords.AnyAsync(r => r.PtnId == request.PtnId))
+            if (!await _context.PatientMedicalRecords.AnyAsync(r => r.PtnId == request.PatientId))
                 throw new ArgumentException("Patient medical record does not exist.");
 
             // Validate DctId
-            if (!await _context.Doctors.AnyAsync(d => d.DctId == request.DctId))
+            if (!await _context.Doctors.AnyAsync(d => d.DctId == request.DoctorId))
                 throw new ArgumentException("Doctor does not exist.");
 
             // Validate ApmStatus (only for updates)
@@ -87,7 +87,7 @@ namespace HIV_System_API_Services.Implements
             // Validate DoctorWorkSchedule
             var dayOfWeek = request.ApmtDate.ToDateTime(TimeOnly.MinValue).DayOfWeek;
             var schedule = await _context.DoctorWorkSchedules
-                .FirstOrDefaultAsync(s => s.DoctorId == request.DctId && s.DayOfWeek == (int)dayOfWeek);
+                .FirstOrDefaultAsync(s => s.DoctorId == request.DoctorId && s.DayOfWeek == (int)dayOfWeek);
 
             if (schedule == null)
                 throw new InvalidOperationException($"Doctor is not available on {dayOfWeek}.");
@@ -104,7 +104,7 @@ namespace HIV_System_API_Services.Implements
             var endTimeSpan = apmTime.ToTimeSpan() + appointmentDuration;
 
             var overlapQuery = _context.Appointments
-                .Where(a => a.DctId == request.DctId &&
+                .Where(a => a.DctId == request.DoctorId &&
                             a.ApmtDate == request.ApmtDate &&
                             a.ApmTime < TimeOnly.FromTimeSpan(endTimeSpan) &&
                             a.ApmTime >= apmTime &&
@@ -140,16 +140,25 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
-        public async Task<List<AppointmentResponseDTO>> GetAppointmentsByDoctorIdAsync(int doctorId)
+        public async Task<List<AppointmentResponseDTO>> GetAppointmentsByAccountIdAsync(int accountId, byte role)
         {
-            var appointments = await _appointmentRepo.GetAppointmentsByDoctorIdAsync(doctorId);
-            return appointments.Select(MapToResponseDTO).ToList();
+            Debug.WriteLine($"Retrieving appointments for account ID: {accountId} with role: {role}");
+
+            try
+            {
+                var appointments = await _appointmentRepo.GetAppointmentsByAccountIdAsync(accountId, role);
+                return appointments.Select(MapToResponseDTO).ToList();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error retrieving appointments: {ex.Message}");
+                throw;
+            }
         }
-        
 
         public async Task<AppointmentResponseDTO> CreateAppointmentAsync(AppointmentRequestDTO request)
         {
-            Debug.WriteLine($"Creating appointment for PmrId: {request.PtnId}, DctId: {request.DctId}");
+            Debug.WriteLine($"Creating appointment for PmrId: {request.PatientId}, DctId: {request.DoctorId}");
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Request DTO is required.");
 
@@ -174,7 +183,7 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<bool> DeleteAppointmentByIdAsync(int id)
         {
-            Debug.WriteLine($"Deleting appointment with ApmId: {id}");
+            Debug.WriteLine($"Deleting appointment with AppointmentId: {id}");
             return await _appointmentRepo.DeleteAppointmentByIdAsync(id);
         }
 
@@ -217,5 +226,6 @@ namespace HIV_System_API_Services.Implements
                 throw;
             }
         }
+
     }
 }
