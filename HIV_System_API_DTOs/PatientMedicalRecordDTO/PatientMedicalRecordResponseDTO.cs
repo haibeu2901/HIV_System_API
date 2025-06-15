@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HIV_System_API_DTOs.Appointment;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,5 +11,6 @@ namespace HIV_System_API_DTOs.PatientMedicalRecordDTO
     {
         public int PmrId { get; set; }
         public int PtnId { get; set; }
+        public List<AppointmentResponseDTO> Appointments { get; set; } = new List<AppointmentResponseDTO>();
     }
 }

@@ -118,6 +118,10 @@ namespace HIV_System_API_Services.Implements
 
             // Update fields
             existingAccount.AccPassword = updatedAccount.AccPassword;
+            if (!string.IsNullOrWhiteSpace(updatedAccount.Email) && await _accountRepo.IsEmailUsedAsync(updatedAccount.Email))
+            {
+                throw new InvalidOperationException($"Email '{updatedAccount.Email}' is already in use.");
+            }
             existingAccount.Email = updatedAccount.Email;
             existingAccount.Fullname = updatedAccount.Fullname;
             existingAccount.Dob = updatedAccount.Dob;
@@ -145,6 +149,12 @@ namespace HIV_System_API_Services.Implements
             if (existingAccount != null)
                 throw new InvalidOperationException($"Account already exists.");
 
+            //Check if email is already used
+            if (!string.IsNullOrWhiteSpace(patient.Email) && await _accountRepo.IsEmailUsedAsync(patient.Email))
+            {
+                throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
+            }
+
             // Map PatientAccountRequestDTO to AccountRequestDTO
             var accountDto = new AccountRequestDTO
             {
@@ -161,31 +171,17 @@ namespace HIV_System_API_Services.Implements
             // Create Account
             var createdAccount = await _accountRepo.CreateAccountAsync(MapToEntity(accountDto));
 
-            // Create PatientMedicalRecord
-            var patientMedicalRecord = new PatientMedicalRecord
-            {
-                PtnId = createdAccount.AccId
-            };
-
             // Create Patient entity
             var patientEntity = new Patient
             {
                 PtnId = createdAccount.AccId,
                 AccId = createdAccount.AccId,
                 Acc = createdAccount,
-                PatientMedicalRecord = patientMedicalRecord
             };
 
             // Save Patient entity
             var patientRepo = new PatientRepo();
             var createdPatient = await patientRepo.CreatePatientAsync(patientEntity);
-
-            // Map to PatientMedicalRecordResponseDTO
-            var medicalRecordDto = new PatientMedicalRecordResponseDTO
-            {
-                PmrId = createdPatient.PatientMedicalRecord?.PmrId ?? 0,
-                PtnId = createdPatient.PtnId
-            };
 
             // Map to PatientResponseDTO
             return new PatientResponseDTO
@@ -193,7 +189,6 @@ namespace HIV_System_API_Services.Implements
                 PatientId = createdPatient.PtnId,
                 AccId = createdPatient.AccId,
                 Account = MapToResponseDTO(createdAccount),
-                MedicalRecord = medicalRecordDto
             };
         }
 

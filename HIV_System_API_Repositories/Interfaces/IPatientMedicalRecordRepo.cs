@@ -14,5 +14,6 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<PatientMedicalRecord> CreatePatientMedicalRecordAsync(PatientMedicalRecord record);
         Task<PatientMedicalRecord> UpdatePatientMedicalRecordAsync(int id, PatientMedicalRecord record);
         Task<bool> DeletePatientMedicalRecordAsync(int id);
+        Task<PatientMedicalRecord?> GetPersonalMedicalRecordAsync(int accId);
     }
 }

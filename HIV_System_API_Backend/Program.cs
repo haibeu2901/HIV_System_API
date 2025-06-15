@@ -33,6 +33,50 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(key))
         };
+
+        // Add this block to customize responses
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                // Skip the default logic.
+                context.HandleResponse();
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/json";
+                    var result = System.Text.Json.JsonSerializer.Serialize("This action is not authorized.");
+                    return context.Response.WriteAsync(result);
+                }
+                return Task.CompletedTask;
+            },
+            OnForbidden = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize("You don't have permission to perform this action.");
+                return context.Response.WriteAsync(result);
+            },
+            OnAuthenticationFailed = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize("Authentication failed. Invalid or expired token.");
+                return context.Response.WriteAsync(result);
+            },
+            OnMessageReceived = context =>
+            {
+                // Optionally handle missing token
+                if (string.IsNullOrEmpty(context.Token))
+                {
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    context.Response.ContentType = "application/json";
+                    var result = System.Text.Json.JsonSerializer.Serialize("No JWT token found in the request.");
+                    return context.Response.WriteAsync(result);
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // Configure Swagger with JWT support

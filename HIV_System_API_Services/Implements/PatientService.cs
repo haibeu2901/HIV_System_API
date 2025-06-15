@@ -60,12 +60,7 @@ namespace HIV_System_API_Services.Implements
                     Gender = account.Gender,
                     Roles = account.Roles,
                     IsActive = account.IsActive
-                },
-                MedicalRecord = medicalRecord != null ? new PatientMedicalRecordResponseDTO
-                {
-                    PmrId = medicalRecord.PmrId,
-                    PtnId = medicalRecord.PtnId
-                } : new PatientMedicalRecordResponseDTO()
+                }
             };
         }
 

@@ -53,17 +53,17 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (Exception ex)
             {
                 return StatusCode(
                     StatusCodes.Status500InternalServerError, 
-                    $"Error creating regimen: {ex.Message}");
+                    $"Error creating regimen: {ex.InnerException}");
             }
         }
         [HttpDelete("DeletePatientArvRegimen/{parId}")]
@@ -98,7 +98,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Error updating regimen: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Error updating regimen: {ex.InnerException}");
             }
 
         }

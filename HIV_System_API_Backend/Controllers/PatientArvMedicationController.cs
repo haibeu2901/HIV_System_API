@@ -34,7 +34,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -63,7 +63,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -88,15 +88,15 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -124,11 +124,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (KeyNotFoundException)
             {
@@ -136,7 +136,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -165,7 +165,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
     }

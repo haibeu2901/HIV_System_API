@@ -37,6 +37,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             return await _context.Appointments
                 .Include(a => a.Dct)
+                .Include(a => a.Ptn)
                     .ThenInclude(d => d.Acc)
                 .Include(a => a.Ptn)
                     .ThenInclude(p => p.Acc)
@@ -46,7 +47,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Appointment> CreateAppointmentAsync(Appointment appointment)
         {
             if (appointment == null)
-                throw new ArgumentNullException(nameof(appointment));
+                throw new ArgumentNullException(nameof(appointment), "Appointment cannot be null.");
 
             // Verify that the Doctor exists
             var doctor = await _context.Doctors.FindAsync(appointment.DctId);
@@ -76,21 +77,29 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<Appointment?> GetAppointmentByIdAsync(int id)
         {
-            return await _context.Appointments
+            Debug.WriteLine($"Attempting to retrieve appointment with ApmId: {id}");
+            var appointment = await _context.Appointments
                 .Include(a => a.Dct)
-                    .ThenInclude(d => d.Acc)
                 .Include(a => a.Ptn)
-                    .ThenInclude(p => p.Acc)
                 .FirstOrDefaultAsync(a => a.ApmId == id);
+            if (appointment == null)
+            {
+                Debug.WriteLine($"Appointment with ApmId: {id} not found.");
+            }
+            else
+            {
+                Debug.WriteLine($"Successfully retrieved appointment with ApmId: {id}");
+            }
+            return appointment;
         }
 
         public async Task<Appointment> UpdateAppointmentByIdAsync(int id, Appointment appointment)
         {
+            Debug.WriteLine($"Attempting to update appointment with ApmId: {id}");
             var existingAppointment = await _context.Appointments
                 .Include(a => a.Dct)
                 .Include(a => a.Ptn)
                 .FirstOrDefaultAsync(a => a.ApmId == id);
-
             if (existingAppointment == null)
                 throw new KeyNotFoundException($"Appointment with id {id} not found.");
 

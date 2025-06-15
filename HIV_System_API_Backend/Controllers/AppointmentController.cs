@@ -14,14 +14,16 @@ namespace HIV_System_API_Backend.Controllers
     public class AppointmentController : ControllerBase
     {
         private IAppointmentService _appointmentService;
+        private readonly IConfiguration _configuration;
 
-        public AppointmentController()
+        public AppointmentController(IConfiguration configuration)
         {
             _appointmentService = new AppointmentService();
+            _configuration = configuration;
         }
 
         [HttpGet("GetAllAppointments")]
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> GetAllAppointments()
         {
             try
@@ -31,12 +33,12 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
         [HttpPost("CreateAppointment")]
-        [Authorize]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
         public async Task<ActionResult> CreateAppointment([FromBody] AppointmentRequestDTO dto)
         {
             if (dto == null)
@@ -49,20 +51,20 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.Message);
+                return Conflict(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
         [HttpDelete("DeleteAppointment/{id}")]
-        [Authorize]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> DeleteAppointmentByIdAsync(int id)
         {
             try
@@ -75,12 +77,12 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
         [HttpGet("GetAppointmentById/{id}")]
-        [Authorize(Roles = "1,2")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<ActionResult> GetAppointmentById(int id)
         {
             try
@@ -93,11 +95,12 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
         [HttpPut("UpdateAppointment/{id}")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> UpdateAppointmentByIdAsync(int id, [FromBody] AppointmentRequestDTO dto)
         {
             if (dto == null)
@@ -110,19 +113,20 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.Message);
+                return Conflict(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
         [HttpPatch("ChangeAppointmentStatus/{id}/{status}")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
         public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
         {
             try
@@ -132,20 +136,20 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(ex.Message);
+                return NotFound(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
         [HttpGet("my-appointments")]
-        [Authorize(Roles = "2,3")] // Only doctors and patients
         public async Task<ActionResult<List<AppointmentResponseDTO>>> GetMyAppointments()
         {
             try
@@ -172,7 +176,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
     }

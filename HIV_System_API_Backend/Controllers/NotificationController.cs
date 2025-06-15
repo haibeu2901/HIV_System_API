@@ -30,7 +30,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -53,7 +53,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -72,11 +72,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ex.Message);
+                return NotFound(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -96,7 +96,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -121,7 +121,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -156,7 +156,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -175,11 +175,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ex.Message);
+                return NotFound(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -198,11 +198,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ex.Message);
+                return NotFound(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
     }

@@ -101,7 +101,9 @@ public partial class HivSystemApiContext : DbContext
             entity.HasOne(d => d.Ptn).WithMany(p => p.Appointments)
                 .HasForeignKey(d => d.PtnId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Appointment_Patient");
+                .HasConstraintName("FK_Appointment_Patient")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ArvMedicationDetail>(entity =>

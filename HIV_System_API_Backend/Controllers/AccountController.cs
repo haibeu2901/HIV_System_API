@@ -6,6 +6,7 @@ using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +32,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllAccounts")]
-        [Authorize(Roles ="1")]
+        [Authorize(Roles = "1, 5")]
         public async Task<IActionResult> GetAllAccounts()
         {
             var accounts = await _accountService.GetAllAccountsAsync();
@@ -56,14 +57,23 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return NotFound("Account not found or invalid credentials.");
             }
-            
+
             var tokenString = GenerateJSONWebToken(account);
-            return Ok(new { 
+            return Ok(new
+            {
                 token = tokenString,
-                username = account.AccUsername,
-                email = account.Email,
-                role = account.Roles,
-                accountId = account.AccId
+                account = new AccountResponseDTO
+                {
+                    AccId = account.AccId,
+                    AccUsername = account.AccUsername,
+                    AccPassword = account.AccPassword,
+                    Email = account.Email,
+                    Fullname = account.Fullname,
+                    Dob = account.Dob,
+                    Gender = account.Gender,
+                    Roles = account.Roles,
+                    IsActive = account.IsActive
+                }
             });
         }
 
@@ -98,7 +108,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAccountById/{id}")]
-        [Authorize(Roles ="1")]
+        [Authorize(Roles ="1, 5")]
         public async Task<IActionResult> GetAccountById(int id)
         {
             var account = await _accountService.GetAccountByIdAsync(id);
@@ -110,7 +120,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAccount")]
-        [Authorize(Roles ="1")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> CreateAccount([FromBody] AccountRequestDTO accountDTO)
         {
             if (accountDTO == null ||
@@ -131,16 +141,16 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Account creation failed: {ex.Message}");
+                return Conflict($"Account creation failed: {ex.InnerException}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
         
         [HttpPut("UpdateAccount/{id}")]
-        [Authorize]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> UpdateAccount(int id, [FromBody] UpdateAccountRequestDTO accountDTO)
         {
             try
@@ -166,11 +176,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Account update failed: {ex.Message}");
+                return Conflict($"Account update failed: {ex.InnerException}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
 
@@ -196,7 +206,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
 
@@ -222,11 +232,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Patient account creation failed: {ex.Message}");
+                return Conflict($"Patient account creation failed: {ex.InnerException}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
         [HttpPut("UpdatePatientProfile")]

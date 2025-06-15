@@ -37,7 +37,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -67,7 +67,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -80,7 +80,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="400">If the service data is invalid</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpPost("CreateMedicalService")]
-        [Authorize(Roles = "1,4")] // Only admin and staff can create services
+        [Authorize(Roles = "1,5")] // Only admin and manager can create services
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -93,15 +93,15 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -116,7 +116,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="404">If the service was not found</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpPut("UpdateMedicalService/{id}")]
-        [Authorize(Roles = "1,4")] // Only admin and staff can update services
+        [Authorize(Roles = "1,5")] // Only admin and manager can update services
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -130,11 +130,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException);
             }
             catch (KeyNotFoundException)
             {
@@ -142,7 +142,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
 
@@ -172,11 +172,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
         [HttpPost("DisableMedicalService/{id}")]
-        [Authorize(Roles = "1,4")] // Only admin and staff can disable services
+        [Authorize(Roles = "1,5")] // Only admin and manager can disable services
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -193,7 +193,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
     }
