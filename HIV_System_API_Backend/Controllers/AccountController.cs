@@ -87,8 +87,6 @@ namespace HIV_System_API_Backend.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, account.AccUsername),
                 new Claim(JwtRegisteredClaimNames.Email, account.Email ?? ""),
                 new Claim("AccountId", account.AccId.ToString()),
-                new Claim("AccUsername", account.AccUsername),
-                new Claim("AccPassword", account.AccPassword),
                 new Claim(ClaimTypes.Role, account.Roles.ToString()), // This will store the byte value
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
@@ -138,11 +136,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Account creation failed: {ex.Message}");
+                return Conflict($"Account creation failed: {ex.InnerException}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
         
@@ -168,11 +166,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Account update failed: {ex.Message}");
+                return Conflict($"Account update failed: {ex.InnerException}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
 
@@ -191,11 +189,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Account deletion failed: {ex.Message}");
+                return Conflict($"Account deletion failed: {ex.InnerException}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
 
@@ -221,11 +219,11 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return Conflict($"Patient account creation failed: {ex.Message}");
+                return Conflict($"Patient account creation failed: {ex.InnerException}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
     }
