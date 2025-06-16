@@ -58,6 +58,12 @@ namespace HIV_System_API_Backend.Controllers
                 return NotFound("Account not found or invalid credentials.");
             }
 
+            // Check if account is active
+            if (account.IsActive.HasValue && !account.IsActive.Value)
+            {
+                throw new InvalidOperationException("Account is inactive. Please contact us at Contact Page to resolve this problem.");
+            }
+
             var tokenString = GenerateJSONWebToken(account);
             return Ok(new
             {
