@@ -176,6 +176,13 @@ namespace HIV_System_API_DAOs.Implements
                 .ToListAsync();
         }
 
-
+        public async Task<List<Notification>> GetAllPersonalNotificationsAsync(int accId)
+        {
+            return await _context.NotificationAccounts
+                .Include(na => na.Ntf)
+                .Where(na => na.AccId == accId)
+                .Select(na => na.Ntf)
+                .ToListAsync();
+        }
     }
 }

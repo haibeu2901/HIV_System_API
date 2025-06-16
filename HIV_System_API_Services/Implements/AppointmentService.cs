@@ -394,5 +394,24 @@ namespace HIV_System_API_Services.Implements
                 throw;
             }
         }
+
+        public async Task<List<AppointmentResponseDTO>> GetAllPersonalAppointmentsAsync(int accId)
+        {
+            Debug.WriteLine($"Retrieving all personal appointments for AccountId: {accId}");
+
+            // Validate account existence
+            var account = await _context.Accounts.FindAsync(accId);
+            if (account == null)
+                throw new ArgumentException($"Account with ID {accId} does not exist.");
+
+            // Optionally, check if account is a patient or doctor
+            var isPatient = await _context.Patients.AnyAsync(p => p.AccId == accId);
+            var isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId);
+            if (!isPatient && !isDoctor)
+                throw new InvalidOperationException("Account is neither a patient nor a doctor.");
+
+            var appointments = await _appointmentRepo.GetAllPersonalAppointmentsAsync(accId);
+            return appointments.Select(MapToResponseDTO).ToList();
+        }
     }
 }

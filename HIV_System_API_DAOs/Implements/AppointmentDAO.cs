@@ -289,5 +289,16 @@ namespace HIV_System_API_DAOs.Implements
                 throw new InvalidOperationException("Failed to update appointment due to database error.", ex);
             }
         }
+
+        public async Task<List<Appointment>> GetAllPersonalAppointmentsAsync(int accId)
+        {
+            return await _context.Appointments
+                .Include(a => a.Dct)
+                    .ThenInclude(d => d.Acc)
+                .Include(a => a.Ptn)
+                    .ThenInclude(p => p.Acc)
+                .Where(a => a.Ptn.AccId == accId || a.Dct.AccId == accId)
+                .ToListAsync();
+        }
     }
 }
