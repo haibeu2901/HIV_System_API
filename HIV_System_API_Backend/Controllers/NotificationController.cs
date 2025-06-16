@@ -20,7 +20,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllNoti")]
-        [Authorize (Roles = "1,4,5")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllNotifications()
         {
             try
@@ -58,7 +58,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetNotificationDetails/{id:int}")]
-        [Authorize (Roles = "1,4,5")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<ActionResult<NotificationDetailResponseDTO>> GetNotificationDetailsAsync(int id)
         {
             if (id <= 0)
@@ -81,7 +81,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateNotification")]
-        [Authorize (Roles = "1,4,5")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<ActionResult<NotificationResponseDTO>> CreateNotificationAsync([FromBody] CreateNotificationRequestDTO dto)
         {
             if (dto == null)
@@ -101,7 +101,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateNotibyId/{id:int}")]
-        [Authorize (Roles = "1,4,5")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<IActionResult> UpdateNotificationByIdAsync(int id, [FromBody] UpdateNotificationRequestDTO dto)
         {
             if (dto == null)
@@ -126,7 +126,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteNotibyId/{id:int}")]
-        [Authorize (Roles = "1,4,5")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<IActionResult> DeleteNotificationByIdAsync(int id)
         {
             if (id <= 0)
@@ -161,7 +161,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("sendToRole/{ntfId:int}/{role}")]
-        [Authorize (Roles = "1,4,5")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<ActionResult<NotificationDetailResponseDTO>> SendNotificationToRoleAsync(int ntfId, byte role)
         {
             if (ntfId <= 0)
@@ -184,7 +184,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("sendToAccId/{ntfId:int}/{accId:int}")]
-        [Authorize (Roles = "1,4,5")]
+        [Authorize(Roles = "1,4,5")]
         public async Task<ActionResult<NotificationDetailResponseDTO>> SendNotificationToAccIdAsync(int ntfId, int accId)
         {
             if (ntfId <= 0 || accId <= 0)

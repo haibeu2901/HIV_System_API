@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.AppointmentDTO;
 using HIV_System_API_DTOs.NotificationDTO;
 using System;
 using System.Collections.Generic;
