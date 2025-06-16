@@ -73,15 +73,39 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<bool> DeleteAccountAsync(int accId)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId);
-            if (account == null)
-            {
-                return false;
-            }
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            _context.Accounts.Remove(account);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId);
+                if (account == null)
+                {
+                    return false;
+                }
+
+                // Delete all patients associated with this account first
+                var relatedPatients = await _context.Patients
+                    .Where(p => p.AccId == accId)
+                    .ToListAsync();
+
+                if (relatedPatients.Any())
+                {
+                    _context.Patients.RemoveRange(relatedPatients);
+                }
+
+                // Now delete the account
+                _context.Accounts.Remove(account);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<Account> CreateAccountAsync(Account account)
@@ -150,6 +174,27 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Account?> GetAccountByUsernameAsync(string username)
         {
             return await _context.Accounts.FirstOrDefaultAsync(a => a.AccUsername == username);
+        }
+
+        public async Task<Account?> GetAccountByEmailAsync(string email)
+        {
+            return await _context.Accounts
+                .FirstOrDefaultAsync(a => a.Email != null && a.Email.ToLower() == email.ToLower());
+        }
+
+        public async Task<Account> UpdateAccountStatusAsync(int id, bool isActive)
+        {
+            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
+            if (existingAccount == null)
+            {
+                throw new KeyNotFoundException($"Account with id {id} not found.");
+            }
+
+            // Update only the IsActive status
+            existingAccount.IsActive = isActive;
+
+            await _context.SaveChangesAsync();
+            return existingAccount;
         }
     }
 }

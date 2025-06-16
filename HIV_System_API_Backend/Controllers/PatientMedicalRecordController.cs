@@ -6,6 +6,7 @@ using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 
 namespace HIV_System_API_Backend.Controllers
@@ -18,11 +19,11 @@ namespace HIV_System_API_Backend.Controllers
         private readonly IConfiguration _configuration;
         private readonly IAccountService _accountService;
 
-        public PatientMedicalRecordController(IConfiguration configuration)
+        public PatientMedicalRecordController(IConfiguration configuration, IMemoryCache memoryCache)
         {
             _patientMedicalRecordService = new PatientMedicalRecordService();
             _configuration = configuration;
-            _accountService = new AccountService();
+            _accountService = new AccountService(memoryCache);
         }
 
         [HttpGet("GetPatientsMedicalRecord")]

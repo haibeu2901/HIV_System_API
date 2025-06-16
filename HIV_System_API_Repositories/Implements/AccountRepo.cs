@@ -27,6 +27,11 @@ namespace HIV_System_API_Repositories.Implements
             return await AccountDAO.Instance.DeleteAccountAsync(accId);
         }
 
+        public Task<Account?> GetAccountByEmailAsync(string email)
+        {
+            return AccountDAO.Instance.GetAccountByEmailAsync(email);
+        }
+
         public async Task<Account?> GetAccountByIdAsync(int accId)
         {
             return await AccountDAO.Instance.GetAccountByIdAsync(accId);
@@ -60,6 +65,11 @@ namespace HIV_System_API_Repositories.Implements
         public Task<Account> UpdateAccountProfileAsync(int id, Account updatedAccount)
         {
             return AccountDAO.Instance.UpdateAccountProfileAsync(id, updatedAccount);
+        }
+
+        public Task<Account> UpdateAccountStatusAsync(int id, bool isActive)
+        {
+            return AccountDAO.Instance.UpdateAccountStatusAsync(id, isActive);
         }
     }
 }

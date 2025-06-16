@@ -12,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+
 // Add JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -118,6 +119,9 @@ builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordSer
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 builder.Services.AddScoped<IPatientArvMedicationService, PatientArvMedicationService>();
 builder.Services.AddScoped<IMedicalServiceService, MedicalServiceService>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
