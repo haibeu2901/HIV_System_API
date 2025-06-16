@@ -16,11 +16,9 @@ namespace HIV_System_API_Services.Implements
     public class DoctorService : IDoctorService
     {
         private readonly IDoctorRepo _doctorRepo;
-        private readonly IDoctorWorkScheduleRepo _workScheduleRepo;
         public DoctorService()
         {
             _doctorRepo = new DoctorRepo();
-            _workScheduleRepo = new DoctorWorkScheduleRepo();
         }
 
         private Doctor MapToEntity(DoctorRequestDTO dto)
