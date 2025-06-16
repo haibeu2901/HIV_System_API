@@ -1,4 +1,5 @@
-﻿using HIV_System_API_DTOs.DoctorWorkScheduleDTO;
+﻿using HIV_System_API_Backend.Common;
+using HIV_System_API_DTOs.DoctorWorkScheduleDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -115,5 +116,29 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
+        [HttpGet("GetPersonalWorkSchedules")]
+        [Authorize(Roles = "1,2,4,5")]
+        public async Task<IActionResult> GetPersonalWorkSchedules()
+        {
+            int doctorId = ClaimsHelper.ExtractAccountIdFromClaims(User).Value;
+
+            if (doctorId <= 0)
+            {
+                return BadRequest("Doctor ID must be greater than zero.");
+            }
+            try
+            {
+                var schedules = await _doctorWorkScheduleService.GetPersonalWorkSchedulesAsync(doctorId);
+                if (schedules == null || schedules.Count == 0)
+                {
+                    return NotFound($"No work schedules found for doctor with ID {doctorId}.");
+                }
+                return Ok(schedules);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
+            }
+        }
     }
 }

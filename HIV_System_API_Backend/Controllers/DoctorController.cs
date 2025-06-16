@@ -12,12 +12,10 @@ namespace HIV_System_API_Backend.Controllers
     public class DoctorController : ControllerBase
     {
         private readonly IDoctorService _doctorService;
-        private readonly IConfiguration _configuration;
 
-        public DoctorController(IConfiguration configuration)
+        public DoctorController()
         {
             _doctorService = new DoctorService();
-            _configuration = configuration;
         }
 
         [HttpGet("GetAllDoctors")]
@@ -32,7 +30,7 @@ namespace HIV_System_API_Backend.Controllers
             return Ok(doctors);
         }
 
-        [HttpGet("GetDoctorById/{id}")]
+        [HttpGet("GetDoctorById")]
         [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetDoctorById(int id)
         {
@@ -68,8 +66,8 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpPut("UpdateDoctor/{id}")]
-        [Authorize(Roles = "1,2,5")]
+        [HttpPut("UpdateDoctor")]
+        [Authorize(Roles = "1,5")]
         public async Task<IActionResult> UpdateDoctor(int id, [FromBody] DoctorRequestDTO doctorRequest)
         {
             if (doctorRequest == null)

@@ -13,12 +13,10 @@ namespace HIV_System_API_Backend.Controllers
     public class ArvMedicationDetailController : ControllerBase
     {
         private IArvMedicationDetailService _arvMedicationDetailService;
-        private readonly IConfiguration _configuration;
 
-        public ArvMedicationDetailController(IConfiguration configuration)
+        public ArvMedicationDetailController()
         {
             _arvMedicationDetailService = new ArvMedicationDetailService();
-            _configuration = configuration;
         }
 
         [HttpGet("GetAllArvMedicationDetails")]

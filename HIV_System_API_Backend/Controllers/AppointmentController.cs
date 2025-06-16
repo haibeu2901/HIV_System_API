@@ -16,12 +16,10 @@ namespace HIV_System_API_Backend.Controllers
     public class AppointmentController : ControllerBase
     {
         private IAppointmentService _appointmentService;
-        private readonly IConfiguration _configuration;
 
-        public AppointmentController(IConfiguration configuration)
+        public AppointmentController()
         {
             _appointmentService = new AppointmentService();
-            _configuration = configuration;
         }
 
         [HttpGet("GetAllAppointments")]

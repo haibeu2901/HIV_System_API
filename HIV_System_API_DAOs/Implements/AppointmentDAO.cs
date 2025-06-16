@@ -45,15 +45,15 @@ namespace HIV_System_API_DAOs.Implements
                 .ToListAsync();
         }
 
-        public async Task<Appointment> CreateAppointmentAsync(CreateAppointmentRequestDTO appointmentDto, int accId)
+        public async Task<Appointment> CreateAppointmentAsync(CreateAppointmentRequestDTO createDto, int accId)
         {
-            if (appointmentDto == null)
-                throw new ArgumentNullException(nameof(appointmentDto), "Appointment cannot be null.");
+            if (createDto == null)
+                throw new ArgumentNullException(nameof(createDto), "Appointment cannot be null.");
 
             // Ensure doctor exists
-            var doctor = await _context.Doctors.FindAsync(appointmentDto.DoctorId);
+            var doctor = await _context.Doctors.FindAsync(createDto.DoctorId);
             if (doctor == null)
-                throw new InvalidOperationException($"Doctor with ID {appointmentDto.DoctorId} not found.");
+                throw new InvalidOperationException($"Doctor with ID {createDto.DoctorId} not found.");
 
             // Ensure patient exists (by account)
             var patient = await _context.Patients.FirstOrDefaultAsync(p => p.AccId == accId);
@@ -65,9 +65,9 @@ namespace HIV_System_API_DAOs.Implements
             {
                 DctId = doctor.DctId,
                 PtnId = patient.PtnId,
-                ApmtDate = appointmentDto.AppointmentDate,
-                ApmTime = appointmentDto.AppointmentTime,
-                Notes = appointmentDto.Notes,
+                ApmtDate = createDto.AppointmentDate,
+                ApmTime = createDto.AppointmentTime,
+                Notes = createDto.Notes,
                 ApmStatus = 1 // Default status, adjust as needed
             };
 
@@ -251,10 +251,10 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<Appointment> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO appointmentDto, int accId)
+        public async Task<Appointment> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO updateDto, int accId)
         {
-            if (appointmentDto == null)
-                throw new ArgumentNullException(nameof(appointmentDto), "Appointment update data cannot be null.");
+            if (updateDto == null)
+                throw new ArgumentNullException(nameof(updateDto), "Appointment update data cannot be null.");
 
             // Find the appointment by its ID
             var appointment = await _context.Appointments
@@ -266,9 +266,9 @@ namespace HIV_System_API_DAOs.Implements
                 throw new KeyNotFoundException($"Appointment with id {appointmentId} not found.");
 
             // Update fields
-            appointment.ApmtDate = appointmentDto.AppointmentDate;
-            appointment.ApmTime = appointmentDto.AppointmentTime;
-            appointment.Notes = appointmentDto.Notes;
+            appointment.ApmtDate = updateDto.AppointmentDate;
+            appointment.ApmTime = updateDto.AppointmentTime;
+            appointment.Notes = updateDto.Notes;
 
             try
             {
