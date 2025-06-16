@@ -13,12 +13,10 @@ namespace HIV_System_API_Backend.Controllers
     public class DoctorWorkScheduleController : ControllerBase
     {
         private readonly IDoctorWorkScheduleService _doctorWorkScheduleService;
-        private readonly IConfiguration _configuration;
 
-        public DoctorWorkScheduleController(IConfiguration configuration)
+        public DoctorWorkScheduleController()
         {
             _doctorWorkScheduleService = new DoctorWorkScheduleService();
-            _configuration = configuration;
         }
 
         [HttpGet("GetDoctorWorkSchedules")]

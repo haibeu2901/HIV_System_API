@@ -12,12 +12,10 @@ namespace HIV_System_API_Backend.Controllers
     public class DoctorController : ControllerBase
     {
         private readonly IDoctorService _doctorService;
-        private readonly IConfiguration _configuration;
 
-        public DoctorController(IConfiguration configuration)
+        public DoctorController()
         {
             _doctorService = new DoctorService();
-            _configuration = configuration;
         }
 
         [HttpGet("GetAllDoctors")]
