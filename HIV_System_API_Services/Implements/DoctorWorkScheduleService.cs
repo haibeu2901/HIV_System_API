@@ -76,5 +76,28 @@ namespace HIV_System_API_Services.Implements
             var updatedEntity = await _doctorWorkScheduleRepo.UpdateDoctorWorkScheduleAsync(id, entity);
             return MapToResponseDTO(updatedEntity);
         }
+
+        public async Task<List<PersonalWorkScheduleResponseDTO>> GetPersonalWorkSchedulesAsync(int doctorId)
+        {
+            if (doctorId <= 0)
+                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorId));
+
+            var schedules = await _doctorWorkScheduleRepo.GetPersonalWorkSchedulesAsync(doctorId);
+
+            if (schedules == null || !schedules.Any())
+                return new List<PersonalWorkScheduleResponseDTO>();
+
+            var result = schedules
+                .Where(s => s.DayOfWeek.HasValue)
+                .Select(s => new PersonalWorkScheduleResponseDTO
+                {
+                    DayOfWeek = s.DayOfWeek.Value,
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime
+                })
+                .ToList();
+
+            return result;
+        }
     }
 }

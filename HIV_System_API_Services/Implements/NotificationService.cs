@@ -116,5 +116,21 @@ namespace HIV_System_API_Services.Implements
                 CreatedAt = DateTime.UtcNow
             };
         }
+
+        public async Task<List<NotificationResponseDTO>> GetAllPersonalNotificationsAsync(int accId)
+        {
+            if (accId <= 0)
+            {
+                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
+            }
+
+            var notifications = await _notificationRepo.GetAllPersonalNotificationsAsync(accId);
+            if (notifications == null)
+            {
+                return new List<NotificationResponseDTO>();
+            }
+
+            return notifications.Select(MapToResponseDTO).ToList();
+        }
     }
 }

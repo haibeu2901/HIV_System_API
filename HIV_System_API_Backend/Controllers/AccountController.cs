@@ -70,6 +70,12 @@ namespace HIV_System_API_Backend.Controllers
                 return Unauthorized("Please verify your email before logging in or contact support if you have verified.");
             }
 
+            // Check if account is active
+            if (account.IsActive.HasValue && !account.IsActive.Value)
+            {
+                throw new InvalidOperationException("Account is inactive. Please contact us at Contact Page to resolve this problem.");
+            }
+
             var tokenString = GenerateJSONWebToken(account);
             return Ok(new
             {
@@ -303,7 +309,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
 

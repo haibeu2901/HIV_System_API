@@ -19,5 +19,6 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<Appointment> ChangeAppointmentStatusAsync(int id, byte status);
         Task<List<Appointment>> GetAppointmentsByAccountIdAsync(int accountId, byte role);
         Task<Appointment> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO appointment, int accId);
+        Task<List<Appointment>> GetAllPersonalAppointmentsAsync(int accId);
     }
 }

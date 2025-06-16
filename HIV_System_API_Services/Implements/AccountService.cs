@@ -91,10 +91,11 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<AccountResponseDTO?> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
-            var account = await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
-            if (account == null)
+            if (string.IsNullOrWhiteSpace(accUsername) || string.IsNullOrWhiteSpace(accPassword))
                 return null;
-            return MapToResponseDTO(account);
+
+            var account = await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
+            return account == null ? null : MapToResponseDTO(account);
         }
 
         public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
@@ -152,10 +153,15 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(patient.AccPassword))
                 throw new ArgumentNullException(nameof(patient.AccPassword));
 
-            // Check for duplicate username (by username only, not password)
-            var existingAccount = await _accountRepo.GetAccountByLoginAsync(patient.AccUsername, patient.AccPassword);
-            if (existingAccount != null)
-                throw new InvalidOperationException($"Account already exists.");
+            // Check for duplicate username
+            if (!string.IsNullOrWhiteSpace(patient.AccUsername))
+            {
+                var existingAccount = await _accountRepo.GetAccountByUsernameAsync(patient.AccUsername);
+                if (existingAccount != null)
+                {
+                    throw new InvalidOperationException($"Username '{patient.AccUsername}' is already in use.");
+                }
+            }
 
             //Check if email is already used
             if (!string.IsNullOrWhiteSpace(patient.Email) && await _accountRepo.IsEmailUsedAsync(patient.Email))
