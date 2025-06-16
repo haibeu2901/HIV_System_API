@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.ArvMedicationDetailDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +10,11 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface IArvMedicationDetailService
     {
-        Task<List<ArvMedicationDetail>> GetAllArvMedicationDetailsAsync();
-        Task<ArvMedicationDetail> GetArvMedicationDetailByIdAsync(int id);
-        Task<bool> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail);
-        Task<bool> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail);
+        Task<List<ArvMedicationDetailDTO>> GetAllArvMedicationDetailsAsync();
+        Task<ArvMedicationDetailDTO> GetArvMedicationDetailByIdAsync(int id);
+        Task<ArvMedicationDetailDTO> CreateArvMedicationDetailAsync(ArvMedicationDetailDTO arvMedicationDetail);
+        Task<ArvMedicationDetailDTO> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetailDTO arvMedicationDetail);
         Task<bool> DeleteArvMedicationDetailAsync(int id);
-        Task<List<ArvMedicationDetail>> SearchArvMedicationDetailsByNameAsync(string searchTerm);
+        Task<List<ArvMedicationDetailDTO>> SearchArvMedicationDetailsByNameAsync(string searchTerm);
     }
 }

@@ -11,8 +11,8 @@ namespace HIV_System_API_DAOs.Interfaces
     {
         Task<List<ArvMedicationDetail>> GetAllArvMedicationDetailsAsync();
         Task<ArvMedicationDetail?> GetArvMedicationDetailByIdAsync(int id);
-        Task<bool> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail);
-        Task<bool> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail);
+        Task<ArvMedicationDetail> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail);
+        Task<ArvMedicationDetail> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail);
         Task<bool> DeleteArvMedicationDetailAsync(int id);
         Task<List<ArvMedicationDetail>> SearchArvMedicationDetailsByNameAsync(string searchTerm);
     }
