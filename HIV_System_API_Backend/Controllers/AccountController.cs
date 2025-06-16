@@ -376,7 +376,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Even if account creation succeeded, there might be an issue with response generation
                 // Log the error but still return success if we can verify the account exists

@@ -16,6 +16,8 @@ namespace HIV_System_API_Backend.Controllers
     public class PatientMedicalRecordController : ControllerBase
     {
         private IPatientMedicalRecordService _patientMedicalRecordService;
+        private readonly IConfiguration _configuration;
+        private readonly IAccountService _accountService;
 
         public PatientMedicalRecordController(IConfiguration configuration, IMemoryCache memoryCache)
         {
