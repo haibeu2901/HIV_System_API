@@ -39,8 +39,9 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<Account?> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
-            return await _context.Accounts
+            var account = await _context.Accounts
                 .FirstOrDefaultAsync(a => a.AccUsername == accUsername && a.AccPassword == accPassword);
+            return account;
         }
 
         public async Task<Account?> GetAccountByIdAsync(int accId)
@@ -127,7 +128,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             return _context.Accounts.AnyAsync(a => a.Email == mail);
         }
-            
+
         public async Task<Account> UpdateAccountProfileAsync(int id, Account updatedAccount)
         {
             var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);

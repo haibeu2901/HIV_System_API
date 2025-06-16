@@ -12,14 +12,16 @@ namespace HIV_System_API_Backend.Controllers
     public class DoctorController : ControllerBase
     {
         private readonly IDoctorService _doctorService;
+        private readonly IConfiguration _configuration;
 
-        public DoctorController()
+        public DoctorController(IConfiguration configuration)
         {
             _doctorService = new DoctorService();
+            _configuration = configuration;
         }
 
         [HttpGet("GetAllDoctors")]
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetAllDoctors()
         {
             var doctors = await _doctorService.GetAllDoctorsAsync();
@@ -31,7 +33,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorById/{id}")]
-        [Authorize]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetDoctorById(int id)
         {
             var doctor = await _doctorService.GetDoctorByIdAsync(id);
@@ -43,7 +45,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateDoctor")]
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "1,5")]
         public async Task<IActionResult> CreateDoctor([FromBody] DoctorRequestDTO doctorRequestDTO)
         {
             if (doctorRequestDTO == null)
@@ -67,7 +69,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateDoctor/{id}")]
-        [Authorize(Roles = "1,2")]
+        [Authorize(Roles = "1,2,5")]
         public async Task<IActionResult> UpdateDoctor(int id, [FromBody] DoctorRequestDTO doctorRequest)
         {
             if (doctorRequest == null)
@@ -91,7 +93,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteDoctor")]
-        [Authorize (Roles = "1")]
+        [Authorize (Roles = "1,5")]
         public async Task<IActionResult> DeleteDoctor(int id)
         {
             try
@@ -109,8 +111,8 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetDoctorByDateAndTime/{Date}/{Time}")]
-        [Authorize]
+        [HttpGet("GetDoctorByDateAndTime")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetDoctorByDateAndTime(DateOnly Date, TimeOnly Time)
         {
             try
