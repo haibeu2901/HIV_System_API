@@ -50,7 +50,7 @@ namespace HIV_System_API_DAOs.Implements
             return arvMedicationDetail;
         }
 
-        public async Task<bool> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail)
+        public async Task<ArvMedicationDetail> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail)
         {
             // Validate input parameter
             if (arvMedicationDetail == null)
@@ -59,11 +59,13 @@ namespace HIV_System_API_DAOs.Implements
             }
             // Add the new ARV medication detail to the context
             await _context.ArvMedicationDetails.AddAsync(arvMedicationDetail);
-            // Save changes to the database and return the result
-            return await _context.SaveChangesAsync() > 0;
+            // Save changes to the database
+            await _context.SaveChangesAsync();
+            // Return the created entity (with updated keys, etc.)
+            return arvMedicationDetail;
         }
 
-        public async Task<bool> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail)
+        public async Task<ArvMedicationDetail> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail)
         {
             // Validate input parameters
             if (id <= 0)
@@ -78,17 +80,18 @@ namespace HIV_System_API_DAOs.Implements
             var existingDetail = await _context.ArvMedicationDetails.FindAsync(id);
             if (existingDetail == null)
             {
-                return false; // Not found
+                throw new KeyNotFoundException($"ARV medication detail with ID {id} not found.");
             }
             // Update the properties of the existing detail
-            existingDetail.AmdId = id; // Ensure ID remains the same
             existingDetail.MedName = arvMedicationDetail.MedName;
             existingDetail.MedDescription = arvMedicationDetail.MedDescription;
             existingDetail.Dosage = arvMedicationDetail.Dosage;
             existingDetail.Price = arvMedicationDetail.Price;
             existingDetail.Manufactorer = arvMedicationDetail.Manufactorer;
-            // Save changes to the database and return the result
-            return await _context.SaveChangesAsync() > 0;
+            // Save changes to the database
+            await _context.SaveChangesAsync();
+            // Return the updated entity
+            return existingDetail;
         }
 
         public async Task<bool> DeleteArvMedicationDetailAsync(int id)

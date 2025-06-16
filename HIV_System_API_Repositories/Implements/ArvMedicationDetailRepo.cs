@@ -11,7 +11,7 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class ArvMedicationDetailRepo : IArvMedicationDetailRepo
     {
-        public async Task<bool> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail)
+        public async Task<ArvMedicationDetail> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail)
         {
             return await ArvMedicationDetailDAO.Instance.CreateArvMedicationDetailAsync(arvMedicationDetail);
         }
@@ -36,7 +36,7 @@ namespace HIV_System_API_Repositories.Implements
             return await ArvMedicationDetailDAO.Instance.SearchArvMedicationDetailsByNameAsync(searchTerm);
         }
 
-        public async Task<bool> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail)
+        public async Task<ArvMedicationDetail> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetail arvMedicationDetail)
         {
             return await ArvMedicationDetailDAO.Instance.UpdateArvMedicationDetailAsync(id, arvMedicationDetail);
         }
