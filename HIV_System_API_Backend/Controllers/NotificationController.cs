@@ -1,4 +1,5 @@
-﻿using HIV_System_API_BOs;
+﻿using HIV_System_API_Backend.Common;
+using HIV_System_API_BOs;
 using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -19,8 +20,8 @@ namespace HIV_System_API_Backend.Controllers
             _notificationService = notificationService;
         }
 
-        [HttpGet("GetAllNoti")]
-        [Authorize(Roles = "1,4,5")]
+        [HttpGet("GetAllNotifications")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllNotifications()
         {
             try
@@ -199,6 +200,27 @@ namespace HIV_System_API_Backend.Controllers
             catch (ArgumentException ex)
             {
                 return NotFound(ex.InnerException);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+            }
+        }
+
+        [HttpPost("GetAllPersonalNotifications")]
+        [Authorize(Roles = "1,2,3,4,5")]
+        public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllPersonalNotificationsAsync()
+        {
+            int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
+
+            if (accId <= 0)
+            {
+                return BadRequest("Invalid account ID.");
+            }
+            try
+            {
+                var notifications = await _notificationService.GetAllPersonalNotificationsAsync(accId);
+                return Ok(notifications);
             }
             catch (Exception ex)
             {

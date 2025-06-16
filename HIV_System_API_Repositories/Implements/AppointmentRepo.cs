@@ -33,6 +33,11 @@ namespace HIV_System_API_Repositories.Implements
             return await AppointmentDAO.Instance.GetAllAppointmentsAsync();
         }
 
+        public async Task<List<Appointment>> GetAllPersonalAppointmentsAsync(int accId)
+        {
+            return await AppointmentDAO.Instance.GetAllPersonalAppointmentsAsync(accId);
+        }
+
         public async Task<Appointment?> GetAppointmentByIdAsync(int id)
         {
             return await AppointmentDAO.Instance.GetAppointmentByIdAsync(id);

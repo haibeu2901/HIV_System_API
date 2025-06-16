@@ -222,5 +222,23 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
+
+        [HttpGet("GetAllPersonalAppointments")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        public async Task<IActionResult> GetAllPersonalAppointments()
+        {
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+                return Unauthorized("Invalid user session.");
+            try
+            {
+                var appointments = await _appointmentService.GetAllPersonalAppointmentsAsync(accountId.Value);
+                return Ok(appointments);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
+            }
+        }
     }
 }

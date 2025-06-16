@@ -28,6 +28,11 @@ namespace HIV_System_API_Repositories.Implements
             return NotificationDAO.Instance.GetAllNotification(); 
         }
 
+        public async Task<List<Notification>> GetAllPersonalNotificationsAsync(int accId)
+        {
+            return await NotificationDAO.Instance.GetAllPersonalNotificationsAsync(accId);
+        }
+
         public Task<Notification> GetNotificationByIdAsync(int id)
         {
             return NotificationDAO.Instance.GetNotificationByIdAsync(id);
