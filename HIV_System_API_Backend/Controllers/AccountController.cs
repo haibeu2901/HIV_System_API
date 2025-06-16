@@ -199,12 +199,12 @@ namespace HIV_System_API_Backend.Controllers
                 var currentUserRole = byte.Parse(User.FindFirst(ClaimTypes.Role)?.Value ?? "0");
                 var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
 
-                var deactivated = await _accountService.DeleteAccountAsync(id);
-                if (!deactivated)
+                var deleted = await _accountService.DeleteAccountAsync(id);
+                if (!deleted)
                 {
                     return NotFound($"Account with ID {id} not found.");
                 }
-                return Ok("Account has been successfully deactivated.");
+                return Ok("Account has been successfully deleted.");
             }
             catch (UnauthorizedAccessException ex)
             {

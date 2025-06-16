@@ -105,9 +105,9 @@ namespace HIV_System_API_Backend.Controllers
         [Authorize(Roles = "1,4,5")]
         public async Task<IActionResult> UpdateNotificationByIdAsync(int id, [FromBody] UpdateNotificationRequestDTO dto)
         {
-            if (id <= 0 || dto == null)
+            if (dto == null)
             {
-                return BadRequest("Invalid notification ID or data.");
+                return BadRequest("Invalid notification data.");
             }
             try
             {

@@ -87,10 +87,6 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
-                if (patientId <= 0)
-                {
-                    return BadRequest("Patient ID must be greater than zero.");
-                }
                 if (patientRequest == null)
                 {
                     return BadRequest("Patient request data is required.");
@@ -116,11 +112,6 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
-                if (patientId <= 0)
-                {
-                    return BadRequest("Patient ID must be greater than zero.");
-                }
-
                 var deleted = await _patientService.DeletePatientAsync(patientId);
                 if (!deleted)
                 {
