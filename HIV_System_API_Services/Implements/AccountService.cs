@@ -293,6 +293,26 @@ namespace HIV_System_API_Services.Implements
             return MapToResponseDTO(account);
         }
 
+        public async Task<string> InitiatePasswordResetAsync(ForgotPasswordRequestDTO request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Email))
+                throw new ArgumentException("Email is required.");
+            // Check if account exists for the email
+            var account = await _accountRepo.GetAccountByEmailAsync(request.Email);
+            if (account == null)
+                throw new InvalidOperationException("No account found with the provided email.");
+            // Generate verification code
+            var verificationCode = _verificationService.GenerateCode(request.Email);
+            // Store the code in cache with expiry
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
+            _memoryCache.Set($"forgot_password_{request.Email}", verificationCode, cacheOptions);
+            // TODO: Send code to user's email (email sending not implemented here)
+            return (verificationCode);
+        }
+
         public async Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request)
         {
             if (request == null)
@@ -426,6 +446,91 @@ namespace HIV_System_API_Services.Implements
 
             var result = await _accountRepo.ChangePasswordAsync(accId, changeRequest);
             return result;
+        }
+
+        public async Task<(bool Success, string Message)> SendPasswordResetCodeAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return (false, "Email is required.");
+
+            // Check if account exists for the email
+            var account = await _accountRepo.GetAccountByEmailAsync(email);
+            if (account == null)
+                return (false, "No account found with the provided email.");
+
+            // Optionally: Check if account is active
+            if (account.IsActive == false)
+                return (false, "Account is not active.");
+
+            // Generate verification code
+            var code = _verificationService.GenerateCode(email);
+
+            // Store the code in cache with expiry
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
+            _memoryCache.Set($"password_reset_{email}", code, cacheOptions);
+
+            // TODO: Send code to user's email (email sending not implemented here)
+            // You may inject an IEmailService and call it here.
+
+            return (true, "Password reset code has been sent to your email.");
+        }
+
+        public async Task<(bool Success, string Message)> VerifyPasswordResetCodeAsync(string email, string code)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return (false, "Email is required.");
+            if (string.IsNullOrWhiteSpace(code))
+                return (false, "Verification code is required.");
+
+            // Check if the code exists in cache (for password reset)
+            var cacheKey = $"forgot_password_{email}";
+            if (!_memoryCache.TryGetValue<string>(cacheKey, out var cachedCode))
+                return (false, "No password reset request found or code expired.");
+
+            if (!string.Equals(cachedCode, code, StringComparison.Ordinal))
+                return (false, "Verification code does not match.");
+
+            // Optionally: Remove the code from cache after successful verification
+            _memoryCache.Remove(cacheKey);
+
+            return (true, "Verification code is valid.");
+        }
+
+        public async Task<(bool Success, string Message)> ResetPasswordAsync(string email, string code, string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return (false, "Email is required.");
+            if (string.IsNullOrWhiteSpace(code))
+                return (false, "Verification code is required.");
+            if (string.IsNullOrWhiteSpace(newPassword))
+                return (false, "New password is required.");
+
+            var account = await _accountRepo.GetAccountByEmailAsync(email);
+            if (account == null)
+                return (false, "No account found with the provided email.");
+            if (account.IsActive == false)
+                return (false, "Account is not active.");
+
+            var (isValid, message) = await VerifyPasswordResetCodeAsync(email, code);
+            if (!isValid)
+                return (false, message);
+
+            if (account.AccPassword == newPassword)
+                return (false, "New password must be different from the current password.");
+
+            var changeRequest = new ChangePasswordRequestDTO
+            {
+                currentPassword = account.AccPassword,
+                newPassword = newPassword,
+                confirmNewPassword = newPassword
+            };
+
+            var result = await _accountRepo.ChangePasswordAsync(account.AccId, changeRequest);
+            if (!result)
+                return (false, "Failed to reset password.");
+
+            return (true, "Password has been reset successfully.");
         }
     }
 }

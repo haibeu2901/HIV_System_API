@@ -166,7 +166,7 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
-        
+
         [HttpPut("UpdateAccount/{id}")]
         [Authorize(Roles = "1")]
         public async Task<IActionResult> UpdateAccount(int id, [FromBody] UpdateAccountRequestDTO accountDTO)
@@ -441,6 +441,53 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
             }
+        }
+
+        [HttpPost("Forgot-Password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDTO request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest("Email is required.");
+            }
+            try
+            {
+                var verificationCode = await _accountService.InitiatePasswordResetAsync(request);
+                await SendVerificationEmail(request.Email, verificationCode);
+                return Ok(new { message = "Verification code sent to your email." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPost("Reset-Password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromQuery] string email, [FromQuery] string code, [FromBody] ResetPasswordRequestDTO request)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(new { message = "Email is required." });
+
+            if (string.IsNullOrWhiteSpace(code))
+                return BadRequest(new { message = "Verification code is required." });
+
+            if (request == null || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.ConfirmPassword))
+                return BadRequest(new { message = "Password and confirm password are required." });
+
+            if (request.Password != request.ConfirmPassword)
+                return BadRequest(new { message = "Passwords do not match." });
+
+            var (success, message) = await _accountService.ResetPasswordAsync(email, code, request.Password);
+            if (!success)
+                return BadRequest(new { message });
+
+            return Ok(new { message = "Password has been reset successfully." });
         }
 
         private async Task SendVerificationEmail(string email, string code)
