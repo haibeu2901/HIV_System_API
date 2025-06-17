@@ -388,5 +388,44 @@ namespace HIV_System_API_Services.Implements
 
             return (true, ""); // Pending registration exists
         }
+
+        public async Task<bool> ChangePasswordAsync(int accId, ChangePasswordRequestDTO request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (string.IsNullOrWhiteSpace(request.currentPassword))
+                throw new ArgumentException("Current password is required.", nameof(request.currentPassword));
+            if (string.IsNullOrWhiteSpace(request.newPassword))
+                throw new ArgumentException("New password is required.", nameof(request.newPassword));
+            if (string.IsNullOrWhiteSpace(request.confirmNewPassword))
+                throw new ArgumentException("Confirm new password is required.", nameof(request.confirmNewPassword));
+
+            if (request.newPassword != request.confirmNewPassword)
+                throw new InvalidOperationException("New password and confirmation do not match.");
+
+            var account = await _accountRepo.GetAccountByIdAsync(accId);
+            if (account == null)
+                throw new KeyNotFoundException($"Account with id {accId} not found.");
+
+            if (account.AccPassword != request.currentPassword)
+                throw new InvalidOperationException("Current password is incorrect.");
+
+            if (account.AccPassword == request.newPassword)
+                throw new InvalidOperationException("New password must be different from the current password.");
+
+            // Optionally: add password strength validation here
+
+            // Update password
+            var changeRequest = new ChangePasswordRequestDTO
+            {
+                currentPassword = request.currentPassword,
+                newPassword = request.newPassword,
+                confirmNewPassword = request.confirmNewPassword
+            };
+
+            var result = await _accountRepo.ChangePasswordAsync(accId, changeRequest);
+            return result;
+        }
     }
 }

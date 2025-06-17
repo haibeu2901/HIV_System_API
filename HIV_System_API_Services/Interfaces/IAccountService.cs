@@ -23,5 +23,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request);
         Task<AccountResponseDTO> VerifyEmailAndCreateAccountAsync(string email, string code);
         Task<(bool isValid, string message)> HasPendingRegistrationAsync(string email);
+        Task<bool> ChangePasswordAsync(int accId, ChangePasswordRequestDTO request);
     }
 }

@@ -12,6 +12,11 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class AccountRepo : IAccountRepo
     {
+        public async Task<bool> ChangePasswordAsync(int accId, ChangePasswordRequestDTO request)
+        {
+            return await AccountDAO.Instance.ChangePasswordAsync(accId, request); 
+        }
+
         public async Task<Account> CreateAccountAsync(Account account)
         {
             return await AccountDAO.Instance.CreateAccountAsync(account);

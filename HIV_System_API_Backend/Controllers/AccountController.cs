@@ -415,6 +415,34 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
+        [HttpPost("Change-Password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.currentPassword) || string.IsNullOrWhiteSpace(request.newPassword) || string.IsNullOrEmpty(request.confirmNewPassword))
+            {
+                return BadRequest("Old and new passwords are required.");
+            }
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+                if (currentUserId == 0)
+                {
+                    return Unauthorized("Invalid user session.");
+                }
+                var result = await _accountService.ChangePasswordAsync(currentUserId, request);
+                if (!result)
+                {
+                    return BadRequest("Failed to change password. Please check your old password and try again.");
+                }
+                return Ok("Password changed successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
         private async Task SendVerificationEmail(string email, string code)
         {
             var emailContent = $@"
