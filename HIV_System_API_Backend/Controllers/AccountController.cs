@@ -491,7 +491,6 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("View-profile")]
-        [Authorize]
         public async Task<IActionResult> ViewProfile()
         {
             try

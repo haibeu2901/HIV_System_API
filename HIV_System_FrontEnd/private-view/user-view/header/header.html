@@ -1,0 +1,39 @@
+<!-- header.html -->
+<header class="header">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>CareFirst HIV Clinic</span>
+            </div>
+            <ul class="nav-menu">
+                <li>
+                    <button class="btn-home" onclick="window.location.href='/private-view/user-view/booking/appointment-booking.html'">
+                        <i class="fas fa-home"></i> Home
+                    </button>
+                </li>
+                <li class="dropdown">
+                    <button class="btn-view" type="button">
+                        <i class="fas fa-user"></i> View <i class="fas fa-caret-down"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="/private-view/user-view/profile/profile.html"><i class="fas fa-id-card"></i> Profile</a>
+                        <a href="/private-view/user-view/booking/appointment-booking.html"><i class="fas fa-calendar-check"></i> Appointment</a>
+                        <a href="/private-view/user-view/medical-record.html"><i class="fas fa-notes-medical"></i> Medical Record</a>
+                        <a href="/private-view/user-view/all-doctors.html"><i class="fas fa-user-md"></i> All Doctors</a>
+                    </div>
+                </li>
+                <li>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+</header>

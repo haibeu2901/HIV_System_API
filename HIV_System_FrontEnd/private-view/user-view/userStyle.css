@@ -18,134 +18,7 @@
             padding: 0 20px;
         }
 
-        /* --- Professional Header Styling --- */
-.header {
-    background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
-    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
-    padding: 0;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-}
 
-.nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-height: 70px;
-}
-
-.nav-logo {
-    display: flex;
-    align-items: center;
-    font-size: 1.7rem;
-    font-weight: bold;
-    color: #fff;
-    letter-spacing: 1px;
-    gap: 0.7rem;
-    user-select: none;
-}
-
-.nav-logo i {
-    font-size: 2.1rem;
-    color: #fff;
-    margin-right: 0.5rem;
-}
-
-.nav-menu {
-    list-style: none;
-    display: flex;
-    gap: 1.2rem;
-    align-items: center;
-    margin: 0;
-}
-
-.nav-menu li {
-    position: relative;
-}
-
-.nav-menu a {
-    text-decoration: none;
-    color: #333;
-    font-weight: 500;
-    transition: color 0.3s;
-}
-
-.nav-menu a:hover {
-    color: #e74c3c;
-}
-
-.btn-profile,
-.btn-regimen,
-.btn-booking,
-.btn-logout {
-    background: transparent;
-    color: #fff;
-    border: 2px solid transparent;
-    padding: 0.45rem 1.2rem;
-    border-radius: 22px;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 1rem;
-    transition: 
-        background 0.2s,
-        color 0.2s,
-        border 0.2s,
-        box-shadow 0.2s;
-    outline: none;
-    box-shadow: none;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.btn-profile:hover,
-.btn-regimen:hover,
-.btn-booking:hover {
-    background: #fff;
-    color: #e74c3c;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
-}
-
-.btn-logout {
-    background: #fff;
-    color: #e74c3c;
-    border: 2px solid #fff;
-    font-weight: 600;
-    margin-left: 0.5rem;
-    transition: background 0.2s, color 0.2s, border 0.2s;
-}
-
-.btn-logout:hover {
-    background: #c0392b;
-    color: #fff;
-    border: 2px solid #fff;
-}
-
-.btn-logout i {
-    margin-right: 0.4rem;
-    font-size: 1.1rem;
-}
-
-.hamburger {
-    display: none;
-    flex-direction: column;
-    cursor: pointer;
-    margin-left: 1rem;
-}
-
-.hamburger span {
-    height: 3px;
-    width: 25px;
-    background: #fff;
-    margin-bottom: 4px;
-    border-radius: 2px;
-    transition: all 0.3s;
-}
 
 /* Main Content */
         .main-content {
@@ -621,7 +494,69 @@
           background: #ccc;
         }
 
-        /* Responsive Design */
+        /* Dropdown Styles */
+        .dropdown {
+    position: relative;
+    display: inline-block;
+}
+.btn-view {
+    background: transparent;
+    color: #fff;
+    border: 2px solid transparent;
+    padding: 0.45rem 1.2rem;
+    border-radius: 22px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.btn-view:hover,
+.dropdown:hover .btn-view {
+    background: #fff;
+    color: #e74c3c;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 190px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+    z-index: 1;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    right: 0;
+}
+.dropdown-content a {
+    color: #e74c3c;
+    padding: 0.8rem 1.2rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 1rem;
+    border-bottom: 1px solid #f2f2f2;
+    transition: background 0.2s, color 0.2s;
+}
+.dropdown-content a:last-child {
+    border-bottom: none;
+}
+.dropdown-content a:hover {
+    background-color: #f2f2f2;
+    color: #c0392b;
+}
+.dropdown:hover .dropdown-content,
+.dropdown:focus-within .dropdown-content {
+    display: block;
+}
+
+/* Responsive Design */
         @media (max-width: 768px) {
             .nav-container {
                 flex-direction: column;

@@ -192,13 +192,15 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         }
 
         const data = await response.json();
-        const fullName = data.fullName;
-        const role = data.roles;
-        localStorage.setItem("fullName", fullName); // Store full name in localStorage
+        const fullName = data.account.fullName;
+        const role = data.account.roles;
+        localStorage.setItem("token", data.token);
         console.log("Login successful:", data);
+        console.log("Role:", role);
+        localStorage.setItem("accId", data.account.accId); // Store account ID in localStorage
         if (role == 3) {
           window.location.href =
-            "http://127.0.0.1:5500/private-view/user-view/appointment-booking.html"; // Redirect to the appointment booking page after successful login
+            "http://127.0.0.1:5500/private-view/user-view/booking/appointment-booking.html"; // Redirect to the appointment booking page after successful login
         } else if (role == 2) {
           window.location.href = "http://127.0.0.1:5500/private-view/doctor-view/doctor-dashboard.html";
         } // Redirect to the doctor dashboard page after successful login
