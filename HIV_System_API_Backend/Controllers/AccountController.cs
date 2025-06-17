@@ -1,6 +1,7 @@
 ﻿using Azure;
 using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
+using HIV_System_API_DTOs.EmailDTO;
 using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
@@ -11,11 +12,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 
 namespace HIV_System_API_Backend.Controllers
 {
@@ -25,10 +28,15 @@ namespace HIV_System_API_Backend.Controllers
     {
         private IAccountService _accountService;
         private readonly IConfiguration _configuration;
-        public AccountController( IConfiguration configuration)
+        private readonly IEmailSender _emailSender;
+        private readonly IVerificationCodeService _verificationService;
+
+        public AccountController(IConfiguration configuration, IMemoryCache memoryCache)
         {
             _configuration = configuration;
-            _accountService = new AccountService();
+            _accountService = new AccountService(memoryCache);
+            _emailSender = new EmailSender(configuration);
+            _verificationService = new VerificationCodeService(memoryCache);
         }
 
         [HttpGet("GetAllAccounts")]
@@ -56,6 +64,10 @@ namespace HIV_System_API_Backend.Controllers
             if (account == null)
             {
                 return NotFound("Account not found or invalid credentials.");
+            }
+            if (account.IsActive == false)
+            {
+                return Unauthorized("Please verify your email before logging in or contact support if you have verified.");
             }
 
             // Check if account is active
@@ -114,7 +126,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAccountById/{id}")]
-        [Authorize(Roles ="1, 5")]
+        [Authorize(Roles = "1, 5")]
         public async Task<IActionResult> GetAccountById(int id)
         {
             var account = await _accountService.GetAccountByIdAsync(id);
@@ -216,33 +228,29 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpPost("CreatePatientAccount")]
+        [HttpPost("RegisterPatient")]
         [AllowAnonymous]
-        public async Task<IActionResult> CreatePatientAccount([FromBody] PatientAccountRequestDTO request)
+        public async Task<IActionResult> RegisterPatient([FromBody] PatientAccountRequestDTO request)
         {
-            if (request == null ||
-                string.IsNullOrWhiteSpace(request.AccUsername) ||
-                string.IsNullOrWhiteSpace(request.AccPassword))
-            {
-                return BadRequest("Username and password are required.");
-            }
+            if (request == null)
+                return BadRequest("Registration details are required.");
 
             try
             {
-                var createdPatient = await _accountService.CreatePatientAccountAsync(request);
-                if (createdPatient == null)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Patient account could not be created.");
-                }
-                return CreatedAtAction(nameof(GetAccountById), new { id = createdPatient.AccId }, createdPatient);
+                var (verificationCode, email) = await _accountService.InitiatePatientRegistrationAsync(request);
+
+                // Send verification email
+                await SendVerificationEmail(email, verificationCode);
+
+                return Ok(new { message = "Registration initiated. Please check your email for verification code." });
             }
-            catch (DbUpdateException ex)
+            catch (InvalidOperationException ex)
             {
-                return Conflict($"Patient account creation failed: {ex.InnerException}");
+                return Conflict(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
             }
         }
         [HttpPut("UpdatePatientProfile")]
@@ -303,6 +311,123 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
+        }
+
+        [HttpPost("resend-verification")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendVerificationCode([FromBody] ResendVerificationRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Email))
+                    return BadRequest(new { message = "Email is required" });
+
+                // Verify if there's a pending registration by checking with account service
+                var (isValid, message) = await _accountService.HasPendingRegistrationAsync(request.Email);
+                if (!isValid)
+                    return BadRequest(new { message });
+
+                // Generate new verification code
+                var code = _verificationService.GenerateCode(request.Email);
+                await SendVerificationEmail(request.Email, code);
+
+                return Ok(new { message = "New verification code has been sent" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("verify-registration")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyRegistration([FromBody] EmailVerificationRequest request)
+        {
+            try
+            {
+                var account = await _accountService.VerifyEmailAndCreateAccountAsync(request.Email, request.Code);
+
+                // If we got here, the account was created successfully
+                // Generate JWT token for immediate login
+                var token = GenerateJSONWebToken(account);
+
+                // Create a simplified response object to avoid serialization issues
+                var response = new
+                {
+                    message = "Account created successfully",
+                    token = token,
+                    account = new
+                    {
+                        account.AccId,
+                        account.AccUsername,
+                        account.Email,
+                        account.Fullname,
+                        account.Dob,
+                        account.Gender,
+                        account.Roles,
+                        account.IsActive
+                    }
+                };
+
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                // Even if account creation succeeded, there might be an issue with response generation
+                // Log the error but still return success if we can verify the account exists
+                try
+                {
+                    var createdAccount = await _accountService.GetAccountByEmailAsync(request.Email);
+                    if (createdAccount != null && createdAccount.IsActive == true)
+                    {
+                        var token = GenerateJSONWebToken(createdAccount);
+                        var response = new
+                        {
+                            message = "Account created successfully",
+                            token = token,
+                            account = new
+                            {
+                                createdAccount.AccId,
+                                createdAccount.AccUsername,
+                                createdAccount.Email,
+                                createdAccount.Fullname,
+                                createdAccount.Dob,
+                                createdAccount.Gender,
+                                createdAccount.Roles,
+                                createdAccount.IsActive
+                            }
+                        };
+                        return Ok(response);
+                    }
+                }
+                catch
+                {
+                    // If the fallback fails, then return the 500 error
+                }
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "Account was created but there was an error generating the response." });
+            }
+        }
+
+        private async Task SendVerificationEmail(string email, string code)
+        {
+            var emailContent = $@"
+            <h2>Welcome to HIV System</h2>
+            <p>Your verification code is: <strong>{code}</strong></p>
+            <p>This code will expire in 4 minutes.</p>
+            <p>If the code expires, you can request a new one through the application.</p>";
+
+            await _emailSender.SendEmailAsync(
+                email,
+                "Verify Your Email",
+                emailContent
+            );
         }
     }
 }

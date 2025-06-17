@@ -17,8 +17,11 @@ namespace HIV_System_API_Services.Interfaces
         Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, UpdateAccountRequestDTO updatedAccount);
         Task<bool> DeleteAccountAsync(int accId);
         Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account);
-        Task<PatientResponseDTO> CreatePatientAccountAsync(PatientAccountRequestDTO patient);
         Task<AccountResponseDTO> UpdatePatientProfileAsync(int accountId, PatientProfileUpdateDTO profileDTO);
         Task<AccountResponseDTO> UpdateDoctorProfileAsync(int accountId, DoctorProfileUpdateDTO profileDTO);
+        Task<AccountResponseDTO?> GetAccountByEmailAsync(string email);
+        Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request);
+        Task<AccountResponseDTO> VerifyEmailAndCreateAccountAsync(string email, string code);
+        Task<(bool isValid, string message)> HasPendingRegistrationAsync(string email);
     }
 }

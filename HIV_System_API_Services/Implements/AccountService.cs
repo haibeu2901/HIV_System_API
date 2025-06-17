@@ -5,6 +5,7 @@ using HIV_System_API_DTOs.PatientMedicalRecordDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,11 +17,18 @@ namespace HIV_System_API_Services.Implements
     public class AccountService : IAccountService
     {
         private readonly IAccountRepo _accountRepo;
+        private readonly IVerificationCodeService _verificationService;
+        private readonly IMemoryCache _memoryCache;
+        private const int PENDING_REGISTRATION_EXPIRY_MINUTES = 30;
 
-        public AccountService()
+        public AccountService(IMemoryCache memoryCache)
         {
             _accountRepo = new AccountRepo();
+            _verificationService = new VerificationCodeService(memoryCache);
+            _memoryCache = memoryCache;
         }
+
+
 
         private Account MapToEntity(AccountRequestDTO dto)
         {
@@ -101,12 +109,12 @@ namespace HIV_System_API_Services.Implements
             if (updatedAccount == null)
                 throw new ArgumentNullException(nameof(updatedAccount));
             //check authorization
-            if(updatedAccount.Roles != 1)
+            if (updatedAccount.Roles != 1)
             {
-                if(updatedAccount.Roles == 4 && updatedAccount.Roles == 5)
+                if (updatedAccount.Roles == 4 && updatedAccount.Roles == 5)
                 {
                     var currentAccount = await _accountRepo.GetAccountByIdAsync(id);
-                    if(currentAccount?.Roles == 1)
+                    if (currentAccount?.Roles == 1)
                         throw new UnauthorizedAccessException("You do not have permission to update this account.");
                 }
             }
@@ -135,7 +143,7 @@ namespace HIV_System_API_Services.Implements
             return MapToResponseDTO(updatedEntity);
         }
 
-        public async Task<PatientResponseDTO> CreatePatientAccountAsync(PatientAccountRequestDTO patient)
+        internal async Task<PatientResponseDTO> CreatePatientAccountAsync(PatientAccountRequestDTO patient)
         {
             if (patient == null)
                 throw new ArgumentNullException(nameof(patient));
@@ -269,6 +277,116 @@ namespace HIV_System_API_Services.Implements
             }
 
             return MapToResponseDTO(updatedAccount);
+        }
+
+        
+
+        public async Task<AccountResponseDTO?> GetAccountByEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentNullException(nameof(email));
+
+            var account = await _accountRepo.GetAccountByEmailAsync(email);
+            if (account == null)
+                return null;
+
+            return MapToResponseDTO(account);
+        }
+
+        public async Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (string.IsNullOrWhiteSpace(request.AccUsername))
+                throw new ArgumentException("Username is required");
+            if (string.IsNullOrWhiteSpace(request.AccPassword))
+                throw new ArgumentException("Password is required");
+            if (string.IsNullOrWhiteSpace(request.Email))
+                throw new ArgumentException("Email is required");
+
+            // Check for existing account
+            var existingAccount = await _accountRepo.GetAccountByLoginAsync(request.AccUsername, request.AccPassword);
+            if (existingAccount != null)
+                throw new InvalidOperationException("Account already exists");
+
+            if (await _accountRepo.IsEmailUsedAsync(request.Email))
+                throw new InvalidOperationException($"Email '{request.Email}' is already in use");
+
+            // Store the registration request in cache
+            var pendingRegistration = new PendingPatientRegistrationDTO
+            {
+                AccUsername = request.AccUsername,
+                AccPassword = request.AccPassword,
+                Email = request.Email,
+                Fullname = request.Fullname,
+                Dob = request.Dob,
+                Gender = request.Gender
+            };
+
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
+
+            var verificationCode = _verificationService.GenerateCode(request.Email);
+            _memoryCache.Set($"pending_registration_{request.Email}", pendingRegistration, cacheOptions);
+
+            return (verificationCode, request.Email);
+        }
+
+        public async Task<AccountResponseDTO> VerifyEmailAndCreateAccountAsync(string email, string code)
+        {
+            if (!_verificationService.VerifyCode(email, code))
+                throw new InvalidOperationException("Invalid or expired verification code");
+
+            // Retrieve pending registration
+            var cacheKey = $"pending_registration_{email}";
+            if (!_memoryCache.TryGetValue(cacheKey, out PendingPatientRegistrationDTO? pendingRegistration))
+                throw new InvalidOperationException("No pending registration found or registration expired");
+
+            _memoryCache.Remove(cacheKey);
+
+            // Create the patient account
+            var patientRequest = new PatientAccountRequestDTO
+            {
+                AccUsername = pendingRegistration.AccUsername,
+                AccPassword = pendingRegistration.AccPassword,
+                Email = pendingRegistration.Email,
+                Fullname = pendingRegistration.Fullname,
+                Dob = pendingRegistration.Dob,
+                Gender = pendingRegistration.Gender
+            };
+
+            var patientResponse = await CreatePatientAccountAsync(patientRequest);
+
+            // The account is created with IsActive = true since it's already verified
+            var account = await _accountRepo.GetAccountByIdAsync(patientResponse.AccId);
+            if (account != null)
+            {
+                account.IsActive = true;
+                await _accountRepo.UpdateAccountStatusAsync(account.AccId, true);
+            }
+
+            return patientResponse.Account ?? throw new InvalidOperationException("Failed to create account");
+        }
+
+        public async Task<(bool isValid, string message)> HasPendingRegistrationAsync(string email)
+        {
+            // Use the same key pattern as used in InitiatePatientRegistrationAsync
+            var pendingRegistration = _memoryCache.Get<PendingPatientRegistrationDTO>($"pending_registration_{email}");
+
+            if (pendingRegistration == null)
+                return (false, "No pending registration found for this email");
+
+            // Check if there's already an account with this email
+            var existingAccount = await GetAccountByEmailAsync(email);
+            if (existingAccount != null)
+            {
+                if (existingAccount.IsActive == true)
+                    return (false, "Account is already verified");
+                return (true, ""); // Account exists but not verified
+            }
+
+            return (true, ""); // Pending registration exists
         }
     }
 }
