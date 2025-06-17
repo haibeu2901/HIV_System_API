@@ -490,6 +490,30 @@ namespace HIV_System_API_Backend.Controllers
             return Ok(new { message = "Password has been reset successfully." });
         }
 
+        [HttpGet("View-profile")]
+        [Authorize]
+        public async Task<IActionResult> ViewProfile()
+        {
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+                if (currentUserId == 0)
+                {
+                    return Unauthorized("Invalid user session.");
+                }
+                var account = await _accountService.GetAccountByIdAsync(currentUserId);
+                if (account == null)
+                {
+                    return NotFound($"Account with ID {currentUserId} not found.");
+                }
+                return Ok(account);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
         private async Task SendVerificationEmail(string email, string code)
         {
             var emailContent = $@"
