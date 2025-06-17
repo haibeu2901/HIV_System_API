@@ -197,5 +197,24 @@ namespace HIV_System_API_DAOs.Implements
             await _context.SaveChangesAsync();
             return existingAccount;
         }
+
+        public async Task<bool> ChangePasswordAsync(int accId, ChangePasswordRequestDTO request)
+        {
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == accId && a.AccPassword == request.currentPassword);
+            if (account == null)
+            {
+                return false;
+            }
+
+            // Check if the current password matches
+            if (account.AccPassword != request.currentPassword)
+            {
+                return false;
+            }
+
+            account.AccPassword = request.newPassword!;
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
