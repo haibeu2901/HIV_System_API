@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Appointment - CareFirst HIV Clinic</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="userStyle.css">
+    <link rel="stylesheet" href="../userStyle.css">
+    <link rel = "stylesheet" href = "../header/header.css">
 </head>
 <body>
     <!-- Header -->
@@ -492,7 +493,7 @@
                 }
             }
         });
-        fetch('header.html')
+        fetch('../header/header.html')
   .then(response => response.text())
   .then(data => {
     document.getElementById('header-placeholder').innerHTML = data;

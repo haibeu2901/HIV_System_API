@@ -1,0 +1,64 @@
+/* Profile Page Styles */
+.container {
+    max-width: 500px;
+    margin: 2.5rem auto 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(231,76,60,0.08);
+    padding: 2.5rem 2rem 2rem 2rem;
+}
+
+h2 {
+    text-align: center;
+    color: #e74c3c;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+#profile-details {
+    margin-top: 1.5rem;
+}
+
+.profile-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.profile-list li {
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid #f2f2f2;
+    font-size: 1.08rem;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-list li:last-child {
+    border-bottom: none;
+}
+
+.profile-list strong {
+    color: #c0392b;
+    min-width: 120px;
+    display: inline-block;
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1.2rem 0.5rem;
+    }
+    h2 {
+        font-size: 1.3rem;
+    }
+    .profile-list li {
+        font-size: 0.98rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+}
