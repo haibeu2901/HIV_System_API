@@ -195,7 +195,6 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         const fullName = data.account.fullName;
         const role = data.account.roles;
         localStorage.setItem("token", data.token);
-        localStorage.setItem("account", JSON.stringify(data.account));
         console.log("Login successful:", data);
         console.log("Role:", role);
         localStorage.setItem("accId", data.account.accId); // Store account ID in localStorage
