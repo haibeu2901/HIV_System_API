@@ -166,7 +166,7 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
             }
         }
-        
+
         [HttpPut("UpdateAccount/{id}")]
         [Authorize(Roles = "1")]
         public async Task<IActionResult> UpdateAccount(int id, [FromBody] UpdateAccountRequestDTO accountDTO)
@@ -415,8 +415,84 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet ("View-profile")]
+
+
+        [HttpPost("Change-Password")]
         [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.currentPassword) || string.IsNullOrWhiteSpace(request.newPassword) || string.IsNullOrEmpty(request.confirmNewPassword))
+            {
+                return BadRequest("Old and new passwords are required.");
+            }
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
+                if (currentUserId == 0)
+                {
+                    return Unauthorized("Invalid user session.");
+                }
+                var result = await _accountService.ChangePasswordAsync(currentUserId, request);
+                if (!result)
+                {
+                    return BadRequest("Failed to change password. Please check your old password and try again.");
+                }
+                return Ok("Password changed successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPost("Forgot-Password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDTO request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest("Email is required.");
+            }
+            try
+            {
+                var verificationCode = await _accountService.InitiatePasswordResetAsync(request);
+                await SendVerificationEmail(request.Email, verificationCode);
+                return Ok(new { message = "Verification code sent to your email." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPost("Reset-Password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromQuery] string email, [FromQuery] string code, [FromBody] ResetPasswordRequestDTO request)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(new { message = "Email is required." });
+
+            if (string.IsNullOrWhiteSpace(code))
+                return BadRequest(new { message = "Verification code is required." });
+
+            if (request == null || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.ConfirmPassword))
+                return BadRequest(new { message = "Password and confirm password are required." });
+
+            if (request.Password != request.ConfirmPassword)
+                return BadRequest(new { message = "Passwords do not match." });
+
+            var (success, message) = await _accountService.ResetPasswordAsync(email, code, request.Password);
+            if (!success)
+                return BadRequest(new { message });
+
+            return Ok(new { message = "Password has been reset successfully." });
+        }
+
+        [HttpGet("View-profile")]
         public async Task<IActionResult> ViewProfile()
         {
             try
