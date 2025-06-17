@@ -167,13 +167,32 @@ namespace HIV_System_API_Services.Implements
             return MapToResponseDTO(fullDoctor);
         }
 
-        public async Task<List<DoctorResponseDTO>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
+        public async Task<List<DoctorProfileResponse>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
         {
             var doctors = await _doctorRepo.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
-            return doctors
-                .Where(d => d.Acc != null)
-                .Select(MapToResponseDTO)
-                .ToList();
+            return doctors.Select(doctor => new DoctorProfileResponse
+            {
+                Degree = doctor.Degree,
+                Bio = doctor.Bio,
+                Email = doctor.Acc?.Email,
+                Fullname = doctor.Acc?.Fullname,
+                Dob = doctor.Acc?.Dob
+            }).ToList();
+        }
+
+        public async Task<DoctorProfileResponse?> GetDoctorProfileAsync(int id)
+        {
+            var doctor = await _doctorRepo.GetDoctorByIdAsync(id);
+            if (doctor == null || doctor.Acc == null)
+                return null;
+            return new DoctorProfileResponse
+            {
+                Degree = doctor.Degree,
+                Bio = doctor.Bio,
+                Email = doctor.Acc.Email,
+                Fullname = doctor.Acc.Fullname,
+                Dob = doctor.Acc.Dob
+            };
         }
     }
 }
