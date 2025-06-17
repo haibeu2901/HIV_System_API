@@ -38,7 +38,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateAppointment")]
-        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        [Authorize]
         public async Task<ActionResult> CreateAppointment([FromBody] CreateAppointmentRequestDTO dto)
         {
             if (dto == null)
@@ -161,8 +161,9 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        
         [HttpGet("my-appointments")]
+        [Authorize]
         public async Task<ActionResult<List<AppointmentResponseDTO>>> GetMyAppointments()
         {
             try
@@ -194,7 +195,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("UpdateAppointmentRequest")]
-        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        [Authorize]
         public async Task<IActionResult> UpdateAppointment(int id, [FromBody] UpdateAppointmentRequestDTO dto)
         {
             if (dto == null)
@@ -222,7 +223,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllPersonalAppointments")]
-        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        [Authorize]
         public async Task<IActionResult> GetAllPersonalAppointments()
         {
             var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);

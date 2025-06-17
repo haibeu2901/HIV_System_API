@@ -20,7 +20,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorWorkSchedules")]
-        [Authorize(Roles = "1,2,4,5")]
+        [Authorize]
         public async Task<IActionResult> GetDoctorWorkSchedules()
         {
             var schedules = await _doctorWorkScheduleService.GetDoctorWorkSchedulesAsync();
@@ -32,7 +32,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorWorkScheduleById/{id}")]
-        [Authorize(Roles = "1,2,4,5")]
+        [Authorize]
         public async Task<IActionResult> GetDoctorWorkScheduleById(int id)
         {
             var schedule = await _doctorWorkScheduleService.GetDoctorWorkScheduleByIdAsync(id);
@@ -120,18 +120,19 @@ namespace HIV_System_API_Backend.Controllers
         [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetPersonalWorkSchedules()
         {
-            int doctorId = ClaimsHelper.ExtractAccountIdFromClaims(User).Value;
+            int? doctorId = ClaimsHelper.ExtractAccountIdFromClaims(User);
 
-            if (doctorId <= 0)
+            if (!doctorId.HasValue || doctorId.Value <= 0)
             {
                 return BadRequest("Doctor ID must be greater than zero.");
             }
+
             try
             {
-                var schedules = await _doctorWorkScheduleService.GetPersonalWorkSchedulesAsync(doctorId);
+                var schedules = await _doctorWorkScheduleService.GetPersonalWorkSchedulesAsync(doctorId.Value);
                 if (schedules == null || schedules.Count == 0)
                 {
-                    return NotFound($"No work schedules found for doctor with ID {doctorId}.");
+                    return NotFound($"No work schedules found for doctor with ID {doctorId.Value}.");
                 }
                 return Ok(schedules);
             }
