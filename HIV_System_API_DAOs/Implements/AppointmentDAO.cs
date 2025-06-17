@@ -1,6 +1,7 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Interfaces;
 using HIV_System_API_DTOs.Appointment;
+using HIV_System_API_DTOs.AppointmentDTO;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -44,29 +45,46 @@ namespace HIV_System_API_DAOs.Implements
                 .ToListAsync();
         }
 
-        public async Task<Appointment> CreateAppointmentAsync(Appointment appointment)
+        public async Task<Appointment> CreateAppointmentAsync(CreateAppointmentRequestDTO createDto, int accId)
         {
-            if (appointment == null)
-                throw new ArgumentNullException(nameof(appointment), "Appointment cannot be null.");
+            if (createDto == null)
+                throw new ArgumentNullException(nameof(createDto), "Appointment cannot be null.");
 
-            // Verify that the Doctor exists
-            var doctor = await _context.Doctors.FindAsync(appointment.DctId);
+            // Ensure doctor exists
+            var doctor = await _context.Doctors.FindAsync(createDto.DoctorId);
             if (doctor == null)
-                throw new InvalidOperationException($"Doctor with ID {appointment.DctId} not found.");
+                throw new InvalidOperationException($"Doctor with ID {createDto.DoctorId} not found.");
 
-            // Verify that the Patient exists
-            var patient = await _context.Patients.FindAsync(appointment.PtnId);
+            // Ensure patient exists (by account)
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.AccId == accId);
             if (patient == null)
-                throw new InvalidOperationException($"Patient with ID {appointment.PtnId} not found.");
+                throw new InvalidOperationException($"Patient not found for account ID {accId}.");
+
+            // Create Appointment entity
+            var appointment = new Appointment
+            {
+                DctId = doctor.DctId,
+                PtnId = patient.PtnId,
+                ApmtDate = createDto.AppointmentDate,
+                ApmTime = createDto.AppointmentTime,
+                Notes = createDto.Notes,
+                ApmStatus = 1 // Default status, adjust as needed
+            };
 
             try
             {
                 await _context.Appointments.AddAsync(appointment);
                 await _context.SaveChangesAsync();
 
-                // Reload the appointment with related entities
-                return await GetAppointmentByIdAsync(appointment.ApmId)
-                    ?? throw new InvalidOperationException("Failed to retrieve created appointment.");
+                // Return appointment with related entities loaded
+                var created = await _context.Appointments
+                    .Include(a => a.Dct)
+                        .ThenInclude(d => d.Acc)
+                    .Include(a => a.Ptn)
+                        .ThenInclude(p => p.Acc)
+                    .FirstOrDefaultAsync(a => a.ApmId == appointment.ApmId);
+
+                return created ?? throw new InvalidOperationException("Failed to retrieve created appointment.");
             }
             catch (DbUpdateException ex)
             {
@@ -231,6 +249,56 @@ namespace HIV_System_API_DAOs.Implements
                 Debug.WriteLine($"Error in GetAppointmentsByAccountIdAsync: {ex.Message}");
                 throw;
             }
+        }
+
+        public async Task<Appointment> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO updateDto, int accId)
+        {
+            if (updateDto == null)
+                throw new ArgumentNullException(nameof(updateDto), "Appointment update data cannot be null.");
+
+            // Find the appointment by its ID
+            var appointment = await _context.Appointments
+                .Include(a => a.Dct)
+                .Include(a => a.Ptn)
+                .FirstOrDefaultAsync(a => a.ApmId == appointmentId);
+
+            if (appointment == null)
+                throw new KeyNotFoundException($"Appointment with id {appointmentId} not found.");
+
+            // Update fields
+            appointment.ApmtDate = updateDto.AppointmentDate;
+            appointment.ApmTime = updateDto.AppointmentTime;
+            appointment.Notes = updateDto.Notes;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                // Reload with related entities
+                var updated = await _context.Appointments
+                    .Include(a => a.Dct)
+                        .ThenInclude(d => d.Acc)
+                    .Include(a => a.Ptn)
+                        .ThenInclude(p => p.Acc)
+                    .FirstOrDefaultAsync(a => a.ApmId == appointment.ApmId);
+
+                return updated ?? throw new InvalidOperationException("Failed to retrieve updated appointment.");
+            }
+            catch (DbUpdateException ex)
+            {
+                Debug.WriteLine($"Failed to update appointment: {ex.Message}, InnerException: {ex.InnerException?.Message}");
+                throw new InvalidOperationException("Failed to update appointment due to database error.", ex);
+            }
+        }
+
+        public async Task<List<Appointment>> GetAllPersonalAppointmentsAsync(int accId)
+        {
+            return await _context.Appointments
+                .Include(a => a.Dct)
+                    .ThenInclude(d => d.Acc)
+                .Include(a => a.Ptn)
+                    .ThenInclude(p => p.Acc)
+                .Where(a => a.Ptn.AccId == accId || a.Dct.AccId == accId)
+                .ToListAsync();
         }
     }
 }

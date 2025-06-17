@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.AppointmentDTO;
 using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
@@ -114,6 +115,22 @@ namespace HIV_System_API_Services.Implements
                 SendAt = notification.SendAt ?? DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             };
+        }
+
+        public async Task<List<NotificationResponseDTO>> GetAllPersonalNotificationsAsync(int accId)
+        {
+            if (accId <= 0)
+            {
+                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
+            }
+
+            var notifications = await _notificationRepo.GetAllPersonalNotificationsAsync(accId);
+            if (notifications == null)
+            {
+                return new List<NotificationResponseDTO>();
+            }
+
+            return notifications.Select(MapToResponseDTO).ToList();
         }
     }
 }

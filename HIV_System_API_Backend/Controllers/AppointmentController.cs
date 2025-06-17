@@ -1,5 +1,7 @@
-﻿using HIV_System_API_BOs;
+﻿using HIV_System_API_Backend.Common;
+using HIV_System_API_BOs;
 using HIV_System_API_DTOs.Appointment;
+using HIV_System_API_DTOs.AppointmentDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +16,10 @@ namespace HIV_System_API_Backend.Controllers
     public class AppointmentController : ControllerBase
     {
         private IAppointmentService _appointmentService;
-        private readonly IConfiguration _configuration;
 
-        public AppointmentController(IConfiguration configuration)
+        public AppointmentController()
         {
             _appointmentService = new AppointmentService();
-            _configuration = configuration;
         }
 
         [HttpGet("GetAllAppointments")]
@@ -39,23 +39,36 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("CreateAppointment")]
         [Authorize(Roles = "1, 2, 3, 4, 5")]
-        public async Task<ActionResult> CreateAppointment([FromBody] AppointmentRequestDTO dto)
+        public async Task<ActionResult> CreateAppointment([FromBody] CreateAppointmentRequestDTO dto)
         {
             if (dto == null)
                 return BadRequest("Appointment data is required.");
 
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+                return Unauthorized("Invalid user session.");
+
             try
             {
-                var createdAppointment = await _appointmentService.CreateAppointmentAsync(dto);
+                // Map AppointmentRequestDTO to CreateAppointmentDTO
+                var createDto = new CreateAppointmentRequestDTO
+                {
+                    DoctorId = dto.DoctorId,
+                    AppointmentDate = dto.AppointmentDate,
+                    AppointmentTime = dto.AppointmentTime,
+                    Notes = dto.Notes
+                };
+
+                var createdAppointment = await _appointmentService.CreateAppointmentAsync(createDto, accountId.Value);
                 return CreatedAtAction(nameof(GetAppointmentById), new { id = createdAppointment.AppointmentId }, createdAppointment);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.InnerException);
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.InnerException);
+                return Conflict(ex.Message);
             }
             catch (Exception ex)
             {
@@ -125,7 +138,7 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpPatch("ChangeAppointmentStatus/{id}/{status}")]
+        [HttpPatch("ChangeAppointmentStatus")]
         [Authorize(Roles = "1, 2, 3, 4, 5")]
         public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
         {
@@ -173,6 +186,52 @@ namespace HIV_System_API_Backend.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
+            }
+        }
+
+        [HttpPost("UpdateAppointmentRequest")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        public async Task<IActionResult> UpdateAppointment(int id, [FromBody] UpdateAppointmentRequestDTO dto)
+        {
+            if (dto == null)
+                return BadRequest("Appointment data is required.");
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+                return Unauthorized("Invalid user session.");
+            try
+            {
+                var updatedAppointment = await _appointmentService.UpdateAppointmentAsync(id, dto, accountId.Value);
+                return Ok(updatedAppointment);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
+            }
+        }
+
+        [HttpGet("GetAllPersonalAppointments")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        public async Task<IActionResult> GetAllPersonalAppointments()
+        {
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+                return Unauthorized("Invalid user session.");
+            try
+            {
+                var appointments = await _appointmentService.GetAllPersonalAppointmentsAsync(accountId.Value);
+                return Ok(appointments);
             }
             catch (Exception ex)
             {

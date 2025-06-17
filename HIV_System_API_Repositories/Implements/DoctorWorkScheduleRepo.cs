@@ -32,6 +32,11 @@ namespace HIV_System_API_Repositories.Implements
             return await DoctorWorkScheduleDAO.Instance.GetDoctorWorkSchedulesAsync();
         }
 
+        public Task<List<DoctorWorkSchedule>> GetPersonalWorkSchedulesAsync(int doctorId)
+        {
+            return DoctorWorkScheduleDAO.Instance.GetPersonalWorkSchedulesAsync(doctorId);
+        }
+
         public async Task<DoctorWorkSchedule> UpdateDoctorWorkScheduleAsync(int id, DoctorWorkSchedule doctorWorkSchedule)
         {
             return await DoctorWorkScheduleDAO.Instance.UpdateDoctorWorkScheduleAsync(id, doctorWorkSchedule);

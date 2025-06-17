@@ -82,5 +82,12 @@ namespace HIV_System_API_DAOs.Implements
             await _context.SaveChangesAsync();
             return existingSchedule;
         }
+
+        public async Task<List<DoctorWorkSchedule>> GetPersonalWorkSchedulesAsync(int doctorId)
+        {
+            return await _context.DoctorWorkSchedules
+                .Where(dws => dws.DoctorId == doctorId)
+                .ToListAsync();
+        }
     }
 }

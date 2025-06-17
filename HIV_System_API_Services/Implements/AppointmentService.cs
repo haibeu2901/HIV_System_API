@@ -1,6 +1,8 @@
 ﻿using Azure.Core;
 using HIV_System_API_BOs;
 using HIV_System_API_DTOs.Appointment;
+using HIV_System_API_DTOs.AppointmentDTO;
+using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -17,11 +19,13 @@ namespace HIV_System_API_Services.Implements
     public class AppointmentService : IAppointmentService
     {
         private readonly IAppointmentRepo _appointmentRepo;
+        private readonly INotificationRepo _notificationRepo;
         private readonly HivSystemApiContext _context;
 
         public AppointmentService()
         {
             _appointmentRepo = new AppointmentRepo();
+            _notificationRepo = new NotificationRepo();
             _context = new HivSystemApiContext();
         }
 
@@ -68,9 +72,9 @@ namespace HIV_System_API_Services.Implements
 
         private async Task ValidateAppointmentAsync(AppointmentRequestDTO request, bool validateStatus, int? apmId = null)
         {
-            // Validate PmrId
-            if (!await _context.PatientMedicalRecords.AnyAsync(r => r.PtnId == request.PatientId))
-                throw new ArgumentException("Patient medical record does not exist.");
+            // Validate PatientId
+            if (!await _context.Patients.AnyAsync(p => p.PtnId == request.PatientId))
+                throw new ArgumentException("Patient does not exist.");
 
             // Validate DctId
             if (!await _context.Doctors.AnyAsync(d => d.DctId == request.DoctorId))
@@ -124,7 +128,70 @@ namespace HIV_System_API_Services.Implements
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var appointment = await _context.Appointments
+                    .FirstOrDefaultAsync(a => a.ApmId == id);
+
+                if (appointment == null)
+                    throw new InvalidOperationException($"Appointment with ID {id} not found.");
+
                 var updatedAppointment = await _appointmentRepo.ChangeAppointmentStatusAsync(id, status);
+
+                if (updatedAppointment == null)
+                    throw new InvalidOperationException($"Failed to update appointment status for ID {id}.");
+
+                if (updatedAppointment.ApmStatus == 4) // If status is cancelled
+                {
+                    // Create notification for cancellation
+                    var notification = new Notification
+                    {
+                        NotiType = "Appt Cancel", // <= 12 chars
+                        NotiMessage = "Cuộc hẹn của bạn đã bị huỷ.",
+                        SendAt = DateTime.UtcNow
+                    };
+                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
+                }
+                else if (updatedAppointment.ApmStatus == 5) // If status is completed
+                {
+                    // Create notification for completion
+                    var notification = new Notification
+                    {
+                        NotiType = "Appt Complete", // <= 12 chars
+                        NotiMessage = "Cuộc hẹn của bạn đã thành công.",
+                        SendAt = DateTime.UtcNow
+                    };
+                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
+
+                    // Check for patient medical record, create if missing
+                    var patientMedicalRecord = await _context.PatientMedicalRecords
+                        .FirstOrDefaultAsync(r => r.PtnId == updatedAppointment.PtnId);
+                    if (patientMedicalRecord == null)
+                    {
+                        patientMedicalRecord = new PatientMedicalRecord
+                        {
+                            PtnId = updatedAppointment.PtnId,
+                        };
+                        _context.PatientMedicalRecords.Add(patientMedicalRecord);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                else if (updatedAppointment.ApmStatus == 2) // If status is confirmed
+                {
+                    // Create notification for confirmation
+                    var notification = new Notification
+                    {
+                        NotiType = "Appt Confirm", // <= 12 chars
+                        NotiMessage = "Cuộc hẹn của bạn đã được xác nhận.",
+                        SendAt = DateTime.UtcNow
+                    };
+                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
+                }
+
                 await transaction.CommitAsync();
                 return MapToResponseDTO(updatedAppointment);
             }
@@ -152,16 +219,16 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
-        public async Task<AppointmentResponseDTO> CreateAppointmentAsync(AppointmentRequestDTO request)
+        public async Task<AppointmentResponseDTO> CreateAppointmentAsync(CreateAppointmentRequestDTO request, int accId)
         {
-            Debug.WriteLine($"Creating appointment for PmrId: {request.PatientId}, DctId: {request.DoctorId}");
+            Debug.WriteLine($"Creating appointment for PatientId: {accId}, DoctorId: {request.DoctorId}");
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Request DTO is required.");
 
             // Validate patient existence
             var patient = await _context.Patients
                 .Include(p => p.Acc)
-                .FirstOrDefaultAsync(p => p.PtnId == request.PatientId);
+                .FirstOrDefaultAsync(p => p.PtnId == accId);
             if (patient == null)
                 throw new ArgumentException("Patient does not exist.");
 
@@ -172,34 +239,39 @@ namespace HIV_System_API_Services.Implements
             if (doctor == null)
                 throw new ArgumentException("Doctor does not exist.");
 
-            // Check for patient medical record, create if missing
-            var patientMedicalRecord = await _context.PatientMedicalRecords
-                .FirstOrDefaultAsync(r => r.PtnId == request.PatientId);
-            if (patientMedicalRecord == null)
-            {
-                patientMedicalRecord = new PatientMedicalRecord
-                {
-                    PtnId = request.PatientId
-                };
-                _context.PatientMedicalRecords.Add(patientMedicalRecord);
-                await _context.SaveChangesAsync();
-            }
-
             // Validate appointment (schedule, overlap, etc.)
-            await ValidateAppointmentAsync(request, validateStatus: false);
+            var appointmentRequestDto = new AppointmentRequestDTO
+            {
+                PatientId = accId,
+                DoctorId = request.DoctorId,
+                ApmtDate = request.AppointmentDate,
+                ApmTime = request.AppointmentTime,
+                Notes = request.Notes,
+                ApmStatus = 1 // Default status for creation
+            };
+            await ValidateAppointmentAsync(appointmentRequestDto, validateStatus: false);
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var appointment = MapToEntity(request);
-                appointment.ApmStatus = 1;
-                var createdAppointment = await _appointmentRepo.CreateAppointmentAsync(appointment);
+                var createdAppointment = await _appointmentRepo.CreateAppointmentAsync(request, accId);
                 await transaction.CommitAsync();
+
+                // Create notification and send to doctor
+                var notification = new Notification
+                {
+                    NotiType = "Appointment Request",
+                    NotiMessage = "Có 1 yêu cầu đặt lịch hẹn mới, vui lòng phản hồi.",
+                    SendAt = DateTime.UtcNow
+                };
+                var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, doctor.AccId);
+
                 return MapToResponseDTO(createdAppointment);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Failed to create appointment: {ex.Message}");
+                Debug.WriteLine($"Failed to create appointment: {ex.InnerException?.Message ?? ex.Message}");
                 await transaction.RollbackAsync();
                 throw;
             }
@@ -251,5 +323,95 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
+        public async Task<AppointmentResponseDTO> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO appointment, int accId)
+        {
+            Debug.WriteLine($"Updating appointment for AccountId: {accId}");
+
+            if (appointment == null)
+                throw new ArgumentNullException(nameof(appointment), "Request DTO is required.");
+
+            // Find the appointment by ID
+            var existingAppointment = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.ApmId == appointmentId);
+
+            if (existingAppointment == null)
+                throw new InvalidOperationException("Appointment not found for update.");
+
+            // Prepare DTO for validation
+            var requestDto = new AppointmentRequestDTO
+            {
+                PatientId = existingAppointment.PtnId,
+                DoctorId = existingAppointment.DctId,
+                ApmtDate = appointment.AppointmentDate,
+                ApmTime = appointment.AppointmentTime,
+                Notes = appointment.Notes,
+                ApmStatus = existingAppointment.ApmStatus
+            };
+
+            await ValidateAppointmentAsync(requestDto, validateStatus: true, apmId: existingAppointment.ApmId);
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Update fields
+                existingAppointment.ApmtDate = appointment.AppointmentDate;
+                existingAppointment.ApmTime = appointment.AppointmentTime;
+                existingAppointment.Notes = appointment.Notes;
+
+                var updatedAppointment = await _appointmentRepo.UpdateAppointmentAsync(appointmentId, appointment, accId);
+
+                var notification = new Notification
+                {
+                    NotiType = "Appointment Update",
+                    NotiMessage = "Lịch hẹn của bạn đã được cập nhật.",
+                    SendAt = DateTime.UtcNow
+                };
+
+                var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                var account = await _context.Accounts.FindAsync(accId);
+                if (account != null && account.Roles == 2) // 2 = Doctor
+                {
+                    // Send notification to the patient
+                    var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PtnId == updatedAppointment.PtnId);
+                    if (patient != null)
+                        await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, patient.AccId);
+                }
+                else if (account != null && account.Roles == 3) // 3 = Patient
+                {
+                    // Send notification to the doctor
+                    var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.DctId == updatedAppointment.DctId);
+                    if (doctor != null)
+                        await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, doctor.AccId);
+                }
+
+                await transaction.CommitAsync();
+                return MapToResponseDTO(updatedAppointment);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to update appointment: {ex.Message}");
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<List<AppointmentResponseDTO>> GetAllPersonalAppointmentsAsync(int accId)
+        {
+            Debug.WriteLine($"Retrieving all personal appointments for AccountId: {accId}");
+
+            // Validate account existence
+            var account = await _context.Accounts.FindAsync(accId);
+            if (account == null)
+                throw new ArgumentException($"Account with ID {accId} does not exist.");
+
+            // Optionally, check if account is a patient or doctor
+            var isPatient = await _context.Patients.AnyAsync(p => p.AccId == accId);
+            var isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId);
+            if (!isPatient && !isDoctor)
+                throw new InvalidOperationException("Account is neither a patient nor a doctor.");
+
+            var appointments = await _appointmentRepo.GetAllPersonalAppointmentsAsync(accId);
+            return appointments.Select(MapToResponseDTO).ToList();
+        }
     }
 }

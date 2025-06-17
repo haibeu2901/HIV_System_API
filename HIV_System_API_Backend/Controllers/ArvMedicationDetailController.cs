@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.ArvMedicationDetailDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -12,13 +13,14 @@ namespace HIV_System_API_Backend.Controllers
     public class ArvMedicationDetailController : ControllerBase
     {
         private IArvMedicationDetailService _arvMedicationDetailService;
+
         public ArvMedicationDetailController()
         {
             _arvMedicationDetailService = new ArvMedicationDetailService();
         }
 
         [HttpGet("GetAllArvMedicationDetails")]
-        [Authorize]                    
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllArvMedicationDetails()
         {
             try
@@ -28,12 +30,12 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
 
-        [HttpGet("GetArvMedicationDetailById/{id}")]
-        [Authorize]
+        [HttpGet("GetArvMedicationDetailById")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetArvMedicationDetailById(int id)
         {
             try
@@ -51,36 +53,37 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
 
         [HttpPost("CreateArvMedicationDetail")]
-        [Authorize(Roles = "1,2,4.5")]
-        public async Task<IActionResult> CreateArvMedicationDetail([FromBody] ArvMedicationDetail arvMedicationDetail)
+        [Authorize(Roles = "1,5")]
+        public async Task<IActionResult> CreateArvMedicationDetail([FromBody] ArvMedicationDetailDTO arvMedicationDetailDto)
         {
             try
             {
-                if (arvMedicationDetail == null)
+                if (arvMedicationDetailDto == null)
                 {
                     return BadRequest("ARV Medication Detail cannot be null.");
                 }
-                var result = await _arvMedicationDetailService.CreateArvMedicationDetailAsync(arvMedicationDetail);
-                if (result)
+                var createdDetail = await _arvMedicationDetailService.CreateArvMedicationDetailAsync(arvMedicationDetailDto);
+                if (createdDetail != null)
                 {
-                    return CreatedAtAction(nameof(GetArvMedicationDetailById), new { id = arvMedicationDetail.AmdId }, arvMedicationDetail);
+                    // Assuming createdDetail has an ID property, otherwise adjust accordingly
+                    return CreatedAtAction(nameof(GetArvMedicationDetailById), new { id = createdDetail.ARVMedicationName }, createdDetail);
                 }
                 return BadRequest("Failed to create ARV Medication Detail.");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
 
-        [HttpPut("UpdateArvMedicationDetail/{id}")]
-        [Authorize(Roles = "1,2,4.5")]
-        public async Task<IActionResult> UpdateArvMedicationDetail(int id, [FromBody] ArvMedicationDetail arvMedicationDetail)
+        [HttpPut("UpdateArvMedicationDetail")]
+        [Authorize(Roles = "1,5")]
+        public async Task<IActionResult> UpdateArvMedicationDetail(int id, [FromBody] ArvMedicationDetailDTO arvMedicationDetailDto)
         {
             try
             {
@@ -88,13 +91,9 @@ namespace HIV_System_API_Backend.Controllers
                 {
                     return BadRequest("ID must be greater than zero.");
                 }
-                if (arvMedicationDetail == null)
+                if (arvMedicationDetailDto == null)
                 {
                     return BadRequest("ARV Medication Detail cannot be null.");
-                }
-                if (id != arvMedicationDetail.AmdId)
-                {
-                    return BadRequest("ID in URL does not match ID in body.");
                 }
 
                 var existing = await _arvMedicationDetailService.GetArvMedicationDetailByIdAsync(id);
@@ -103,16 +102,8 @@ namespace HIV_System_API_Backend.Controllers
                     return NotFound($"ARV Medication Detail with ID {id} not found.");
                 }
 
-                // Update the properties of the existing detail with the new values
-                existing.AmdId = id;
-                existing.MedName = arvMedicationDetail.MedName;
-                existing.Dosage = arvMedicationDetail.Dosage;
-                existing.MedDescription = arvMedicationDetail.MedDescription;
-                existing.Price = arvMedicationDetail.Price;
-                existing.Manufactorer = arvMedicationDetail.Manufactorer;
-
-                var result = await _arvMedicationDetailService.UpdateArvMedicationDetailAsync(id, existing);
-                if (result)
+                var updatedDetail = await _arvMedicationDetailService.UpdateArvMedicationDetailAsync(id, arvMedicationDetailDto);
+                if (updatedDetail != null)
                 {
                     return NoContent();
                 }
@@ -120,12 +111,12 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
 
-        [HttpDelete("DeleteArvMedicationDetail/{id}")]
-        [Authorize]
+        [HttpDelete("DeleteArvMedicationDetail")]
+        [Authorize(Roles = "1,5")]
         public async Task<IActionResult> DeleteArvMedicationDetail(int id)
         {
             try
@@ -143,11 +134,12 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
 
-        [HttpGet("SearchArvMedicationDetailsByName/{searchTerm}")]
+        [HttpGet("SearchArvMedicationDetailsByName")]
+        [AllowAnonymous]
         public async Task<IActionResult> SearchArvMedicationDetailsByName(string searchTerm)
         {
             try
@@ -161,7 +153,7 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
     }

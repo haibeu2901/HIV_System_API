@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.AppointmentDTO;
 using HIV_System_API_DTOs.NotificationDTO;
 using System;
 using System.Collections.Generic;
@@ -19,5 +20,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<NotificationDetailResponseDTO> SendNotificationToRoleAsync(int ntfId, byte role);  // Changed return type
         Task<NotificationDetailResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId);  // Changed return type
         Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId);  // New method
+        Task<List<NotificationResponseDTO>> GetAllPersonalNotificationsAsync(int accId);
     }
 }

@@ -21,5 +21,7 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<bool> IsEmailUsedAsync(string mail);
         Task<Account> UpdateAccountProfileAsync(int id, Account updatedAccount);
         Task<Account?> GetAccountByUsernameAsync(string username);
+        Task<Account?> GetAccountByEmailAsync(string email);
+        Task<Account> UpdateAccountStatusAsync(int id, bool isActive);
     }
 }

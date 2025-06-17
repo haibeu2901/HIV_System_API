@@ -16,11 +16,9 @@ namespace HIV_System_API_Services.Implements
     public class DoctorService : IDoctorService
     {
         private readonly IDoctorRepo _doctorRepo;
-        private readonly IDoctorWorkScheduleRepo _workScheduleRepo;
         public DoctorService()
         {
             _doctorRepo = new DoctorRepo();
-            _workScheduleRepo = new DoctorWorkScheduleRepo();
         }
 
         private Doctor MapToEntity(DoctorRequestDTO dto)
@@ -75,7 +73,20 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<DoctorResponseDTO> CreateDoctorAsync(DoctorRequestDTO doctor)
         {
-            if (doctor == null) throw new ArgumentNullException(nameof(doctor));
+            if (doctor == null)
+                throw new ArgumentNullException(nameof(doctor));
+
+            // Validation: AccId must be positive
+            if (doctor.AccId <= 0)
+                throw new ArgumentException("Account ID must be a positive integer.", nameof(doctor.AccId));
+
+            // Validation: Degree is required and should not be empty
+            if (string.IsNullOrWhiteSpace(doctor.Degree))
+                throw new ArgumentException("Degree is required.", nameof(doctor.Degree));
+
+            // Validation: Bio is required and should not be empty
+            if (string.IsNullOrWhiteSpace(doctor.Bio))
+                throw new ArgumentException("Bio is required.", nameof(doctor.Bio));
 
             // Map DTO to entity
             var doctorEntity = MapToEntity(doctor);
