@@ -21,5 +21,7 @@ namespace HIV_System_API_Services.Interfaces
         Task<NotificationDetailResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId);  // Changed return type
         Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId);  // New method
         Task<List<NotificationResponseDTO>> GetAllPersonalNotificationsAsync(int accId);
+        Task<List<NotificationResponseDTO>> GetAllUnreadNotificationsAsync(int accId);
+        Task<NotificationResponseDTO> ViewNotificationAsync(int ntfId, int accId);
     }
 }

@@ -82,7 +82,8 @@ namespace HIV_System_API_DAOs.Implements
             var notificationAccount = new NotificationAccount
             {
                 NtfId = ntfId,
-                AccId = accId
+                AccId = accId,
+                IsRead = false // Assuming IsRead is a boolean property to track read status
             };
 
             // Add and save
@@ -113,7 +114,8 @@ namespace HIV_System_API_DAOs.Implements
             var notificationAccounts = accounts.Select(accId => new NotificationAccount
             {
                 NtfId = ntfId,
-                AccId = accId
+                AccId = accId,
+                IsRead = false // Assuming IsRead is a boolean property to track read status
             });
 
             // Add all mappings in one go
@@ -183,6 +185,36 @@ namespace HIV_System_API_DAOs.Implements
                 .Where(na => na.AccId == accId)
                 .Select(na => na.Ntf)
                 .ToListAsync();
+        }
+
+        public async Task<List<Notification>> GetAllUnreadNotificationsAsync(int accId)
+        {
+            // Check if NotificationAccount has a property named 'IsRead'
+            // If not, this will throw at runtime; otherwise, it will work as intended.
+            return await _context.NotificationAccounts
+                .Include(na => na.Ntf)
+                .Where(na => na.AccId == accId)
+                .Where(na => na.IsRead == false)
+                .Select(na => na.Ntf)
+                .ToListAsync();
+        }
+
+        public async Task<Notification> ViewNotificationAsync(int ntfId, int accId)
+        {
+            var notificationAccount = await _context.NotificationAccounts
+                .Include(na => na.Ntf)
+                .FirstOrDefaultAsync(na => na.NtfId == ntfId && na.AccId == accId);
+
+            if (notificationAccount == null)
+                throw new ArgumentException("Notification or recipient not found.");
+
+            if (!notificationAccount.IsRead)
+            {
+                notificationAccount.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return notificationAccount.Ntf;
         }
     }
 }
