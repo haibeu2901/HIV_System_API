@@ -91,7 +91,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeleteDoctor")]
-        [Authorize (Roles = "1,5")]
+        [Authorize(Roles = "1,5")]
         public async Task<IActionResult> DeleteDoctor(int id)
         {
             try
@@ -110,7 +110,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorByDateAndTime")]
-        [Authorize(Roles = "1,2,4,5")]
+        [Authorize]
         public async Task<IActionResult> GetDoctorByDateAndTime(DateOnly Date, TimeOnly Time)
         {
             try
@@ -121,6 +121,25 @@ namespace HIV_System_API_Backend.Controllers
                     return NotFound("No doctors available at the specified date and time.");
                 }
                 return Ok(doctors);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
+            }
+        }
+
+        [HttpGet("ViewDoctorProfile")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ViewDoctorProfile(int id)
+        {
+            try
+            {
+                var doctor = await _doctorService.GetDoctorByIdAsync(id);
+                if (doctor == null)
+                {
+                    return NotFound($"Doctor with ID {id} not found.");
+                }
+                return Ok(doctor);
             }
             catch (Exception ex)
             {
