@@ -19,7 +19,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllDoctors")]
-        [Authorize(Roles = "1,2,4,5")]
+        [Authorize]
         public async Task<IActionResult> GetAllDoctors()
         {
             var doctors = await _doctorService.GetAllDoctorsAsync();
@@ -134,7 +134,7 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
-                var doctor = await _doctorService.GetDoctorByIdAsync(id);
+                var doctor = await _doctorService.GetDoctorProfileAsync(id);
                 if (doctor == null)
                 {
                     return NotFound($"Doctor with ID {id} not found.");
