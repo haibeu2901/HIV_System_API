@@ -68,6 +68,9 @@ namespace HIV_System_API_Repositories.Implements
             return NotificationDAO.Instance.UpdateNotificationByIdAsync(notification);
         }
 
-        
+        public async Task<Notification> ViewNotificationAsync(int ntfId, int accId)
+        {
+            return await NotificationDAO.Instance.ViewNotificationAsync(ntfId, accId);
+        }
     }
 }

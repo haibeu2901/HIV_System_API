@@ -248,6 +248,28 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        
+        [HttpPost("ViewNotification/{ntfId}")]
+        [Authorize]
+        public async Task<ActionResult<Notification>> ViewNotificationAsync(int ntfId)
+        {
+            int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
+            if (ntfId <= 0 || accId <= 0)
+            {
+                return BadRequest("Invalid notification ID or account ID.");
+            }
+            try
+            {
+                var notification = await _notificationService.ViewNotificationAsync(ntfId, accId);
+                return Ok(notification);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.InnerException);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+            }
+        }
     }
 }

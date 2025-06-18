@@ -199,6 +199,22 @@ namespace HIV_System_API_DAOs.Implements
                 .ToListAsync();
         }
 
-        
+        public async Task<Notification> ViewNotificationAsync(int ntfId, int accId)
+        {
+            var notificationAccount = await _context.NotificationAccounts
+                .Include(na => na.Ntf)
+                .FirstOrDefaultAsync(na => na.NtfId == ntfId && na.AccId == accId);
+
+            if (notificationAccount == null)
+                throw new ArgumentException("Notification or recipient not found.");
+
+            if (!notificationAccount.IsRead)
+            {
+                notificationAccount.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return notificationAccount.Ntf;
+        }
     }
 }
