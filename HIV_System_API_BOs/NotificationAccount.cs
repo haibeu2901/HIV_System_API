@@ -10,6 +10,7 @@ public partial class NotificationAccount
     public int AccId { get; set; }
 
     public int NtfId { get; set; }
+    public bool IsRead { get; set; }
 
     public virtual Account Acc { get; set; } = null!;
 

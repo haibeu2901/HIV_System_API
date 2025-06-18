@@ -22,5 +22,6 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<Account?> GetAccountByUsernameAsync(string username);
         Task<Account?> GetAccountByEmailAsync(string email);
         Task<Account> UpdateAccountStatusAsync(int id, bool isActive);
+        Task<bool> ChangePasswordAsync(int accId, ChangePasswordRequestDTO request);
     }
 }
