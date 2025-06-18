@@ -1,0 +1,166 @@
+/* Profile Page Styles */
+body {
+    background: linear-gradient(120deg, #f8f9fa 0%, #fbeee6 100%);
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.container {
+    max-width: 500px;
+    margin: 2.5rem auto 0 auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(44,62,80,0.10), 0 1.5px 0 #e74c3c inset;
+    padding: 2.5rem 2rem 2rem 2rem;
+    border: 2.5px solid #e74c3c;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+    animation: fadeInCard 0.7s cubic-bezier(.39,.575,.565,1) both;
+}
+
+.container:hover {
+    box-shadow: 0 12px 40px rgba(44,62,80,0.16), 0 2px 0 #e74c3c inset;
+    transform: translateY(-2px) scale(1.01);
+}
+
+.medical-record-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    position: relative;
+}
+
+.medical-record-icon img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    filter: grayscale(0.2) brightness(0.95);
+}
+
+.medical-record-icon i {
+    font-size: 3.5rem;
+    color: #e74c3c;
+    background: #fff;
+    border-radius: 50%;
+    padding: 0.6rem;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+}
+
+.medical-record-icon::after {
+    content: "";
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: #e74c3c;
+    margin: 1rem auto 0 auto;
+    border-radius: 2px;
+}
+
+h2 {
+    text-align: center;
+    color: #e74c3c;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+#profile-details {
+    margin-top: 1.5rem;
+}
+
+.profile-list {
+    background: #faf9f6;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.04);
+    padding: 1.5rem 1rem;
+    margin: 0;
+    list-style: none;
+}
+
+.profile-list li {
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid #f2f2f2;
+    font-size: 1.08rem;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-list li:last-child {
+    border-bottom: none;
+}
+
+.profile-list strong {
+    color: #c0392b;
+    min-width: 120px;
+    display: inline-block;
+    font-weight: 600;
+}
+
+/* Ensure the button is always visible */
+.btn-profile {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 22px;
+    padding: 0.7rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.5rem auto 0 auto;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    width: 100%;
+    max-width: 250px;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+}
+
+.btn-profile:hover {
+    background: #c0392b;
+    color: #fff;
+}
+
+input, select {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 0.5rem 0.8rem;
+    font-size: 1rem;
+    background: #faf9f6;
+    transition: border 0.2s, box-shadow 0.2s;
+    width: 100%;
+    margin-top: 0.2rem;
+}
+
+input:focus, select:focus {
+    border: 1.5px solid #e74c3c;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(231,76,60,0.09);
+}
+
+@keyframes fadeInCard {
+    0% { opacity: 0; transform: translateY(30px) scale(0.98);}
+    100% { opacity: 1; transform: translateY(0) scale(1);}
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1.2rem 0.5rem;
+    }
+    h2 {
+        font-size: 1.3rem;
+    }
+    .profile-list li {
+        font-size: 0.98rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+}
