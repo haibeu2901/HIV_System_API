@@ -241,9 +241,10 @@ console.log(payload);
         return res.json();
     })
     .then(data => {
-        // Show appointment details after successful booking
-        showAppointmentDetails(payload);
-    })
+    // Redirect or update UI as needed, or leave empty if handled elsewhere
+    // For example, redirect to your appointment details page:
+    window.location.href = "../appointment-view/view-appointment.html";
+})
     .catch(err => {
         if (err.message !== "Time slot taken") {
             alert("Error: " + err.message);
@@ -414,6 +415,8 @@ function getStartTimeFromSlot(slot) {
     // slot is "14:00 - 14:30"
     return slot.split(' - ')[0] + ":00";
 }
+
+
 
 
 
