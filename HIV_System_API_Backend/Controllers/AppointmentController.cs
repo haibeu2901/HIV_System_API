@@ -139,7 +139,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPatch("ChangeAppointmentStatus")]
-        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        [Authorize]
         public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
         {
             try
