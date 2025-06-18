@@ -82,7 +82,8 @@ namespace HIV_System_API_DAOs.Implements
             var notificationAccount = new NotificationAccount
             {
                 NtfId = ntfId,
-                AccId = accId
+                AccId = accId,
+                IsRead = false // Assuming IsRead is a boolean property to track read status
             };
 
             // Add and save
@@ -113,7 +114,8 @@ namespace HIV_System_API_DAOs.Implements
             var notificationAccounts = accounts.Select(accId => new NotificationAccount
             {
                 NtfId = ntfId,
-                AccId = accId
+                AccId = accId,
+                IsRead = false // Assuming IsRead is a boolean property to track read status
             });
 
             // Add all mappings in one go

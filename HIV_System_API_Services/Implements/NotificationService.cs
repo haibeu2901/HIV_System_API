@@ -152,8 +152,7 @@ namespace HIV_System_API_Services.Implements
                 NotiType = n.NotiType,
                 NotiMessage = n.NotiMessage,
                 SendAt = n.SendAt ?? DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                IsRead = false
+                CreatedAt = DateTime.UtcNow
             }).ToList();
         }
 
