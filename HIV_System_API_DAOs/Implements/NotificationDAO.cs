@@ -184,5 +184,19 @@ namespace HIV_System_API_DAOs.Implements
                 .Select(na => na.Ntf)
                 .ToListAsync();
         }
+
+        public async Task<List<Notification>> GetAllUnreadNotificationsAsync(int accId)
+        {
+            // Check if NotificationAccount has a property named 'IsRead'
+            // If not, this will throw at runtime; otherwise, it will work as intended.
+            return await _context.NotificationAccounts
+                .Include(na => na.Ntf)
+                .Where(na => na.AccId == accId)
+                .Where(na => na.IsRead == false)
+                .Select(na => na.Ntf)
+                .ToListAsync();
+        }
+
+        
     }
 }

@@ -132,5 +132,31 @@ namespace HIV_System_API_Services.Implements
 
             return notifications.Select(MapToResponseDTO).ToList();
         }
+
+        public async Task<List<NotificationResponseDTO>> GetAllUnreadNotificationsAsync(int accId)
+        {
+            if (accId <= 0)
+            {
+                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
+            }
+
+            var notifications = await _notificationRepo.GetAllUnreadNotificationsAsync(accId);
+            if (notifications == null)
+            {
+                return new List<NotificationResponseDTO>();
+            }
+
+            return notifications.Select(n => new NotificationResponseDTO
+            {
+                NotiId = n.NtfId,
+                NotiType = n.NotiType,
+                NotiMessage = n.NotiMessage,
+                SendAt = n.SendAt ?? DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            }).ToList();
+        }
+
+        
     }
 }

@@ -227,5 +227,27 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
+
+        [HttpGet("GetAllUnreadNotifications")]
+        [Authorize]
+        public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllUnreadNotificationsAsync()
+        {
+            int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
+            if (accId <= 0)
+            {
+                return BadRequest("Invalid account ID.");
+            }
+            try
+            {
+                var notifications = await _notificationService.GetAllUnreadNotificationsAsync(accId);
+                return Ok(notifications);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        
     }
 }
