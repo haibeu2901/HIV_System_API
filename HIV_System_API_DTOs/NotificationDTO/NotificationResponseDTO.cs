@@ -13,5 +13,6 @@ namespace HIV_System_API_DTOs.NotificationDTO
         public string? NotiMessage { get; set; }
         public DateTime SendAt { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsRead { get; set; }
     }
 }
