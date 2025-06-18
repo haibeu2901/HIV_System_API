@@ -132,5 +132,47 @@ namespace HIV_System_API_Services.Implements
 
             return notifications.Select(MapToResponseDTO).ToList();
         }
+
+        public async Task<List<NotificationResponseDTO>> GetAllUnreadNotificationsAsync(int accId)
+        {
+            if (accId <= 0)
+            {
+                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
+            }
+
+            var notifications = await _notificationRepo.GetAllUnreadNotificationsAsync(accId);
+            if (notifications == null)
+            {
+                return new List<NotificationResponseDTO>();
+            }
+
+            return notifications.Select(n => MapToResponseDTO(n)).ToList();
+        }
+
+        public async Task<NotificationResponseDTO> ViewNotificationAsync(int ntfId, int accId)
+        {
+            if (ntfId <= 0)
+            {
+                throw new ArgumentException("Notification ID must be greater than zero.", nameof(ntfId));
+            }
+            if (accId <= 0)
+            {
+                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
+            }
+
+            var notification = await _notificationRepo.GetNotificationByIdAsync(ntfId);
+            if (notification == null)
+            {
+                throw new KeyNotFoundException($"Notification with ID {ntfId} not found.");
+            }
+
+            var result = await _notificationRepo.ViewNotificationAsync(ntfId, accId);
+            if (result == null)
+            {
+                throw new InvalidOperationException($"Notification with ID {ntfId} could not be marked as viewed for account {accId}.");
+            }
+
+            return MapToResponseDTO(result);
+        }
     }
 }

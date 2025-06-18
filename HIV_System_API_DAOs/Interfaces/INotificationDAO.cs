@@ -20,5 +20,7 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<List<NotificationAccount>> GetNotificationRecipientsAsync(int ntfId);
         Task<List<Notification>> GetNotificationsByRecipientAsync(int accId);
         Task<List<Notification>> GetAllPersonalNotificationsAsync(int accId);
+        Task<List<Notification>> GetAllUnreadNotificationsAsync(int accId);
+        Task<Notification> ViewNotificationAsync(int ntfId, int accId);
     }
 }
