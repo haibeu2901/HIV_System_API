@@ -109,10 +109,10 @@ namespace HIV_System_API_Services.Implements
             return await _doctorRepo.DeleteDoctorAsync(id);
         }
 
-        public async Task<List<DoctorResponseDTO>> GetAllDoctorsAsync()
+        public async Task<List<DoctorProfileResponse>> GetAllDoctorsAsync()
         {
             var doctors = await _doctorRepo.GetAllDoctorsAsync();
-            var result = new List<DoctorResponseDTO>();
+            var result = new List<DoctorProfileResponse>();
 
             foreach (var doctor in doctors)
             {
@@ -120,7 +120,14 @@ namespace HIV_System_API_Services.Implements
                 if (doctor.Acc == null)
                     continue;
 
-                result.Add(MapToResponseDTO(doctor));
+                result.Add(new DoctorProfileResponse
+                {
+                    Degree = doctor.Degree,
+                    Bio = doctor.Bio,
+                    Email = doctor.Acc.Email,
+                    Fullname = doctor.Acc.Fullname,
+                    Dob = doctor.Acc.Dob
+                });
             }
 
             return result;
