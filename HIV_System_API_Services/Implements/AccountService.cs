@@ -492,7 +492,7 @@ namespace HIV_System_API_Services.Implements
                 return (false, "Verification code does not match.");
 
             // Optionally: Remove the code from cache after successful verification
-            _memoryCache.Remove(cacheKey);
+             _memoryCache.Remove(cacheKey);
 
             return (true, "Verification code is valid.");
         }

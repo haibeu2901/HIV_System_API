@@ -250,7 +250,7 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("ViewNotification/{ntfId}")]
         [Authorize]
-        public async Task<ActionResult<Notification>> ViewNotificationAsync(int ntfId)
+        public async Task<ActionResult<NotificationResponseDTO>> ViewNotificationAsync(int ntfId)
         {
             int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
             if (ntfId <= 0 || accId <= 0)
