@@ -208,7 +208,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("GetAllPersonalNotifications")]
-        [Authorize(Roles = "1,2,3,4,5")]
+        [Authorize]
         public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllPersonalNotificationsAsync()
         {
             int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
