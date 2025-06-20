@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Doctor Dashboard</title>
+    <link rel="stylesheet" href="doctorStyle.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <i class="fa fa-user-md"></i>
+                    Doctor Dashboard
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="../../public-view/landingpage.html">Home</a></li>
+                    <li><a href="#" id="logoutBtn" class="btn-login">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>Welcome, Doctor</h2>
+            <nav class="sidebar-nav">
+                <button id="btnSchedule" class="active">View Work Schedule</button>
+                <button id="btnProfile">View Profile</button>
+                <button id="btnLogout" style="color:#e74c3c;">Logout</button>
+            </nav>
+        </aside>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="dashboard-header" id="dashboardHeader">Work Schedule</div>
+            <div class="dashboard-section" id="dashboardSection">
+                <p>Loading work schedule...</p>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="doctor-dashboard-script.js"></script>
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <div class="footer-logo">
+              <i class="fas fa-heartbeat"></i>
+              <span>CareFirst HIV Clinic</span>
+            </div>
+            <p>
+              Providing compassionate HIV care and support for everyone in our
+              community.
+            </p>
+          </div>
+          <div class="footer-section">
+            <h3>Quick Links</h3>
+            <ul>
+              <li><a href="#home">Home</a></li>
+              <li><a href="#services">Services</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Services</h3>
+            <ul>
+              <li><a href="#">HIV Testing</a></li>
+              <li><a href="#">Treatment</a></li>
+              <li><a href="#">Support Groups</a></li>
+              <li><a href="#">Prevention</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Emergency</h3>
+            <p>24/7 Hotline: <strong>(555) 911-HIV1</strong></p>
+            <p>Crisis Support Available</p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>
+            &copy; 2025 CareFirst HIV Clinic. All rights reserved. | Privacy
+            Policy | Terms of Service
+          </p>
+        </div>
+      </div>
+    </footer>
+</body>
+</html>

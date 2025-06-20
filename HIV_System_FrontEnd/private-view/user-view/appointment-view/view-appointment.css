@@ -1,0 +1,76 @@
+        body {
+            background: #f7f8fa;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .main-content {
+            max-width: 800px;
+            margin: 40px auto 0 auto;
+            padding: 32px 24px;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(44,62,80,0.07);
+        }
+        h1 {
+            text-align: center;
+            color: #e74c3c;
+            margin-bottom: 32px;
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+        }
+        .appointment-card {
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 22px;
+            background: #fafbfc;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.04);
+            transition: box-shadow 0.2s;
+        }
+        .appointment-card:hover {
+            box-shadow: 0 6px 24px rgba(231,76,60,0.10);
+            border-color: #e74c3c;
+        }
+        .appointment-card h3 {
+            margin: 0 0 10px 0;
+            color: #c0392b;
+            font-size: 1.3rem;
+        }
+        .appointment-card p {
+            margin: 6px 0;
+            font-size: 1.05rem;
+        }
+        .appointment-card strong {
+            color: #333;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 12px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .status-pending {
+            background: #fff3e0;
+            color: #e67e22;
+            border: 1px solid #e67e22;
+        }
+        .status-confirmed {
+            background: #eafaf1;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        .status-cancelled {
+            background: #fdeaea;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        @media (max-width: 600px) {
+            .main-content {
+                padding: 12px 2vw;
+            }
+            .appointment-card {
+                padding: 12px 8px;
+            }
+        }

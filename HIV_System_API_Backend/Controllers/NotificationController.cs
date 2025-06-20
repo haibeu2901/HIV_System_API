@@ -208,7 +208,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("GetAllPersonalNotifications")]
-        [Authorize(Roles = "1,2,3,4,5")]
+        [Authorize]
         public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllPersonalNotificationsAsync()
         {
             int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
@@ -250,7 +250,7 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("ViewNotification/{ntfId}")]
         [Authorize]
-        public async Task<ActionResult<Notification>> ViewNotificationAsync(int ntfId)
+        public async Task<ActionResult<NotificationResponseDTO>> ViewNotificationAsync(int ntfId)
         {
             int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
             if (ntfId <= 0 || accId <= 0)
