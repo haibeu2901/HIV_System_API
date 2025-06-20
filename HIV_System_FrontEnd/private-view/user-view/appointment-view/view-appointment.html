@@ -7,16 +7,21 @@
     <link rel="stylesheet" href="../userStyle.css">
     <link rel="stylesheet" href="../header/header.css">
     <link rel="stylesheet" href="view-appointment.css">
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
 </head>
 <body>
     <div id="header-placeholder"></div>
     <div class="main-content">
         <h1>My Appointments</h1>
         <div id="appointment-list"></div>
+        <div id="calendar"></div>
     </div>
     <script src="../header/header.js"></script>
     <script src="view-appointment.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script>
         // Initialize the header
         document.getElementById('header-placeholder').innerHTML = document.querySelector('.header').outerHTML;

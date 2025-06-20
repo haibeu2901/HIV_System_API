@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem("token");
-    const appointmentList = document.getElementById('appointment-list');
-    appointmentList.innerHTML = "<p>Loading...</p>";
+    const calendarEl = document.getElementById('calendar');
 
+    let events = [];
     try {
         const res = await fetch("https://localhost:7009/api/Appointment/my-appointments", {
             headers: { "Authorization": `Bearer ${token}` }
@@ -10,30 +10,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!res.ok) throw new Error("Failed to fetch appointments");
         const data = await res.json();
 
-        if (data.length === 0) {
-            appointmentList.innerHTML = "<p>No appointments found.</p>";
-            return;
-        }
-
-        appointmentList.innerHTML = data.map(appt => `
-            <div class="appointment-card">
-                <h3>Dr. ${appt.doctorName}</h3>
-                <p><strong>Date:</strong> ${appt.apmtDate}</p>
-                <p><strong>Time:</strong> ${appt.apmTime}</p>
-                <p><strong>Status:</strong> ${renderStatus(appt.apmStatus)}</p>
-                <p><strong>Notes:</strong> ${appt.notes || "None"}</p>
-            </div>
-        `).join('');
+        events = data.map(appt => ({
+            title: `Dr. ${appt.doctorName}\n${appt.apmTime} (${renderStatusText(appt.apmStatus)})`,
+            start: `${appt.apmtDate}T${appt.apmTime}`,
+            end: `${appt.apmtDate}T${addMinutes(appt.apmTime, 30)}`, // 30 min duration
+            color: getStatusColor(appt.apmStatus),
+            extendedProps: {
+                notes: appt.notes || "None",
+                status: renderStatusText(appt.apmStatus)
+            }
+        }));
     } catch (err) {
-        appointmentList.innerHTML = `<p style="color:red;">${err.message}</p>`;
+        calendarEl.innerHTML = `<p style="color:red;">${err.message}</p>`;
+        return;
     }
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: events,
+        eventDisplay: 'block',
+        eventDidMount: function(info) {
+            // Make events look like sticky notes
+            info.el.style.borderRadius = '12px';
+            info.el.style.boxShadow = '0 2px 8px rgba(44,62,80,0.10)';
+            info.el.style.fontWeight = '500';
+            info.el.style.whiteSpace = 'pre-line';
+        },
+        eventClick: function(info) {
+            alert(
+                `${info.event.title}\n` +
+                `Time: ${info.event.start.toLocaleString()} - ${info.event.end.toLocaleTimeString()}\n` +
+                `Notes: ${info.event.extendedProps.notes}`
+            );
+        }
+    });
+    calendar.render();
 });
 
-function renderStatus(status) {
+function renderStatusText(status) {
     switch (status) {
-        case 1: return '<span style="color:orange;">Pending</span>';
-        case 2: return '<span style="color:green;">Confirmed</span>';
-        case 3: return '<span style="color:red;">Cancelled</span>';
+        case 1: return 'Pending';
+        case 2: return 'Confirmed';
+        case 3: return 'Cancelled';
         default: return 'Unknown';
     }
+}
+function getStatusColor(status) {
+    switch (status) {
+        case 1: return '#fbc02d'; // Pending - yellow
+        case 2: return '#43a047'; // Confirmed - green
+        case 3: return '#e53935'; // Cancelled - red
+        default: return '#90a4ae';
+    }
+}
+function addMinutes(time, minsToAdd) {
+    // time: "09:00", minsToAdd: 30 => "09:30"
+    const [h, m] = time.split(':').map(Number);
+    const date = new Date(0, 0, 0, h, m + minsToAdd, 0, 0);
+    return date.toTimeString().slice(0,5);
 }
