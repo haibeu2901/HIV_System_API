@@ -34,6 +34,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         events: events,
         eventDisplay: 'block',
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            meridiem: false,
+            hour12: false
+        },
+        displayEventTime: false,
         eventDidMount: function(info) {
             // Make events look like sticky notes
             info.el.style.borderRadius = '12px';
@@ -42,14 +49,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             info.el.style.whiteSpace = 'pre-line';
         },
         eventClick: function(info) {
-            alert(
-                `${info.event.title}\n` +
-                `Time: ${info.event.start.toLocaleString()} - ${info.event.end.toLocaleTimeString()}\n` +
-                `Notes: ${info.event.extendedProps.notes}`
-            );
+            // Fill modal fields
+            document.getElementById('sticky-title').textContent = info.event.title.split('\n')[0];
+            document.getElementById('sticky-status').textContent = info.event.extendedProps.status;
+            document.getElementById('sticky-date').textContent = info.event.start.toLocaleDateString();
+            document.getElementById('sticky-time').textContent =
+                info.event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) +
+                " - " +
+                info.event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('sticky-notes').textContent = info.event.extendedProps.notes;
+
+            // Show modal
+            document.getElementById('sticky-note-modal').classList.remove('hidden');
         }
     });
     calendar.render();
+
+    document.getElementById('closeStickyNote').onclick = function() {
+        document.getElementById('sticky-note-modal').classList.add('hidden');
+    };
+    document.getElementById('sticky-note-modal').onclick = function(e) {
+        if (e.target === this) this.classList.add('hidden');
+    };
 });
 
 function renderStatusText(status) {
