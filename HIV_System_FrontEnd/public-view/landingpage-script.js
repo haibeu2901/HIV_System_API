@@ -168,7 +168,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
     const submitButton = this.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
 
-    submitButton.textContent = "Logging in...";
+    submitButton.textContent = "Logging in..."; 
     submitButton.disabled = true;
 
     const logginFunction = async (userName, password) => {
