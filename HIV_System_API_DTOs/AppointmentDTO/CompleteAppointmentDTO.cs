@@ -9,6 +9,5 @@ namespace HIV_System_API_DTOs.AppointmentDTO
     public class CompleteAppointmentDTO
     {
         public string? Notes { get; set; }
-        public byte ApmStatus { get; set; }
     }
 }
