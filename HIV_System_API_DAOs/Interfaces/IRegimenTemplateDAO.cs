@@ -9,12 +9,12 @@ namespace HIV_System_API_DAOs.Interfaces
 {
     public interface IRegimenTemplateDAO
     {
-        Task<List<ArvRegimenTemplate>> GetAllRegimenTemplates();
-        Task<ArvRegimenTemplate?> GetRegimenTemplateById(int id);
-        Task<ArvRegimenTemplate?> CreateRegimenTemplate(ArvRegimenTemplate regimenTemplate);
-        Task<ArvRegimenTemplate?> UpdateRegimenTemplate(int id, ArvRegimenTemplate regimenTemplate);
-        Task<bool> DeleteRegimenTemplate(int id);
-        Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByDescription(string description);
-        Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByLevel(byte level);
+        Task<List<ArvRegimenTemplate>> GetAllRegimenTemplatesAsync();
+        Task<ArvRegimenTemplate?> GetRegimenTemplateByIdAsync(int id);
+        Task<ArvRegimenTemplate?> CreateRegimenTemplateAsync(ArvRegimenTemplate regimenTemplate);
+        Task<ArvRegimenTemplate?> UpdateRegimenTemplateAsync(int id, ArvRegimenTemplate regimenTemplate);
+        Task<bool> DeleteRegimenTemplateAsync(int id);
+        Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByDescriptionAsync(string description);
+        Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByLevelAsync(byte level);
     }
 }

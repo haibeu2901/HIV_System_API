@@ -31,7 +31,7 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<ArvRegimenTemplate?> CreateRegimenTemplate(ArvRegimenTemplate regimenTemplate)
+        public async Task<ArvRegimenTemplate?> CreateRegimenTemplateAsync(ArvRegimenTemplate regimenTemplate)
         {
             if (regimenTemplate == null)
             {
@@ -49,7 +49,7 @@ namespace HIV_System_API_DAOs.Implements
             return null;
         }
 
-        public async Task<bool> DeleteRegimenTemplate(int id)
+        public async Task<bool> DeleteRegimenTemplateAsync(int id)
         {
             var regimenTemplate = await _context.ArvRegimenTemplates.FindAsync(id);
             if (regimenTemplate == null)
@@ -60,21 +60,21 @@ namespace HIV_System_API_DAOs.Implements
             return await _context.SaveChangesAsync() > 0; // Returns true if the deletion was successful
         }
 
-        public async Task<List<ArvRegimenTemplate>> GetAllRegimenTemplates()
+        public async Task<List<ArvRegimenTemplate>> GetAllRegimenTemplatesAsync()
         {
             return await _context.ArvRegimenTemplates
                 .Include(r => r.ArvMedicationTemplates)
                 .ToListAsync();
         }
 
-        public async Task<ArvRegimenTemplate?> GetRegimenTemplateById(int id)
+        public async Task<ArvRegimenTemplate?> GetRegimenTemplateByIdAsync(int id)
         {
             return await _context.ArvRegimenTemplates
                 .Include(r => r.ArvMedicationTemplates)
                 .FirstOrDefaultAsync(r => r.ArtId == id);
         }
 
-        public async Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByDescription(string description)
+        public async Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByDescriptionAsync(string description)
         {
             return await _context.ArvRegimenTemplates
                 .Where(r => r.Description != null && r.Description.Contains(description))
@@ -82,7 +82,7 @@ namespace HIV_System_API_DAOs.Implements
                 .ToListAsync();
         }
 
-        public async Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByLevel(byte level)
+        public async Task<List<ArvRegimenTemplate>> GetRegimenTemplatesByLevelAsync(byte level)
         {
             return await _context.ArvRegimenTemplates
                 .Where(r => r.Level == level)
@@ -90,7 +90,7 @@ namespace HIV_System_API_DAOs.Implements
                 .ToListAsync();
         }
 
-        public async Task<ArvRegimenTemplate?> UpdateRegimenTemplate(int id, ArvRegimenTemplate regimenTemplate)
+        public async Task<ArvRegimenTemplate?> UpdateRegimenTemplateAsync(int id, ArvRegimenTemplate regimenTemplate)
         {
             if (regimenTemplate == null)
             {

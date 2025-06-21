@@ -122,13 +122,14 @@ builder.Services.AddScoped<IMedicalServiceService, MedicalServiceService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
+builder.Services.AddScoped<IRegimenTemplateService, RegimenTemplateService>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // No trailing slash
+            .WithOrigins("http://127.0.0.1:5500", "https://localhost:7009", "http://localhost:5500") // No trailing slash
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
