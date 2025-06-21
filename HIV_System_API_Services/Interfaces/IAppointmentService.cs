@@ -20,5 +20,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<AppointmentResponseDTO>> GetAppointmentsByAccountIdAsync(int accountId, byte role);
         Task<AppointmentResponseDTO> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO appointment, int accId);
         Task<List<AppointmentResponseDTO>> GetAllPersonalAppointmentsAsync(int accId);
+        Task<AppointmentResponseDTO> CompleteAppointmentAsync(int appointmentId, CompleteAppointmentDTO dto, int accId);
     }
 }

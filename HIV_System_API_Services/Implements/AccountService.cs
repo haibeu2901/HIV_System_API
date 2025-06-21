@@ -169,6 +169,28 @@ namespace HIV_System_API_Services.Implements
                 throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
             }
 
+            //Check date of birth
+            if (patient.Dob.HasValue && patient.Dob.Value > DateTime.Now)
+            {
+                throw new ArgumentException("Date of birth cannot be in the future.", nameof(patient.Dob));
+            }
+            if (patient.Dob.HasValue && patient.Dob.Value < new DateTime(1900, 1, 1))
+            {
+                throw new ArgumentException("Date of birth cannot be before 1900.", nameof(patient.Dob));
+            }
+
+            // Check if patient is at least 18 years old
+            if (patient.Dob.HasValue)
+            {
+                var today = DateTime.Today;
+                var age = today.Year - patient.Dob.Value.Year;
+                if (patient.Dob.Value.Date > today.AddYears(-age)) age--;
+                if (age < 18)
+                {
+                    throw new ArgumentException("Patient must be at least 18 years old.", nameof(patient.Dob));
+                }
+            }
+
             // Map PatientAccountRequestDTO to AccountRequestDTO
             var accountDto = new AccountRequestDTO
             {

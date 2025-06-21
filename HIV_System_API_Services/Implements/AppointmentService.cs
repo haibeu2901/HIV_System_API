@@ -84,47 +84,107 @@ namespace HIV_System_API_Services.Implements
             if (validateStatus && (request.ApmStatus < 1 || request.ApmStatus > 5))
                 throw new ArgumentException("Invalid appointment status. Must be between 1 and 5.");
 
-            // Determine the day of week for the appointment
+            // Validate ApmtDate and ApmTime
+            var todayDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            var nowTime = TimeOnly.FromDateTime(DateTime.UtcNow);
+
+            if (request.ApmtDate < todayDate)
+                throw new ArgumentException("Appointment date cannot be in the past.");
+            if (request.ApmtDate == todayDate && request.ApmTime < nowTime)
+                throw new ArgumentException("Appointment time cannot be in the past for today's date.");
+
             var dayOfWeek = (byte)request.ApmtDate.ToDateTime(TimeOnly.MinValue).DayOfWeek;
 
-            // Find all doctor's work schedules for the day (could be multiple time slots)
+            // Get all available schedules for the doctor on the requested day and date
             var schedules = await _context.DoctorWorkSchedules
-                .Where(s => s.DoctorId == request.DoctorId && s.DayOfWeek == dayOfWeek && s.IsAvailable)
+                .Where(s => s.DoctorId == request.DoctorId && s.IsAvailable && s.WorkDate == request.ApmtDate)
                 .ToListAsync();
 
             if (schedules == null || schedules.Count == 0)
-                throw new InvalidOperationException($"Doctor is not available on {((DayOfWeek)dayOfWeek)}.");
+            {
+                // If no schedule for the requested date, suggest the nearest available date
+                var today = request.ApmtDate;
+                var maxSearchDays = 30;
+                DateOnly? nearestDate = null;
+                for (int i = 1; i <= maxSearchDays; i++)
+                {
+                    var nextDate = today.AddDays(i);
+                    var hasSchedule = await _context.DoctorWorkSchedules
+                        .AnyAsync(s => s.DoctorId == request.DoctorId && s.IsAvailable && s.WorkDate == nextDate);
+                    if (hasSchedule)
+                    {
+                        nearestDate = nextDate;
+                        break;
+                    }
+                }
+                var message = "Doctor does not have an available work schedule on this day.";
+                if (nearestDate.HasValue)
+                    message += $" Nearest available date: {nearestDate.Value:yyyy-MM-dd}.";
+                throw new InvalidOperationException(message);
+            }
 
-            var apmTime = request.ApmTime;
-            var appointmentDuration = TimeSpan.FromMinutes(30);
-            var apmStart = apmTime.ToTimeSpan();
-            var apmEnd = apmStart + appointmentDuration;
-
-            // Check if the appointment fits in any available schedule slot
-            var fitsInSchedule = schedules.Any(schedule =>
-                apmTime >= schedule.StartTime &&
-                apmTime < schedule.EndTime &&
-                apmEnd <= schedule.EndTime.ToTimeSpan()
+            // Check if requested time is within any available schedule for the date
+            var isWithinSchedule = schedules.Any(s =>
+                request.ApmTime >= s.StartTime &&
+                request.ApmTime < s.EndTime
             );
 
-            if (!fitsInSchedule)
-                throw new InvalidOperationException("Appointment time is outside doctor's available schedule for the day.");
+            if (!isWithinSchedule)
+            {
+                // Suggest all available time slots for this date
+                var availableSlots = schedules
+                    .Select(s => $"{s.StartTime:HH\\:mm} - {s.EndTime:HH\\:mm}")
+                    .ToList();
 
-            // Check for overlapping appointments (not cancelled)
-            var overlapQuery = _context.Appointments
+                var slotsMessage = availableSlots.Count > 0
+                    ? string.Join(", ", availableSlots)
+                    : "No available slots.";
+
+                throw new InvalidOperationException(
+                    $"Requested appointment time is outside of doctor's available schedule. " +
+                    $"Doctor's working time slots on {request.ApmtDate:yyyy-MM-dd}: {slotsMessage}."
+                );
+            }
+
+            // Assume each appointment is 30 minutes
+            var appointmentDuration = TimeSpan.FromMinutes(30);
+            var apmTime = request.ApmTime;
+            var apmEnd = apmTime.Add(appointmentDuration);
+
+            // Fetch all appointments for the doctor on the date (not cancelled)
+            var appointmentsOnDate = await _context.Appointments
                 .Where(a => a.DctId == request.DoctorId
                     && a.ApmtDate == request.ApmtDate
-                    && a.ApmStatus != 4 // Exclude cancelled
-                    && a.ApmTime < TimeOnly.FromTimeSpan(apmEnd)
-                    && TimeOnly.FromTimeSpan(a.ApmTime.ToTimeSpan() + appointmentDuration) > apmTime);
+                    && a.ApmStatus != 4) // 4 = Cancelled
+                .ToListAsync();
 
-            if (apmId.HasValue)
-                overlapQuery = overlapQuery.Where(a => a.ApmId != apmId.Value);
-
-            var hasOverlap = await overlapQuery.AnyAsync();
+            // Check for overlapping appointments (not cancelled)
+            var hasOverlap = appointmentsOnDate.Any(a =>
+            {
+                var existingStart = a.ApmTime;
+                var existingEnd = a.ApmTime.Add(appointmentDuration);
+                return existingStart < apmEnd && existingEnd > apmTime
+                    && (!apmId.HasValue || a.ApmId != apmId.Value);
+            });
 
             if (hasOverlap)
-                throw new InvalidOperationException("Doctor has an overlapping appointment at this time.");
+            {
+                // Find all overlapping appointments for more detailed feedback
+                var overlappingAppointments = appointmentsOnDate
+                    .Where(a =>
+                    {
+                        var existingStart = a.ApmTime;
+                        var existingEnd = a.ApmTime.Add(appointmentDuration);
+                        return existingStart < apmEnd && existingEnd > apmTime
+                            && (!apmId.HasValue || a.ApmId != apmId.Value);
+                    })
+                    .Select(a => new { a.ApmTime })
+                    .ToList();
+
+                throw new InvalidOperationException(
+                    $"Doctor has an overlapping appointment at this time."
+                );
+            }
         }
 
         public async Task<AppointmentResponseDTO> ChangeAppointmentStatusAsync(int id, byte status)
@@ -159,32 +219,6 @@ namespace HIV_System_API_Services.Implements
                     var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
-                }
-                else if (updatedAppointment.ApmStatus == 5) // If status is completed
-                {
-                    // Create notification for completion
-                    var notification = new Notification
-                    {
-                        NotiType = "Appt Complete", // <= 12 chars
-                        NotiMessage = "Cuộc hẹn của bạn đã thành công.",
-                        SendAt = DateTime.UtcNow
-                    };
-                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
-                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
-                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
-
-                    // Check for patient medical record, create if missing
-                    var patientMedicalRecord = await _context.PatientMedicalRecords
-                        .FirstOrDefaultAsync(r => r.PtnId == updatedAppointment.PtnId);
-                    if (patientMedicalRecord == null)
-                    {
-                        patientMedicalRecord = new PatientMedicalRecord
-                        {
-                            PtnId = updatedAppointment.PtnId,
-                        };
-                        _context.PatientMedicalRecords.Add(patientMedicalRecord);
-                        await _context.SaveChangesAsync();
-                    }
                 }
                 else if (updatedAppointment.ApmStatus == 2) // If status is confirmed
                 {
@@ -420,6 +454,78 @@ namespace HIV_System_API_Services.Implements
 
             var appointments = await _appointmentRepo.GetAllPersonalAppointmentsAsync(accId);
             return appointments.Select(MapToResponseDTO).ToList();
+        }
+
+        public async Task<AppointmentResponseDTO> CompleteAppointmentAsync(int appointmentId, CompleteAppointmentDTO dto, int accId)
+        {
+            Debug.WriteLine($"Completing appointment with ApmId: {appointmentId} by AccountId: {accId}");
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Find the appointment
+                var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.ApmId == appointmentId);
+                if (appointment == null)
+                    throw new InvalidOperationException($"Appointment with ID {appointmentId} not found.");
+
+                // Only allow doctor to complete
+                var account = await _context.Accounts.FindAsync(accId);
+                if (account == null)
+                    throw new ArgumentException($"Account with ID {accId} does not exist.");
+                var isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
+                if (!isDoctor)
+                    throw new UnauthorizedAccessException("Only the doctor of this appointment can complete it.");
+
+                // Only allow if not already completed/cancelled
+                if (appointment.ApmStatus == 4)
+                    throw new InvalidOperationException("Cannot complete a cancelled appointment.");
+                if (appointment.ApmStatus == 5)
+                    throw new InvalidOperationException("Appointment is already completed.");
+
+                // Update notes if provided
+                if (!string.IsNullOrWhiteSpace(dto.Notes))
+                {
+                    appointment.Notes = dto.Notes;
+                }
+
+                // Change status to completed (5)
+                appointment.ApmStatus = 5;
+                _context.Appointments.Update(appointment);
+                await _context.SaveChangesAsync();
+
+                // Create notification for both patient and doctor
+                var notification = new Notification
+                {
+                    NotiType = "Appt Complete",
+                    NotiMessage = "Cuộc hẹn của bạn đã thành công.",
+                    SendAt = DateTime.UtcNow
+                };
+                var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, appointment.PtnId);
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, appointment.DctId);
+
+                // Ensure patient medical record exists
+                var patientMedicalRecord = await _context.PatientMedicalRecords
+                    .FirstOrDefaultAsync(r => r.PtnId == appointment.PtnId);
+                if (patientMedicalRecord == null)
+                {
+                    patientMedicalRecord = new PatientMedicalRecord
+                    {
+                        PtnId = appointment.PtnId,
+                    };
+                    _context.PatientMedicalRecords.Add(patientMedicalRecord);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+                return MapToResponseDTO(appointment);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to complete appointment: {ex.Message}");
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }
