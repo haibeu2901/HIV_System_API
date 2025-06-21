@@ -58,8 +58,6 @@ namespace HIV_System_API_Services.Implements
                 Account = new AccountResponseDTO
                 {
                     AccId = doctor.Acc.AccId,
-                    AccUsername = doctor.Acc.AccUsername,
-                    AccPassword = doctor.Acc.AccPassword,
                     Email = doctor.Acc.Email,
                     Fullname = doctor.Acc.Fullname,
                     Dob = doctor.Acc.Dob,
