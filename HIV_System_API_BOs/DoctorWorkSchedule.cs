@@ -15,5 +15,9 @@ public partial class DoctorWorkSchedule
 
     public TimeOnly EndTime { get; set; }
 
+    public DateOnly WorkDate { get; set; }
+
+    public bool IsAvailable { get; set; }
+
     public virtual Doctor Doctor { get; set; } = null!;
 }

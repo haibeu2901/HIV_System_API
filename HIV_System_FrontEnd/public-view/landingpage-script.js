@@ -200,7 +200,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         localStorage.setItem("accId", data.account.accId); // Store account ID in localStorage
         if (role == 3) {
           window.location.href =
-            "http://127.0.0.1:5500/private-view/user-view/booking/appointment-booking.html"; // Redirect to the appointment booking page after successful login
+            "/private-view/user-view/booking/appointment-booking.html"; // Redirect to the appointment booking page after successful login
         } else if (role == 2) {
           window.location.href = "http://127.0.0.1:5500/HIV_System_FrontEnd/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
         } // Redirect to the doctor dashboard page after successful login

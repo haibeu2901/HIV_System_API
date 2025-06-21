@@ -27,6 +27,8 @@ namespace HIV_System_API_Services.Implements
             {
                 DoctorId = requestDTO.DoctorId,
                 DayOfWeek = (byte)requestDTO.DayOfWeek,
+                WorkDate = requestDTO.WorkDate,
+                IsAvailable = requestDTO.IsAvailable,
                 StartTime = requestDTO.StartTime,
                 EndTime = requestDTO.EndTime
             };
@@ -39,6 +41,8 @@ namespace HIV_System_API_Services.Implements
                 DocWorkScheduleId = doctorWorkSchedule.DwsId,
                 DoctorId = doctorWorkSchedule.DoctorId,
                 DayOfWeek = doctorWorkSchedule.DayOfWeek.HasValue ? doctorWorkSchedule.DayOfWeek.Value : 0,
+                WorkDate = doctorWorkSchedule.WorkDate,
+                IsAvailable = doctorWorkSchedule.IsAvailable,
                 StartTime = doctorWorkSchedule.StartTime,
                 EndTime = doctorWorkSchedule.EndTime
             };
@@ -46,6 +50,15 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<DoctorWorkScheduleResponseDTO> CreateDoctorWorkScheduleAsync(DoctorWorkScheduleRequestDTO doctorWorkSchedule)
         {
+            if (doctorWorkSchedule == null)
+                throw new ArgumentNullException(nameof(doctorWorkSchedule));
+            if (doctorWorkSchedule.DoctorId <= 0)
+                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorWorkSchedule.DoctorId));
+            if (doctorWorkSchedule.DayOfWeek < 1 || doctorWorkSchedule.DayOfWeek > 7)
+                throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "DayOfWeek must be between 1 (Sunday) and 7 (Saturday).");
+            if (doctorWorkSchedule.StartTime >= doctorWorkSchedule.EndTime)
+                throw new ArgumentException("StartTime must be earlier than EndTime.");
+
             var entity = MapToEntity(doctorWorkSchedule);
             var createdEntity = await _doctorWorkScheduleRepo.CreateDoctorWorkScheduleAsync(entity);
             return MapToResponseDTO(createdEntity);
@@ -72,6 +85,17 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<DoctorWorkScheduleResponseDTO> UpdateDoctorWorkScheduleAsync(int id, DoctorWorkScheduleRequestDTO doctorWorkSchedule)
         {
+            if (id <= 0)
+                throw new ArgumentException("Id must be a positive integer.", nameof(id));
+            if (doctorWorkSchedule == null)
+                throw new ArgumentNullException(nameof(doctorWorkSchedule));
+            if (doctorWorkSchedule.DoctorId <= 0)
+                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorWorkSchedule.DoctorId));
+            if (doctorWorkSchedule.DayOfWeek < 1 || doctorWorkSchedule.DayOfWeek > 7)
+                throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "DayOfWeek must be between 1 (Sunday) and 7 (Saturday).");
+            if (doctorWorkSchedule.StartTime >= doctorWorkSchedule.EndTime)
+                throw new ArgumentException("StartTime must be earlier than EndTime.");
+
             var entity = MapToEntity(doctorWorkSchedule);
             var updatedEntity = await _doctorWorkScheduleRepo.UpdateDoctorWorkScheduleAsync(id, entity);
             return MapToResponseDTO(updatedEntity);
@@ -87,15 +111,27 @@ namespace HIV_System_API_Services.Implements
             if (schedules == null || !schedules.Any())
                 return new List<PersonalWorkScheduleResponseDTO>();
 
-            var result = schedules
-                .Where(s => s.DayOfWeek.HasValue)
-                .Select(s => new PersonalWorkScheduleResponseDTO
+            var result = new List<PersonalWorkScheduleResponseDTO>();
+
+            foreach (var s in schedules)
+            {
+                // Validate required fields
+                if (!s.DayOfWeek.HasValue)
+                    continue;
+                if (s.StartTime > s.EndTime)
+                    continue;
+                if (s.StartTime == s.EndTime)
+                    continue;
+
+                result.Add(new PersonalWorkScheduleResponseDTO
                 {
                     DayOfWeek = s.DayOfWeek.Value,
+                    WorkDate = s.WorkDate,
+                    IsAvailable = s.IsAvailable,
                     StartTime = s.StartTime,
                     EndTime = s.EndTime
-                })
-                .ToList();
+                });
+            }
 
             return result;
         }

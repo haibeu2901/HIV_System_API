@@ -76,7 +76,7 @@ namespace HIV_System_API_Services.Implements
             if (!await _context.Patients.AnyAsync(p => p.PtnId == request.PatientId))
                 throw new ArgumentException("Patient does not exist.");
 
-            // Validate DctId
+            // Validate DoctorId
             if (!await _context.Doctors.AnyAsync(d => d.DctId == request.DoctorId))
                 throw new ArgumentException("Doctor does not exist.");
 
@@ -84,34 +84,42 @@ namespace HIV_System_API_Services.Implements
             if (validateStatus && (request.ApmStatus < 1 || request.ApmStatus > 5))
                 throw new ArgumentException("Invalid appointment status. Must be between 1 and 5.");
 
-            // Validate DoctorWorkSchedule
-            var dayOfWeek = request.ApmtDate.ToDateTime(TimeOnly.MinValue).DayOfWeek;
-            var schedule = await _context.DoctorWorkSchedules
-                .FirstOrDefaultAsync(s => s.DoctorId == request.DoctorId && s.DayOfWeek == (int)dayOfWeek);
+            // Determine the day of week for the appointment
+            var dayOfWeek = (byte)request.ApmtDate.ToDateTime(TimeOnly.MinValue).DayOfWeek;
 
-            if (schedule == null)
-                throw new InvalidOperationException($"Doctor is not available on {dayOfWeek}.");
+            // Find all doctor's work schedules for the day (could be multiple time slots)
+            var schedules = await _context.DoctorWorkSchedules
+                .Where(s => s.DoctorId == request.DoctorId && s.DayOfWeek == dayOfWeek && s.IsAvailable)
+                .ToListAsync();
 
-            var startTime = schedule.StartTime;
-            var endTime = schedule.EndTime;
+            if (schedules == null || schedules.Count == 0)
+                throw new InvalidOperationException($"Doctor is not available on {((DayOfWeek)dayOfWeek)}.");
+
             var apmTime = request.ApmTime;
+            var appointmentDuration = TimeSpan.FromMinutes(30);
+            var apmStart = apmTime.ToTimeSpan();
+            var apmEnd = apmStart + appointmentDuration;
 
-            if (apmTime < startTime || apmTime >= endTime)
-                throw new InvalidOperationException($"Appointment time is outside doctor's schedule ({startTime}-{endTime}).");
+            // Check if the appointment fits in any available schedule slot
+            var fitsInSchedule = schedules.Any(schedule =>
+                apmTime >= schedule.StartTime &&
+                apmTime < schedule.EndTime &&
+                apmEnd <= schedule.EndTime.ToTimeSpan()
+            );
 
-            // Check for overlapping appointments
-            var appointmentDuration = TimeSpan.FromMinutes(30); // Assume 30-minute duration
-            var endTimeSpan = apmTime.ToTimeSpan() + appointmentDuration;
+            if (!fitsInSchedule)
+                throw new InvalidOperationException("Appointment time is outside doctor's available schedule for the day.");
 
+            // Check for overlapping appointments (not cancelled)
             var overlapQuery = _context.Appointments
-                .Where(a => a.DctId == request.DoctorId &&
-                            a.ApmtDate == request.ApmtDate &&
-                            a.ApmTime < TimeOnly.FromTimeSpan(endTimeSpan) &&
-                            a.ApmTime >= apmTime &&
-                            a.ApmStatus != 4); // Exclude cancelled appointments
+                .Where(a => a.DctId == request.DoctorId
+                    && a.ApmtDate == request.ApmtDate
+                    && a.ApmStatus != 4 // Exclude cancelled
+                    && a.ApmTime < TimeOnly.FromTimeSpan(apmEnd)
+                    && TimeOnly.FromTimeSpan(a.ApmTime.ToTimeSpan() + appointmentDuration) > apmTime);
 
             if (apmId.HasValue)
-                overlapQuery = overlapQuery.Where(a => a.ApmId != apmId.Value); // Exclude current appointment for updates
+                overlapQuery = overlapQuery.Where(a => a.ApmId != apmId.Value);
 
             var hasOverlap = await overlapQuery.AnyAsync();
 
