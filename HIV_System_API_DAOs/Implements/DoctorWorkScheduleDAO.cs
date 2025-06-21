@@ -74,6 +74,8 @@ namespace HIV_System_API_DAOs.Implements
                 throw new KeyNotFoundException($"DoctorWorkSchedule with id {id} not found.");
 
             existingSchedule.DayOfWeek = doctorWorkSchedule.DayOfWeek;
+            existingSchedule.WorkDate = doctorWorkSchedule.WorkDate;
+            existingSchedule.IsAvailable = doctorWorkSchedule.IsAvailable;
             existingSchedule.StartTime = doctorWorkSchedule.StartTime;
             existingSchedule.EndTime = doctorWorkSchedule.EndTime;
             // Do not update navigation property Doctor directly

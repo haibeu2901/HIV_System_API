@@ -190,10 +190,20 @@ public partial class HivSystemApiContext : DbContext
 
             entity.ToTable("Doctor_Work_Schedule");
 
+            entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.IsAvailable }, "IX_DoctorWorkSchedule_Doctor_Date_Available");
+
+            entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.StartTime, e.EndTime }, "UQ_Doctor_Date_Time").IsUnique();
+
             entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week");
             entity.Property(e => e.DoctorId).HasColumnName("doctor_id");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
+            entity.Property(e => e.IsAvailable)
+                .HasDefaultValue(true)
+                .HasColumnName("isAvailable");
             entity.Property(e => e.StartTime).HasColumnName("start_time");
+            entity.Property(e => e.WorkDate)
+                .HasDefaultValue(new DateOnly(2025, 1, 1))
+                .HasColumnName("work_date");
 
             entity.HasOne(d => d.Doctor).WithMany(p => p.DoctorWorkSchedules)
                 .HasForeignKey(d => d.DoctorId)

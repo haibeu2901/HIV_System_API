@@ -160,40 +160,7 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
-
         
-        [HttpGet("my-appointments")]
-        [Authorize]
-        public async Task<ActionResult<List<AppointmentResponseDTO>>> GetMyAppointments()
-        {
-            try
-            {
-                // Get current user's role and ID from the token
-                var currentUserRole = byte.Parse(User.FindFirst(ClaimTypes.Role)?.Value ?? "0");
-                var currentUserId = int.Parse(User.FindFirst("AccountId")?.Value ?? "0");
-
-                if (currentUserId == 0)
-                {
-                    return Unauthorized("Invalid user session.");
-                }
-
-                var appointments = await _appointmentService.GetAppointmentsByAccountIdAsync(currentUserId, currentUserRole);
-                return Ok(appointments);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.InnerException}");
-            }
-        }
-
         [HttpPost("UpdateAppointmentRequest")]
         [Authorize]
         public async Task<IActionResult> UpdateAppointment(int id, [FromBody] UpdateAppointmentRequestDTO dto)

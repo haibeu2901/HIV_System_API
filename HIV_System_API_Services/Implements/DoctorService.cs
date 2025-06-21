@@ -122,6 +122,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     Degree = doctor.Degree,
                     Bio = doctor.Bio,
+                    Gender = doctor.Acc.Gender,
                     Email = doctor.Acc.Email,
                     Fullname = doctor.Acc.Fullname,
                     Dob = doctor.Acc.Dob
@@ -177,11 +178,12 @@ namespace HIV_System_API_Services.Implements
             var doctors = await _doctorRepo.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
             return doctors.Select(doctor => new DoctorProfileResponse
             {
-                Degree = doctor.Degree,
-                Bio = doctor.Bio,
                 Email = doctor.Acc?.Email,
                 Fullname = doctor.Acc?.Fullname,
-                Dob = doctor.Acc?.Dob
+                Dob = doctor.Acc?.Dob,
+                Gender = doctor.Acc.Gender,
+                Degree = doctor.Degree,
+                Bio = doctor.Bio
             }).ToList();
         }
 
@@ -194,6 +196,7 @@ namespace HIV_System_API_Services.Implements
             {
                 Degree = doctor.Degree,
                 Bio = doctor.Bio,
+                Gender = doctor.Acc.Gender,
                 Email = doctor.Acc.Email,
                 Fullname = doctor.Acc.Fullname,
                 Dob = doctor.Acc.Dob
