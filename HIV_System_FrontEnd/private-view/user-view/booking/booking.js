@@ -223,28 +223,23 @@ console.log(payload);
     const token = localStorage.getItem("token");
     fetch("https://localhost:7009/api/Appointment/CreateAppointment", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(payload)
     })
-    .then(async res => {
+    .then(res => {
         if (res.status === 409) {
-            alert("This time slot has already been taken. Please choose another time slot.");
-            throw new Error("Time slot taken");
+            // Show the backend's message if available
+            return res.text().then(msg => {
+                alert(msg || "This time slot has already been taken. Please choose another time slot.");
+                throw new Error("Time slot taken");
+            });
         }
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || "Failed to create appointment");
-        }
+        if (!res.ok) throw new Error("Failed to create appointment");
         return res.json();
     })
     .then(data => {
-    // Redirect or update UI as needed, or leave empty if handled elsewhere
-    // For example, redirect to your appointment details page:
-    window.location.href = "../appointment-view/view-appointment.html";
-})
+        window.location.href = "../appointment-view/view-appointment.html";
+    })
     .catch(err => {
         if (err.message !== "Time slot taken") {
             alert("Error: " + err.message);

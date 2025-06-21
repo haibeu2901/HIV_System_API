@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         const response = await fetch("https://localhost:7009/api/Account/View-profile", {
-            method: "POST",
+            method: "GET",
             headers: {
                 "Authorization": `Bearer ${token}`
             }
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </li>
                     <li>
                         <strong>Password:</strong>
-                        <input type="password" id="accPassword" name="accPassword" value="${data.accPassword || ''}" required />
+                        <span>********</span>
                     </li>
                     <li>
                         <strong>Role:</strong> <span>${data.roles}</span>
@@ -81,6 +81,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 gender,
                 accPassword
             };
+
+           
 
             try {
                 const updateResponse = await fetch("https://localhost:7009/api/Account/UpdatePatientProfile", {

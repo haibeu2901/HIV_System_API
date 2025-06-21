@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CareFirst HIV Clinic - Comprehensive HIV Care & Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css" />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -284,7 +285,7 @@
               <span class="checkmark"></span>
               Remember me
             </label>
-            <a href="#" class="forgot-password">Forgot Password?</a>
+            <a href="./forgot-password/forgot-password.html" class="forgot-password">Forgot Password?</a>
           </div>
           <button type="submit" class="btn-primary btn-full">Login</button>
           <div class="form-footer">
@@ -364,7 +365,7 @@
                     <label class="checkbox-container">
                         <input type="checkbox" name="terms" required>
                         <span class="checkmark"></span>
-                        I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                        I agree to the Terms of Service  and  Privacy Policy
                     </label>
                 </div>
                 <button type="submit" class="btn-primary btn-full">Create Account</button>
@@ -387,6 +388,33 @@
             <button class="btn-primary btn-full" onclick="closeModal('successModal')">Continue</button>
         </div>
     </div>
+
+    <!-- Email Verification Modal -->
+    <div id="verifyModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Email Verification</h2>
+          <span class="close" onclick="closeModal('verifyModal')">&times;</span>
+        </div>
+        <form id="verifyForm" class="auth-form">
+          <div class="form-group">
+            <label for="verifyEmail">Email</label>
+            <input type="email" id="verifyEmail" name="verifyEmail" readonly />
+          </div>
+          <div class="form-group">
+            <label for="verifyCode">Verification Code</label>
+            <input type="text" id="verifyCode" name="verifyCode" maxlength="6" required />
+            <span class="error-message" id="verifyCodeError"></span>
+          </div>
+          <div class="form-options flex items-center justify-between">
+            <span id="countdown" class="text-red-600 font-semibold"></span>
+            <button type="button" id="resendBtn" class="btn-secondary" disabled>Resend Code</button>
+          </div>
+          <button type="submit" class="btn-primary btn-full mt-4">Verify</button>
+        </form>
+      </div>
+    </div>
+
     <script src="landingpage-script.js"></script>
   </body>
 </html>
