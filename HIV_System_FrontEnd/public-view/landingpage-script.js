@@ -202,7 +202,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
           window.location.href =
             "/private-view/user-view/booking/appointment-booking.html"; // Redirect to the appointment booking page after successful login
         } else if (role == 2) {
-          window.location.href = "http://127.0.0.1:5500/private-view/doctor-view/doctor-dashboard.html";
+          window.location.href = "/private-view/doctor-view/doctor-dashboard.html";
         } // Redirect to the doctor dashboard page after successful login
       } catch (error) {
         console.error("Error during login:", error);
