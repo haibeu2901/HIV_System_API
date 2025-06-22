@@ -8,8 +8,6 @@ namespace HIV_System_API_DTOs.ComponentTestResultDTO
 {
     public class ComponentTestResultRequestDTO
     {
-        public int ComponentTestResultId { get; set; }
-
         public int TestResultId { get; set; }
         public int StaffId { get; set; }
 

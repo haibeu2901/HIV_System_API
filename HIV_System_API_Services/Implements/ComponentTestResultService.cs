@@ -25,7 +25,6 @@ namespace HIV_System_API_Services.Implements
         {
             return new ComponentTestResult
             {
-                CtrId = componentTestResult.ComponentTestResultId,
                 TrsId = componentTestResult.TestResultId,
                 StfId = componentTestResult.StaffId,
                 CtrName = componentTestResult.ComponentTestResultName,
