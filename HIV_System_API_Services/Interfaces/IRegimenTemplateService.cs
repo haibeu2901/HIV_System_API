@@ -1,5 +1,5 @@
 ﻿using HIV_System_API_BOs;
-using HIV_System_API_DTOs.ARVRegimenDTO;
+using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;

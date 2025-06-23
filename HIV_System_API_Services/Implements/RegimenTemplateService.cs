@@ -1,5 +1,5 @@
 ﻿using HIV_System_API_BOs;
-using HIV_System_API_DTOs.ARVRegimenDTO;
+using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;

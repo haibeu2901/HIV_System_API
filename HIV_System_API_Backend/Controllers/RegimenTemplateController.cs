@@ -1,4 +1,4 @@
-﻿using HIV_System_API_DTOs.ARVRegimenDTO;
+﻿using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

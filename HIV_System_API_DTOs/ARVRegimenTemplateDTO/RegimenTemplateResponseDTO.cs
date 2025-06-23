@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HIV_System_API_DTOs.ARVRegimenDTO
+namespace HIV_System_API_DTOs.ARVRegimenTemplateDTO
 {
-    public class RegimenTemplateRequestDTO
+    public class RegimenTemplateResponseDTO
     {
+        public int ArtId { get; set; }
         public string? Description { get; set; }
         public byte? Level { get; set; }
         public int? Duration { get; set; }
