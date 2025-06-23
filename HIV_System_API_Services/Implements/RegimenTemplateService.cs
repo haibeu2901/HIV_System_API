@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.ARVMedicationTemplateDTO;
 using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
@@ -14,10 +15,12 @@ namespace HIV_System_API_Services.Implements
     public class RegimenTemplateService : IRegimenTemplateService
     {
         private readonly IRegimenTemplateRepo _regimenTemplateRepo;
+        private readonly IArvMedicationDetailRepo _arvMedicationDetailRepo;
 
         public RegimenTemplateService()
         {
             _regimenTemplateRepo = new RegimenTemplateRepo();
+            _arvMedicationDetailRepo = new ArvMedicationDetailRepo();
         }
 
         private ArvRegimenTemplate MapToEntity(RegimenTemplateRequestDTO regimenTemplate)
@@ -33,13 +36,38 @@ namespace HIV_System_API_Services.Implements
 
         private RegimenTemplateResponseDTO MapToResponse(ArvRegimenTemplate regimenTemplate)
         {
+            if (regimenTemplate == null) 
+                throw new ArgumentNullException(nameof(regimenTemplate));
+
+            var medications = regimenTemplate.ArvMedicationTemplates ?? new List<ArvMedicationTemplate>();
+
+            // Map each medication template to response DTO
+            var medicationTemplates = medications.Select(medicationTemplate =>
+            {
+                // Use navigation properties if available, otherwise fetch from repository
+                var medicationDetail = medicationTemplate.Amd ??
+                    _arvMedicationDetailRepo.GetArvMedicationDetailByIdAsync(medicationTemplate.AmdId).GetAwaiter().GetResult();
+
+                return new MedicationTemplateResponseDTO
+                {
+                    ArvMedicationTemplateId = medicationTemplate.AmtId,
+                    ArvRegimenTemplateId = regimenTemplate.ArtId,
+                    ArvRegimenTemplateDescription = regimenTemplate.Description,
+                    ArvMedicationDetailId = medicationTemplate.AmdId,
+                    MedicationName = medicationDetail?.MedName,
+                    MedicationDescription = medicationDetail?.MedDescription,
+                    Dosage = medicationDetail?.Dosage,
+                    Quantity = medicationTemplate.Quantity ?? 0
+                };
+            }).ToList();
+
             return new RegimenTemplateResponseDTO
             {
                 ArtId = regimenTemplate.ArtId,
                 Description = regimenTemplate.Description,
                 Level = regimenTemplate.Level,
-                Duration = regimenTemplate.Duration
-                // ArvMedicationTemplates property is not present in RegimenTemplateResponseDTO signature.
+                Duration = regimenTemplate.Duration,
+                Medications = medicationTemplates
             };
         }
 

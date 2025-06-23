@@ -154,8 +154,8 @@ namespace HIV_System_API_Backend.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetRegimenTemplatesByLevel(int level)
         {
-            if (level < 1 || level > 3)
-                return BadRequest("Level must be between 1 and 3.");
+            if (level < 1 || level > 4)
+                return BadRequest("Level must be between 1 and 4.");
 
             try
             {
