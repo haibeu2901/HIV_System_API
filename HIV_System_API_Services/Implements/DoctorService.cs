@@ -46,7 +46,9 @@ namespace HIV_System_API_Services.Implements
                     DoctorId = ws.DoctorId,
                     DayOfWeek = ws.DayOfWeek ?? 0,
                     StartTime = ws.StartTime,
-                    EndTime = ws.EndTime
+                    EndTime = ws.EndTime,
+                    WorkDate = ws.WorkDate,
+                    IsAvailable = ws.IsAvailable
                 }).ToList() ?? new List<DoctorWorkScheduleResponseDTO>();
 
             return new DoctorResponseDTO
@@ -55,7 +57,7 @@ namespace HIV_System_API_Services.Implements
                 Degree = doctor.Degree,
                 Bio = doctor.Bio,
                 AccId = doctor.AccId,
-                Account = new AccountResponseDTO
+                Account = doctor.Acc == null ? null : new AccountResponseDTO
                 {
                     AccId = doctor.Acc.AccId,
                     Email = doctor.Acc.Email,
@@ -122,6 +124,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     Degree = doctor.Degree,
                     Bio = doctor.Bio,
+                    Gender = doctor.Acc.Gender,
                     Email = doctor.Acc.Email,
                     Fullname = doctor.Acc.Fullname,
                     Dob = doctor.Acc.Dob
@@ -174,15 +177,35 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<List<DoctorProfileResponse>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
         {
+            // Validation: Ensure date is not default
+            if (apmtDate == default)
+                throw new ArgumentException("Appointment date is required.", nameof(apmtDate));
+
+            // Validation: Ensure time is not default
+            if (apmTime == default)
+                throw new ArgumentException("Appointment time is required.", nameof(apmTime));
+
             var doctors = await _doctorRepo.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
-            return doctors.Select(doctor => new DoctorProfileResponse
+            var result = new List<DoctorProfileResponse>();
+
+            foreach (var doctor in doctors)
             {
-                Degree = doctor.Degree,
-                Bio = doctor.Bio,
-                Email = doctor.Acc?.Email,
-                Fullname = doctor.Acc?.Fullname,
-                Dob = doctor.Acc?.Dob
-            }).ToList();
+                // Defensive: skip if Acc is null (should not happen if DB is correct)
+                if (doctor.Acc == null)
+                    continue;
+
+                result.Add(new DoctorProfileResponse
+                {
+                    Email = doctor.Acc.Email,
+                    Fullname = doctor.Acc.Fullname,
+                    Dob = doctor.Acc.Dob,
+                    Gender = doctor.Acc.Gender,
+                    Degree = doctor.Degree,
+                    Bio = doctor.Bio
+                });
+            }
+
+            return result;
         }
 
         public async Task<DoctorProfileResponse?> GetDoctorProfileAsync(int id)
@@ -194,6 +217,7 @@ namespace HIV_System_API_Services.Implements
             {
                 Degree = doctor.Degree,
                 Bio = doctor.Bio,
+                Gender = doctor.Acc.Gender,
                 Email = doctor.Acc.Email,
                 Fullname = doctor.Acc.Fullname,
                 Dob = doctor.Acc.Dob
