@@ -174,7 +174,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
     const logginFunction = async (userName, password) => {
       try {
         const response = await fetch(
-          `https://localhost:7009/api/Account/GetAccountByLogin`,
+          `http://localhost:5000/api/Account/GetAccountByLogin`,
           {
             method: "POST",
             headers: {
