@@ -122,6 +122,7 @@ builder.Services.AddScoped<IMedicalServiceService, MedicalServiceService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
+builder.Services.AddScoped<IVNPayService, VNPayService>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
