@@ -1,3 +1,5 @@
+.notification-container {
+=======
 
     .notification-container {
             max-width: 600px;
@@ -122,6 +124,8 @@
     font-size: 0.85rem;
     color: #888;
     margin-top: 2px;
+}
+=======
 }
 =======
         }

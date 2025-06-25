@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <i class="fas fa-envelope"></i> Contact the Doctor
                     </a>
 =======
+=======
                     <button class="btn-chat" onclick="chatToDoctor('${doc.account.accId}', '${doc.account.fullname}')">
                         <i class="fas fa-comments"></i> Chat to Doctor
                     </button>
