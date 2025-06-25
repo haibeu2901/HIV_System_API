@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({}) // send an empty object if the API expects a body
+            headers: { "Authorization": `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Failed to fetch notifications");
         const data = await res.json();
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+=======
 function formatDateTime(dateStr) {
     const d = new Date(dateStr);
     return d.toLocaleString('en-GB', {

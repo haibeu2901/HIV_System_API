@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const calendarEl = document.getElementById('calendar');
 
     let events = [];
+    appointmentList.innerHTML = "<p>Loading...</p>";
+
     try {
         const res = await fetch("https://localhost:7009/api/Appointment/my-appointments", {
             headers: { "Authorization": `Bearer ${token}` }
@@ -94,4 +96,30 @@ function addMinutes(time, minsToAdd) {
     const [h, m] = time.split(':').map(Number);
     const date = new Date(0, 0, 0, h, m + minsToAdd, 0, 0);
     return date.toTimeString().slice(0,5);
+        if (data.length === 0) {
+            appointmentList.innerHTML = "<p>No appointments found.</p>";
+            return;
+        }
+
+        appointmentList.innerHTML = data.map(appt => `
+            <div class="appointment-card">
+                <h3>Dr. ${appt.doctorName}</h3>
+                <p><strong>Date:</strong> ${appt.apmtDate}</p>
+                <p><strong>Time:</strong> ${appt.apmTime}</p>
+                <p><strong>Status:</strong> ${renderStatus(appt.apmStatus)}</p>
+                <p><strong>Notes:</strong> ${appt.notes || "None"}</p>
+            </div>
+        `).join('');
+    } catch (err) {
+        appointmentList.innerHTML = `<p style="color:red;">${err.message}</p>`;
+    }
+});
+
+function renderStatus(status) {
+    switch (status) {
+        case 1: return '<span style="color:orange;">Pending</span>';
+        case 2: return '<span style="color:green;">Confirmed</span>';
+        case 3: return '<span style="color:red;">Cancelled</span>';
+        default: return 'Unknown';
+    }
 }

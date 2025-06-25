@@ -208,7 +208,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("GetAllPersonalNotifications")]
-        [Authorize(Roles = "1,2,3,4,5")]
+        [Authorize]
         public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllPersonalNotificationsAsync()
         {
             int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
@@ -221,6 +221,50 @@ namespace HIV_System_API_Backend.Controllers
             {
                 var notifications = await _notificationService.GetAllPersonalNotificationsAsync(accId);
                 return Ok(notifications);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+            }
+        }
+
+        [HttpGet("GetAllUnreadNotifications")]
+        [Authorize]
+        public async Task<ActionResult<List<NotificationResponseDTO>>> GetAllUnreadNotificationsAsync()
+        {
+            int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
+            if (accId <= 0)
+            {
+                return BadRequest("Invalid account ID.");
+            }
+            try
+            {
+                var notifications = await _notificationService.GetAllUnreadNotificationsAsync(accId);
+                return Ok(notifications);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpPost("ViewNotification/{ntfId}")]
+        [Authorize]
+        public async Task<ActionResult<NotificationResponseDTO>> ViewNotificationAsync(int ntfId)
+        {
+            int accId = ClaimsHelper.ExtractAccountIdFromClaims(User) ?? 0;
+            if (ntfId <= 0 || accId <= 0)
+            {
+                return BadRequest("Invalid notification ID or account ID.");
+            }
+            try
+            {
+                var notification = await _notificationService.ViewNotificationAsync(ntfId, accId);
+                return Ok(notification);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.InnerException);
             }
             catch (Exception ex)
             {

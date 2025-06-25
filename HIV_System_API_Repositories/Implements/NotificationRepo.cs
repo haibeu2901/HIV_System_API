@@ -33,6 +33,11 @@ namespace HIV_System_API_Repositories.Implements
             return await NotificationDAO.Instance.GetAllPersonalNotificationsAsync(accId);
         }
 
+        public async Task<List<Notification>> GetAllUnreadNotificationsAsync(int accId)
+        {
+            return await NotificationDAO.Instance.GetAllUnreadNotificationsAsync(accId);
+        }
+
         public Task<Notification> GetNotificationByIdAsync(int id)
         {
             return NotificationDAO.Instance.GetNotificationByIdAsync(id);
@@ -61,6 +66,11 @@ namespace HIV_System_API_Repositories.Implements
         public Task<bool> UpdateNotificationByIdAsync(Notification notification)
         {
             return NotificationDAO.Instance.UpdateNotificationByIdAsync(notification);
+        }
+
+        public async Task<Notification> ViewNotificationAsync(int ntfId, int accId)
+        {
+            return await NotificationDAO.Instance.ViewNotificationAsync(ntfId, accId);
         }
     }
 }

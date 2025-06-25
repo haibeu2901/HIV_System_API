@@ -56,7 +56,7 @@ public partial class HivSystemApiContext : DbContext
 // To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer(GetConnectionString());
 
-    private static string? GetConnectionString()
+    private static string GetConnectionString()
     {
         IConfiguration config = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -101,9 +101,7 @@ public partial class HivSystemApiContext : DbContext
             entity.HasOne(d => d.Ptn).WithMany(p => p.Appointments)
                 .HasForeignKey(d => d.PtnId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Appointment_Patient")
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasConstraintName("FK_Appointment_Patient");
         });
 
         modelBuilder.Entity<ArvMedicationDetail>(entity =>
@@ -192,10 +190,20 @@ public partial class HivSystemApiContext : DbContext
 
             entity.ToTable("Doctor_Work_Schedule");
 
+            entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.IsAvailable }, "IX_DoctorWorkSchedule_Doctor_Date_Available");
+
+            entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.StartTime, e.EndTime }, "UQ_Doctor_Date_Time").IsUnique();
+
             entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week");
             entity.Property(e => e.DoctorId).HasColumnName("doctor_id");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
+            entity.Property(e => e.IsAvailable)
+                .HasDefaultValue(true)
+                .HasColumnName("isAvailable");
             entity.Property(e => e.StartTime).HasColumnName("start_time");
+            entity.Property(e => e.WorkDate)
+                .HasDefaultValue(new DateOnly(2025, 1, 1))
+                .HasColumnName("work_date");
 
             entity.HasOne(d => d.Doctor).WithMany(p => p.DoctorWorkSchedules)
                 .HasForeignKey(d => d.DoctorId)
@@ -221,7 +229,7 @@ public partial class HivSystemApiContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NtfId).HasName("PK__Notifica__E1A7DA5324520B35");
+            entity.HasKey(e => e.NtfId).HasName("PK__Notifica__E23E8D0644D5F2C5");
 
             entity.Property(e => e.NotiMessage).HasMaxLength(300);
             entity.Property(e => e.NotiType).HasMaxLength(20);
@@ -232,7 +240,7 @@ public partial class HivSystemApiContext : DbContext
 
         modelBuilder.Entity<NotificationAccount>(entity =>
         {
-            entity.HasKey(e => e.NtaId).HasName("PK__Notifica__E23E8D0644D5F2C5");
+            entity.HasKey(e => e.NtaId).HasName("PK__Notifica__E1A7DA5324520B35");
 
             entity.ToTable("Notification_Account");
 
