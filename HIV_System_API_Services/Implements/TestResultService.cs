@@ -94,12 +94,15 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        public async Task<List<TestResultResponseDTO>> GetPositiveTestResultPatient()
+        public async Task<List<TestResultResponseDTO>> GetSustainTestResultPatient()
         {
-            var results = await _testResultRepo.GetAllTestResult();
-            
-            // Filter for positive results where ResultValue is true
-            var positiveResults = results.Where(r => r.ResultValue == true).ToList();
+            using var context = new HivSystemApiContext();
+            var positiveResults = await context.TestResults
+                .Include(tr => tr.ComponentTestResults)
+                .ThenInclude(ct => ct.Stf)
+                .Where(r => r.ResultValue == true)
+                .ToListAsync();
+
             return positiveResults.Select(MapToResponse).ToList();
         }
 

@@ -96,11 +96,11 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("positive")]
+        [HttpGet("Sustain")]
         [Authorize(Roles = "1,2,4,5")]
-        public async Task<ActionResult<List<TestResultResponseDTO>>> GetPositiveTestResultPatient()
+        public async Task<ActionResult<List<TestResultResponseDTO>>> GetSustainTestResultPatient()
         {
-            var results = await _testResultService.GetPositiveTestResultPatient();
+            var results = await _testResultService.GetSustainTestResultPatient();
             return Ok(results);
         }
     }

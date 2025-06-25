@@ -168,13 +168,13 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
     const submitButton = this.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
 
-    submitButton.textContent = "Logging in...";
+    submitButton.textContent = "Logging in..."; 
     submitButton.disabled = true;
 
     const logginFunction = async (userName, password) => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/Account/GetAccountByLogin`,
+          `https://localhost:7009/api/Account/GetAccountByLogin`,
           {
             method: "POST",
             headers: {
@@ -202,7 +202,9 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
           window.location.href =
             "/private-view/user-view/booking/appointment-booking.html"; // Redirect to the appointment booking page after successful login
         } else if (role == 2) {
-          window.location.href = "http://127.0.0.1:5500/private-view/doctor-view/doctor-dashboard.html";
+          window.location.href = "/private-view/doctor-view/doctor-dashboard.html";
+
+          window.location.href = "/HIV_System_FrontEnd/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
         } // Redirect to the doctor dashboard page after successful login
       } catch (error) {
         console.error("Error during login:", error);

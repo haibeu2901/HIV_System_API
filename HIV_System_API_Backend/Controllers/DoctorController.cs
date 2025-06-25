@@ -31,7 +31,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorById")]
-        [Authorize(Roles = "1,2,3,4,5")]
+        [Authorize]
         public async Task<IActionResult> GetDoctorById(int id)
         {
             var doctor = await _doctorService.GetDoctorByIdAsync(id);

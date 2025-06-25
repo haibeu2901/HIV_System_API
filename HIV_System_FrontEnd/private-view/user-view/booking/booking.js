@@ -224,6 +224,28 @@ console.log(payload);
     fetch("https://localhost:7009/api/Appointment/CreateAppointment", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+=======
+        body: JSON.stringify(payload)
+    })
+    .then(res => {
+        if (res.status === 409) {
+            // Show the backend's message if available
+            return res.text().then(msg => {
+                alert(msg || "This time slot has already been taken. Please choose another time slot.");
+                throw new Error("Time slot taken");
+            });
+        }
+        if (!res.ok) throw new Error("Failed to create appointment");
+        return res.json();
+    })
+    .then(data => {
+        window.location.href = "../appointment-view/view-appointment.html";
+    })
+=======
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(payload)
     })
     .then(res => {

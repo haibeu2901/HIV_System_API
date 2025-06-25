@@ -6,12 +6,9 @@ using System.Threading.Tasks;
 
 namespace HIV_System_API_DTOs.ComponentTestResultDTO
 {
-    public class ComponentTestResultRequestDTO
+    public class ComponentTestResultUpdateRequestDTO
     {
-        public int TestResultId { get; set; }
-        public int StaffId { get; set; }
-
-        public string ComponentTestResultName  { get; set; } = null!;
+        public string ComponentTestResultName { get; set; } = null!;
 
         public string? CtrDescription { get; set; }
 
