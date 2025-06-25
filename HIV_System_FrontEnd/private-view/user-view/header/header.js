@@ -34,5 +34,5 @@ fetch('../header/header.html')
 function logout() {
   localStorage.clear();
   sessionStorage.clear();
-  window.location.href = 'http://127.0.0.1:5500/public-view/landingpage.html';
+  window.location.href = '/public-view/landingpage.html';
 }
