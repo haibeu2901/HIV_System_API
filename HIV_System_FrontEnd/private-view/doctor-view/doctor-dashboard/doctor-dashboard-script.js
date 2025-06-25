@@ -5,7 +5,7 @@ const doctorId = localStorage.getItem('accId');
 async function getWorkSchedule(doctorId) {
     try {
         const token = localStorage.getItem('token'); // Assumes token is stored as 'token'
-        const response = await fetch(`http://localhost:5000/api/DoctorWorkSchedule/GetDoctorWorkSchedules?doctorId=${doctorId}`, {
+        const response = await fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedules?doctorId=${doctorId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -70,7 +70,7 @@ async function renderWorkSchedule(doctorId, containerId) {
 async function getDoctorProfile(accId) {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/Doctor/GetDoctorById?id=${accId}`, {
+        const response = await fetch(`https://localhost:7009/api/Doctor/GetDoctorById?id=${accId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -118,7 +118,7 @@ function setActive(btn) {
 }
 
 function logout() {
-    window.location.href = "../../public-view/landingpage.html";
+    window.location.href = "../../../public-view/landingpage.html";
 }
 
 // Attach event listeners after DOM is loaded

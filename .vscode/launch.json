@@ -5,10 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "C#: HIV_System_API_Backend [Default Configuration]",
-            "type": "dotnet",
-            "request": "launch",
-            "projectPath": "${workspaceFolder}\\HIV_System_API_Backend\\HIV_System_API_Backend.csproj"
+
         }
     ]
 }

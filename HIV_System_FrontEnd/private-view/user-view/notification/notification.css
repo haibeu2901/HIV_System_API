@@ -1,4 +1,7 @@
 .notification-container {
+=======
+
+    .notification-container {
             max-width: 600px;
             margin: 40px auto;
             background: #fff;
@@ -122,3 +125,7 @@
     color: #888;
     margin-top: 2px;
 }
+=======
+}
+=======
+        }
