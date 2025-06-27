@@ -170,5 +170,23 @@ namespace HIV_System_API_Services.Implements
                 throw new InvalidOperationException($"Unexpected error updating ARV regimen: {ex.Message}");
             }
         }
+
+        public async Task<List<PatientArvRegimenResponseDTO>> GetPatientArvRegimensByPatientIdAsync(int patientId)
+        {
+            try
+            {
+                if (patientId <= 0)
+                    throw new ArgumentException("Invalid Patient ID");
+
+                var entityList = await _patientArvRegimenRepo.GetPatientArvRegimensByPatientIdAsync(patientId);
+                if (entityList == null || !entityList.Any())
+                    return null;
+                return entityList.Select(MapToResponseDTO).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving ARV regimens for patient {patientId}: {ex.Message}");
+            }
+        }
     }
 }

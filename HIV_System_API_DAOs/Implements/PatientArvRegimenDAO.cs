@@ -38,7 +38,7 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<PatientArvRegimen?> GetPatientArvRegimenByIdAsync(int parId)
         {
-            return await _context.PatientArvRegimen.FindAsync(parId);
+            return await _context.PatientArvRegimen.SingleOrDefaultAsync(p => p.PmrId == parId);
         }
 
         public async Task<PatientArvRegimen> CreatePatientArvRegimenAsync(PatientArvRegimen patientArvRegimen)
@@ -84,6 +84,15 @@ namespace HIV_System_API_DAOs.Implements
             _context.PatientArvRegimen.Remove(regimen);
             await _context.SaveChangesAsync();
             return true; // Deletion successful
+        }
+
+        public async Task<List<PatientArvRegimen>> GetPatientArvRegimensByPatientIdAsync(int patientId)
+        {
+            return await _context.PatientArvRegimen
+                .Include(p => p.Pmr)
+                .Include(p => p.PatientArvMedications)
+                .Where(p => p.Pmr.PtnId == patientId)
+                .ToListAsync();
         }
     }
 }
