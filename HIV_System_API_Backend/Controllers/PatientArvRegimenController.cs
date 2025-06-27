@@ -115,7 +115,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetPatientArvRegimensByPatientId")]
-        [Authorize]
+        [Authorize(Roles="1,2,4,5")]
         public async Task<IActionResult> GetPatientArvRegimensByPatientId(int patientId)
         {
             if (patientId <= 0)
