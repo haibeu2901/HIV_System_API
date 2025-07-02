@@ -20,56 +20,76 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetDoctorWorkSchedules")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetDoctorWorkSchedules()
         {
-            var schedules = await _doctorWorkScheduleService.GetDoctorWorkSchedulesAsync();
-            if (schedules == null || schedules.Count == 0)
+            try
             {
-                return NotFound("No doctor work schedules found.");
+                var schedules = await _doctorWorkScheduleService.GetDoctorWorkSchedulesAsync();
+                if (schedules == null || schedules.Count == 0)
+                    return NotFound("No doctor work schedules found.");
+
+                return Ok(schedules);
             }
-            return Ok(schedules);
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve doctor work schedules: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while retrieving doctor work schedules.");
+            }
         }
 
         [HttpGet("GetDoctorWorkScheduleById/{id}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetDoctorWorkScheduleById(int id)
         {
-            var schedule = await _doctorWorkScheduleService.GetDoctorWorkScheduleByIdAsync(id);
-            if (schedule == null)
+            try
             {
-                return NotFound($"Doctor work schedule with ID {id} not found.");
+                var schedule = await _doctorWorkScheduleService.GetDoctorWorkScheduleByIdAsync(id);
+                if (schedule == null)
+                    return NotFound($"Doctor work schedule with ID {id} not found.");
+
+                return Ok(schedule);
             }
-            return Ok(schedule);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve doctor work schedule with ID {id}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while retrieving doctor work schedule with ID {id}.");
+            }
         }
 
         [HttpPost("CreateDoctorWorkSchedule")]
         [Authorize (Roles = "1,2,4,5")]
         public async Task<IActionResult> CreateDoctorWorkSchedule([FromBody] DoctorWorkScheduleRequestDTO requestDTO)
         {
-            if (requestDTO == null)
-            {
-                return BadRequest("Request body is null.");
-            }
-
-            // Manual model validation for TimeOnly fields
             if (requestDTO.StartTime == default || requestDTO.EndTime == default)
-            {
                 return BadRequest("StartTime and EndTime must be valid in 'HH:mm:ss' format.");
-            }
 
             try
             {
                 var createdSchedule = await _doctorWorkScheduleService.CreateDoctorWorkScheduleAsync(requestDTO);
-                if (createdSchedule == null)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create doctor work schedule.");
-                }
                 return CreatedAtAction(nameof(GetDoctorWorkScheduleById), new { id = createdSchedule.DocWorkScheduleId }, createdSchedule);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to create doctor work schedule: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while creating doctor work schedule.");
             }
         }
 
@@ -77,23 +97,29 @@ namespace HIV_System_API_Backend.Controllers
         [Authorize (Roles = "1,2,4,5")]
         public async Task<IActionResult> UpdateDoctorWorkSchedule(int id, [FromBody] DoctorWorkScheduleRequestDTO requestDTO)
         {
-            if (requestDTO == null)
-            {
-                return BadRequest("Request body is null.");
-            }
+            if (requestDTO.StartTime == default || requestDTO.EndTime == default)
+                return BadRequest("StartTime and EndTime must be valid in 'HH:mm:ss' format.");
 
             try
             {
                 var updatedSchedule = await _doctorWorkScheduleService.UpdateDoctorWorkScheduleAsync(id, requestDTO);
-                if (updatedSchedule == null)
-                {
-                    return NotFound($"Doctor work schedule with ID {id} not found.");
-                }
                 return Ok(updatedSchedule);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to update doctor work schedule with ID {id}: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while updating doctor work schedule with ID {id}.");
             }
         }
 
@@ -105,19 +131,30 @@ namespace HIV_System_API_Backend.Controllers
             {
                 var deleted = await _doctorWorkScheduleService.DeleteDoctorWorkScheduleAsync(id);
                 if (!deleted)
-                {
                     return NotFound($"Doctor work schedule with ID {id} not found.");
-                }
+
                 return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to delete doctor work schedule with ID {id}: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while deleting doctor work schedule with ID {id}.");
             }
         }
 
         [HttpGet("GetPersonalWorkSchedules")]
-        [Authorize(Roles = "1,2,4,5")]
+        [Authorize(Roles = "2")]
         public async Task<IActionResult> GetPersonalWorkSchedules()
         {
             int? doctorId = ClaimsHelper.ExtractAccountIdFromClaims(User);
@@ -131,14 +168,47 @@ namespace HIV_System_API_Backend.Controllers
             {
                 var schedules = await _doctorWorkScheduleService.GetPersonalWorkSchedulesAsync(doctorId.Value);
                 if (schedules == null || schedules.Count == 0)
-                {
                     return NotFound($"No work schedules found for doctor with ID {doctorId.Value}.");
-                }
+
                 return Ok(schedules);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve work schedules for doctor with ID {doctorId.Value}: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.InnerException}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId.Value}.");
+            }
+        }
+
+        [HttpGet("GetDoctorWorkSchedulesByDoctorId/{doctorId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetDoctorWorkSchedulesByDoctorId(int doctorId)
+        {
+            try
+            {
+                var schedules = await _doctorWorkScheduleService.GetDoctorWorkSchedulesByDoctorIdAsync(doctorId);
+                if (schedules == null || schedules.Count == 0)
+                    return NotFound($"No work schedules found for doctor with ID {doctorId}.");
+
+                return Ok(schedules);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve work schedules for doctor with ID {doctorId}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId}.");
             }
         }
     }
