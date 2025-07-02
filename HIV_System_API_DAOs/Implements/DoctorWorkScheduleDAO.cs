@@ -43,7 +43,8 @@ namespace HIV_System_API_DAOs.Implements
                     .FirstOrDefaultAsync(dws => dws.DoctorId == doctorWorkSchedule.DoctorId &&
                                                 dws.WorkDate == doctorWorkSchedule.WorkDate &&
                                                 dws.StartTime == doctorWorkSchedule.StartTime &&
-                                                dws.EndTime == doctorWorkSchedule.EndTime);
+                                                dws.EndTime == doctorWorkSchedule.EndTime &&
+                                                dws.IsAvailable == true);
 
                 if (existingSchedule != null)
                 {
@@ -102,6 +103,7 @@ namespace HIV_System_API_DAOs.Implements
             {
                 return await _context.DoctorWorkSchedules
                     .Include(dws => dws.Doctor) // Include related Doctor entity if needed
+                    .Where(dws => dws.IsAvailable == true)
                     .OrderBy(dws => dws.WorkDate)
                     .ThenBy(dws => dws.StartTime)
                     .ToListAsync();
@@ -132,7 +134,8 @@ namespace HIV_System_API_DAOs.Implements
                                   dws.DoctorId == doctorWorkSchedule.DoctorId &&
                                   dws.WorkDate == doctorWorkSchedule.WorkDate &&
                                   dws.StartTime == doctorWorkSchedule.StartTime &&
-                                  dws.EndTime == doctorWorkSchedule.EndTime)
+                                  dws.EndTime == doctorWorkSchedule.EndTime &&
+                                  dws.IsAvailable == true) // checking for availability
                     .FirstOrDefaultAsync();
 
                 if (conflictingSchedule != null)
@@ -179,7 +182,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<List<DoctorWorkSchedule>> GetDoctorWorkSchedulesByDoctorIdAsync(int doctorId)
         {
             return await _context.DoctorWorkSchedules
-                .Where(dws => dws.DoctorId == doctorId)
+                .Where(dws => dws.DoctorId == doctorId && dws.IsAvailable == true)
                 .Include(dws => dws.Doctor)
                 .OrderBy(dws => dws.WorkDate)
                 .ThenBy(dws => dws.StartTime)
