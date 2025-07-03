@@ -26,31 +26,40 @@ namespace HIV_System_API_Services.Implements
             var vnp_TmnCode = _config["VNPay:TmnCode"];
             var vnp_HashSecret = _config["VNPay:HashSecret"];
 
-            var vnp_TxnRef = request.OrderId;  
+            var vnp_TxnRef = request.OrderId;
             var vnp_OrderInfo = request.OrderDescription;
             var vnp_Amount = ((int)(request.amount * 100)).ToString();
             var vnp_CreateDate = DateTime.Now.ToString("yyyyMMddHHmmss");
 
-            var vnp_Params = new SortedDictionary<string, string>
-            {
-                { "vnp_Version", "2.1.0" },
-                { "vnp_Command", "pay" },
-                { "vnp_TmnCode", vnp_TmnCode },
-                { "vnp_Amount", vnp_Amount },
-                { "vnp_CurrCode", "VND" },
-                { "vnp_TxnRef", vnp_TxnRef },
-                { "vnp_OrderInfo", vnp_OrderInfo },
-                { "vnp_OrderType", "other" },
-                { "vnp_Locale", "vn" },
-                { "vnp_ReturnUrl", vnp_Returnurl },
-                { "vnp_IpAddr", clientIp },
-                { "vnp_CreateDate", vnp_CreateDate }
-            };
+            var vnp_Params = new Dictionary<string, string>
+    {
+        { "vnp_Version", "2.1.0" },
+        { "vnp_Command", "pay" },
+        { "vnp_TmnCode", vnp_TmnCode },
+        { "vnp_Amount", vnp_Amount },
+        { "vnp_CurrCode", "VND" },
+        { "vnp_TxnRef", vnp_TxnRef },
+        { "vnp_OrderInfo", vnp_OrderInfo },
+        { "vnp_OrderType", "other" },
+        { "vnp_Locale", "vn" },
+        { "vnp_ReturnUrl", vnp_Returnurl },
+        { "vnp_IpAddr", clientIp },
+        { "vnp_CreateDate", vnp_CreateDate }
+    };
 
-            var query = string.Join("&", vnp_Params.Select(kvp => $"{kvp.Key}={HttpUtility.UrlEncode(kvp.Value)}"));
-            var signData = string.Join("&", vnp_Params.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+            // 1. Sort by key
+            var ordered = vnp_Params.OrderBy(kvp => kvp.Key);
+
+            // 2. Build signData with raw values (not URL-encoded)
+            var signData = string.Join("&", ordered.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+
+            // 3. Build query with URL-encoded values
+            var query = string.Join("&", ordered.Select(kvp => $"{kvp.Key}={HttpUtility.UrlEncode(kvp.Value)}"));
+
+            // 4. Hash
             var hash = HmacSHA512(vnp_HashSecret, signData);
 
+            // 5. Build final URL
             var paymentUrl = $"{vnp_Url}?{query}&vnp_SecureHash={hash}";
             return paymentUrl;
         }

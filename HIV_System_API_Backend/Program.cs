@@ -129,7 +129,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // No trailing slash
+            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500", "https://localhost:7009") // No trailing slash
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
