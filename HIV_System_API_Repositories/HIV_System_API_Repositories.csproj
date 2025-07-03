@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Stripe.net" Version="48.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\HIV_System_API_DAOs\HIV_System_API_DAOs.csproj" />
   </ItemGroup>
 
