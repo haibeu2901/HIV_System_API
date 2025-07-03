@@ -28,7 +28,12 @@ namespace HIV_System_API_Services.Implements
             _memoryCache = memoryCache;
         }
 
-
+        public AccountService(IAccountRepo accountRepo, IVerificationCodeService verificationService, IMemoryCache memoryCache)
+        {
+            _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
+            _verificationService = verificationService ?? throw new ArgumentNullException(nameof(verificationService));
+            _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+        }
 
         private Account MapToEntity(AccountRequestDTO dto)
         {
