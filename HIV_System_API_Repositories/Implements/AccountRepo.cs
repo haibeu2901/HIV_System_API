@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Implements;
+using HIV_System_API_DAOs.Interfaces;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_Repositories.Interfaces;
 using System;
@@ -12,6 +13,18 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class AccountRepo : IAccountRepo
     {
+        private readonly IAccountDAO _accountDAO;
+
+        public AccountRepo()
+        {
+            _accountDAO = new AccountDAO();
+        }
+
+        public AccountRepo(IAccountDAO accountDAO)
+        {
+            _accountDAO = accountDAO;
+        }
+
         public async Task<bool> ChangePasswordAsync(int accId, ChangePasswordRequestDTO request)
         {
             return await AccountDAO.Instance.ChangePasswordAsync(accId, request); 

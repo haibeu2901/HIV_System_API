@@ -19,6 +19,12 @@ namespace HIV_System_API_Backend.Controllers
             _arvMedicationDetailService = new ArvMedicationDetailService();
         }
 
+        // Use for unit testing or dependency injection
+        //public ArvMedicationDetailController(IArvMedicationDetailService arvMedicationDetailService)
+        //{
+        //    _arvMedicationDetailService = arvMedicationDetailService; // Injected
+        //}
+
         [HttpGet("GetAllArvMedicationDetails")]
         [AllowAnonymous]
         public async Task<IActionResult> GetAllArvMedicationDetails()
