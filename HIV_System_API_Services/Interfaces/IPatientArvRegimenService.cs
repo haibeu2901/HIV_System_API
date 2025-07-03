@@ -1,4 +1,5 @@
-﻿using HIV_System_API_DTOs.PatientARVRegimenDTO;
+﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,7 @@ namespace HIV_System_API_Services.Interfaces
         Task<PatientArvRegimenResponseDTO> CreatePatientArvRegimenAsync(PatientArvRegimenRequestDTO patientArvRegimen);
         Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenAsync(int parId, PatientArvRegimenRequestDTO patientArvRegimen);
         Task<bool> DeletePatientArvRegimenAsync(int parId);
+        Task<List<PatientArvRegimenResponseDTO>> GetPatientArvRegimensByPatientIdAsync(int patientId);
+
     }
 }

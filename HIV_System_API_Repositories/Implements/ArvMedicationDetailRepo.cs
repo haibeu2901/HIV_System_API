@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Implements;
+using HIV_System_API_DAOs.Interfaces;
 using HIV_System_API_Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,19 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class ArvMedicationDetailRepo : IArvMedicationDetailRepo
     {
+        private readonly IArvMedicationDetailDAO _arvMedicationDetailDAO;
+
+        public ArvMedicationDetailRepo()
+        {
+            _arvMedicationDetailDAO = new ArvMedicationDetailDAO();
+        }
+
+        // Use for unit testing or dependency injection
+        public ArvMedicationDetailRepo(IArvMedicationDetailDAO arvMedicationDetailDAO)
+        {
+            _arvMedicationDetailDAO = arvMedicationDetailDAO;
+        }
+
         public async Task<ArvMedicationDetail> CreateArvMedicationDetailAsync(ArvMedicationDetail arvMedicationDetail)
         {
             return await ArvMedicationDetailDAO.Instance.CreateArvMedicationDetailAsync(arvMedicationDetail);

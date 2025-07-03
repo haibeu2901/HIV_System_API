@@ -20,6 +20,12 @@ namespace HIV_System_API_DAOs.Implements
             _context = new HivSystemApiContext();
         }
 
+        // Use for unit testing or dependency injection
+        public AccountDAO(HivSystemApiContext context)
+        {
+            _context = context;
+        }
+
         public static AccountDAO Instance
         {
             get
@@ -40,7 +46,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Account?> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
             var account = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.AccUsername == accUsername && a.AccPassword == accPassword);
+                .SingleOrDefaultAsync(a => a.AccUsername == accUsername && a.AccPassword == accPassword && a.IsActive == true);
             return account;
         }
 

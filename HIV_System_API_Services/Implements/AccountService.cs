@@ -28,7 +28,12 @@ namespace HIV_System_API_Services.Implements
             _memoryCache = memoryCache;
         }
 
-
+        public AccountService(IAccountRepo accountRepo, IVerificationCodeService verificationService, IMemoryCache memoryCache)
+        {
+            _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
+            _verificationService = verificationService ?? throw new ArgumentNullException(nameof(verificationService));
+            _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+        }
 
         private Account MapToEntity(AccountRequestDTO dto)
         {
@@ -167,6 +172,28 @@ namespace HIV_System_API_Services.Implements
             if (!string.IsNullOrWhiteSpace(patient.Email) && await _accountRepo.IsEmailUsedAsync(patient.Email))
             {
                 throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
+            }
+
+            //Check date of birth
+            if (patient.Dob.HasValue && patient.Dob.Value > DateTime.Now)
+            {
+                throw new ArgumentException("Date of birth cannot be in the future.", nameof(patient.Dob));
+            }
+            if (patient.Dob.HasValue && patient.Dob.Value < new DateTime(1900, 1, 1))
+            {
+                throw new ArgumentException("Date of birth cannot be before 1900.", nameof(patient.Dob));
+            }
+
+            // Check if patient is at least 18 years old
+            if (patient.Dob.HasValue)
+            {
+                var today = DateTime.Today;
+                var age = today.Year - patient.Dob.Value.Year;
+                if (patient.Dob.Value.Date > today.AddYears(-age)) age--;
+                if (age < 18)
+                {
+                    throw new ArgumentException("Patient must be at least 18 years old.", nameof(patient.Dob));
+                }
             }
 
             // Map PatientAccountRequestDTO to AccountRequestDTO
@@ -492,7 +519,7 @@ namespace HIV_System_API_Services.Implements
                 return (false, "Verification code does not match.");
 
             // Optionally: Remove the code from cache after successful verification
-            _memoryCache.Remove(cacheKey);
+             _memoryCache.Remove(cacheKey);
 
             return (true, "Verification code is valid.");
         }

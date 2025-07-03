@@ -146,33 +146,29 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<List<Doctor>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
         {
-            // Convert DateOnly and TimeOnly to DateTime for querying
+            // Step 1: Determine the day of week (1=Monday, ..., 7=Sunday)
             var dayOfWeek = (int)apmtDate.ToDateTime(TimeOnly.MinValue).DayOfWeek;
-            if (dayOfWeek == 0) // Sunday
-            {
-                dayOfWeek = 7; // Adjust to 7 for Sunday
-            }
+            if (dayOfWeek == 0) dayOfWeek = 7;
 
-            // Assume 30-minute appointment duration, consistent with AppointmentService
+            // Step 2: Define appointment duration and calculate end time
             var appointmentDuration = TimeSpan.FromMinutes(30);
-            var apmTimeSpan = apmTime.ToTimeSpan();
-            var apmEndTime = TimeOnly.FromTimeSpan(apmTimeSpan + appointmentDuration);
+            var apmEndTime = apmTime.Add(appointmentDuration);
 
-            // Query doctors who have a schedule matching the day and time
+            // Step 3: Query for available doctors
             var availableDoctors = await _context.Doctors
                 .Include(d => d.Acc)
                 .Include(d => d.DoctorWorkSchedules)
                 .Where(d => d.DoctorWorkSchedules.Any(ws =>
                     ws.DayOfWeek == dayOfWeek &&
                     ws.StartTime <= apmTime &&
-                    ws.EndTime >= apmEndTime))
-                // Exclude doctors with conflicting appointments
+                    ws.EndTime >= apmEndTime &&
+                    ws.IsAvailable == true))
                 .Where(d => !_context.Appointments.Any(a =>
                     a.DctId == d.DctId &&
                     a.ApmtDate == apmtDate &&
                     a.ApmTime < apmEndTime &&
                     a.ApmTime >= apmTime &&
-                    a.ApmStatus != 4)) // Exclude cancelled appointments
+                    a.ApmStatus != 4))
                 .ToListAsync();
 
             return availableDoctors;

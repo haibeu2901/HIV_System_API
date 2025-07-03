@@ -1,0 +1,176 @@
+body {
+            background: #f7f8fa;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .main-content {
+            max-width: 800px;
+            margin: 40px auto 0 auto;
+            padding: 32px 24px;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(44,62,80,0.07);
+        }
+        h1 {
+            text-align: center;
+            color: #e74c3c;
+            margin-bottom: 32px;
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+        }
+        .appointment-card {
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 22px;
+            background: #fafbfc;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.04);
+            transition: box-shadow 0.2s;
+        }
+        .appointment-card:hover {
+            box-shadow: 0 6px 24px rgba(231,76,60,0.10);
+            border-color: #e74c3c;
+        }
+        .appointment-card h3 {
+            margin: 0 0 10px 0;
+            color: #c0392b;
+            font-size: 1.3rem;
+        }
+        .appointment-card p {
+            margin: 6px 0;
+            font-size: 1.05rem;
+        }
+        .appointment-card strong {
+            color: #333;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 12px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .status-pending {
+            background: #fff3e0;
+            color: #e67e22;
+            border: 1px solid #e67e22;
+        }
+        .status-confirmed {
+            background: #eafaf1;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        .status-cancelled {
+            background: #fdeaea;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        @media (max-width: 600px) {
+            .main-content {
+                padding: 12px 2vw;
+            }
+            .appointment-card {
+                padding: 12px 8px;
+            }
+        }
+=======
+
+        /* Style FullCalendar view switcher buttons */
+.fc .fc-button-group .fc-button {
+    background: #fff;
+    color: #e74c3c;
+    border: 1.5px solid #e74c3c;
+    border-radius: 10px !important;
+    font-weight: 600;
+    margin-left: 6px;
+    margin-right: 0;
+    box-shadow: none;
+    transition: background 0.2s, color 0.2s;
+    min-width: 60px;
+    text-transform: capitalize;
+}
+
+.fc .fc-button-group .fc-button:first-child {
+    margin-left: 0;
+}
+
+.fc .fc-button-group .fc-button.fc-button-active,
+.fc .fc-button-group .fc-button:focus,
+.fc .fc-button-group .fc-button:hover {
+    background: #e74c3c;
+    color: #fff;
+    border-color: #e74c3c;
+    outline: none;
+}
+
+.fc .fc-button-group {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+}
+
+/* Optional: style the "today" button to match */
+.fc .fc-button.fc-today-button {
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 10px !important;
+    border: 1.5px solid #e74c3c;
+    font-weight: 600;
+    margin-left: 10px;
+    min-width: 60px;
+    box-shadow: none;
+    transition: background 0.2s, color 0.2s;
+}
+.fc .fc-button.fc-today-button:disabled {
+    background: #ccc;
+    color: #fff;
+    border-color: #ccc;
+}
+
+/* Sticky Note Modal Styles */
+.sticky-modal {
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sticky-modal.hidden {
+    display: none;
+}
+.sticky-modal-content {
+    background: #fffbe7;
+    border: 2px solid #fbc02d;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+    padding: 32px 32px 24px 32px;
+    min-width: 320px;
+    max-width: 90vw;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    position: relative;
+}
+.sticky-close {
+    position: absolute;
+    top: 12px;
+    right: 18px;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #e74c3c;
+    cursor: pointer;
+}
+.sticky-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    color: #c0392b;
+    font-size: 1.3rem;
+}
+.sticky-field {
+    margin-bottom: 10px;
+    font-size: 1.08rem;
+}
+=======
+

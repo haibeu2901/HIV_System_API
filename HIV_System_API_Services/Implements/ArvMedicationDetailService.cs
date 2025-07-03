@@ -14,9 +14,16 @@ namespace HIV_System_API_Services.Implements
     public class ArvMedicationDetailService : IArvMedicationDetailService
     {
         private readonly IArvMedicationDetailRepo _arvMedicationDetailRepo;
+
         public ArvMedicationDetailService()
         {
             _arvMedicationDetailRepo = new ArvMedicationDetailRepo();
+        }
+
+        // Use for unit testing or dependency injection
+        public ArvMedicationDetailService(IArvMedicationDetailRepo arvMedicationDetailRepo)
+        {
+            _arvMedicationDetailRepo = arvMedicationDetailRepo; // Injected
         }
 
         private void ValidateArvMedicationDetailDTO(ArvMedicationDetailDTO dto)

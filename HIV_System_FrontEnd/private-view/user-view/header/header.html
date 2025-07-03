@@ -18,11 +18,12 @@
                     </button>
                     <div class="dropdown-content">
                         <a href="/private-view/user-view/profile/profile.html"><i class="fas fa-id-card"></i> Profile</a>
-                        <a href="/private-view/user-view/booking/appointment-booking.html"><i class="fas fa-calendar-check"></i> Appointment</a>
-                        <a href="/private-view/user-view/medical-record.html"><i class="fas fa-notes-medical"></i> Medical Record</a>
-                        <a href="/private-view/user-view/all-doctors.html"><i class="fas fa-user-md"></i> All Doctors</a>
+                        <a href="/private-view/user-view/appointment-view/view-appointment.html"><i class="fas fa-calendar-check"></i> Appointment</a>
+                        <a href="/private-view/user-view/notification/notification.html"><i class="fas fa-bell"></i> Notification</a>
+                        <a href="/private-view/user-view/view-doctor/allDoctor.html"><i class="fas fa-user-md"></i> All Doctors</a>
                     </div>
                 </li>
+               
                 <li>
                     <button class="btn-logout" onclick="logout()">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -37,3 +38,17 @@
         </div>
     </nav>
 </header>
+
+<!-- Notification Pop-up -->
+<div id="notification-popup" class="notification-popup hidden">
+    <div class="popup-header">
+        <span>Notifications</span>
+        <button id="closeNotificationPopup" class="close-btn"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="popup-notification-list" class="popup-list">
+        <!-- Notifications will be injected here -->
+    </div>
+    <div class="popup-footer">
+        <a href="/private-view/user-view/notification/notification.html">See all incoming activity</a>
+    </div>
+</div>
