@@ -20,6 +20,8 @@ namespace HIV_System_API_Services.Implements
         private readonly IVerificationCodeService _verificationService;
         private readonly IMemoryCache _memoryCache;
         private const int PENDING_REGISTRATION_EXPIRY_MINUTES = 30;
+        // Define a reasonable, consistent timeout to prevent Regular Expression Denial of Service (ReDoS) attacks.
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
         public AccountService(IMemoryCache memoryCache)
         {
@@ -66,6 +68,12 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
+        /// <summary>
+        /// Validates a username based on a set of rules.
+        /// </summary>
+        /// <param name="username">The username to validate.</param>
+        /// <param name="email">Optional: The user's email to ensure the username is not the same.</param>
+        /// <exception cref="ArgumentException">Thrown when the username is invalid.</exception>
         public static void ValidateUsername(string username, string email = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -74,15 +82,29 @@ namespace HIV_System_API_Services.Implements
             if (username.Length < 3 || username.Length > 16)
                 throw new ArgumentException("Username must be between 3 and 16 characters.", nameof(username));
 
-            // This regex ensures the username only contains allowed characters.
-            // It implicitly handles the "no spaces" rule, so a separate check is not needed.
-            if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$"))
-                throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.", nameof(username));
+            try
+            {
+                // This regex ensures the username only contains allowed characters.
+                // A timeout is specified to prevent ReDoS attacks.
+                if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$", RegexOptions.None, RegexTimeout))
+                    throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.", nameof(username));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Handle the case where the regex match takes too long.
+                throw new ArgumentException("Username validation timed out due to excessive complexity.", nameof(username));
+            }
 
             if (!string.IsNullOrEmpty(email) && username.Equals(email, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("Username cannot be the same as the email.", nameof(username));
         }
 
+        /// <summary>
+        /// Validates a password based on complexity and length rules.
+        /// </summary>
+        /// <param name="password">The password to validate.</param>
+        /// <param name="username">Optional: The user's username to ensure the password is not the same.</param>
+        /// <exception cref="ArgumentException">Thrown when the password is invalid.</exception>
         public static void ValidatePassword(string password, string username = null)
         {
             if (string.IsNullOrWhiteSpace(password))
@@ -98,7 +120,7 @@ namespace HIV_System_API_Services.Implements
             bool hasUppercase = password.Any(char.IsUpper);
             bool hasLowercase = password.Any(char.IsLower);
             bool hasDigit = password.Any(char.IsDigit);
-            const string specialCharacters = @"@$!%*?&";
+            const string specialCharacters = @"~!@#$%^&*.";
             bool hasSpecialChar = password.Any(specialCharacters.Contains);
 
             if (!hasUppercase || !hasLowercase || !hasDigit || !hasSpecialChar)
@@ -108,16 +130,20 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Password cannot be the same as the username.", nameof(password));
         }
 
+        /// <summary>
+        /// Validates an email address based on format and length rules.
+        /// </summary>
+        /// <param name="email">The email to validate.</param>
+        /// <param name="username">Optional: The user's username to ensure the email is not the same.</param>
+        /// <exception cref="ArgumentException">Thrown when the email is invalid.</exception>
         public static void ValidateEmail(string email, string username = null)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email is required.", nameof(email));
 
-            // 1. Check overall length.
             if (email.Length > 254)
                 throw new ArgumentException("Email must not exceed 254 characters.", nameof(email));
 
-            // 2. Ensure there is exactly one '@' symbol.
             var parts = email.Split('@');
             if (parts.Length != 2)
                 throw new ArgumentException("Email format is invalid (must contain exactly one '@').", nameof(email));
@@ -125,22 +151,26 @@ namespace HIV_System_API_Services.Implements
             var localPart = parts[0];
             var domainPart = parts[1];
 
-            // 3. Check length of local and domain parts.
             if (localPart.Length == 0 || localPart.Length > 64)
                 throw new ArgumentException("Email local-part must be between 1 and 64 characters.", nameof(email));
 
             if (domainPart.Length == 0 || domainPart.Length > 255)
                 throw new ArgumentException("Email domain must be between 1 and 255 characters.", nameof(email));
 
-            // 4. Check for invalid character sequences.
             if (localPart.Contains("..") || domainPart.Contains(".."))
                 throw new ArgumentException("Email cannot contain consecutive dots.", nameof(email));
 
-            // 5. Use a practical regex for overall format validation.
-            if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
-                throw new ArgumentException("Email format is invalid.", nameof(email));
+            try
+            {
+                // Use a practical regex for overall format validation with a timeout to prevent ReDoS.
+                if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", RegexOptions.None, RegexTimeout))
+                    throw new ArgumentException("Email format is invalid.", nameof(email));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                throw new ArgumentException("Email validation timed out due to excessive complexity.", nameof(email));
+            }
 
-            // 6. Check against username.
             if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("Email cannot be the same as the username.", nameof(email));
         }
