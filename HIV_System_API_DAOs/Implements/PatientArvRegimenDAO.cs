@@ -33,12 +33,18 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<List<PatientArvRegimen>> GetAllPatientArvRegimensAsync()
         {
-            return await _context.PatientArvRegimen.ToListAsync();
+            return await _context.PatientArvRegimen
+                .Include(p => p.Pmr)
+                .Include(p => p.PatientArvMedications)
+                .ToListAsync();
         }
 
         public async Task<PatientArvRegimen?> GetPatientArvRegimenByIdAsync(int parId)
         {
-            return await _context.PatientArvRegimen.SingleOrDefaultAsync(p => p.PmrId == parId);
+            return await _context.PatientArvRegimen
+                .Include(p => p.Pmr)
+                .Include(p => p.PatientArvMedications)
+                .SingleOrDefaultAsync(p => p.ParId == parId);
         }
 
         public async Task<PatientArvRegimen> CreatePatientArvRegimenAsync(PatientArvRegimen patientArvRegimen)
@@ -57,17 +63,22 @@ namespace HIV_System_API_DAOs.Implements
             {
                 throw new ArgumentNullException(nameof(patientArvRegimen), "Patient ARV regimen cannot be null.");
             }
+
             var existingRegimen = await _context.PatientArvRegimen.FindAsync(parId);
             if (existingRegimen == null)
             {
                 throw new KeyNotFoundException($"No ARV regimen found with ID {parId}.");
             }
+
+            // Update all properties
+            existingRegimen.PmrId = patientArvRegimen.PmrId; // Allow PMR ID updates
             existingRegimen.StartDate = patientArvRegimen.StartDate;
             existingRegimen.EndDate = patientArvRegimen.EndDate;
             existingRegimen.Notes = patientArvRegimen.Notes;
             existingRegimen.RegimenLevel = patientArvRegimen.RegimenLevel;
             existingRegimen.RegimenStatus = patientArvRegimen.RegimenStatus;
             existingRegimen.TotalCost = patientArvRegimen.TotalCost;
+            existingRegimen.CreatedAt = patientArvRegimen.CreatedAt;
 
             _context.PatientArvRegimen.Update(existingRegimen);
             await _context.SaveChangesAsync();
@@ -81,6 +92,7 @@ namespace HIV_System_API_DAOs.Implements
             {
                 return false; // Regimen not found
             }
+
             _context.PatientArvRegimen.Remove(regimen);
             await _context.SaveChangesAsync();
             return true; // Deletion successful
@@ -92,6 +104,15 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(p => p.Pmr)
                 .Include(p => p.PatientArvMedications)
                 .Where(p => p.Pmr.PtnId == patientId)
+                .ToListAsync();
+        }
+
+        public async Task<List<PatientArvRegimen>> GetPersonalArvRegimensAsync(int personalId)
+        {
+            return await _context.PatientArvRegimen
+                .Include(p => p.Pmr)
+                .Include(p => p.PatientArvMedications)
+                .Where(p => p.Pmr.PtnId == personalId)
                 .ToListAsync();
         }
     }

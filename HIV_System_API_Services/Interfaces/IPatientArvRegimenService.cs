@@ -16,6 +16,7 @@ namespace HIV_System_API_Services.Interfaces
         Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenAsync(int parId, PatientArvRegimenRequestDTO patientArvRegimen);
         Task<bool> DeletePatientArvRegimenAsync(int parId);
         Task<List<PatientArvRegimenResponseDTO>> GetPatientArvRegimensByPatientIdAsync(int patientId);
+        Task<List<PatientArvRegimenResponseDTO>> GetPersonalArvRegimensAsync(int personalId);
 
     }
 }
