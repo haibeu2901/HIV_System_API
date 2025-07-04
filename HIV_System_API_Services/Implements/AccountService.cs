@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace HIV_System_API_Services.Implements
@@ -66,10 +67,58 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
+        private void ValidateUsername(string username, string email = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("Username is required.");
+
+            // Length: 3-16 characters
+            if (username.Length < 3 || username.Length > 16)
+                throw new ArgumentException("Username must be between 3 and 16 characters.");
+
+            // Alphanumeric, underscores, and hyphens only
+            if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$"))
+                throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.");
+
+            // No spaces
+            if (username.Contains(" "))
+                throw new ArgumentException("Username cannot contain spaces.");
+
+            // Cannot match email
+            if (!string.IsNullOrEmpty(email) && username.Equals(email, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Username cannot be the same as the email.");
+        }
+
+        private void ValidatePassword(string password, string username = null)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                throw new ArgumentException("Password is required.");
+
+            // Minimum 8 characters
+            if (password.Length < 8)
+                throw new ArgumentException("Password must be at least 8 characters long.");
+
+            // At least one uppercase, one lowercase, one digit, one special character
+            if (!Regex.IsMatch(password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$"))
+                throw new ArgumentException("Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (@$!%*?&).");
+
+            // No spaces
+            if (password.Contains(" "))
+                throw new ArgumentException("Password cannot contain spaces.");
+
+            // Cannot match username
+            if (!string.IsNullOrEmpty(username) && password.Equals(username, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Password cannot be the same as the username.");
+        }
+
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
             if (account == null)
                 throw new ArgumentNullException(nameof(account));
+
+            // Validate username and password
+            ValidateUsername(account.AccUsername, account.Email);
+            ValidatePassword(account.AccPassword, account.AccUsername);
 
             // Check for duplicate username
             var existing = await _accountRepo.GetAccountByLoginAsync(account.AccUsername, account.AccPassword);
@@ -98,6 +147,10 @@ namespace HIV_System_API_Services.Implements
         {
             if (string.IsNullOrWhiteSpace(accUsername) || string.IsNullOrWhiteSpace(accPassword))
                 return null;
+
+            // Validate username and password format
+            ValidateUsername(accUsername);
+            ValidatePassword(accPassword, accUsername);
 
             var account = await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
             return account == null ? null : MapToResponseDTO(account);
@@ -157,6 +210,10 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(patient.AccUsername));
             if (string.IsNullOrWhiteSpace(patient.AccPassword))
                 throw new ArgumentNullException(nameof(patient.AccPassword));
+
+            // Validate username and password
+            ValidateUsername(patient.AccUsername, patient.Email);
+            ValidatePassword(patient.AccPassword, patient.AccUsername);
 
             // Check for duplicate username
             if (!string.IsNullOrWhiteSpace(patient.AccUsername))
@@ -352,6 +409,10 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(request.Email))
                 throw new ArgumentException("Email is required");
 
+            // Validate username and password
+            ValidateUsername(request.AccUsername, request.Email);
+            ValidatePassword(request.AccPassword, request.AccUsername);
+
             // Check for existing account
             var existingAccount = await _accountRepo.GetAccountByLoginAsync(request.AccUsername, request.AccPassword);
             if (existingAccount != null)
@@ -458,6 +519,9 @@ namespace HIV_System_API_Services.Implements
             if (account.AccPassword != request.currentPassword)
                 throw new InvalidOperationException("Current password is incorrect.");
 
+            // Validate new password
+            ValidatePassword(request.newPassword, account.AccUsername);
+
             if (account.AccPassword == request.newPassword)
                 throw new InvalidOperationException("New password must be different from the current password.");
 
@@ -542,6 +606,9 @@ namespace HIV_System_API_Services.Implements
             var (isValid, message) = await VerifyPasswordResetCodeAsync(email, code);
             if (!isValid)
                 return (false, message);
+
+            // Validate new password
+            ValidatePassword(newPassword, account.AccUsername);
 
             if (account.AccPassword == newPassword)
                 return (false, "New password must be different from the current password.");
