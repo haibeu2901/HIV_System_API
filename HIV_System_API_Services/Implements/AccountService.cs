@@ -111,14 +111,47 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Password cannot be the same as the username.");
         }
 
+        private void ValidateEmail(string email, string username = null)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.");
+
+            // Check total length (max 254 characters)
+            if (email.Length > 254)
+                throw new ArgumentException("Email must not exceed 254 characters.");
+
+            // Check format with regex
+            if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
+                throw new ArgumentException("Email format is invalid.");
+
+            // Check for consecutive dots
+            if (email.Contains(".."))
+                throw new ArgumentException("Email cannot contain consecutive dots.");
+
+            // Check local-part length (max 64 characters)
+            var localPart = email.Split('@')[0];
+            if (localPart.Length > 64)
+                throw new ArgumentException("Email local-part must not exceed 64 characters.");
+
+            // Check domain length (max 255 characters)
+            var domainPart = email.Split('@')[1];
+            if (domainPart.Length > 255)
+                throw new ArgumentException("Email domain must not exceed 255 characters.");
+
+            // Check if email matches username
+            if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Email cannot be the same as the username.");
+        }
+
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
             if (account == null)
                 throw new ArgumentNullException(nameof(account));
 
-            // Validate username and password
+            // Validate username, password, and email
             ValidateUsername(account.AccUsername, account.Email);
             ValidatePassword(account.AccPassword, account.AccUsername);
+            ValidateEmail(account.Email, account.AccUsername);
 
             // Check for duplicate username
             var existing = await _accountRepo.GetAccountByLoginAsync(account.AccUsername, account.AccPassword);
@@ -166,7 +199,16 @@ namespace HIV_System_API_Services.Implements
         {
             if (updatedAccount == null)
                 throw new ArgumentNullException(nameof(updatedAccount));
-            //check authorization
+
+            // Validate password if provided
+            if (!string.IsNullOrWhiteSpace(updatedAccount.AccPassword))
+                ValidatePassword(updatedAccount.AccPassword);
+
+            // Validate email if provided
+            if (!string.IsNullOrWhiteSpace(updatedAccount.Email))
+                ValidateEmail(updatedAccount.Email);
+
+            // Check authorization
             if (updatedAccount.Roles != 1)
             {
                 if (updatedAccount.Roles == 4 && updatedAccount.Roles == 5)
@@ -211,9 +253,10 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(patient.AccPassword))
                 throw new ArgumentNullException(nameof(patient.AccPassword));
 
-            // Validate username and password
+            // Validate username, password, and email
             ValidateUsername(patient.AccUsername, patient.Email);
             ValidatePassword(patient.AccPassword, patient.AccUsername);
+            ValidateEmail(patient.Email, patient.AccUsername);
 
             // Check for duplicate username
             if (!string.IsNullOrWhiteSpace(patient.AccUsername))
@@ -302,6 +345,16 @@ namespace HIV_System_API_Services.Implements
             if (existingAccount.Roles != 3)
                 throw new UnauthorizedAccessException("This account is not a patient account.");
 
+            // Validate email if provided
+            if (!string.IsNullOrWhiteSpace(profileDTO.Email))
+                ValidateEmail(profileDTO.Email, existingAccount.AccUsername);
+
+            // Check email uniqueness if updated
+            if (!string.IsNullOrWhiteSpace(profileDTO.Email) && !profileDTO.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(profileDTO.Email))
+            {
+                throw new InvalidOperationException($"Email '{profileDTO.Email}' is already in use.");
+            }
+
             var accountToUpdate = new Account
             {
                 AccId = accountId,
@@ -325,11 +378,26 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(profileDTO));
 
             var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
+
             if (existingAccount == null)
                 throw new KeyNotFoundException($"Account with id {accountId} not found.");
 
             if (existingAccount.Roles != 2)
                 throw new UnauthorizedAccessException("This account is not a doctor account.");
+
+            // Validate password if provided
+            if (!string.IsNullOrWhiteSpace(profileDTO.AccPassword))
+                ValidatePassword(profileDTO.AccPassword, existingAccount?.AccUsername);
+
+            // Validate email if provided
+            if (!string.IsNullOrWhiteSpace(profileDTO.Email))
+                ValidateEmail(profileDTO.Email, existingAccount?.AccUsername);
+
+            // Check email uniqueness if updated
+            if (!string.IsNullOrWhiteSpace(profileDTO.Email) && !profileDTO.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(profileDTO.Email))
+            {
+                throw new InvalidOperationException($"Email '{profileDTO.Email}' is already in use.");
+            }
 
             var accountToUpdate = new Account
             {
@@ -370,6 +438,9 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentNullException(nameof(email));
 
+            // Validate email
+            ValidateEmail(email);
+
             var account = await _accountRepo.GetAccountByEmailAsync(email);
             if (account == null)
                 return null;
@@ -383,12 +454,18 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.Email))
                 throw new ArgumentException("Email is required.");
+
+            // Validate email
+            ValidateEmail(request.Email);
+
             // Check if account exists for the email
             var account = await _accountRepo.GetAccountByEmailAsync(request.Email);
             if (account == null)
                 throw new InvalidOperationException("No account found with the provided email.");
+
             // Generate verification code
             var verificationCode = _verificationService.GenerateCode(request.Email);
+
             // Store the code in cache with expiry
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
@@ -409,9 +486,10 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(request.Email))
                 throw new ArgumentException("Email is required");
 
-            // Validate username and password
+            // Validate username, password, and email
             ValidateUsername(request.AccUsername, request.Email);
             ValidatePassword(request.AccPassword, request.AccUsername);
+            ValidateEmail(request.Email, request.AccUsername);
 
             // Check for existing account
             var existingAccount = await _accountRepo.GetAccountByLoginAsync(request.AccUsername, request.AccPassword);
@@ -446,6 +524,9 @@ namespace HIV_System_API_Services.Implements
             if (!_verificationService.VerifyCode(email, code))
                 throw new InvalidOperationException("Invalid or expired verification code");
 
+            // Validate email
+            ValidateEmail(email);
+
             // Retrieve pending registration
             var cacheKey = $"pending_registration_{email}";
             if (!_memoryCache.TryGetValue(cacheKey, out PendingPatientRegistrationDTO? pendingRegistration))
@@ -479,6 +560,9 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<(bool isValid, string message)> HasPendingRegistrationAsync(string email)
         {
+            // Validate email
+            ValidateEmail(email);
+
             // Use the same key pattern as used in InitiatePatientRegistrationAsync
             var pendingRegistration = _memoryCache.Get<PendingPatientRegistrationDTO>($"pending_registration_{email}");
 
@@ -544,6 +628,9 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(email))
                 return (false, "Email is required.");
 
+            // Validate email
+            ValidateEmail(email);
+
             // Check if account exists for the email
             var account = await _accountRepo.GetAccountByEmailAsync(email);
             if (account == null)
@@ -574,6 +661,9 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(code))
                 return (false, "Verification code is required.");
 
+            // Validate email
+            ValidateEmail(email);
+
             // Check if the code exists in cache (for password reset)
             var cacheKey = $"forgot_password_{email}";
             if (!_memoryCache.TryGetValue<string>(cacheKey, out var cachedCode))
@@ -596,6 +686,9 @@ namespace HIV_System_API_Services.Implements
                 return (false, "Verification code is required.");
             if (string.IsNullOrWhiteSpace(newPassword))
                 return (false, "New password is required.");
+
+            // Validate email
+            ValidateEmail(email);
 
             var account = await _accountRepo.GetAccountByEmailAsync(email);
             if (account == null)
