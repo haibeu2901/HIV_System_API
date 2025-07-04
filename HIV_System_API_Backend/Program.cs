@@ -123,6 +123,7 @@ builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 builder.Services.AddScoped<IRegimenTemplateService, RegimenTemplateService>();
+builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
