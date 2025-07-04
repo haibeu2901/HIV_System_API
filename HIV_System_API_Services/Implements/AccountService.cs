@@ -9,7 +9,6 @@ using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -67,80 +66,83 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        private void ValidateUsername(string username, string email = null)
+        public static void ValidateUsername(string username, string email = null)
         {
             if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentException("Username is required.");
+                throw new ArgumentException("Username is required.", nameof(username));
 
-            // Length: 3-16 characters
             if (username.Length < 3 || username.Length > 16)
-                throw new ArgumentException("Username must be between 3 and 16 characters.");
+                throw new ArgumentException("Username must be between 3 and 16 characters.", nameof(username));
 
-            // Alphanumeric, underscores, and hyphens only
+            // This regex ensures the username only contains allowed characters.
+            // It implicitly handles the "no spaces" rule, so a separate check is not needed.
             if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$"))
-                throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.");
+                throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.", nameof(username));
 
-            // No spaces
-            if (username.Contains(" "))
-                throw new ArgumentException("Username cannot contain spaces.");
-
-            // Cannot match email
             if (!string.IsNullOrEmpty(email) && username.Equals(email, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Username cannot be the same as the email.");
+                throw new ArgumentException("Username cannot be the same as the email.", nameof(username));
         }
 
-        private void ValidatePassword(string password, string username = null)
+        public static void ValidatePassword(string password, string username = null)
         {
             if (string.IsNullOrWhiteSpace(password))
-                throw new ArgumentException("Password is required.");
+                throw new ArgumentException("Password is required.", nameof(password));
 
-            // Minimum 8 characters
             if (password.Length < 8)
-                throw new ArgumentException("Password must be at least 8 characters long.");
+                throw new ArgumentException("Password must be at least 8 characters long.", nameof(password));
 
-            // At least one uppercase, one lowercase, one digit, one special character
-            if (!Regex.IsMatch(password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$"))
-                throw new ArgumentException("Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (@$!%*?&).");
+            if (password.Contains(' '))
+                throw new ArgumentException("Password cannot contain spaces.", nameof(password));
 
-            // No spaces
-            if (password.Contains(" "))
-                throw new ArgumentException("Password cannot contain spaces.");
+            // Use LINQ for better readability than a complex regex with lookaheads.
+            bool hasUppercase = password.Any(char.IsUpper);
+            bool hasLowercase = password.Any(char.IsLower);
+            bool hasDigit = password.Any(char.IsDigit);
+            const string specialCharacters = @"@$!%*?&";
+            bool hasSpecialChar = password.Any(specialCharacters.Contains);
 
-            // Cannot match username
+            if (!hasUppercase || !hasLowercase || !hasDigit || !hasSpecialChar)
+                throw new ArgumentException($"Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character ({specialCharacters}).", nameof(password));
+
             if (!string.IsNullOrEmpty(username) && password.Equals(username, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Password cannot be the same as the username.");
+                throw new ArgumentException("Password cannot be the same as the username.", nameof(password));
         }
 
-        private void ValidateEmail(string email, string username = null)
+        public static void ValidateEmail(string email, string username = null)
         {
             if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email is required.");
+                throw new ArgumentException("Email is required.", nameof(email));
 
-            // Check total length (max 254 characters)
+            // 1. Check overall length.
             if (email.Length > 254)
-                throw new ArgumentException("Email must not exceed 254 characters.");
+                throw new ArgumentException("Email must not exceed 254 characters.", nameof(email));
 
-            // Check format with regex
+            // 2. Ensure there is exactly one '@' symbol.
+            var parts = email.Split('@');
+            if (parts.Length != 2)
+                throw new ArgumentException("Email format is invalid (must contain exactly one '@').", nameof(email));
+
+            var localPart = parts[0];
+            var domainPart = parts[1];
+
+            // 3. Check length of local and domain parts.
+            if (localPart.Length == 0 || localPart.Length > 64)
+                throw new ArgumentException("Email local-part must be between 1 and 64 characters.", nameof(email));
+
+            if (domainPart.Length == 0 || domainPart.Length > 255)
+                throw new ArgumentException("Email domain must be between 1 and 255 characters.", nameof(email));
+
+            // 4. Check for invalid character sequences.
+            if (localPart.Contains("..") || domainPart.Contains(".."))
+                throw new ArgumentException("Email cannot contain consecutive dots.", nameof(email));
+
+            // 5. Use a practical regex for overall format validation.
             if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
-                throw new ArgumentException("Email format is invalid.");
+                throw new ArgumentException("Email format is invalid.", nameof(email));
 
-            // Check for consecutive dots
-            if (email.Contains(".."))
-                throw new ArgumentException("Email cannot contain consecutive dots.");
-
-            // Check local-part length (max 64 characters)
-            var localPart = email.Split('@')[0];
-            if (localPart.Length > 64)
-                throw new ArgumentException("Email local-part must not exceed 64 characters.");
-
-            // Check domain length (max 255 characters)
-            var domainPart = email.Split('@')[1];
-            if (domainPart.Length > 255)
-                throw new ArgumentException("Email domain must not exceed 255 characters.");
-
-            // Check if email matches username
+            // 6. Check against username.
             if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Email cannot be the same as the username.");
+                throw new ArgumentException("Email cannot be the same as the username.", nameof(email));
         }
 
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
@@ -211,7 +213,7 @@ namespace HIV_System_API_Services.Implements
             // Check authorization
             if (updatedAccount.Roles != 1)
             {
-                if (updatedAccount.Roles == 4 && updatedAccount.Roles == 5)
+                if (updatedAccount.Roles == 4 || updatedAccount.Roles == 5)
                 {
                     var currentAccount = await _accountRepo.GetAccountByIdAsync(id);
                     if (currentAccount?.Roles == 1)
@@ -219,18 +221,19 @@ namespace HIV_System_API_Services.Implements
                 }
             }
 
-
             // Fetch the existing account
             var existingAccount = await _accountRepo.GetAccountByIdAsync(id);
             if (existingAccount == null)
                 throw new KeyNotFoundException($"Account with id {id} not found.");
 
-            // Update fields
-            existingAccount.AccPassword = updatedAccount.AccPassword;
-            if (!string.IsNullOrWhiteSpace(updatedAccount.Email) && await _accountRepo.IsEmailUsedAsync(updatedAccount.Email))
+            // Check email uniqueness if updated
+            if (!string.IsNullOrWhiteSpace(updatedAccount.Email) && !updatedAccount.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(updatedAccount.Email))
             {
                 throw new InvalidOperationException($"Email '{updatedAccount.Email}' is already in use.");
             }
+
+            // Update fields
+            existingAccount.AccPassword = updatedAccount.AccPassword;
             existingAccount.Email = updatedAccount.Email;
             existingAccount.Fullname = updatedAccount.Fullname;
             existingAccount.Dob = updatedAccount.Dob;
@@ -268,13 +271,13 @@ namespace HIV_System_API_Services.Implements
                 }
             }
 
-            //Check if email is already used
+            // Check if email is already used
             if (!string.IsNullOrWhiteSpace(patient.Email) && await _accountRepo.IsEmailUsedAsync(patient.Email))
             {
                 throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
             }
 
-            //Check date of birth
+            // Check date of birth
             if (patient.Dob.HasValue && patient.Dob.Value > DateTime.Now)
             {
                 throw new ArgumentException("Date of birth cannot be in the future.", nameof(patient.Dob));
@@ -304,7 +307,7 @@ namespace HIV_System_API_Services.Implements
                 Email = patient.Email,
                 Fullname = patient.Fullname,
                 Dob = patient.Dob.HasValue ? DateOnly.FromDateTime(patient.Dob.Value) : null,
-                Gender = patient.Gender, // PatientAccountRequestDTO does not have Gender, set to null or default
+                Gender = patient.Gender,
                 Roles = 3, // Assuming 3 is the role for Patient
                 IsActive = true
             };
@@ -378,7 +381,6 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(profileDTO));
 
             var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
-
             if (existingAccount == null)
                 throw new KeyNotFoundException($"Account with id {accountId} not found.");
 
@@ -431,8 +433,6 @@ namespace HIV_System_API_Services.Implements
             return MapToResponseDTO(updatedAccount);
         }
 
-        
-
         public async Task<AccountResponseDTO?> GetAccountByEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
@@ -465,13 +465,12 @@ namespace HIV_System_API_Services.Implements
 
             // Generate verification code
             var verificationCode = _verificationService.GenerateCode(request.Email);
-
             // Store the code in cache with expiry
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
             _memoryCache.Set($"forgot_password_{request.Email}", verificationCode, cacheOptions);
             // TODO: Send code to user's email (email sending not implemented here)
-            return (verificationCode);
+            return verificationCode;
         }
 
         public async Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request)
@@ -563,7 +562,6 @@ namespace HIV_System_API_Services.Implements
             // Validate email
             ValidateEmail(email);
 
-            // Use the same key pattern as used in InitiatePatientRegistrationAsync
             var pendingRegistration = _memoryCache.Get<PendingPatientRegistrationDTO>($"pending_registration_{email}");
 
             if (pendingRegistration == null)
@@ -609,8 +607,6 @@ namespace HIV_System_API_Services.Implements
             if (account.AccPassword == request.newPassword)
                 throw new InvalidOperationException("New password must be different from the current password.");
 
-            // Optionally: add password strength validation here
-
             // Update password
             var changeRequest = new ChangePasswordRequestDTO
             {
@@ -649,8 +645,6 @@ namespace HIV_System_API_Services.Implements
             _memoryCache.Set($"password_reset_{email}", code, cacheOptions);
 
             // TODO: Send code to user's email (email sending not implemented here)
-            // You may inject an IEmailService and call it here.
-
             return (true, "Password reset code has been sent to your email.");
         }
 
@@ -673,7 +667,7 @@ namespace HIV_System_API_Services.Implements
                 return (false, "Verification code does not match.");
 
             // Optionally: Remove the code from cache after successful verification
-             _memoryCache.Remove(cacheKey);
+            _memoryCache.Remove(cacheKey);
 
             return (true, "Verification code is valid.");
         }
