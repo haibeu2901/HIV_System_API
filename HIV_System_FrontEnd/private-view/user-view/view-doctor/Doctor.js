@@ -41,6 +41,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </ul>
                 </div>
                 <div class="doctor-actions">
+                    <a class="btn-chat" href="mailto:${doc.account.email}?subject=Contact%20from%20CareFirst%20HIV%20Clinic" target="_blank">
+                        <i class="fas fa-envelope"></i> Contact the Doctor
+                    </a>
+=======
+=======
                     <button class="btn-chat" onclick="chatToDoctor('${doc.account.accId}', '${doc.account.fullname}')">
                         <i class="fas fa-comments"></i> Chat to Doctor
                     </button>

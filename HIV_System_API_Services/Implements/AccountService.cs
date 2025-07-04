@@ -249,7 +249,7 @@ namespace HIV_System_API_Services.Implements
             {
                 AccId = accountId,
                 AccUsername = existingAccount.AccUsername, // preserve username
-                AccPassword = profileDTO.AccPassword ?? existingAccount.AccPassword,
+                AccPassword = existingAccount.AccPassword,
                 Email = profileDTO.Email ?? existingAccount.Email,
                 Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
                 Dob = profileDTO.Dob ?? existingAccount.Dob,

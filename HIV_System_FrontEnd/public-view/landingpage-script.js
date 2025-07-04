@@ -168,13 +168,13 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
     const submitButton = this.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
 
-    submitButton.textContent = "Logging in...";
+    submitButton.textContent = "Logging in..."; 
     submitButton.disabled = true;
 
     const logginFunction = async (userName, password) => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/Account/GetAccountByLogin`,
+          `https://localhost:7009/api/Account/GetAccountByLogin`,
           {
             method: "POST",
             headers: {
@@ -202,7 +202,9 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
           window.location.href =
             "/private-view/user-view/booking/appointment-booking.html"; // Redirect to the appointment booking page after successful login
         } else if (role == 2) {
-          window.location.href = "http://127.0.0.1:5500/HIV_System_FrontEnd/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
+          window.location.href = "/private-view/doctor-view/doctor-dashboard.html";
+=======
+          window.location.href = "/HIV_System_FrontEnd/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
         } // Redirect to the doctor dashboard page after successful login
       } catch (error) {
         console.error("Error during login:", error);
@@ -353,7 +355,7 @@ document
 
       try {
         const response = await fetch(
-          "https://localhost:7009/api/Account/CreatePatientAccount",
+          "https://localhost:7009/api/Account/RegisterPatient",
           {
             method: "POST",
             headers: {
@@ -369,8 +371,8 @@ document
         }
 
         // Success: show modal and reset form
-        closeModal("registerModal");
-        openModal("successModal");
+       closeModal("registerModal");
+        openVerifyModal(email);
         this.reset();
       } catch (error) {
         alert("Registration failed: " + error.message);
@@ -397,6 +399,91 @@ document.getElementById("contactForm").addEventListener("submit", function (e) {
     submitButton.textContent = originalText;
     submitButton.disabled = false;
   }, 2000);
+});
+
+// Verification Modal Functions
+let countdownInterval;
+let countdownTime = 240; // 4 minutes in seconds
+
+function openVerifyModal(email) {
+  document.getElementById("verifyEmail").value = email;
+  document.getElementById("verifyCode").value = "";
+  clearError("verifyCode");
+  document.getElementById("resendBtn").disabled = true;
+  openModal("verifyModal");
+  startCountdown();
+}
+
+function startCountdown() {
+  clearInterval(countdownInterval);
+  countdownTime = 240;
+  updateCountdown();
+  countdownInterval = setInterval(() => {
+    countdownTime--;
+    updateCountdown();
+    if (countdownTime <= 0) {
+      clearInterval(countdownInterval);
+      document.getElementById("countdown").textContent = "Code expired.";
+      document.getElementById("resendBtn").disabled = false;
+    }
+  }, 1000);
+}
+
+function updateCountdown() {
+  const min = Math.floor(countdownTime / 60);
+  const sec = countdownTime % 60;
+  document.getElementById("countdown").textContent =
+    `Code expires in ${min}:${sec.toString().padStart(2, "0")}`;
+  document.getElementById("resendBtn").disabled = countdownTime > 0;
+}
+
+// Resend code
+document.getElementById("resendBtn").addEventListener("click", async function () {
+  const email = document.getElementById("verifyEmail").value;
+  this.disabled = true;
+  try {
+    await fetch("https://localhost:7009/api/Account/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    countdownTime = 240;
+    startCountdown();
+    alert("Verification code resent!");
+  } catch {
+    alert("Failed to resend code. Please try again.");
+    this.disabled = false;
+  }
+});
+
+// Verify code
+document.getElementById("verifyForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  clearError("verifyCode");
+  const email = document.getElementById("verifyEmail").value;
+  const code = document.getElementById("verifyCode").value.trim();
+
+  if (!code) {
+    showError("verifyCode", "Please enter the verification code.");
+    return;
+  }
+
+  try {
+    const res = await fetch("https://localhost:7009/api/Account/verify-registration", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code })
+    });
+    if (!res.ok) {
+      showError("verifyCode", "Invalid or expired code.");
+      return;
+    }
+    clearInterval(countdownInterval);
+    closeModal("verifyModal");
+    openModal("successModal");
+  } catch {
+    showError("verifyCode", "Verification failed. Try again.");
+  }
 });
 
 // Real-time validation for better UX

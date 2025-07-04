@@ -4,17 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HIV_System_API_DTOs.TestComponentDTO
+namespace HIV_System_API_DTOs.ComponentTestResultDTO
 {
-    public class ComponentTestRequestDTO
+    public class ComponentTestResultUpdateRequestDTO
     {
-        public int CtrId { get; set; }
-
-        public int TrsId { get; set; }
-
-        public int StfId { get; set; }
-
-        public string CtrName { get; set; } = null!;
+        public string ComponentTestResultName { get; set; } = null!;
 
         public string? CtrDescription { get; set; }
 

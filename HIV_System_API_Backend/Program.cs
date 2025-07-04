@@ -1,11 +1,12 @@
 using HIV_System_API_BOs;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Stripe;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,7 +110,7 @@ builder.Services.AddDbContext<HivSystemApiContext>(options =>
 
 // Add Services
 builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailService>();
-builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<HIV_System_API_Services.Interfaces.IAccountService, HIV_System_API_Services.Implements.AccountService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -122,6 +123,8 @@ builder.Services.AddScoped<IMedicalServiceService, MedicalServiceService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddHttpContextAccessor(); // Add this for user claims access
 builder.Services.AddScoped<IRegimenTemplateService, RegimenTemplateService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 
@@ -136,6 +139,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+StripeConfiguration.ApiKey = stripeSecretKey;
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
