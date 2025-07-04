@@ -271,6 +271,12 @@ namespace HIV_System_API_Services.Implements
                     throw new InvalidOperationException($"Patient ARV Regimen with ID {parId} does not exist.");
                 }
 
+                // Validate the whether the regimen is completed
+                if (existingRegimen.RegimenStatus == 5) // Completed
+                {
+                    throw new InvalidOperationException($"Cannot update ARV Regimen with ID {parId} because it is marked as Completed.");
+                }
+
                 // Validate that the PatientMedicalRecord exists before updating the regimen
                 await ValidatePatientMedicalRecordExists(patientArvRegimen.PatientMedRecordId);
 
@@ -381,6 +387,76 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Unexpected error retrieving personal ARV regimens for personal ID {personalId}: {ex.InnerException}");
+            }
+        }
+
+        public async Task<PatientArvRegimenResponseDTO> PatchPatientArvRegimenAsync(int parId, PatientArvRegimenPatchDTO patientArvRegimen)
+        {
+            if (patientArvRegimen == null)
+                throw new ArgumentNullException(nameof(patientArvRegimen));
+
+            if (parId <= 0)
+                throw new ArgumentException("Invalid Patient ARV Regimen ID");
+
+            try
+            {
+                var existingRegimen = await _patientArvRegimenRepo.GetPatientArvRegimenByIdAsync(parId);
+                if (existingRegimen == null)
+                {
+                    throw new InvalidOperationException($"Patient ARV Regimen with ID {parId} does not exist.");
+                }
+
+                if (existingRegimen.RegimenStatus == 5) // Completed
+                {
+                    throw new InvalidOperationException($"Cannot update ARV Regimen with ID {parId} because it is marked as Completed.");
+                }
+
+                if (patientArvRegimen.StartDate.HasValue && existingRegimen.RegimenStatus == 2) // Active
+                {
+                    throw new InvalidOperationException($"Cannot update StartDate for ARV Regimen with ID {parId} because it is Active.");
+                }
+
+                await ValidateRegimenLevel(patientArvRegimen.RegimenLevel);
+                await ValidateRegimenStatus(patientArvRegimen.RegimenStatus);
+
+                if (patientArvRegimen.StartDate.HasValue && patientArvRegimen.EndDate.HasValue
+                    && patientArvRegimen.StartDate > patientArvRegimen.EndDate)
+                {
+                    throw new ArgumentException("Start date cannot be later than end date.");
+                }
+
+                // Update only provided fields
+                if (patientArvRegimen.Notes != null)
+                    existingRegimen.Notes = patientArvRegimen.Notes;
+                if (patientArvRegimen.RegimenLevel.HasValue)
+                    existingRegimen.RegimenLevel = patientArvRegimen.RegimenLevel.Value;
+                if (patientArvRegimen.StartDate.HasValue)
+                    existingRegimen.StartDate = patientArvRegimen.StartDate.Value;
+                if (patientArvRegimen.EndDate.HasValue)
+                    existingRegimen.EndDate = patientArvRegimen.EndDate.Value;
+                if (patientArvRegimen.RegimenStatus.HasValue)
+                    existingRegimen.RegimenStatus = patientArvRegimen.RegimenStatus.Value;
+                if (patientArvRegimen.TotalCost.HasValue)
+                    existingRegimen.TotalCost = patientArvRegimen.TotalCost.Value;
+
+                var updatedEntity = await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, existingRegimen);
+                return MapToResponseDTO(updatedEntity);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Database error while updating ARV regimen: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error updating ARV regimen: {ex.InnerException}");
             }
         }
     }

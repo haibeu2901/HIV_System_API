@@ -300,6 +300,48 @@ namespace HIV_System_API_Backend.Controllers
                     $"Unexpected error occurred while retrieving personal ARV regimens for Personal ID : {ex.InnerException}");
             }
         }
+
+        /// <summary>
+        /// Partially updates a patient ARV regimen
+        /// </summary>
+        /// <param name="parId">Patient ARV Regimen ID</param>
+        /// <param name="patientArvRegimen">Updated patient ARV regimen data</param>
+        /// <returns>Updated patient ARV regimen</returns>
+        [HttpPatch("PatchPatientArvRegimen/{parId}")]
+        [Authorize(Roles = "1,2,5")]
+        public async Task<IActionResult> PatchPatientArvRegimen(int parId, [FromBody] PatientArvRegimenPatchDTO patientArvRegimen)
+        {
+            if (patientArvRegimen == null)
+            {
+                return BadRequest("Request body is null.");
+            }
+
+            try
+            {
+                var updatedRegimen = await _patientArvRegimenService.PatchPatientArvRegimenAsync(parId, patientArvRegimen);
+                return Ok(updatedRegimen);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest($"Missing required data: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid input: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest($"Operation failed: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Database error while updating ARV regimen: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Unexpected error updating regimen: {ex.InnerException}");
+            }
+        }
     }
 }
 
