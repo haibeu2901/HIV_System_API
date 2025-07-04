@@ -23,6 +23,13 @@ namespace HIV_System_API_Services.Implements
             _context = new HivSystemApiContext(); // Initialize context
         }
 
+        // Use for unit testing or dependency injection
+        public PatientArvRegimenService(IPatientArvRegimenRepo patientArvRegimenRepo, HivSystemApiContext context)
+        {
+            _patientArvRegimenRepo = patientArvRegimenRepo; // Injected
+            _context = context;
+        }
+
         private async Task ValidatePatientMedicalRecordExists(int pmrId)
         {
             var exists = await _context.PatientMedicalRecords.AnyAsync(pmr => pmr.PmrId == pmrId);
