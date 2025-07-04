@@ -201,7 +201,7 @@ namespace HIV_System_API_Tests
 
             _mockAccountRepo
                 .Setup(x => x.GetAccountByLoginAsync(username, password))
-                .ReturnsAsync(inactiveAccount);
+                .ReturnsAsync((Account)null);
 
             // Act
             var result = await _accountService.GetAccountByLoginAsync(username, password);
