@@ -126,6 +126,8 @@ builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddHttpContextAccessor(); // Add this for user claims access
 builder.Services.AddScoped<IRegimenTemplateService, RegimenTemplateService>();
+builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
+
 // Add CORS policy
 builder.Services.AddCors(options =>
 {
