@@ -9,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -22,6 +23,9 @@ namespace HIV_System_API_Services.Implements
         private const int PENDING_REGISTRATION_EXPIRY_MINUTES = 30;
         // Define a reasonable, consistent timeout to prevent Regular Expression Denial of Service (ReDoS) attacks.
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
+        private const int SaltLength = 12; // 12 bytes -> 16 chars in base64
+        private const int HashLength = 24; // 24 bytes -> 32 chars in base64
+        private const int Iterations = 100000; // PBKDF2 iteration count
 
         public AccountService(IMemoryCache memoryCache)
         {
@@ -37,12 +41,53 @@ namespace HIV_System_API_Services.Implements
             _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         }
 
+        private string HashPassword(string password)
+        {
+            // Generate a random salt
+            byte[] salt = RandomNumberGenerator.GetBytes(SaltLength);
+            // Generate PBKDF2 hash
+            using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256))
+            {
+                byte[] hash = pbkdf2.GetBytes(HashLength);
+                // Combine salt and hash as base64 strings
+                string saltBase64 = Convert.ToBase64String(salt);
+                string hashBase64 = Convert.ToBase64String(hash);
+                return $"{saltBase64}:{hashBase64}"; // Format: <16-chars>:<32-chars>
+            }
+        }
+
+        private bool VerifyPassword(string password, string storedHash)
+        {
+            // Split stored hash into salt and hash
+            string[] parts = storedHash.Split(':');
+            if (parts.Length != 2)
+                return false;
+
+            try
+            {
+                byte[] salt = Convert.FromBase64String(parts[0]);
+                byte[] storedHashBytes = Convert.FromBase64String(parts[1]);
+
+                // Compute hash of provided password
+                using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256))
+                {
+                    byte[] computedHash = pbkdf2.GetBytes(HashLength);
+                    // Compare hashes
+                    return CryptographicOperations.FixedTimeEquals(computedHash, storedHashBytes);
+                }
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
         private Account MapToEntity(AccountRequestDTO dto)
         {
             return new Account
             {
                 AccUsername = dto.AccUsername,
-                AccPassword = dto.AccPassword,
+                AccPassword = HashPassword(dto.AccPassword),
                 Email = dto.Email,
                 Fullname = dto.Fullname,
                 Dob = dto.Dob,
@@ -58,7 +103,7 @@ namespace HIV_System_API_Services.Implements
             {
                 AccId = account.AccId,
                 AccUsername = account.AccUsername,
-                AccPassword = account.AccPassword,
+                // Exclude AccPassword for security
                 Email = account.Email,
                 Fullname = account.Fullname,
                 Dob = account.Dob,
@@ -130,7 +175,7 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Password cannot be the same as the username.", nameof(password));
         }
 
-        /// <summary>
+        // <summary>
         /// Validates an email address based on format and length rules.
         /// </summary>
         /// <param name="email">The email to validate.</param>
@@ -172,7 +217,7 @@ namespace HIV_System_API_Services.Implements
             }
 
             if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Email cannot be the same as the username.", nameof(email));
+                throw new ArgumentException("Email cannot be the same as the username.", nameof(username));
         }
 
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
@@ -186,9 +231,13 @@ namespace HIV_System_API_Services.Implements
             ValidateEmail(account.Email, account.AccUsername);
 
             // Check for duplicate username
-            var existing = await _accountRepo.GetAccountByLoginAsync(account.AccUsername, account.AccPassword);
-            if (existing != null)
-                throw new InvalidOperationException($"Account already exists.");
+            var existingByUsername = await _accountRepo.GetAccountByUsernameAsync(account.AccUsername);
+            if (existingByUsername != null)
+                throw new InvalidOperationException($"Username '{account.AccUsername}' is already in use.");
+
+            // Check for duplicate email
+            if (await _accountRepo.IsEmailUsedAsync(account.Email))
+                throw new InvalidOperationException($"Email '{account.Email}' is already in use.");
 
             var entity = MapToEntity(account);
             var createdAccount = await _accountRepo.CreateAccountAsync(entity);
@@ -217,8 +266,11 @@ namespace HIV_System_API_Services.Implements
             ValidateUsername(accUsername);
             ValidatePassword(accPassword, accUsername);
 
-            var account = await _accountRepo.GetAccountByLoginAsync(accUsername, accPassword);
-            return account == null ? null : MapToResponseDTO(account);
+            var account = await _accountRepo.GetAccountByUsernameAsync(accUsername);
+            if (account == null || !VerifyPassword(accPassword, account.AccPassword))
+                return null;
+
+            return MapToResponseDTO(account);
         }
 
         public async Task<List<AccountResponseDTO>> GetAllAccountsAsync()
@@ -263,7 +315,7 @@ namespace HIV_System_API_Services.Implements
             }
 
             // Update fields
-            existingAccount.AccPassword = updatedAccount.AccPassword;
+            existingAccount.AccPassword = !string.IsNullOrWhiteSpace(updatedAccount.AccPassword) ? HashPassword(updatedAccount.AccPassword) : existingAccount.AccPassword;
             existingAccount.Email = updatedAccount.Email;
             existingAccount.Fullname = updatedAccount.Fullname;
             existingAccount.Dob = updatedAccount.Dob;
@@ -276,15 +328,17 @@ namespace HIV_System_API_Services.Implements
             return MapToResponseDTO(updatedEntity);
         }
 
-        internal async Task<PatientResponseDTO> CreatePatientAccountAsync(PatientAccountRequestDTO patient)
+        public async Task<PatientResponseDTO> CreatePatientAccountAsync(PatientAccountRequestDTO patient)
         {
             if (patient == null)
                 throw new ArgumentNullException(nameof(patient));
 
             if (string.IsNullOrWhiteSpace(patient.AccUsername))
-                throw new ArgumentNullException(nameof(patient.AccUsername));
+                throw new ArgumentException("Username is required.", nameof(patient.AccUsername));
             if (string.IsNullOrWhiteSpace(patient.AccPassword))
-                throw new ArgumentNullException(nameof(patient.AccPassword));
+                throw new ArgumentException("Password is required.", nameof(patient.AccPassword));
+            if (string.IsNullOrWhiteSpace(patient.Email))
+                throw new ArgumentException("Email is required.", nameof(patient.Email));
 
             // Validate username, password, and email
             ValidateUsername(patient.AccUsername, patient.Email);
@@ -292,17 +346,14 @@ namespace HIV_System_API_Services.Implements
             ValidateEmail(patient.Email, patient.AccUsername);
 
             // Check for duplicate username
-            if (!string.IsNullOrWhiteSpace(patient.AccUsername))
+            var existingAccount = await _accountRepo.GetAccountByUsernameAsync(patient.AccUsername);
+            if (existingAccount != null)
             {
-                var existingAccount = await _accountRepo.GetAccountByUsernameAsync(patient.AccUsername);
-                if (existingAccount != null)
-                {
-                    throw new InvalidOperationException($"Username '{patient.AccUsername}' is already in use.");
-                }
+                throw new InvalidOperationException($"Username '{patient.AccUsername}' is already in use.");
             }
 
             // Check if email is already used
-            if (!string.IsNullOrWhiteSpace(patient.Email) && await _accountRepo.IsEmailUsedAsync(patient.Email))
+            if (await _accountRepo.IsEmailUsedAsync(patient.Email))
             {
                 throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
             }
@@ -338,7 +389,7 @@ namespace HIV_System_API_Services.Implements
                 Fullname = patient.Fullname,
                 Dob = patient.Dob.HasValue ? DateOnly.FromDateTime(patient.Dob.Value) : null,
                 Gender = patient.Gender,
-                Roles = 3, // Assuming 3 is the role for Patient
+                Roles = 3, // 3 is the role for Patient
                 IsActive = true
             };
 
@@ -419,11 +470,11 @@ namespace HIV_System_API_Services.Implements
 
             // Validate password if provided
             if (!string.IsNullOrWhiteSpace(profileDTO.AccPassword))
-                ValidatePassword(profileDTO.AccPassword, existingAccount?.AccUsername);
+                ValidatePassword(profileDTO.AccPassword, existingAccount.AccUsername);
 
             // Validate email if provided
             if (!string.IsNullOrWhiteSpace(profileDTO.Email))
-                ValidateEmail(profileDTO.Email, existingAccount?.AccUsername);
+                ValidateEmail(profileDTO.Email, existingAccount.AccUsername);
 
             // Check email uniqueness if updated
             if (!string.IsNullOrWhiteSpace(profileDTO.Email) && !profileDTO.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(profileDTO.Email))
@@ -435,7 +486,7 @@ namespace HIV_System_API_Services.Implements
             {
                 AccId = accountId,
                 AccUsername = existingAccount.AccUsername, // preserve username
-                AccPassword = profileDTO.AccPassword ?? existingAccount.AccPassword,
+                AccPassword = !string.IsNullOrWhiteSpace(profileDTO.AccPassword) ? HashPassword(profileDTO.AccPassword) : existingAccount.AccPassword,
                 Email = profileDTO.Email ?? existingAccount.Email,
                 Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
                 Dob = profileDTO.Dob ?? existingAccount.Dob,
@@ -520,10 +571,10 @@ namespace HIV_System_API_Services.Implements
             ValidatePassword(request.AccPassword, request.AccUsername);
             ValidateEmail(request.Email, request.AccUsername);
 
-            // Check for existing account
-            var existingAccount = await _accountRepo.GetAccountByLoginAsync(request.AccUsername, request.AccPassword);
+            // Check for existing account by username
+            var existingAccount = await _accountRepo.GetAccountByUsernameAsync(request.AccUsername);
             if (existingAccount != null)
-                throw new InvalidOperationException("Account already exists");
+                throw new InvalidOperationException($"Username '{request.AccUsername}' is already in use.");
 
             if (await _accountRepo.IsEmailUsedAsync(request.Email))
                 throw new InvalidOperationException($"Email '{request.Email}' is already in use");
@@ -532,7 +583,7 @@ namespace HIV_System_API_Services.Implements
             var pendingRegistration = new PendingPatientRegistrationDTO
             {
                 AccUsername = request.AccUsername,
-                AccPassword = request.AccPassword,
+                AccPassword = request.AccPassword, // Store as plain text for now, will be hashed on verification
                 Email = request.Email,
                 Fullname = request.Fullname,
                 Dob = request.Dob,
@@ -628,20 +679,22 @@ namespace HIV_System_API_Services.Implements
             if (account == null)
                 throw new KeyNotFoundException($"Account with id {accId} not found.");
 
-            if (account.AccPassword != request.currentPassword)
+            // Verify the current password using the hashed password in database
+            if (!VerifyPassword(request.currentPassword, account.AccPassword))
                 throw new InvalidOperationException("Current password is incorrect.");
 
             // Validate new password
             ValidatePassword(request.newPassword, account.AccUsername);
 
-            if (account.AccPassword == request.newPassword)
+            // Check if new password is different from current password
+            if (VerifyPassword(request.newPassword, account.AccPassword))
                 throw new InvalidOperationException("New password must be different from the current password.");
 
             // Update password
             var changeRequest = new ChangePasswordRequestDTO
             {
                 currentPassword = request.currentPassword,
-                newPassword = request.newPassword,
+                newPassword = HashPassword(request.newPassword),
                 confirmNewPassword = request.confirmNewPassword
             };
 
@@ -654,22 +707,29 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(email))
                 return (false, "Email is required.");
 
-            // Validate email
-            ValidateEmail(email);
+            try
+            {
+                // Validate email format
+                ValidateEmail(email);
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, ex.Message);
+            }
 
             // Check if account exists for the email
             var account = await _accountRepo.GetAccountByEmailAsync(email);
             if (account == null)
                 return (false, "No account found with the provided email.");
 
-            // Optionally: Check if account is active
+            // Check if account is active
             if (account.IsActive == false)
                 return (false, "Account is not active.");
 
             // Generate verification code
             var code = _verificationService.GenerateCode(email);
 
-            // Store the code in cache with expiry
+            // Store the code in cache with expiry - using consistent cache key
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
             _memoryCache.Set($"password_reset_{email}", code, cacheOptions);
@@ -685,20 +745,26 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(code))
                 return (false, "Verification code is required.");
 
-            // Validate email
-            ValidateEmail(email);
+            try
+            {
+                // Validate email format
+                ValidateEmail(email);
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, ex.Message);
+            }
 
-            // Check if the code exists in cache (for password reset)
-            var cacheKey = $"forgot_password_{email}";
+            // Check if the code exists in cache - using consistent cache key
+            var cacheKey = $"password_reset_{email}";
             if (!_memoryCache.TryGetValue<string>(cacheKey, out var cachedCode))
                 return (false, "No password reset request found or code expired.");
 
             if (!string.Equals(cachedCode, code, StringComparison.Ordinal))
-                return (false, "Verification code does not match.");
+                return (false, "Invalid verification code.");
 
-            // Optionally: Remove the code from cache after successful verification
-            _memoryCache.Remove(cacheKey);
-
+            // Don't remove the code here - let it be removed in ResetPasswordAsync
+            // This allows multiple verification attempts before actual reset
             return (true, "Verification code is valid.");
         }
 
@@ -711,35 +777,62 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(newPassword))
                 return (false, "New password is required.");
 
-            // Validate email
-            ValidateEmail(email);
+            try
+            {
+                // Validate email format
+                ValidateEmail(email);
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, ex.Message);
+            }
 
             var account = await _accountRepo.GetAccountByEmailAsync(email);
             if (account == null)
                 return (false, "No account found with the provided email.");
+
             if (account.IsActive == false)
                 return (false, "Account is not active.");
 
-            var (isValid, message) = await VerifyPasswordResetCodeAsync(email, code);
-            if (!isValid)
-                return (false, message);
+            // Verify the code first
+            var cacheKey = $"password_reset_{email}";
+            if (!_memoryCache.TryGetValue<string>(cacheKey, out var cachedCode))
+                return (false, "No password reset request found or code expired.");
 
-            // Validate new password
-            ValidatePassword(newPassword, account.AccUsername);
+            if (!string.Equals(cachedCode, code, StringComparison.Ordinal))
+                return (false, "Invalid verification code.");
 
-            if (account.AccPassword == newPassword)
+            try
+            {
+                // Validate new password
+                ValidatePassword(newPassword, account.AccUsername);
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, ex.Message);
+            }
+
+            // Check if new password is different from current password
+            if (VerifyPassword(newPassword, account.AccPassword))
                 return (false, "New password must be different from the current password.");
 
+            // Hash the new password
+            var hashedNewPassword = HashPassword(newPassword);
+
+            // Update the password directly in the repository
             var changeRequest = new ChangePasswordRequestDTO
             {
                 currentPassword = account.AccPassword,
-                newPassword = newPassword,
-                confirmNewPassword = newPassword
+                newPassword = hashedNewPassword,
+                confirmNewPassword = hashedNewPassword
             };
 
             var result = await _accountRepo.ChangePasswordAsync(account.AccId, changeRequest);
             if (!result)
                 return (false, "Failed to reset password.");
+
+            // Remove the verification code from cache after successful reset
+            _memoryCache.Remove(cacheKey);
 
             return (true, "Password has been reset successfully.");
         }
