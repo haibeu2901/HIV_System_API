@@ -31,6 +31,12 @@ namespace HIV_System_API_DAOs.Implements
             _context = new HivSystemApiContext();
         }
 
+        // Use for unit testing or dependency injection
+        public PatientArvRegimenDAO(HivSystemApiContext context)
+        {
+            _context = context;
+        }
+
         public async Task<List<PatientArvRegimen>> GetAllPatientArvRegimensAsync()
         {
             return await _context.PatientArvRegimen

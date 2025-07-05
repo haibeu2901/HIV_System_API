@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Implements;
+using HIV_System_API_DAOs.Interfaces;
 using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using HIV_System_API_Repositories.Interfaces;
 using System;
@@ -12,6 +13,19 @@ namespace HIV_System_API_Repositories.Implements
 {
     public class PatientArvRegimenRepo : IPatientArvRegimenRepo
     {
+        private readonly IPatientArvRegimenDAO _patientArvRegimenDAO;
+
+        public PatientArvRegimenRepo()
+        {
+            _patientArvRegimenDAO = new PatientArvRegimenDAO();
+        }
+
+        // Use for unit testing or dependency injection
+        public PatientArvRegimenRepo(IPatientArvRegimenDAO patientArvRegimenDAO)
+        {
+            _patientArvRegimenDAO = patientArvRegimenDAO;
+        }
+
         public async Task<PatientArvRegimen> CreatePatientArvRegimenAsync(PatientArvRegimen patientArvRegimen)
         {
             return await PatientArvRegimenDAO.Instance.CreatePatientArvRegimenAsync(patientArvRegimen);
