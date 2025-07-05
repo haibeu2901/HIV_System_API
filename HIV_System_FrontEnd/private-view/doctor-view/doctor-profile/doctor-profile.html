@@ -2,22 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Doctor Dashboard</title>
-    <link rel="stylesheet" href="doctorStyle.css">
-    <style>
-        /* Optional: Enhance calendar look */
-        .calendar-table th, .calendar-table td {
-            border: 1px solid #e5e7eb;
-            padding: 8px;
-            text-align: center;
-        }
-        .calendar-table th {
-            background: #f3f4f6;
-        }
-        .calendar-table tr:nth-child(even) td {
-            background: #f9fafb;
-        }
-    </style>
+    <title>Doctor Profile</title>
+    <link rel="stylesheet" href="doctor-profile.css">
 </head>
 <body>
     <!-- Header/Navbar -->
@@ -26,20 +12,17 @@
             <div class="nav-container">
                 <div class="nav-logo">
                     <i class="fa fa-user-md"></i>
-                    Doctor Dashboard
+                    Doctor Profile
                 </div>
                 <ul class="nav-menu">
                     <li>
-                        <a href="../../../public-view/landingpage.html">Home</a>
+                        <a href="../../doctor-view/doctor-dashboard/doctor-dashboard.html">Work Schedule</a>
                     </li>
                     <li>
-                        <button id="btnSchedule" class="btn-login active" style="background:none;border:none;cursor:pointer;">Work Schedule</button>
+                        <button class="btn-login active" style="background:none;border:none;cursor:pointer;">Profile</button>
                     </li>
                     <li>
-                        <button id="btnProfile" class="btn-login" style="background:none;border:none;cursor:pointer;">Profile</button>
-                    </li>
-                    <li>
-                        <a href="#" id="logoutBtn" class="btn-login">Logout</a>
+                        <a href="../../../public-view/landingpage.html" class="btn-login">Logout</a>
                     </li>
                 </ul>
             </div>
@@ -49,18 +32,14 @@
     <!-- Main Content -->
     <div class="dashboard-container" style="padding-top: 100px;">
         <main class="main-content">
-            <div class="dashboard-header" id="dashboardHeader">Work Schedule</div>
-            <div class="dashboard-section" id="dashboardSection">
-                <div style="margin-bottom: 16px;">
-                    <label for="weekSelector"><strong>Select week:</strong></label>
-                    <select id="weekSelector"></select>
-                </div>
-                <div id="scheduleTableContainer"></div>
+            <div class="dashboard-header">Profile</div>
+            <div class="dashboard-section" id="profileSection">
+                <!-- Profile info will be loaded here -->
             </div>
         </main>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
-    <script src="doctor-dashboard-script.js"></script>
+    <script src="doctor-profile-script.js"></script>
     <footer class="footer">
       <div class="container">
         <div class="footer-content">
