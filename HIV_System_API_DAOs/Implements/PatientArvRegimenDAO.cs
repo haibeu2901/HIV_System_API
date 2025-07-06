@@ -121,5 +121,35 @@ namespace HIV_System_API_DAOs.Implements
                 .Where(p => p.Pmr.PtnId == personalId)
                 .ToListAsync();
         }
+
+        public async Task<PatientArvRegimen> InitiatePatientArvRegimenAsync(int patientId)
+        {
+            // First, verify the patient exists by finding their PMR
+            var pmr = await _context.PatientMedicalRecords
+                .FirstOrDefaultAsync(p => p.PtnId == patientId);
+
+            if (pmr == null)
+            {
+                throw new KeyNotFoundException($"No patient found with ID {patientId}.");
+            }
+
+            // Create an empty ARV regimen placeholder - only PMR ID is set
+            var newRegimen = new PatientArvRegimen
+            {
+                PmrId = pmr.PmrId
+                // All other properties (StartDate, EndDate, Notes, RegimenLevel, RegimenStatus, TotalCost) 
+                // will be null/default and filled later when medications are added
+                // CreatedAt will be set automatically by database default
+            };
+
+            await _context.PatientArvRegimen.AddAsync(newRegimen);
+            await _context.SaveChangesAsync();
+
+            // Set the navigation property manually and return the new regimen
+            newRegimen.Pmr = pmr;
+            newRegimen.PatientArvMedications = new List<PatientArvMedication>(); // Empty collection
+
+            return newRegimen;
+        }
     }
 }

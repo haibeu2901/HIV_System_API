@@ -342,6 +342,53 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Unexpected error updating regimen: {ex.InnerException}");
             }
         }
+
+        /// <summary>
+        /// Initiates a new patient ARV regimen with validation
+        /// </summary>
+        /// <param name="patientId">Patient ID to initiate ARV regimen for</param>
+        /// <returns>Initiated patient ARV regimen</returns>
+        [HttpPost("InitiatePatientArvRegimen")]
+        [Authorize(Roles = "1,2,5")]
+        public async Task<IActionResult> InitiatePatientArvRegimen([FromBody] int patientId)
+        {
+            try
+            {
+                if (patientId <= 0)
+                {
+                    return BadRequest("Invalid Patient ID. ID must be greater than 0.");
+                }
+
+                var initiatedRegimen = await _patientArvRegimenService.InitiatePatientArvRegimenAsync(patientId);
+
+                return CreatedAtAction(
+                    nameof(GetPatientArvRegimenById),
+                    new { parId = initiatedRegimen.PatientArvRegiId },
+                    initiatedRegimen);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest($"Missing required data: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid input: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest($"Operation failed: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Database error while initiating ARV regimen: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Unexpected error initiating regimen: {ex.InnerException}");
+            }
+        }
     }
 }
 

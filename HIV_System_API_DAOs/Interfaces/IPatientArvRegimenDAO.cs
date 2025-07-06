@@ -16,5 +16,7 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<bool> DeletePatientArvRegimenAsync(int parId);
         Task<List<PatientArvRegimen>> GetPatientArvRegimensByPatientIdAsync(int patientId);
         Task<List<PatientArvRegimen>> GetPersonalArvRegimensAsync(int personalId);
+        Task<PatientArvRegimen> InitiatePatientArvRegimenAsync(int patientId);
     }
 }
+ 
