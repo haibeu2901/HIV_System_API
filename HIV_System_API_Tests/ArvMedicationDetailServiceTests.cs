@@ -39,11 +39,11 @@ namespace HIV_System_API_Tests
             };
         }
 
-        private ArvMedicationDetailDTO CreateMockDTO(string name = "TestMed",
+        private ArvMedicationDetailResponseDTO CreateMockDTO(string name = "TestMed",
             string description = "Test Description", string dosage = "10mg",
             double price = 100.0, string manufacturer = "Test Manufacturer")
         {
-            return new ArvMedicationDetailDTO
+            return new ArvMedicationDetailResponseDTO
             {
                 ARVMedicationName = name,
                 ARVMedicationDescription = description,
@@ -89,7 +89,7 @@ namespace HIV_System_API_Tests
         public async Task CreateArvMedicationDetailAsync_NullDTO_ThrowsArgumentNullException()
         {
             // Arrange
-            ArvMedicationDetailDTO inputDto = null;
+            ArvMedicationDetailResponseDTO inputDto = null;
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentNullException>(
@@ -489,7 +489,7 @@ namespace HIV_System_API_Tests
         public async Task CreateArvMedicationDetailAsync_ValidDTOWithNullOptionalFields_ReturnsCreatedDTO()
         {
             // Arrange
-            var inputDto = new ArvMedicationDetailDTO
+            var inputDto = new ArvMedicationDetailResponseDTO
             {
                 ARVMedicationName = "TestMed",
                 ARVMedicationPrice = 100.0,
