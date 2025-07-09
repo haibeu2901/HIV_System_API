@@ -18,6 +18,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<PatientArvRegimenResponseDTO>> GetPatientArvRegimensByPatientIdAsync(int patientId);
         Task<List<PatientArvRegimenResponseDTO>> GetPersonalArvRegimensAsync(int personalId);
         Task<PatientArvRegimenResponseDTO> PatchPatientArvRegimenAsync(int parId, PatientArvRegimenPatchDTO patientArvRegimen);
-
+        Task<PatientArvRegimenResponseDTO> InitiatePatientArvRegimenAsync(int patientId);
     }
 }

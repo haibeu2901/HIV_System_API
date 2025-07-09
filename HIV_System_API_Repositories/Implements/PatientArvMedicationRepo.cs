@@ -30,5 +30,15 @@ namespace HIV_System_API_Repositories.Implements
         {
             return await PatientArvMedicationDAO.Instance.DeletePatientArvMedicationAsync(pamId);
         }
+
+        public async Task<List<PatientArvMedication>> GetPatientArvMedicationsByPatientIdAsync(int patientId)
+        {
+            return await PatientArvMedicationDAO.Instance.GetPatientArvMedicationsByPatientIdAsync(patientId);
+        }
+
+        public async Task<List<PatientArvMedication>> GetPatientArvMedicationsByPatientRegimenIdAsync(int parId)
+        {
+            return await PatientArvMedicationDAO.Instance.GetPatientArvMedicationsByPatientRegimenIdAsync(parId);
+        }
     }
 }

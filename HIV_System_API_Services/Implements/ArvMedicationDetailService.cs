@@ -26,7 +26,7 @@ namespace HIV_System_API_Services.Implements
             _arvMedicationDetailRepo = arvMedicationDetailRepo; // Injected
         }
 
-        private void ValidateArvMedicationDetailDTO(ArvMedicationDetailDTO dto)
+        private void ValidateArvMedicationDetailDTO(ArvMedicationDetailResponseDTO dto)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto), "ARV Medication Detail cannot be null.");
@@ -38,7 +38,7 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("ARV Medication Price cannot be negative.", nameof(dto.ARVMedicationPrice));
         }
 
-        private ArvMedicationDetail MapToEntity(ArvMedicationDetailDTO dto)
+        private ArvMedicationDetail MapToEntity(ArvMedicationDetailResponseDTO dto)
         {
             ValidateArvMedicationDetailDTO(dto);
             return new ArvMedicationDetail
@@ -51,12 +51,12 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        private ArvMedicationDetailDTO MapToResponseDTO(ArvMedicationDetail entity)
+        private ArvMedicationDetailResponseDTO MapToResponseDTO(ArvMedicationDetail entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity), "ARV Medication Detail entity cannot be null.");
 
-            return new ArvMedicationDetailDTO
+            return new ArvMedicationDetailResponseDTO
             {
                 ARVMedicationName = entity.MedName,
                 ARVMedicationDescription = entity.MedDescription,
@@ -66,7 +66,7 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        public async Task<ArvMedicationDetailDTO> CreateArvMedicationDetailAsync(ArvMedicationDetailDTO arvMedicationDetail)
+        public async Task<ArvMedicationDetailResponseDTO> CreateArvMedicationDetailAsync(ArvMedicationDetailResponseDTO arvMedicationDetail)
         {
             ValidateArvMedicationDetailDTO(arvMedicationDetail);
             var entity = MapToEntity(arvMedicationDetail);
@@ -81,13 +81,13 @@ namespace HIV_System_API_Services.Implements
             return await _arvMedicationDetailRepo.DeleteArvMedicationDetailAsync(id);
         }
 
-        public async Task<List<ArvMedicationDetailDTO>> GetAllArvMedicationDetailsAsync()
+        public async Task<List<ArvMedicationDetailResponseDTO>> GetAllArvMedicationDetailsAsync()
         {
             var entities = await _arvMedicationDetailRepo.GetAllArvMedicationDetailsAsync();
             return entities.Select(MapToResponseDTO).ToList();
         }
 
-        public async Task<ArvMedicationDetailDTO> GetArvMedicationDetailByIdAsync(int id)
+        public async Task<ArvMedicationDetailResponseDTO> GetArvMedicationDetailByIdAsync(int id)
         {
             if (id <= 0)
                 throw new ArgumentException("Invalid ARV Medication Detail ID.", nameof(id));
@@ -95,7 +95,7 @@ namespace HIV_System_API_Services.Implements
             return entity != null ? MapToResponseDTO(entity) : null;
         }
 
-        public async Task<List<ArvMedicationDetailDTO>> SearchArvMedicationDetailsByNameAsync(string searchTerm)
+        public async Task<List<ArvMedicationDetailResponseDTO>> SearchArvMedicationDetailsByNameAsync(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
                 throw new ArgumentException("Search term cannot be empty.", nameof(searchTerm));
@@ -103,7 +103,7 @@ namespace HIV_System_API_Services.Implements
             return entities.Select(MapToResponseDTO).ToList();
         }
 
-        public async Task<ArvMedicationDetailDTO> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetailDTO arvMedicationDetail)
+        public async Task<ArvMedicationDetailResponseDTO> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetailResponseDTO arvMedicationDetail)
         {
             if (id <= 0)
                 throw new ArgumentException("Invalid ARV Medication Detail ID.", nameof(id));

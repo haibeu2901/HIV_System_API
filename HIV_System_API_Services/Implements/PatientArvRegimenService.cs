@@ -459,5 +459,50 @@ namespace HIV_System_API_Services.Implements
                 throw new InvalidOperationException($"Unexpected error updating ARV regimen: {ex.InnerException}");
             }
         }
+
+        public async Task<PatientArvRegimenResponseDTO> InitiatePatientArvRegimenAsync(int patientId)
+        {
+            try
+            {
+                // Validate input parameter
+                if (patientId <= 0)
+                {
+                    throw new ArgumentException("Invalid Patient ID. ID must be greater than 0.");
+                }
+
+                // Validate that the patient exists
+                await ValidatePatientExists(patientId);
+
+                //// Check if patient already has an active ARV regimen
+                //var existingActiveRegimens = await _patientArvRegimenRepo.GetPatientArvRegimensByPatientIdAsync(patientId);
+                //var hasActiveRegimen = existingActiveRegimens?.Any(r => r.RegimenStatus == 2) == true; // Status 2 = Active
+
+                //if (hasActiveRegimen)
+                //{
+                //    throw new InvalidOperationException($"Patient with ID {patientId} already has an active ARV regimen. Cannot initiate a new one.");
+                //}
+
+                // Create the empty ARV regimen through the repository
+                var createdEntity = await _patientArvRegimenRepo.InitiatePatientArvRegimenAsync(patientId);
+
+                return MapToResponseDTO(createdEntity);
+            }
+            catch (ArgumentException)
+            {
+                throw; // Re-throw validation exceptions
+            }
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw business logic exceptions
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Database error while initiating ARV regimen: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error initiating ARV regimen for patient {patientId}: {ex.InnerException}");
+            }
+        }
     }
 }
