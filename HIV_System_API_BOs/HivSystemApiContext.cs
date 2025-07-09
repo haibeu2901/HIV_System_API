@@ -46,6 +46,8 @@ public partial class HivSystemApiContext : DbContext
 
     public virtual DbSet<PatientMedicalRecord> PatientMedicalRecords { get; set; }
 
+    public virtual DbSet<Payment> Payments { get; set; }
+
     public virtual DbSet<SocialBlog> SocialBlogs { get; set; }
 
     public virtual DbSet<Staff> Staff { get; set; }
@@ -317,6 +319,43 @@ public partial class HivSystemApiContext : DbContext
                 .HasForeignKey<PatientMedicalRecord>(d => d.PtnId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PatientMedicalRecord_Patient");
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.PayId).HasName("PK__Payment__EE8FCECF84F02A32");
+
+            entity.ToTable("Payment", tb => tb.HasTrigger("TRG_Payment_Update"));
+
+            entity.HasIndex(e => new { e.PmrId, e.PaymentDate }, "IX_Payment_Patient_Date");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Currency)
+                .HasMaxLength(3)
+                .HasDefaultValue("VND");
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.PaymentDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.PaymentIntentId).HasMaxLength(30);
+            entity.Property(e => e.PaymentMethod)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Pmr).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.PmrId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Payment_PatientMedicalRecord");
+
+            entity.HasOne(d => d.Srv).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.SrvId)
+                .HasConstraintName("FK_Payment_MedicalService");
         });
 
         modelBuilder.Entity<SocialBlog>(entity =>
