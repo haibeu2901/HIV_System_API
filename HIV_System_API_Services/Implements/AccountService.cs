@@ -1,7 +1,9 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
+using HIV_System_API_DTOs.DoctorDTO;
 using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_DTOs.PatientMedicalRecordDTO;
+using HIV_System_API_DTOs.StaffDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -431,7 +433,11 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        public async Task<AccountResponseDTO> UpdatePatientProfileAsync(int accountId, PatientProfileUpdateDTO profileDTO)
+        /// <summary>
+        /// Updates basic profile for Admin (role=1), Patient (role=3), Manager (role=5)
+        /// Only allows updating: Fullname, Dob, Gender
+        /// </summary>
+        public async Task<BasicProfileResponseDTO> UpdateBasicProfileAsync(int accountId, BasicProfileUpdateDTO profileDTO)
         {
             if (profileDTO == null)
                 throw new ArgumentNullException(nameof(profileDTO));
@@ -440,12 +446,9 @@ namespace HIV_System_API_Services.Implements
             if (existingAccount == null)
                 throw new KeyNotFoundException($"Account with id {accountId} not found.");
 
-            if (existingAccount.Roles != 3)
-                throw new UnauthorizedAccessException("This account is not a patient account.");
-
-            // Validate email if provided
-            if (!string.IsNullOrWhiteSpace(profileDTO.Email))
-                ValidateEmail(profileDTO.Email, existingAccount.AccUsername);
+            // Validate that this is a basic profile role (1, 3, or 5)
+            if (existingAccount.Roles != 1 && existingAccount.Roles != 3 && existingAccount.Roles != 5)
+                throw new UnauthorizedAccessException("This account role does not support basic profile updates.");
 
             // Validate Date of Birth if provided
             if (profileDTO.Dob.HasValue)
@@ -453,18 +456,13 @@ namespace HIV_System_API_Services.Implements
                 ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
             }
 
-            // Check email uniqueness if updated
-            if (!string.IsNullOrWhiteSpace(profileDTO.Email) && !profileDTO.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(profileDTO.Email))
-            {
-                throw new InvalidOperationException($"Email '{profileDTO.Email}' is already in use.");
-            }
-
+            // Create account object with only updated fields (basic profile fields only)
             var accountToUpdate = new Account
             {
                 AccId = accountId,
                 AccUsername = existingAccount.AccUsername, // preserve username
-                AccPassword = existingAccount.AccPassword,
-                Email = profileDTO.Email ?? existingAccount.Email,
+                AccPassword = existingAccount.AccPassword, // preserve password
+                Email = existingAccount.Email, // preserve email
                 Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
                 Dob = profileDTO.Dob ?? existingAccount.Dob,
                 Gender = profileDTO.Gender ?? existingAccount.Gender,
@@ -473,10 +471,50 @@ namespace HIV_System_API_Services.Implements
             };
 
             var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
-            return MapToResponseDTO(updatedAccount);
+
+            return new BasicProfileResponseDTO
+            {
+                AccId = updatedAccount.AccId,
+                AccUsername = updatedAccount.AccUsername,
+                Email = updatedAccount.Email,
+                Fullname = updatedAccount.Fullname,
+                Dob = updatedAccount.Dob,
+                Gender = updatedAccount.Gender,
+                Roles = updatedAccount.Roles,
+                IsActive = updatedAccount.IsActive
+            };
         }
 
-        public async Task<AccountResponseDTO> UpdateDoctorProfileAsync(int accountId, DoctorProfileUpdateDTO profileDTO)
+        public async Task<PatientProfileResponseDTO> UpdatePatientProfileAsync(int accountId, PatientProfileUpdateDTO profileDTO)
+        {
+            var basicDto = new BasicProfileUpdateDTO
+            {
+                Fullname = profileDTO.Fullname,
+                Dob = profileDTO.Dob,
+                Gender = profileDTO.Gender
+            };
+
+            var result = await UpdateBasicProfileAsync(accountId, basicDto);
+
+            // Map BasicProfileResponseDTO to PatientProfileResponseDTO for backward compatibility
+            return new PatientProfileResponseDTO
+            {
+                AccId = result.AccId,
+                AccUsername = result.AccUsername,
+                Email = result.Email,
+                Fullname = result.Fullname,
+                Dob = result.Dob,
+                Gender = result.Gender,
+                Roles = result.Roles,
+                IsActive = result.IsActive
+            };
+        }
+
+        // <summary>
+        /// Updates doctor profile for Doctor (role=2)
+        /// Allows updating: Fullname, Dob, Gender, Degree, Bio
+        /// </summary>
+        public async Task<DoctorProfileResponse> UpdateDoctorProfileAsync(int accountId, DoctorProfileUpdateDTO profileDTO)
         {
             if (profileDTO == null)
                 throw new ArgumentNullException(nameof(profileDTO));
@@ -488,32 +526,19 @@ namespace HIV_System_API_Services.Implements
             if (existingAccount.Roles != 2)
                 throw new UnauthorizedAccessException("This account is not a doctor account.");
 
-            // Validate password if provided
-            if (!string.IsNullOrWhiteSpace(profileDTO.AccPassword))
-                ValidatePassword(profileDTO.AccPassword, existingAccount.AccUsername);
-
-            // Validate email if provided
-            if (!string.IsNullOrWhiteSpace(profileDTO.Email))
-                ValidateEmail(profileDTO.Email, existingAccount.AccUsername);
-
             // Validate Date of Birth if provided
             if (profileDTO.Dob.HasValue)
             {
                 ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
             }
 
-            // Check email uniqueness if updated
-            if (!string.IsNullOrWhiteSpace(profileDTO.Email) && !profileDTO.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(profileDTO.Email))
-            {
-                throw new InvalidOperationException($"Email '{profileDTO.Email}' is already in use.");
-            }
-
+            // Create account object with only updated basic fields
             var accountToUpdate = new Account
             {
                 AccId = accountId,
                 AccUsername = existingAccount.AccUsername, // preserve username
-                AccPassword = !string.IsNullOrWhiteSpace(profileDTO.AccPassword) ? HashPassword(profileDTO.AccPassword) : existingAccount.AccPassword,
-                Email = profileDTO.Email ?? existingAccount.Email,
+                AccPassword = existingAccount.AccPassword, // preserve password
+                Email = existingAccount.Email, // preserve email
                 Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
                 Dob = profileDTO.Dob ?? existingAccount.Dob,
                 Gender = profileDTO.Gender ?? existingAccount.Gender,
@@ -524,20 +549,186 @@ namespace HIV_System_API_Services.Implements
             // Update account profile
             var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
 
-            // Update doctor-specific information
-            if (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio))
+            // Update doctor-specific information if provided
+            var doctorRepo = new DoctorRepo();
+            var doctor = await doctorRepo.GetDoctorByIdAsync(accountId);
+
+            if (doctor != null && (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio)))
             {
-                var doctorRepo = new DoctorRepo();
-                var doctor = await doctorRepo.GetDoctorByIdAsync(accountId);
-                if (doctor != null)
-                {
-                    doctor.Degree = profileDTO.Degree ?? doctor.Degree;
-                    doctor.Bio = profileDTO.Bio ?? doctor.Bio;
-                    await doctorRepo.UpdateDoctorAsync(doctor.DctId, doctor);
-                }
+                // Only update doctor fields that are provided
+                if (!string.IsNullOrWhiteSpace(profileDTO.Degree))
+                    doctor.Degree = profileDTO.Degree;
+
+                if (!string.IsNullOrWhiteSpace(profileDTO.Bio))
+                    doctor.Bio = profileDTO.Bio;
+
+                await doctorRepo.UpdateDoctorAsync(doctor.DctId, doctor);
             }
 
-            return MapToResponseDTO(updatedAccount);
+            // Get updated doctor information for response
+            var updatedDoctor = await doctorRepo.GetDoctorByIdAsync(accountId);
+
+            return new DoctorProfileResponse
+            {
+                AccId = updatedAccount.AccId,
+                AccUsername = updatedAccount.AccUsername,
+                Email = updatedAccount.Email,
+                Fullname = updatedAccount.Fullname,
+                Dob = updatedAccount.Dob,
+                Gender = updatedAccount.Gender,
+                Roles = updatedAccount.Roles,
+                IsActive = updatedAccount.IsActive,
+                Degree = updatedDoctor?.Degree,
+                Bio = updatedDoctor?.Bio
+            };
+        }
+
+        /// <summary>
+        /// Updates staff profile for Staff (role=4)
+        /// Allows updating: Fullname, Dob, Gender, Degree, Bio
+        /// </summary>
+        //public async Task<StaffProfileResponseDTO> UpdateStaffProfileAsync(int accountId, StaffProfileUpdateDTO profileDTO)
+        //{
+        //    if (profileDTO == null)
+        //        throw new ArgumentNullException(nameof(profileDTO));
+
+        //    var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
+        //    if (existingAccount == null)
+        //        throw new KeyNotFoundException($"Account with id {accountId} not found.");
+
+        //    if (existingAccount.Roles != 4)
+        //        throw new UnauthorizedAccessException("This account is not a staff account.");
+
+        //    // Validate Date of Birth if provided
+        //    if (profileDTO.Dob.HasValue)
+        //    {
+        //        ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
+        //    }
+
+        //    // Create account object with only updated basic fields
+        //    var accountToUpdate = new Account
+        //    {
+        //        AccId = accountId,
+        //        AccUsername = existingAccount.AccUsername, // preserve username
+        //        AccPassword = existingAccount.AccPassword, // preserve password
+        //        Email = existingAccount.Email, // preserve email
+        //        Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
+        //        Dob = profileDTO.Dob ?? existingAccount.Dob,
+        //        Gender = profileDTO.Gender ?? existingAccount.Gender,
+        //        Roles = existingAccount.Roles, // preserve role
+        //        IsActive = existingAccount.IsActive // preserve status
+        //    };
+
+        //    // Update account profile
+        //    var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
+
+        //    // Update staff-specific information if provided
+        //    var staffRepo = new StaffRepo();
+        //    var staff = await staffRepo.GetStaffByIdAsync(accountId);
+
+        //    if (staff != null && (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio)))
+        //    {
+        //        // Only update staff fields that are provided
+        //        if (!string.IsNullOrWhiteSpace(profileDTO.Degree))
+        //            staff.Degree = profileDTO.Degree;
+
+        //        if (!string.IsNullOrWhiteSpace(profileDTO.Bio))
+        //            staff.Bio = profileDTO.Bio;
+
+        //        await staffRepo.UpdateStaffAsync(staff.StaffId, staff);
+        //    }
+
+        //    // Get updated staff information for response
+        //    var updatedStaff = await staffRepo.GetStaffByIdAsync(accountId);
+
+        //    return new StaffProfileResponseDTO
+        //    {
+        //        AccId = updatedAccount.AccId,
+        //        AccUsername = updatedAccount.AccUsername,
+        //        Email = updatedAccount.Email,
+        //        Fullname = updatedAccount.Fullname,
+        //        Dob = updatedAccount.Dob,
+        //        Gender = updatedAccount.Gender,
+        //        Roles = updatedAccount.Roles,
+        //        IsActive = updatedAccount.IsActive,
+        //        Degree = updatedStaff?.Degree,
+        //        Bio = updatedStaff?.Bio
+        //    };
+        //}
+
+        /// <summary>
+        /// Universal profile update method that routes to appropriate profile update based on account role
+        /// </summary>
+        public async Task<object> UpdatePersonalProfileAsync(int accountId, object profileDTO)
+        {
+            if (profileDTO == null)
+                throw new ArgumentNullException(nameof(profileDTO));
+
+            // Get account to determine role
+            var account = await _accountRepo.GetAccountByIdAsync(accountId);
+            if (account == null)
+                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+
+            // Route to appropriate profile update based on role
+            switch (account.Roles)
+            {
+                case 1: // Admin
+                case 3: // Patient
+                case 5: // Manager
+                        // Convert to BasicProfileUpdateDTO
+                    if (profileDTO is BasicProfileUpdateDTO basicDto)
+                    {
+                        return await UpdateBasicProfileAsync(accountId, basicDto);
+                    }
+                    // If the DTO is a different type, try to map the common fields
+                    else if (profileDTO is DoctorProfileUpdateDTO doctorDto)
+                    {
+                        var basicFromDoctor = new BasicProfileUpdateDTO
+                        {
+                            Fullname = doctorDto.Fullname,
+                            Dob = doctorDto.Dob,
+                            Gender = doctorDto.Gender
+                        };
+                        return await UpdateBasicProfileAsync(accountId, basicFromDoctor);
+                    }
+                    else if (profileDTO is StaffProfileUpdateDTO staffDto)
+                    {
+                        var basicFromStaff = new BasicProfileUpdateDTO
+                        {
+                            Fullname = staffDto.Fullname,
+                            Dob = staffDto.Dob,
+                            Gender = staffDto.Gender
+                        };
+                        return await UpdateBasicProfileAsync(accountId, basicFromStaff);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Invalid profile DTO type for this account role.");
+                    }
+
+                case 2: // Doctor
+                    if (profileDTO is DoctorProfileUpdateDTO doctorUpdateDto)
+                    {
+                        return await UpdateDoctorProfileAsync(accountId, doctorUpdateDto);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Doctor profile update requires DoctorProfileUpdateDTO.");
+                    }
+
+                //case 4: // Staff
+                //    if (profileDTO is StaffProfileUpdateDTO staffUpdateDto)
+                //    {
+                //        return await UpdateStaffProfileAsync(accountId, staffUpdateDto);
+                //    }
+                //    else
+                //    {
+                //        throw new ArgumentException("Staff profile update requires StaffProfileUpdateDTO.");
+                //    }
+
+                default:
+                    throw new UnauthorizedAccessException($"Profile updates are not supported for role {account.Roles}.");
+            }
         }
 
         public async Task<AccountResponseDTO?> GetAccountByEmailAsync(string email)
