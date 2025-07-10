@@ -1,3 +1,4 @@
+using HIV_System_API_BOs;
 using HIV_System_API_DTOs.PatientArvMedicationDTO;
 
 namespace HIV_System_API_Services.Interfaces
@@ -9,5 +10,7 @@ namespace HIV_System_API_Services.Interfaces
         Task<PatientArvMedicationResponseDTO> CreatePatientArvMedicationAsync(PatientArvMedicationRequestDTO patientArvMedication);
         Task<PatientArvMedicationResponseDTO> UpdatePatientArvMedicationAsync(int pamId, PatientArvMedicationRequestDTO patientArvMedication);
         Task<bool> DeletePatientArvMedicationAsync(int pamId);
+        Task<List<PatientArvMedicationResponseDTO>> GetPatientArvMedicationsByPatientIdAsync(int patientId);
+        Task<List<PatientArvMedicationResponseDTO>> GetPatientArvMedicationsByPatientRegimenIdAsync(int parId);
     }
 }

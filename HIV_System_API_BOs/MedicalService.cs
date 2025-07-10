@@ -18,4 +18,6 @@ public partial class MedicalService
     public bool? IsAvailable { get; set; }
 
     public virtual Account Acc { get; set; } = null!;
+
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }
