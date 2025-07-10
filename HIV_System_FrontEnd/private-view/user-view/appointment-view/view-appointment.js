@@ -144,4 +144,5 @@ function addMinutes(time, minsToAdd) {
   const [h, m] = time.split(":").map(Number);
   const date = new Date(0, 0, 0, h, m + minsToAdd, 0, 0);
   return date.toTimeString().slice(0, 5);
+
 }

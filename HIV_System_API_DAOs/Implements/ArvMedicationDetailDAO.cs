@@ -19,6 +19,13 @@ namespace HIV_System_API_DAOs.Implements
         {
             _context = new HivSystemApiContext();
         }
+
+        // Use for unit testing or dependency injection
+        public ArvMedicationDetailDAO(HivSystemApiContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context), "Context cannot be null.");
+        }
+
         public static ArvMedicationDetailDAO Instance
         {
             get

@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HIV_System_API_DTOs.ARVRegimenDTO
+namespace HIV_System_API_DTOs.PaymentDTO
 {
-    public class RegimenTemplateRequestDTO
+    public class PaymentRequestDTO
     {
+        public decimal Amount { get; set; }
+        public string? Currency { get; set; }
         public string? Description { get; set; }
-        public byte? Level { get; set; }
-        public int? Duration { get; set; }
     }
 }

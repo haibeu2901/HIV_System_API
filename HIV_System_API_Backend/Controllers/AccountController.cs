@@ -39,6 +39,15 @@ namespace HIV_System_API_Backend.Controllers
             _verificationService = new VerificationCodeService(memoryCache);
         }
 
+        // Use for unit testing or dependency injection
+        //public AccountController(IAccountService accountService, IConfiguration configuration, IEmailSender emailSender, IVerificationCodeService verificationService)
+        //{
+        //    _accountService = accountService;
+        //    _configuration = configuration;
+        //    _emailSender = emailSender;
+        //    _verificationService = verificationService;
+        //}
+
         [HttpGet("GetAllAccounts")]
         [Authorize(Roles = "1, 5")]
         public async Task<IActionResult> GetAllAccounts()

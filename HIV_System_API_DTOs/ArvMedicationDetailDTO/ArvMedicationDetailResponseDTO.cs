@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HIV_System_API_DTOs.ArvMedicationDetailDTO
 {
-    public class ArvMedicationDetailDTO
+    public class ArvMedicationDetailResponseDTO
     {
         public string? ARVMedicationName { get; set; }
         public string? ARVMedicationDescription { get; set; }
