@@ -220,6 +220,26 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Email cannot be the same as the username.", nameof(username));
         }
 
+        private static void ValidateDateOfBirth(DateTime? dob, string paramName = "dob")
+        {
+            var dobValue = dob.Value;
+            var today = DateTime.Today;
+
+            // Check if DOB is not in the future
+            if (dobValue.Date > today)
+                throw new ArgumentException("Date of birth cannot be in the future.", paramName);
+
+            // Check if DOB is not before 1900
+            if (dobValue < new DateTime(1900, 1, 1))
+                throw new ArgumentException("Date of birth cannot be before 1900.", paramName);
+
+            // Check if person is at least 18 years old
+            var age = today.Year - dobValue.Year;
+            if (dobValue.Date > today.AddYears(-age)) age--;
+            if (age < 18)
+                throw new ArgumentException("Person must be at least 18 years old.", paramName);
+        }
+
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
             if (account == null)
@@ -229,6 +249,12 @@ namespace HIV_System_API_Services.Implements
             ValidateUsername(account.AccUsername, account.Email);
             ValidatePassword(account.AccPassword, account.AccUsername);
             ValidateEmail(account.Email, account.AccUsername);
+
+            // Validate Date of Birth
+            if (account.Dob.HasValue)
+            {
+                ValidateDateOfBirth(account.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(account.Dob));
+            }
 
             // Check for duplicate username
             var existingByUsername = await _accountRepo.GetAccountByUsernameAsync(account.AccUsername);
@@ -279,6 +305,7 @@ namespace HIV_System_API_Services.Implements
             return accounts.Select(MapToResponseDTO).ToList();
         }
 
+        // Updated UpdateAccountByIdAsync method with DOB validation
         public async Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, UpdateAccountRequestDTO updatedAccount)
         {
             if (updatedAccount == null)
@@ -291,6 +318,12 @@ namespace HIV_System_API_Services.Implements
             // Validate email if provided
             if (!string.IsNullOrWhiteSpace(updatedAccount.Email))
                 ValidateEmail(updatedAccount.Email);
+
+            // Validate Date of Birth if provided
+            if (updatedAccount.Dob.HasValue)
+            {
+                ValidateDateOfBirth(updatedAccount.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(updatedAccount.Dob));
+            }
 
             // Check authorization
             if (updatedAccount.Roles != 1)
@@ -358,27 +391,8 @@ namespace HIV_System_API_Services.Implements
                 throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
             }
 
-            // Check date of birth
-            if (patient.Dob.HasValue && patient.Dob.Value > DateTime.Now)
-            {
-                throw new ArgumentException("Date of birth cannot be in the future.", nameof(patient.Dob));
-            }
-            if (patient.Dob.HasValue && patient.Dob.Value < new DateTime(1900, 1, 1))
-            {
-                throw new ArgumentException("Date of birth cannot be before 1900.", nameof(patient.Dob));
-            }
-
-            // Check if patient is at least 18 years old
-            if (patient.Dob.HasValue)
-            {
-                var today = DateTime.Today;
-                var age = today.Year - patient.Dob.Value.Year;
-                if (patient.Dob.Value.Date > today.AddYears(-age)) age--;
-                if (age < 18)
-                {
-                    throw new ArgumentException("Patient must be at least 18 years old.", nameof(patient.Dob));
-                }
-            }
+            // Validate Date of Birth using the new validation method
+            ValidateDateOfBirth(patient.Dob, nameof(patient.Dob));
 
             // Map PatientAccountRequestDTO to AccountRequestDTO
             var accountDto = new AccountRequestDTO
@@ -433,6 +447,12 @@ namespace HIV_System_API_Services.Implements
             if (!string.IsNullOrWhiteSpace(profileDTO.Email))
                 ValidateEmail(profileDTO.Email, existingAccount.AccUsername);
 
+            // Validate Date of Birth if provided
+            if (profileDTO.Dob.HasValue)
+            {
+                ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
+            }
+
             // Check email uniqueness if updated
             if (!string.IsNullOrWhiteSpace(profileDTO.Email) && !profileDTO.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(profileDTO.Email))
             {
@@ -475,6 +495,12 @@ namespace HIV_System_API_Services.Implements
             // Validate email if provided
             if (!string.IsNullOrWhiteSpace(profileDTO.Email))
                 ValidateEmail(profileDTO.Email, existingAccount.AccUsername);
+
+            // Validate Date of Birth if provided
+            if (profileDTO.Dob.HasValue)
+            {
+                ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
+            }
 
             // Check email uniqueness if updated
             if (!string.IsNullOrWhiteSpace(profileDTO.Email) && !profileDTO.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(profileDTO.Email))
