@@ -84,26 +84,6 @@ body {
     transition: all 0.3s;
 }
 
-.btn-login {
-    background: transparent;
-    color: #e74c3c;
-    border: 2px solid #e74c3c;
-}
-
-.btn-login:hover {
-    background: #e74c3c;
-    color: white;
-}
-
-.btn-register {
-    background: #e74c3c;
-    color: white;
-}
-
-.btn-register:hover {
-    background: #c0392b;
-}
-
 .hamburger {
     display: none;
     flex-direction: column;
@@ -882,6 +862,17 @@ a:focus {
     padding: 2rem;
     min-height: 300px;
 }
+.calendar-table th, .calendar-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: center;
+        }
+        .calendar-table th {
+            background: #f3f4f6;
+        }
+        .calendar-table tr:nth-child(even) td {
+            background: #f9fafb;
+        }
 @media (max-width: 900px) {
     .dashboard-container {
         flex-direction: column;

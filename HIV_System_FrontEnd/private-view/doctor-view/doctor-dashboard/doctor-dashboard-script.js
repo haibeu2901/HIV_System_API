@@ -216,23 +216,8 @@ function logout() {
 
 // Attach event listeners after DOM is loaded
 window.addEventListener('DOMContentLoaded', () => {
-    const btnSchedule = document.getElementById('btnSchedule');
-    const btnProfile = document.getElementById('btnProfile');
     const logoutBtn = document.getElementById('logoutBtn');
-    const dashboardHeader = document.getElementById('dashboardHeader');
-
-    btnSchedule.onclick = function() {
-        setActive(btnSchedule);
-        dashboardHeader.textContent = "Work Schedule";
-        renderWorkSchedule(doctorId, 'dashboardSection');
-    };
-
-    btnProfile.onclick = function() {
-        window.location.href = "../doctor-profile/doctor-profile.html";
-    };
-
     if (logoutBtn) logoutBtn.onclick = logout;
-
-    // Load schedule by default
-    btnSchedule.click();
+    // Always render the work schedule by default
+    renderWorkSchedule(doctorId, 'dashboardSection');
 });
