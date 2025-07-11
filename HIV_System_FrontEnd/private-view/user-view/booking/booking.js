@@ -243,7 +243,7 @@ console.log(payload);
     .then(data => {
     // Redirect or update UI as needed, or leave empty if handled elsewhere
     // For example, redirect to your appointment details page:
-    window.location.href = "HIV_System_FrontEnd/private_view/user_view/appointment-view/view-appointment.html";
+    window.location.href = "../appointment-view/view-appointment.html";
 })
     .catch(err => {
         if (err.message !== "Time slot taken") {
