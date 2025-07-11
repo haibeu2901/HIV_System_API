@@ -7,23 +7,14 @@
     <link rel="stylesheet" href="../userStyle.css">
     <link rel="stylesheet" href="medical-record.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+ 
 </head>
 <body>
     <div id="header-placeholder"></div>
     <div class="medical-record-container">
         <h2>Medical Record</h2>
-        <section id="appointments-section">
-            <h3><i class="fas fa-calendar-check"></i> Appointments</h3>
-            <div id="appointments-list"></div>
-        </section>
-        <section id="test-results-section">
-            <h3><i class="fas fa-vial"></i> Test Results</h3>
-            <div id="test-results-list"></div>
-        </section>
-        <section id="arv-regimens-section">
-            <h3><i class="fas fa-pills"></i> ARV Regimens</h3>
-            <div id="arv-regimens-list"></div>
-        </section>
+        <div class="record-list" id="record-list">
+        </div>
     </div>
     <script src="../header/header.js"></script>
     <script src="medical-record.js"></script>
