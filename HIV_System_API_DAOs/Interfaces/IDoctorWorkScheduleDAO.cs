@@ -15,5 +15,6 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<bool> DeleteDoctorWorkScheduleAsync(int id);
         Task<DoctorWorkSchedule> UpdateDoctorWorkScheduleAsync(int id, DoctorWorkSchedule doctorWorkSchedule);
         Task<List<DoctorWorkSchedule>> GetPersonalWorkSchedulesAsync(int doctorId);
+        Task<List<DoctorWorkSchedule>> GetDoctorWorkSchedulesByDoctorIdAsync(int doctorId);
     }
 }

@@ -40,7 +40,7 @@ namespace HIV_System_API_Services.Implements
             {
                 DocWorkScheduleId = doctorWorkSchedule.DwsId,
                 DoctorId = doctorWorkSchedule.DoctorId,
-                DayOfWeek = doctorWorkSchedule.DayOfWeek.HasValue ? doctorWorkSchedule.DayOfWeek.Value : 0,
+                DayOfWeek = doctorWorkSchedule.DayOfWeek ?? 0,
                 WorkDate = doctorWorkSchedule.WorkDate,
                 IsAvailable = doctorWorkSchedule.IsAvailable,
                 StartTime = doctorWorkSchedule.StartTime,
@@ -58,29 +58,89 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "DayOfWeek must be between 1 (Sunday) and 7 (Saturday).");
             if (doctorWorkSchedule.StartTime >= doctorWorkSchedule.EndTime)
                 throw new ArgumentException("StartTime must be earlier than EndTime.");
+            if (doctorWorkSchedule.WorkDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new ArgumentException("WorkDate cannot be in the past.", nameof(doctorWorkSchedule.WorkDate));
 
-            var entity = MapToEntity(doctorWorkSchedule);
-            var createdEntity = await _doctorWorkScheduleRepo.CreateDoctorWorkScheduleAsync(entity);
-            return MapToResponseDTO(createdEntity);
+            try
+            {
+                var entity = MapToEntity(doctorWorkSchedule);
+                var createdEntity = await _doctorWorkScheduleRepo.CreateDoctorWorkScheduleAsync(entity);
+                return MapToResponseDTO(createdEntity);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to create doctor work schedule: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("An unexpected error occurred while creating doctor work schedule.", ex.InnerException);
+            }
         }
 
         public async Task<bool> DeleteDoctorWorkScheduleAsync(int id)
         {
-            return await _doctorWorkScheduleRepo.DeleteDoctorWorkScheduleAsync(id);
+            if (id <= 0)
+                throw new ArgumentException("ID must be a positive integer.", nameof(id));
+
+            try
+            {
+                var result = await _doctorWorkScheduleRepo.DeleteDoctorWorkScheduleAsync(id);
+                if (!result)
+                    throw new KeyNotFoundException($"Doctor work schedule with ID {id} not found.");
+
+                return true;
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to delete doctor work schedule with ID {id}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred while deleting doctor work schedule with ID {id}.", ex.InnerException);
+            }
         }
 
         public async Task<DoctorWorkScheduleResponseDTO?> GetDoctorWorkScheduleByIdAsync(int id)
         {
-            var entity = await _doctorWorkScheduleRepo.GetDoctorWorkScheduleByIdAsync(id);
-            if (entity == null)
-                return null;
-            return MapToResponseDTO(entity);
+            if (id <= 0)
+                throw new ArgumentException("ID must be a positive integer.", nameof(id));
+
+            try
+            {
+                var entity = await _doctorWorkScheduleRepo.GetDoctorWorkScheduleByIdAsync(id);
+                if (entity == null)
+                    return null;
+
+                return MapToResponseDTO(entity);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve doctor work schedule with ID {id}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred while retrieving doctor work schedule with ID {id}.", ex.InnerException);
+            }
         }
 
         public async Task<List<DoctorWorkScheduleResponseDTO>> GetDoctorWorkSchedulesAsync()
         {
-            var entities = await _doctorWorkScheduleRepo.GetDoctorWorkSchedulesAsync();
-            return entities.Select(MapToResponseDTO).ToList();
+            try
+            {
+                var entities = await _doctorWorkScheduleRepo.GetDoctorWorkSchedulesAsync();
+                if (entities == null || !entities.Any())
+                    return new List<DoctorWorkScheduleResponseDTO>();
+
+                return entities.Select(MapToResponseDTO).ToList();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve doctor work schedules: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("An unexpected error occurred while retrieving doctor work schedules.", ex.InnerException);
+            }
         }
 
         public async Task<DoctorWorkScheduleResponseDTO> UpdateDoctorWorkScheduleAsync(int id, DoctorWorkScheduleRequestDTO doctorWorkSchedule)
@@ -95,10 +155,27 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "DayOfWeek must be between 1 (Sunday) and 7 (Saturday).");
             if (doctorWorkSchedule.StartTime >= doctorWorkSchedule.EndTime)
                 throw new ArgumentException("StartTime must be earlier than EndTime.");
+            if (doctorWorkSchedule.WorkDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new ArgumentException("WorkDate cannot be in the past.", nameof(doctorWorkSchedule.WorkDate));
 
-            var entity = MapToEntity(doctorWorkSchedule);
-            var updatedEntity = await _doctorWorkScheduleRepo.UpdateDoctorWorkScheduleAsync(id, entity);
-            return MapToResponseDTO(updatedEntity);
+            try
+            {
+                var entity = MapToEntity(doctorWorkSchedule);
+                var updatedEntity = await _doctorWorkScheduleRepo.UpdateDoctorWorkScheduleAsync(id, entity);
+                return MapToResponseDTO(updatedEntity);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException($"Doctor work schedule with ID {id} not found.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to update doctor work schedule with ID {id}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred while updating doctor work schedule with ID {id}.", ex.InnerException);
+            }
         }
 
         public async Task<List<PersonalWorkScheduleResponseDTO>> GetPersonalWorkSchedulesAsync(int doctorId)
@@ -106,34 +183,61 @@ namespace HIV_System_API_Services.Implements
             if (doctorId <= 0)
                 throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorId));
 
-            var schedules = await _doctorWorkScheduleRepo.GetPersonalWorkSchedulesAsync(doctorId);
-
-            if (schedules == null || !schedules.Any())
-                return new List<PersonalWorkScheduleResponseDTO>();
-
-            var result = new List<PersonalWorkScheduleResponseDTO>();
-
-            foreach (var s in schedules)
+            try
             {
-                // Validate required fields
-                if (!s.DayOfWeek.HasValue)
-                    continue;
-                if (s.StartTime > s.EndTime)
-                    continue;
-                if (s.StartTime == s.EndTime)
-                    continue;
+                var schedules = await _doctorWorkScheduleRepo.GetPersonalWorkSchedulesAsync(doctorId);
+                if (schedules == null || !schedules.Any())
+                    return new List<PersonalWorkScheduleResponseDTO>();
 
-                result.Add(new PersonalWorkScheduleResponseDTO
+                var result = new List<PersonalWorkScheduleResponseDTO>();
+                foreach (var schedule in schedules)
                 {
-                    DayOfWeek = s.DayOfWeek.Value,
-                    WorkDate = s.WorkDate,
-                    IsAvailable = s.IsAvailable,
-                    StartTime = s.StartTime,
-                    EndTime = s.EndTime
-                });
-            }
+                    if (!schedule.DayOfWeek.HasValue)
+                        continue;
 
-            return result;
+                    result.Add(new PersonalWorkScheduleResponseDTO
+                    {
+                        DayOfWeek = schedule.DayOfWeek.Value,
+                        WorkDate = schedule.WorkDate,
+                        IsAvailable = schedule.IsAvailable,
+                        StartTime = schedule.StartTime,
+                        EndTime = schedule.EndTime
+                    });
+                }
+
+                return result;
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve work schedules for doctor with ID {doctorId}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId}.", ex.InnerException);
+            }
+        }
+
+        public async Task<List<DoctorWorkScheduleResponseDTO>> GetDoctorWorkSchedulesByDoctorIdAsync(int doctorId)
+        {
+            if (doctorId <= 0)
+                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorId));
+
+            try
+            {
+                var entities = await _doctorWorkScheduleRepo.GetDoctorWorkSchedulesByDoctorIdAsync(doctorId);
+                if (entities == null || !entities.Any())
+                    return new List<DoctorWorkScheduleResponseDTO>();
+
+                return entities.Select(MapToResponseDTO).ToList();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve work schedules for doctor with ID {doctorId}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId}.", ex.InnerException);
+            }
         }
     }
 }

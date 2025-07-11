@@ -14,5 +14,9 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<PatientArvRegimen> CreatePatientArvRegimenAsync(PatientArvRegimen patientArvRegimen);
         Task<PatientArvRegimen> UpdatePatientArvRegimenAsync(int parId, PatientArvRegimen patientArvRegimen);
         Task<bool> DeletePatientArvRegimenAsync(int parId);
+        Task<List<PatientArvRegimen>> GetPatientArvRegimensByPatientIdAsync(int patientId);
+        Task<List<PatientArvRegimen>> GetPersonalArvRegimensAsync(int personalId);
+        Task<PatientArvRegimen> InitiatePatientArvRegimenAsync(int patientId);
     }
 }
+ 

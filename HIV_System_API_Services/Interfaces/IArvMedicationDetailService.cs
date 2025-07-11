@@ -10,11 +10,11 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface IArvMedicationDetailService
     {
-        Task<List<ArvMedicationDetailDTO>> GetAllArvMedicationDetailsAsync();
-        Task<ArvMedicationDetailDTO> GetArvMedicationDetailByIdAsync(int id);
-        Task<ArvMedicationDetailDTO> CreateArvMedicationDetailAsync(ArvMedicationDetailDTO arvMedicationDetail);
-        Task<ArvMedicationDetailDTO> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetailDTO arvMedicationDetail);
+        Task<List<ArvMedicationDetailResponseDTO>> GetAllArvMedicationDetailsAsync();
+        Task<ArvMedicationDetailResponseDTO> GetArvMedicationDetailByIdAsync(int id);
+        Task<ArvMedicationDetailResponseDTO> CreateArvMedicationDetailAsync(ArvMedicationDetailResponseDTO arvMedicationDetail);
+        Task<ArvMedicationDetailResponseDTO> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetailResponseDTO arvMedicationDetail);
         Task<bool> DeleteArvMedicationDetailAsync(int id);
-        Task<List<ArvMedicationDetailDTO>> SearchArvMedicationDetailsByNameAsync(string searchTerm);
+        Task<List<ArvMedicationDetailResponseDTO>> SearchArvMedicationDetailsByNameAsync(string searchTerm);
     }
 }
