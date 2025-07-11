@@ -74,7 +74,6 @@ body {
                 padding: 12px 8px;
             }
         }
-=======
 
         /* Style FullCalendar view switcher buttons */
 .fc .fc-button-group .fc-button {
@@ -172,5 +171,8 @@ body {
     margin-bottom: 10px;
     font-size: 1.08rem;
 }
-=======
-
+.sticky-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+}

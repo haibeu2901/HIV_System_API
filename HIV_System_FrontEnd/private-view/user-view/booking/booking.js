@@ -46,82 +46,115 @@ async function generateDoctors() {
     });
 }
 
-// When a doctor is selected, generate available dates for that doctor
-function selectDoctor(doctor, cardElement) {
-    document.querySelectorAll('.doctor-card').forEach(card => card.classList.remove('selected'));
-    cardElement.classList.add('selected');
-    selectedDoctor = doctor;
-    appointmentData.doctor = doctor;
-    // Reset date and time selections
-    selectedDate = null;
-    selectedTime = null;
-    appointmentData.date = null;
-    appointmentData.time = null;
-    // Enable next button
-    document.getElementById('nextBtn').disabled = false;
+let doctorWorkSchedules = []; // Store fetched schedules for selected doctor
+
+// Fetch work schedules for a doctor
+async function fetchDoctorWorkSchedules(doctorId) {
+  const token = localStorage.getItem("token");
+  const response = await fetch(
+    `https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedules?doctorId=${doctorId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  if (!response.ok) throw new Error("Failed to fetch doctor work schedules");
+  doctorWorkSchedules = await response.json();
 }
 
-
-
-// When a date is selected, generate time slots for that date
-function selectDate(date, cardElement) {
-    document.querySelectorAll('.date-card').forEach(card => card.classList.remove('selected'));
-    cardElement.classList.add('selected');
-    selectedDate = date;
-    appointmentData.date = date;
-    document.getElementById('nextBtn').disabled = false;
-    // Update selected date display
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('selectedDateDisplay').textContent = date.toLocaleDateString('en-US', options);
+// When a doctor is selected, fetch their work schedules and show available dates
+async function selectDoctor(doctor, cardElement) {
+  document
+    .querySelectorAll(".doctor-card")
+    .forEach((card) => card.classList.remove("selected"));
+  cardElement.classList.add("selected");
+  selectedDoctor = doctor;
+  appointmentData.doctor = doctor;
+  // Reset date and time selections
+  selectedDate = null;
+  selectedTime = null;
+  appointmentData.date = null;
+  appointmentData.time = null;
+  // Fetch and render available dates
+  await fetchDoctorWorkSchedules(doctor.doctorId);
+  renderAvailableDates();
+  // Enable next button
+  document.getElementById("nextBtn").disabled = false;
 }
 
-// Generate time slots for the selected date and doctor
-function generateTimeSlots() {
-    const timeGrid = document.getElementById('timeGrid');
-    timeGrid.innerHTML = '';
-    if (!selectedDoctor || !selectedDate) return;
-    const slots = generateTimeSlotsForDate(selectedDoctor.workSchedule, selectedDate);
-    slots.forEach(time => {
-        const timeCard = document.createElement('div');
-        timeCard.className = 'time-slot';
-        timeCard.textContent = time;
-        timeCard.onclick = () => selectTime(time, timeCard);
-        timeGrid.appendChild(timeCard);
+// Render available dates from doctorWorkSchedules
+function renderAvailableDates() {
+  const dateGrid = document.getElementById("dateGrid");
+  dateGrid.innerHTML = "";
+  // Get unique available dates
+  const availableDates = [
+    ...new Set(
+      doctorWorkSchedules
+        .filter((ws) => ws.isAvailable)
+        .map((ws) => ws.workDate)
+    ),
+  ];
+  availableDates.forEach((dateStr) => {
+    const dateObj = new Date(dateStr);
+    const btn = document.createElement("button");
+    btn.className = "date-card";
+    btn.textContent = dateObj.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
+    btn.onclick = () => selectDate(dateObj, btn);
+    dateGrid.appendChild(btn);
+  });
+}
+
+// When a date is selected, show available time slots for that date
+function selectDate(date, cardElement) {
+  document
+    .querySelectorAll(".date-card")
+    .forEach((card) => card.classList.remove("selected"));
+  cardElement.classList.add("selected");
+  selectedDate = date;
+  appointmentData.date = date;
+  document.getElementById("nextBtn").disabled = false;
+  // Update selected date display
+  document.getElementById("selectedDateDisplay").textContent =
+    date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  renderTimeSlotsForDate(date);
+}
+
+// Render available time slots for the selected date
+function renderTimeSlotsForDate(date) {
+  const timeGrid = document.getElementById("timeGrid");
+  timeGrid.innerHTML = "";
+  if (!selectedDoctor || !date) return;
+  const dateStr = date.toISOString().split("T")[0];
+  const slots = doctorWorkSchedules
+    .filter((ws) => ws.isAvailable && ws.workDate === dateStr)
+    .map((ws) => `${ws.startTime.substring(0,5)} - ${ws.endTime.substring(0,5)}`);
+  slots.forEach((time) => {
+    const timeCard = document.createElement("div");
+    timeCard.className = "time-slot";
+    timeCard.textContent = time;
+    timeCard.onclick = () => selectTime(time, timeCard);
+    timeGrid.appendChild(timeCard);
+  });
 }
 
 // When a time is selected
 function selectTime(time, cardElement) {
-    document.querySelectorAll('.time-slot').forEach(card => card.classList.remove('selected'));
-    cardElement.classList.add('selected');
-    selectedTime = time;
-    appointmentData.time = time;
-    document.getElementById('nextBtn').disabled = false;
-}
-
-// Generate time slots for a selected date
-function generateTimeSlotsForDate(workSchedule, selectedDate) {
-    const dayOfWeek = selectedDate.getDay();
-    const slots = [];
-    workSchedule
-        .filter(ws => ws.dayOfWeek === dayOfWeek)
-        .forEach(ws => {
-            let start = ws.startTime.substring(0, 5);
-            let end = ws.endTime.substring(0, 5);
-            let [sh, sm] = start.split(':').map(Number);
-            let [eh, em] = end.split(':').map(Number);
-            let current = new Date(selectedDate);
-            current.setHours(sh, sm, 0, 0);
-            const endTime = new Date(selectedDate);
-            endTime.setHours(eh, em, 0, 0);
-            while (current < endTime) {
-                let slotStart = current.toTimeString().substring(0, 5);
-                current.setMinutes(current.getMinutes() + 30);
-                let slotEnd = current < endTime ? current.toTimeString().substring(0, 5) : end;
-                slots.push(`${slotStart} - ${slotEnd}`);
-            }
-        });
-    return slots;
+  document
+    .querySelectorAll(".time-slot")
+    .forEach((card) => card.classList.remove("selected"));
+  cardElement.classList.add("selected");
+  selectedTime = time;
+  appointmentData.time = time;
+  document.getElementById("nextBtn").disabled = false;
 }
 
 // Navigation functions
@@ -197,75 +230,65 @@ function isStepValid() {
 
 // Update confirmation details
 function updateConfirmation() {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('confirmDate').textContent = selectedDate ? selectedDate.toLocaleDateString('en-US', options) : '';
-    document.getElementById('confirmTime').textContent = selectedTime || '';
-    document.getElementById('confirmDoctor').textContent = selectedDoctor ? selectedDoctor.account.fullname : '';
+    const options = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    };
+    document.getElementById("confirmDate").textContent = selectedDate
+        ? selectedDate.toLocaleDateString("en-US", options)
+        : "";
+    document.getElementById("confirmTime").textContent = selectedTime || "";
+    document.getElementById("confirmDoctor").textContent = selectedDoctor
+        ? selectedDoctor.fullname
+        : "";
 }
 
-// Confirm appointment (unchanged)
+// Confirm appointment (update to use selectedDate and selectedTime)
 function confirmAppointment() {
-    if (!selectedDoctor || selectedDayOfWeek === null || !selectedTime) {
-        alert("Please complete all steps.");
-        return;
-    }
-    const appointmentDate = getNextDateForDay(selectedDayOfWeek);
-    const appointmentTime = getStartTimeFromSlot(selectedTime);
-    const notes = document.getElementById('notes').value || "";
-
-    const payload = {
-        doctorId: selectedDoctor.doctorId,
-        appointmentDate: getNextDateForDay(selectedDayOfWeek),
-        appointmentTime: getStartTimeFromSlot(selectedTime),
-        notes: document.getElementById('notes')?.value || ""
-    };
-console.log(payload);
-    const token = localStorage.getItem("token");
-    fetch("https://localhost:7009/api/Appointment/CreateAppointment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-=======
-        body: JSON.stringify(payload)
+  if (!selectedDoctor || !selectedDate || !selectedTime) {
+    alert("Please complete all steps.");
+    return;
+  }
+  const notes = document.getElementById("notes").value || "";
+  const appointmentDate = selectedDate.toISOString().split("T")[0];
+  const appointmentTime = selectedTime.split(" - ")[0] + ":00";
+  const payload = {
+    doctorId: selectedDoctor.doctorId,
+    appointmentDate: appointmentDate,
+    appointmentTime: appointmentTime,
+    notes: notes,
+  };
+  const token = localStorage.getItem("token");
+  fetch("https://localhost:7009/api/Appointment/CreateAppointment", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  })
+    .then((res) => {
+      if (res.status === 409) {
+        return res.text().then((msg) => {
+          alert(
+            msg ||
+              "This time slot has already been taken. Please choose another time slot."
+          );
+          throw new Error("Time slot taken");
+        });
+      }
+      if (!res.ok) throw new Error("Failed to create appointment");
+      return res.json();
     })
-    .then(res => {
-        if (res.status === 409) {
-            // Show the backend's message if available
-            return res.text().then(msg => {
-                alert(msg || "This time slot has already been taken. Please choose another time slot.");
-                throw new Error("Time slot taken");
-            });
-        }
-        if (!res.ok) throw new Error("Failed to create appointment");
-        return res.json();
+    .then((data) => {
+      window.location.href = "../appointment-view/view-appointment.html";
     })
-    .then(data => {
-        window.location.href = "../appointment-view/view-appointment.html";
-    })
-=======
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(res => {
-        if (res.status === 409) {
-            // Show the backend's message if available
-            return res.text().then(msg => {
-                alert(msg || "This time slot has already been taken. Please choose another time slot.");
-                throw new Error("Time slot taken");
-            });
-        }
-        if (!res.ok) throw new Error("Failed to create appointment");
-        return res.json();
-    })
-    .then(data => {
-        window.location.href = "../appointment-view/view-appointment.html";
-    })
-    .catch(err => {
-        if (err.message !== "Time slot taken") {
-            alert("Error: " + err.message);
-        }
+    .catch((err) => {
+      if (err.message !== "Time slot taken") {
+        alert("Error: " + err.message);
+      }
     });
 }
 

@@ -1,6 +1,7 @@
 ﻿using Azure;
 using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
+using HIV_System_API_DTOs.DoctorDTO;
 using HIV_System_API_DTOs.EmailDTO;
 using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_Services.Implements;
@@ -502,6 +503,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("View-profile")]
+        [Authorize]
         public async Task<IActionResult> ViewProfile()
         {
             try
@@ -537,6 +539,64 @@ namespace HIV_System_API_Backend.Controllers
                 "Verify Your Email",
                 emailContent
             );
+        }
+
+        /// <summary>
+        /// Updates personal profile for the authenticated user
+        /// </summary>
+        /// <param name="accountId">Account ID</param>
+        /// <param name="profileDTO">Profile update data</param>
+        /// <returns>Updated profile information</returns>
+        [HttpPut("UpdatePersonalProfile/{accountId}")]
+        [Authorize(Roles = "1,2,3,4,5")] // All roles can update their own profile
+        public async Task<IActionResult> UpdatePersonalProfile(int accountId, [FromBody] object profileDTO)
+        {
+            try
+            {
+                if (profileDTO == null)
+                {
+                    return BadRequest("Profile data is required.");
+                }
+
+                var result = await _accountService.UpdatePersonalProfileAsync(accountId, profileDTO);
+
+                if (result == null)
+                {
+                    return NotFound($"Account with ID {accountId} not found.");
+                }
+
+                return Ok(result);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest($"Invalid input: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid input: {ex.Message}");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound($"Resource not found: {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid($"Access denied: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest($"Operation failed: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Database error while updating profile: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Unexpected error updating profile: {ex.InnerException?.Message ?? ex.Message}");
+            }
         }
     }
 }

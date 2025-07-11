@@ -23,33 +23,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <i class="fas fa-user-md"></i>
                     </div>
                     <div>
-                        <h3>${doc.account.fullname}</h3>
+                        <h3>${doc.fullname}</h3>
                         <p class="degree">${doc.degree}</p>
-                        <p class="email">${doc.account.email}</p>
+                        <p class="email">${doc.email}</p>
                     </div>
                 </div>
                 <p class="bio">${doc.bio}</p>
-                <div class="schedule">
-                    <strong>Work Schedule:</strong>
-                    <ul>
-                        ${doc.workSchedule.map(ws => `
-                            <li>
-                                ${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][ws.dayOfWeek]}: 
-                                ${ws.startTime.substring(0,5)} - ${ws.endTime.substring(0,5)}
-                            </li>
-                        `).join("")}
-                    </ul>
-                </div>
                 <div class="doctor-actions">
-                    <a class="btn-chat" href="mailto:${doc.account.email}?subject=Contact%20from%20CareFirst%20HIV%20Clinic" target="_blank">
+                    <a class="btn-chat" href="mailto:${doc.email}?subject=Contact%20from%20CareFirst%20HIV%20Clinic" target="_blank">
                         <i class="fas fa-envelope"></i> Contact the Doctor
                     </a>
-=======
-=======
-                    <button class="btn-chat" onclick="chatToDoctor('${doc.account.accId}', '${doc.account.fullname}')">
+                    <button class="btn-chat" onclick="chatToDoctor('${doc.email}', '${doc.fullname}')">
                         <i class="fas fa-comments"></i> Chat to Doctor
                     </button>
-                    <button class="btn-book" onclick="bookDoctor('${doc.doctorId}')">
+                    <button class="btn-book" onclick="bookDoctor('${doc.email}')">
                         <i class="fas fa-calendar-plus"></i> Book Appointment
                     </button>
                 </div>
@@ -60,17 +47,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// Add these functions globally
-function chatToDoctor(doctorId, doctorName) {
-    // Redirect to chat page (implement your chat page as needed)
-    window.location.href = `/private-view/user-view/chat/chat.html?doctorId=${doctorId}&doctorName=${encodeURIComponent(doctorName)}`;
-}
-
-function bookDoctor(doctorId) {
-    // Redirect to booking page with doctorId as query param
-    window.location.href = `/private-view/user-view/booking/appointment-booking.html?doctorId=${doctorId}`;
-}
-function chatToDoctor(doctorId, doctorName) {
+// Update chatToDoctor and bookDoctor to use email as ID
+function chatToDoctor(doctorEmail, doctorName) {
     // Show modal
     document.getElementById('chat-modal').style.display = 'flex';
     document.getElementById('chat-doctor-name').textContent = `Chat with Dr. ${doctorName}`;
@@ -87,6 +65,11 @@ function chatToDoctor(doctorId, doctorName) {
             // Here you can implement sending the message to backend if needed
         }
     };
+}
+
+function bookDoctor(doctorEmail) {
+    // Redirect to booking page with doctorEmail as query param
+    window.location.href = `/private-view/user-view/booking/appointment-booking.html?doctorEmail=${encodeURIComponent(doctorEmail)}`;
 }
 
 // Close modal logic

@@ -72,14 +72,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             const fullname = document.getElementById("fullname").value.trim();
             const dob = document.getElementById("dob").value;
             const gender = document.getElementById("gender").value === "true";
-            const accPassword = document.getElementById("accPassword").value;
 
             const updateData = {
                 email,
                 fullname,
                 dob,
                 gender,
-                accPassword
             };
 
            

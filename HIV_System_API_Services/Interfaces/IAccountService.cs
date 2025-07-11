@@ -1,6 +1,8 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.AccountDTO;
+using HIV_System_API_DTOs.DoctorDTO;
 using HIV_System_API_DTOs.PatientDTO;
+using HIV_System_API_DTOs.StaffDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,8 +19,10 @@ namespace HIV_System_API_Services.Interfaces
         Task<AccountResponseDTO> UpdateAccountByIdAsync(int id, UpdateAccountRequestDTO updatedAccount);
         Task<bool> DeleteAccountAsync(int accId);
         Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account);
-        Task<AccountResponseDTO> UpdatePatientProfileAsync(int accountId, PatientProfileUpdateDTO profileDTO);
-        Task<AccountResponseDTO> UpdateDoctorProfileAsync(int accountId, DoctorProfileUpdateDTO profileDTO);
+        Task<PatientProfileResponseDTO> UpdatePatientProfileAsync(int accountId, PatientProfileUpdateDTO profileDTO);
+        Task<DoctorProfileResponse> UpdateDoctorProfileAsync(int accountId, DoctorProfileUpdateDTO profileDTO);
+        //Task<StaffProfileResponseDTO> UpdateStaffProfileAsync(int accountId, StaffProfileUpdateDTO profileDTO);
+        Task<object> UpdatePersonalProfileAsync(int accountId, object profileDTO);
         Task<AccountResponseDTO?> GetAccountByEmailAsync(string email);
         Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request);
         Task<string> InitiatePasswordResetAsync(ForgotPasswordRequestDTO request);
