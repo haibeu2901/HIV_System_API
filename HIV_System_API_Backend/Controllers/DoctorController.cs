@@ -109,9 +109,9 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetDoctorByDateAndTime")]
-        [Authorize]
-        public async Task<IActionResult> GetDoctorByDateAndTime(DateOnly Date, TimeOnly Time)
+        [HttpGet("GetDoctorsByDateAndTime")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetDoctorsByDateAndTime(DateOnly Date, TimeOnly Time)
         {
             try
             {
