@@ -587,74 +587,74 @@ namespace HIV_System_API_Services.Implements
         /// Updates staff profile for Staff (role=4)
         /// Allows updating: Fullname, Dob, Gender, Degree, Bio
         /// </summary>
-        //public async Task<StaffProfileResponseDTO> UpdateStaffProfileAsync(int accountId, StaffProfileUpdateDTO profileDTO)
-        //{
-        //    if (profileDTO == null)
-        //        throw new ArgumentNullException(nameof(profileDTO));
+        public async Task<StaffProfileResponseDTO> UpdateStaffProfileAsync(int accountId, StaffProfileUpdateDTO profileDTO)
+        {
+            if (profileDTO == null)
+                throw new ArgumentNullException(nameof(profileDTO));
 
-        //    var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
-        //    if (existingAccount == null)
-        //        throw new KeyNotFoundException($"Account with id {accountId} not found.");
+            var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
+            if (existingAccount == null)
+                throw new KeyNotFoundException($"Account with id {accountId} not found.");
 
-        //    if (existingAccount.Roles != 4)
-        //        throw new UnauthorizedAccessException("This account is not a staff account.");
+            if (existingAccount.Roles != 4)
+                throw new UnauthorizedAccessException("This account is not a staff account.");
 
-        //    // Validate Date of Birth if provided
-        //    if (profileDTO.Dob.HasValue)
-        //    {
-        //        ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
-        //    }
+            // Validate Date of Birth if provided
+            if (profileDTO.Dob.HasValue)
+            {
+                ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
+            }
 
-        //    // Create account object with only updated basic fields
-        //    var accountToUpdate = new Account
-        //    {
-        //        AccId = accountId,
-        //        AccUsername = existingAccount.AccUsername, // preserve username
-        //        AccPassword = existingAccount.AccPassword, // preserve password
-        //        Email = existingAccount.Email, // preserve email
-        //        Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
-        //        Dob = profileDTO.Dob ?? existingAccount.Dob,
-        //        Gender = profileDTO.Gender ?? existingAccount.Gender,
-        //        Roles = existingAccount.Roles, // preserve role
-        //        IsActive = existingAccount.IsActive // preserve status
-        //    };
+            // Create account object with only updated basic fields
+            var accountToUpdate = new Account
+            {
+                AccId = accountId,
+                AccUsername = existingAccount.AccUsername, // preserve username
+                AccPassword = existingAccount.AccPassword, // preserve password
+                Email = existingAccount.Email, // preserve email
+                Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
+                Dob = profileDTO.Dob ?? existingAccount.Dob,
+                Gender = profileDTO.Gender ?? existingAccount.Gender,
+                Roles = existingAccount.Roles, // preserve role
+                IsActive = existingAccount.IsActive // preserve status
+            };
 
-        //    // Update account profile
-        //    var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
+            // Update account profile
+            var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
 
-        //    // Update staff-specific information if provided
-        //    var staffRepo = new StaffRepo();
-        //    var staff = await staffRepo.GetStaffByIdAsync(accountId);
+            // Update staff-specific information if provided
+            var staffRepo = new StaffRepo();
+            var staff = await staffRepo.GetStaffByIdAsync(accountId);
 
-        //    if (staff != null && (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio)))
-        //    {
-        //        // Only update staff fields that are provided
-        //        if (!string.IsNullOrWhiteSpace(profileDTO.Degree))
-        //            staff.Degree = profileDTO.Degree;
+            if (staff != null && (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio)))
+            {
+                // Only update staff fields that are provided
+                if (!string.IsNullOrWhiteSpace(profileDTO.Degree))
+                    staff.Degree = profileDTO.Degree;
 
-        //        if (!string.IsNullOrWhiteSpace(profileDTO.Bio))
-        //            staff.Bio = profileDTO.Bio;
+                if (!string.IsNullOrWhiteSpace(profileDTO.Bio))
+                    staff.Bio = profileDTO.Bio;
 
-        //        await staffRepo.UpdateStaffAsync(staff.StaffId, staff);
-        //    }
+                await staffRepo.UpdateStaffAsync(staff.StfId, staff);
+            }
 
-        //    // Get updated staff information for response
-        //    var updatedStaff = await staffRepo.GetStaffByIdAsync(accountId);
+            // Get updated staff information for response
+            var updatedStaff = await staffRepo.GetStaffByIdAsync(accountId);
 
-        //    return new StaffProfileResponseDTO
-        //    {
-        //        AccId = updatedAccount.AccId,
-        //        AccUsername = updatedAccount.AccUsername,
-        //        Email = updatedAccount.Email,
-        //        Fullname = updatedAccount.Fullname,
-        //        Dob = updatedAccount.Dob,
-        //        Gender = updatedAccount.Gender,
-        //        Roles = updatedAccount.Roles,
-        //        IsActive = updatedAccount.IsActive,
-        //        Degree = updatedStaff?.Degree,
-        //        Bio = updatedStaff?.Bio
-        //    };
-        //}
+            return new StaffProfileResponseDTO
+            {
+                AccId = updatedAccount.AccId,
+                AccUsername = updatedAccount.AccUsername,
+                Email = updatedAccount.Email,
+                Fullname = updatedAccount.Fullname,
+                Dob = updatedAccount.Dob,
+                Gender = updatedAccount.Gender,
+                Roles = updatedAccount.Roles,
+                IsActive = updatedAccount.IsActive,
+                Degree = updatedStaff?.Degree,
+                Bio = updatedStaff?.Bio
+            };
+        }
 
         /// <summary>
         /// Universal profile update method that routes to appropriate profile update based on account role
@@ -716,15 +716,15 @@ namespace HIV_System_API_Services.Implements
                         throw new ArgumentException("Doctor profile update requires DoctorProfileUpdateDTO.");
                     }
 
-                //case 4: // Staff
-                //    if (profileDTO is StaffProfileUpdateDTO staffUpdateDto)
-                //    {
-                //        return await UpdateStaffProfileAsync(accountId, staffUpdateDto);
-                //    }
-                //    else
-                //    {
-                //        throw new ArgumentException("Staff profile update requires StaffProfileUpdateDTO.");
-                //    }
+                case 4: // Staff
+                    if (profileDTO is StaffProfileUpdateDTO staffUpdateDto)
+                    {
+                        return await UpdateStaffProfileAsync(accountId, staffUpdateDto);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Staff profile update requires StaffProfileUpdateDTO.");
+                    }
 
                 default:
                     throw new UnauthorizedAccessException($"Profile updates are not supported for role {account.Roles}.");
