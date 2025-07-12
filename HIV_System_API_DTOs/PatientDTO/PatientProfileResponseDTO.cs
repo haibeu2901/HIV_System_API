@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HIV_System_API_DTOs.DoctorDTO
+namespace HIV_System_API_DTOs.PatientDTO
 {
-    public class DoctorProfileResponse
+    public class PatientProfileResponseDTO
     {
         public int AccId { get; set; }
         public string? AccUsername { get; set; }
@@ -16,7 +16,5 @@ namespace HIV_System_API_DTOs.DoctorDTO
         public bool? Gender { get; set; }
         public int Roles { get; set; }
         public bool? IsActive { get; set; }
-        public string? Degree { get; set; }
-        public string? Bio { get; set; }
     }
 }

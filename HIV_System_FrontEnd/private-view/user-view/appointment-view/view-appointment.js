@@ -1,3 +1,6 @@
+const params = new URLSearchParams(window.location.search);
+const selectedId = params.get('id');
+
 document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
   const calendarEl = document.getElementById("calendar");
@@ -23,6 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       end: `${appt.apmtDate}T${addMinutes(appt.apmTime, 30)}`, // 30 min duration
       color: getStatusColor(appt.apmStatus),
       extendedProps: {
+        appointmentId: appt.appointmentId,
         notes: appt.notes || "None",
         status: renderStatusText(appt.apmStatus),
       },
@@ -81,6 +85,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
   });
   calendar.render();
+
+  // After calendar.render();
+  if (selectedId) {
+    // Find the event by appointmentId and open its modal
+    const event = calendar.getEvents().find(ev => ev.extendedProps && ev.extendedProps.appointmentId == selectedId);
+    if (event) {
+      // Simulate a click to open the modal
+      calendar.trigger('eventClick', { event });
+    }
+  }
 
   document.getElementById("closeStickyNote").onclick = function () {
     document.getElementById("sticky-note-modal").classList.add("hidden");
