@@ -6,121 +6,50 @@
     <title>Book Appointment - CareFirst HIV Clinic</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="../userStyle.css">
-    <link rel = "stylesheet" href = "../header/header.css">
+    <link rel="stylesheet" href="../header/header.css">
     <link rel="stylesheet" href="booking.css">
 </head>
 <body>
     <!-- Header -->
-<div id="header-placeholder"></div>
+    <div id="header-placeholder"></div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
-            <div class="page-title">
-                <h1>Book an Appointment</h1>
-                <p>Schedule your visit with our healthcare professionals</p>
+    <div class="booking-container">
+        <h2>Book an Appointment</h2>
+        <div class="booking-options">
+            <button id="by-time-btn" class="active">Order by Time</button>
+            <button id="by-doctor-btn">Order by Doctor</button>
+        </div>
+
+        <!-- Order by Time -->
+        <div id="by-time-section" class="booking-section">
+            <h3>Select Date</h3>
+            <input type="date" id="calendar-date">
+            <h3>Select Time</h3>
+            <div id="time-slot-grid"></div>
+            <div id="available-doctors-section" style="display:none;">
+                <h3>Select Doctor</h3>
+                <div id="doctor-list"></div>
             </div>
+            <button id="confirm-time-booking-btn" style="display:none;">Book Appointment</button>
+        </div>
 
-            <div class="booking-container">
-                <!-- Booking Steps -->
-                <div class="booking-steps">
-                    <div class="step active" data-step="1">
-                        <div class="step-number">1</div>
-                        <div>Select Doctor</div>
-                    </div>
-                    <div class="step" data-step="2">
-                        <div class="step-number">2</div>
-                        <div>Select Date</div>
-                    </div>
-                    <div class="step" data-step="3">
-                        <div class="step-number">3</div>
-                        <div>Choose Time</div>
-                    </div>
-                    <div class="step" data-step="4">
-                        <div class="step-number">4</div>
-                        <div>Confirm</div>
-                    </div>
-                </div>
-
-                <!-- Booking Content -->
-                <div class="booking-content">
-                    <!-- Step 1: Doctor Selection -->
-                    <div class="step-content active" id="step1">
-                        <h2>Select Doctor</h2>
-                        <p>Choose your preferred healthcare provider</p>
-                        <div class="doctors-grid" id="doctorsGrid">
-                            <!-- Doctors will be populated by JavaScript -->
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Day of Week Selection -->
-                    <div class="step-content" id="step2">
-                        <h2>Select Appointment Day</h2>
-                        <p>Choose a day of the week for your appointment</p>
-                        <div id="dateGrid"></div>
-                    </div>
-
-                    <!-- Step 3: Time Selection -->
-                    <div class="step-content" id="step3">
-                        <h2>Choose Time Slot</h2>
-                        <p>Select your preferred time for <span id="selectedDateDisplay"></span></p>
-                        <div class="time-grid" id="timeGrid">
-                            <!-- Time slots will be populated by JavaScript -->
-                        </div>
-                    </div>
-
-                    <!-- Step 4: Confirmation -->
-                    <div class="step-content" id="step4">
-                        <h2>Confirm Appointment</h2>
-                        <p>Please review your appointment details</p>
-                        
-                        <div class="confirmation-card">
-                            <div class="confirmation-item">
-                                <span class="confirmation-label">Date:</span>
-                                <span class="confirmation-value" id="confirmDate"></span>
-                            </div>
-                            <div class="confirmation-item">
-                                <span class="confirmation-label">Time:</span>
-                                <span class="confirmation-value" id="confirmTime"></span>
-                            </div>
-                            <div class="confirmation-item">
-                                <span class="confirmation-label">Doctor:</span>
-                                <span class="confirmation-value" id="confirmDoctor"></span>
-                            </div>
-                            <div class="confirmation-item">
-                                <span class="confirmation-label">Appointment Type:</span>
-                                <span class="confirmation-value" id="confirmType"></span>
-                            </div>
-                        </div>
-
-                     
-
-                        <div class="form-group">
-                            <label for="notes">Additional Notes (Optional)</label>
-                            <textarea id="notes" placeholder="Any specific concerns or information you'd like to share..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Navigation Buttons -->
-                    <div class="button-group">
-                        <button class="btn btn-secondary" id="prevBtn" onclick="previousStep()" style="display: none;">
-                            <i class="fas fa-arrow-left"></i> Previous
-                        </button>
-                        <button class="btn btn-primary" id="nextBtn" onclick="nextStep()" disabled>
-                            Next <i class="fas fa-arrow-right"></i>
-                        </button>
-                        <button class="btn btn-primary hidden" id="confirmBtn" onclick="confirmAppointment()">
-                            <i class="fas fa-check"></i> Confirm Appointment
-                        </button>
-                    </div>
-                </div>
+        <!-- Order by Doctor -->
+        <div id="by-doctor-section" class="booking-section" style="display:none;">
+            <h3>Select Doctor</h3>
+            <select id="doctor-select">
+                <option value="">-- Select Doctor --</option>
+            </select>
+            <div id="doctor-schedule-section" style="display:none;">
+                <h3>Select Date</h3>
+                <input type="date" id="doctor-schedule-date">
+                <h3>Select Time</h3>
+                <div id="doctor-time-slot-grid"></div>
+                <button id="confirm-doctor-booking-btn" style="display:none;">Book Appointment</button>
             </div>
         </div>
-    </main>
+    </div>
 
-    <!-- Footer -->
-     <script src="../header/header.js"></script>
+    <script src="../header/header.js"></script>
     <script src="booking.js"></script>
-=======
 </body>
 </html>

@@ -3,7 +3,7 @@ fetch('../header/header.html')
   .then(data => {
     document.getElementById('header-placeholder').innerHTML = data;
 
-    // Dropdown toggle logic (runs after header is loaded)
+    // Dropdown toggle logic
     const dropdown = document.getElementById('viewDropdown');
     const btn = document.getElementById('viewDropdownBtn');
     if (dropdown && btn) {
@@ -11,22 +11,40 @@ fetch('../header/header.html')
         e.stopPropagation();
         dropdown.classList.toggle('open');
       });
-
-      // Close dropdown when clicking outside the dropdown
       document.addEventListener('click', function(e) {
-        // Only close if the click is outside the dropdown
         if (!dropdown.contains(e.target)) {
           dropdown.classList.remove('open');
         }
       });
-
-      // Prevent closing when clicking inside the dropdown content
       const dropdownContent = dropdown.querySelector('.dropdown-content');
       if (dropdownContent) {
         dropdownContent.addEventListener('click', function(e) {
           e.stopPropagation();
         });
       }
+    }
+
+    // Notification bell popup logic
+    const bell = document.getElementById('notificationBell');
+    const popup = document.getElementById('notification-popup');
+    const closeBtn = document.getElementById('closeNotificationPopup');
+    if (bell && popup && closeBtn) {
+      bell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popup.classList.toggle('hidden');
+        // Optionally: load notifications here
+      });
+      closeBtn.addEventListener('click', () => {
+        popup.classList.add('hidden');
+      });
+      document.addEventListener('click', (e) => {
+        if (!popup.contains(e.target) && e.target !== bell) {
+          popup.classList.add('hidden');
+        }
+      });
+      popup.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
     }
   });
 

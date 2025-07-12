@@ -9,6 +9,128 @@
     <link rel="stylesheet" href="view-appointment.css">
     <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+    <style>
+        /* Add or override styles for better look */
+        .main-content {
+            max-width: 900px;
+            margin: 40px auto 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44,62,80,0.08);
+            padding: 32px 28px 28px 28px;
+        }
+        h1 {
+            color: #e74c3c;
+            margin-bottom: 24px;
+            font-size: 2.1em;
+            text-align: center;
+        }
+        #appointment-list {
+            margin-bottom: 32px;
+        }
+        .appointment-card {
+            background: #f7f8fa;
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: box-shadow 0.2s;
+        }
+        .appointment-card:hover {
+            box-shadow: 0 4px 16px rgba(231,76,60,0.10);
+        }
+        .appointment-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .appointment-title {
+            font-size: 1.15em;
+            font-weight: 600;
+            color: #333;
+        }
+        .appointment-meta {
+            font-size: 0.98em;
+            color: #888;
+            margin-top: 2px;
+        }
+        .appointment-status {
+            font-size: 0.97em;
+            font-weight: 600;
+            color: #fff;
+            background: #e74c3c;
+            border-radius: 5px;
+            padding: 4px 12px;
+            margin-left: 12px;
+        }
+        .appointment-actions button {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 16px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: background 0.2s;
+        }
+        .appointment-actions button:hover {
+            background: #c0392b;
+        }
+        #calendar {
+            margin-top: 32px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+            padding: 18px;
+        }
+        /* Sticky Note Modal */
+        .sticky-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(44,62,80,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .sticky-modal.hidden {
+            display: none;
+        }
+        .sticky-modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px 36px;
+            min-width: 340px;
+            box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+            position: relative;
+        }
+        .sticky-close {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            background: none;
+            border: none;
+            font-size: 1.6em;
+            color: #e74c3c;
+            cursor: pointer;
+        }
+        .sticky-field {
+            margin-bottom: 12px;
+            font-size: 1.08em;
+        }
+        @media (max-width: 700px) {
+            .main-content {
+                padding: 12px 4px;
+            }
+            .sticky-modal-content {
+                padding: 18px 8px;
+                min-width: 220px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="header-placeholder"></div>
