@@ -18,14 +18,19 @@ namespace HIV_System_API_Repositories.Implements
             return await NotificationDAO.Instance.CreateNotificationAsync(notification);
         }
 
-        public Task<bool> DeleteNotificationByIdAsync(int id)
+        public async Task<bool> DeleteNotificationByIdAsync(int id)
         {
-            return NotificationDAO.Instance.DeleteNotificationByIdAsync(id);
+            return await NotificationDAO.Instance.DeleteNotificationByIdAsync(id);
         }
 
-        public Task<List<Notification>> GetAllNotification()
+        public async Task<bool> DeleteNotificationForAccountAsync(int ntfId, int accId)
         {
-            return NotificationDAO.Instance.GetAllNotification(); 
+            return await NotificationDAO.Instance.DeleteNotificationForAccountAsync(ntfId, accId);
+        }
+
+        public async Task<List<Notification>> GetAllNotificationsAsync()
+        {
+            return await NotificationDAO.Instance.GetAllNotificationsAsync();
         }
 
         public async Task<List<Notification>> GetAllPersonalNotificationsAsync(int accId)
@@ -38,24 +43,44 @@ namespace HIV_System_API_Repositories.Implements
             return await NotificationDAO.Instance.GetAllUnreadNotificationsAsync(accId);
         }
 
-        public Task<Notification> GetNotificationByIdAsync(int id)
+        public async Task<Notification?> GetNotificationByIdAsync(int id)
         {
-            return NotificationDAO.Instance.GetNotificationByIdAsync(id);
+            return await NotificationDAO.Instance.GetNotificationByIdAsync(id);
         }
 
-        public Task<List<NotificationAccount>> GetNotificationRecipientsAsync(int ntfId)
+        public async Task<List<NotificationAccount>> GetNotificationRecipientsAsync(int ntfId)
         {
-            return NotificationDAO.Instance.GetNotificationRecipientsAsync(ntfId);
+            return await NotificationDAO.Instance.GetNotificationRecipientsAsync(ntfId);
         }
 
-        public Task<List<Notification>> GetNotificationsByRecipientAsync(int accId)
+        public async Task<List<Notification>> GetNotificationsByRecipientAsync(int accId)
         {
-            return NotificationDAO.Instance.GetNotificationsByRecipientAsync(accId);
+            return await NotificationDAO.Instance.GetNotificationsByRecipientAsync(accId);
         }
 
-        public Task<Notification> SendNotificationToAccIdAsync(int ntfId, int accId)
+        public async Task<List<NotificationAccount>> GetPersonalNotificationAccountsAsync(int accId)
         {
-            return NotificationDAO.Instance.SendNotificationToAccIdAsync(ntfId, accId);
+            return await NotificationDAO.Instance.GetPersonalNotificationAccountsAsync(accId);
+        }
+
+        public async Task<int> GetUnreadNotificationCountAsync(int accId)
+        {
+            return await NotificationDAO.Instance.GetUnreadNotificationCountAsync(accId);
+        }
+
+        public async Task<bool> MarkAllNotificationsAsReadAsync(int accId)
+        {
+            return await NotificationDAO.Instance.MarkAllNotificationsAsReadAsync(accId);
+        }
+
+        public async Task<bool> MarkNotificationAsReadAsync(int ntfId, int accId)
+        {
+            return await NotificationDAO.Instance.MarkNotificationAsReadAsync(ntfId, accId);
+        }
+
+        public async Task<Notification> SendNotificationToAccIdAsync(int ntfId, int accId)
+        {
+            return await NotificationDAO.Instance.SendNotificationToAccIdAsync(ntfId, accId);
         }
 
         public Task<Notification> SendNotificationToRoleAsync(int ntfId, byte role)
@@ -63,9 +88,9 @@ namespace HIV_System_API_Repositories.Implements
             return NotificationDAO.Instance.SendNotificationToRoleAsync(ntfId, role);
         }
 
-        public Task<bool> UpdateNotificationByIdAsync(Notification notification)
+        public async Task<bool> UpdateNotificationByIdAsync(Notification notification)
         {
-            return NotificationDAO.Instance.UpdateNotificationByIdAsync(notification);
+            return await NotificationDAO.Instance.UpdateNotificationByIdAsync(notification);
         }
 
         public async Task<Notification> ViewNotificationAsync(int ntfId, int accId)
