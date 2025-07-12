@@ -5,16 +5,19 @@ using HIV_System_API_Services.Interfaces;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Repositories.Implements;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HIV_System_API_Services.Implements
 {
     public class TestResultService : ITestResultService
     {
         private readonly ITestResultRepo _testResultRepo;
+        private readonly IPatientRepo _patientRepo;
 
         public TestResultService()
         {
             _testResultRepo = new TestResultRepo();
+            _patientRepo = new PatientRepo();
         }
 
         private TestResult MapToRequest(TestResultRequestDTO testResult)
@@ -80,18 +83,22 @@ namespace HIV_System_API_Services.Implements
 
             return results.Select(MapToResponse).ToList();
         }
-        public async Task<PersonalTestResultResponseDTO> GetPersonalTestResult(int id)
+        public async Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id)
         {
-            var testResult = await _testResultRepo.GetTestResultById(id);
-            if (testResult == null)
-                throw new KeyNotFoundException($"Test result with ID {id} not found.");
-
-            return new PersonalTestResultResponseDTO
+            var patient = await _patientRepo.GetPatientByIdAsync(id);
+            if (patient == null)
+                throw new KeyNotFoundException($"Patient with ID {id} not found.");
+            var results = await _testResultRepo.GetTestResultsByPatientId(patient.PatientMedicalRecord.PmrId);
+            if (results == null || !results.Any())
+                throw new KeyNotFoundException($"No test results found for patient with ID {id}.");
+            var response = results.Select(r => new PersonalTestResultResponseDTO
             {
-                Result = testResult.ResultValue,
-                TestDate = testResult.TestDate,
-                Notes = testResult.Notes
-            };
+                PatientMedicalRecordId = r.PmrId,
+                TestDate = r.TestDate,
+                Result = r.ResultValue,
+                Notes = r.Notes,
+            }).ToList();
+            return response;
         }
 
         public async Task<List<TestResultResponseDTO>> GetSustainTestResultPatient()
