@@ -43,12 +43,24 @@
     <div class="dashboard-container" style="padding-top: 100px;">
         <main class="main-content">
             <div class="dashboard-header">Patient Medical Records</div>
+            <div class="search-bar">
+                <input type="text" id="patientSearchInput" placeholder="Tìm kiếm bệnh nhân theo tên hoặc email..." />
+            </div>
             <div class="dashboard-section" id="patientMedicalRecordSection">
                 <!-- Patient medical records content goes here -->
             </div>
         </main>
     </div>
+    <div id="patientDetailModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" id="closePatientModal">&times;</span>
+        <div id="patientDetailContent">
+          <!-- Patient details will be injected here -->
+        </div>
+      </div>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="patient-medical-record-script.js"></script>
     <footer class="footer">
       <div class="container">
         <div class="footer-content">

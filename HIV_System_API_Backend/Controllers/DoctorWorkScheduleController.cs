@@ -35,7 +35,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve doctor work schedules: {ex.Message}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while retrieving doctor work schedules.");
             }
@@ -61,7 +61,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve doctor work schedule with ID {id}: {ex.Message}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while retrieving doctor work schedule with ID {id}.");
             }
@@ -87,7 +87,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to create doctor work schedule: {ex.Message}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while creating doctor work schedule.");
             }
@@ -117,7 +117,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to update doctor work schedule with ID {id}: {ex.Message}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while updating doctor work schedule with ID {id}.");
             }
@@ -147,7 +147,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to delete doctor work schedule with ID {id}: {ex.Message}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while deleting doctor work schedule with ID {id}.");
             }
@@ -180,7 +180,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve work schedules for doctor with ID {doctorId.Value}: {ex.Message}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId.Value}.");
             }
@@ -206,7 +206,7 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to retrieve work schedules for doctor with ID {doctorId}: {ex.Message}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId}.");
             }
