@@ -4,7 +4,7 @@ const doctorId = localStorage.getItem('accId');
 // Function to fetch doctor's work schedule with JWT from localStorage
 async function getWorkSchedule(doctorId) {
     try {
-        const token = localStorage.getItem('token'); // Assumes token is stored as 'token'
+        const token = localStorage.getItem('token');
         const response = await fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedules?doctorId=${doctorId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -19,7 +19,6 @@ async function getWorkSchedule(doctorId) {
         console.error('Error fetching work schedule:', error);
         return null;
     }
-    console.log(data);
 }
 
 // Helper to convert dayOfWeek to day name
@@ -28,58 +27,156 @@ function getDayName(dayOfWeek) {
     return days[dayOfWeek] || "Unknown";
 }
 
-// Render schedule as a table
+// Helper to get the start of the week (Monday)
+function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay() || 7; // Sunday is 0, set to 7
+    if (day !== 1) d.setHours(-24 * (day - 1));
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+// Helper to get the end of the week (Sunday)
+function getWeekEnd(date) {
+    const start = getWeekStart(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return end;
+}
+
+// Helper to format date as yyyy-mm-dd
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+// Group schedules by week start date
+function groupSchedulesByWeek(schedules) {
+    const weeks = {};
+    schedules.forEach(item => {
+        const workDate = new Date(item.workDate);
+        const weekStart = formatDate(getWeekStart(workDate));
+        const weekEnd = formatDate(getWeekEnd(workDate));
+        const weekKey = `${weekStart}~${weekEnd}`;
+        if (!weeks[weekKey]) weeks[weekKey] = [];
+        weeks[weekKey].push(item);
+    });
+    return weeks;
+}
+
+// Helper: get all days in a week (Monday to Sunday)
+function getWeekDays(weekStart) {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        days.push(d);
+    }
+    return days;
+}
+
+// Render the week dropdown and schedule calendar grid (timeframes as rows)
 async function renderWorkSchedule(doctorId, containerId) {
     const container = document.getElementById(containerId);
-    container.innerHTML = "<p>Loading work schedule...</p>";
-    const schedules = await getWorkSchedule(doctorId);
+    const tableContainer = document.getElementById('scheduleTableContainer');
+    container.querySelector('#weekSelector').innerHTML = '<option>Loading...</option>';
+    tableContainer.innerHTML = "<p>Loading work schedule...</p>";
 
-    if (schedules && schedules.length > 0) {
-        // Filter for this doctor (should already be filtered by API, but just in case)
-        const filtered = schedules.filter(item => item.doctorId == doctorId);
-        if (filtered.length === 0) {
-            container.innerHTML = "<p>No work schedule found for this doctor.</p>";
+    const schedules = await getWorkSchedule(doctorId);
+    if (!schedules || schedules.length === 0) {
+        tableContainer.innerHTML = "<p>No work schedule found.</p>";
+        container.querySelector('#weekSelector').innerHTML = '';
+        return;
+    }
+
+    // Group by week
+    const weeks = groupSchedulesByWeek(schedules);
+    const weekKeys = Object.keys(weeks).sort();
+
+    // Populate dropdown
+    const weekSelector = container.querySelector('#weekSelector');
+    weekSelector.innerHTML = weekKeys.map(weekKey => {
+        const [start, end] = weekKey.split('~');
+        return `<option value="${weekKey}">${start} to ${end}</option>`;
+    }).join('');
+
+    // Render calendar for selected week
+    function renderCalendar(weekKey) {
+        const weekSchedules = weeks[weekKey] || [];
+        if (weekSchedules.length === 0) {
+            tableContainer.innerHTML = "<p>No work schedule for this week.</p>";
             return;
         }
-        container.innerHTML = `
-            <table style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr>
-                        <th style="border-bottom:1px solid #ccc;padding:8px;text-align:left;">Day</th>
-                        <th style="border-bottom:1px solid #ccc;padding:8px;text-align:left;">Start Time</th>
-                        <th style="border-bottom:1px solid #ccc;padding:8px;text-align:left;">End Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${filtered.map(item => `
-                        <tr>
-                            <td style="padding:8px;">${getDayName(item.dayOfWeek)}</td>
-                            <td style="padding:8px;">${item.startTime.slice(0,5)}</td>
-                            <td style="padding:8px;">${item.endTime.slice(0,5)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    } else {
-        container.innerHTML = "<p>No work schedule found.</p>";
+
+        // 1. Get all unique timeframes for this week
+        const timeframeSet = new Set();
+        weekSchedules.forEach(item => {
+            timeframeSet.add(`${item.startTime}-${item.endTime}`);
+        });
+        // Sort timeframes by startTime
+        const timeframes = Array.from(timeframeSet).sort((a, b) => {
+            const aStart = a.split('-')[0];
+            const bStart = b.split('-')[0];
+            return aStart.localeCompare(bStart);
+        });
+
+        // 2. Build a map: { [dayOfWeek][timeframe]: schedule }
+        const scheduleMap = {};
+        weekSchedules.forEach(item => {
+            const tfKey = `${item.startTime}-${item.endTime}`;
+            if (!scheduleMap[item.dayOfWeek]) scheduleMap[item.dayOfWeek] = {};
+            scheduleMap[item.dayOfWeek][tfKey] = item;
+        });
+
+        // 3. Render table
+        let html = `<table class="calendar-table" style="width:100%;border-collapse:collapse;text-align:center;">
+            <thead>
+                <tr>
+                    <th style="background:#f3f4f6;">Timeframe</th>
+                    ${[1,2,3,4,5,6,7].map(dayNum => `<th style="background:#f3f4f6;">${getDayName(dayNum)}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                ${timeframes.map(tf => {
+                    const [start, end] = tf.split('-');
+                    return `<tr>
+                        <td style="font-weight:bold;">${start.slice(0,5)} - ${end.slice(0,5)}</td>
+                        ${[1,2,3,4,5,6,7].map(dayNum => {
+                            const sched = (scheduleMap[dayNum] && scheduleMap[dayNum][tf]) ? scheduleMap[dayNum][tf] : null;
+                            if (sched) {
+                                return `<td style="background:#e0f7fa;padding:8px;">
+                                    <div>${sched.isAvailable ? '<span style="color:green;">Available</span>' : '<span style="color:red;">Not Available</span>'}</div>
+                                    <div>${sched.workDate ? new Date(sched.workDate).toLocaleDateString() : ''}</div>
+                                </td>`;
+                            } else {
+                                return `<td style="background:#fff;padding:8px;">-</td>`;
+                            }
+                        }).join('')}
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+
+        tableContainer.innerHTML = html;
     }
+
+    // Initial render
+    renderCalendar(weekSelector.value);
+
+    // Change event
+    weekSelector.onchange = () => renderCalendar(weekSelector.value);
 }
 
 // Function to fetch doctor profile (excluding workSchedule)
 async function getDoctorProfile(accId) {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`https://localhost:7009/api/Doctor/GetDoctorById?id=${accId}`, {
+        const response = await fetch(`https://localhost:7009/api/Doctor/GetDoctorProfile?accId=${accId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
-        if (!response.ok) {
-            throw new Error('Failed to fetch doctor profile');
-        }
-        const data = await response.json();
-        return data;
+        if (!response.ok) throw new Error('Failed to fetch doctor profile');
+        return await response.json();
     } catch (error) {
         console.error('Error fetching doctor profile:', error);
         return null;
@@ -90,22 +187,18 @@ async function getDoctorProfile(accId) {
 async function renderDoctorProfile(accId, containerId) {
     const container = document.getElementById(containerId);
     container.innerHTML = "<p>Loading profile...</p>";
-    const data = await getDoctorProfile(accId);
-    if (data) {
-        const account = data.account || {};
+    const profile = await getDoctorProfile(accId);
+    if (profile) {
         container.innerHTML = `
-            <div class="profile-card">
-                <h3>${account.fullname || "Unknown"}</h3>
-                <p><strong>Username:</strong> ${account.accUsername || ""}</p>
-                <p><strong>Email:</strong> ${account.email || ""}</p>
-                <p><strong>Degree:</strong> ${data.degree || ""}</p>
-                <p><strong>Bio:</strong> ${data.bio || ""}</p>
-                <p><strong>Date of Birth:</strong> ${account.dob || ""}</p>
-                <p><strong>Gender:</strong> ${account.gender === false ? "Female" : "Male"}</p>
+            <div class="profile-header">
+                <h2>${profile.account.fullname}</h2>
+                <p>${profile.account.email}</p>
+                <p>${profile.degree}</p>
+                <p>${profile.bio}</p>
             </div>
         `;
     } else {
-        container.innerHTML = "<p style='color:#e74c3c;'>Failed to load profile.</p>";
+        container.innerHTML = "<p>Failed to load profile.</p>";
     }
 }
 
@@ -123,28 +216,8 @@ function logout() {
 
 // Attach event listeners after DOM is loaded
 window.addEventListener('DOMContentLoaded', () => {
-    const btnSchedule = document.getElementById('btnSchedule');
-    const btnProfile = document.getElementById('btnProfile');
-    const btnLogout = document.getElementById('btnLogout');
     const logoutBtn = document.getElementById('logoutBtn');
-    const dashboardHeader = document.getElementById('dashboardHeader');
-    const dashboardSection = document.getElementById('dashboardSection');
-
-    btnSchedule.onclick = function() {
-        setActive(btnSchedule);
-        dashboardHeader.textContent = "Work Schedule";
-        renderWorkSchedule(doctorId, 'dashboardSection');
-    };
-
-    btnProfile.onclick = function() {
-        setActive(btnProfile);
-        dashboardHeader.textContent = "Profile";
-        renderDoctorProfile(doctorId, 'dashboardSection');
-    };
-
-    btnLogout.onclick = logout;
     if (logoutBtn) logoutBtn.onclick = logout;
-
-    // Load schedule by default
-    btnSchedule.click();
+    // Always render the work schedule by default
+    renderWorkSchedule(doctorId, 'dashboardSection');
 });

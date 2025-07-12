@@ -1,0 +1,34 @@
+@import url('../doctor-profile/doctor-profile-style.css');
+
+.appointment-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.appointment-table th, .appointment-table td {
+    border: 1px solid #e5e7eb;
+    padding: 10px 12px;
+    text-align: center;
+}
+.appointment-table th {
+    background: #f3f4f6;
+    color: #333;
+    font-weight: 600;
+}
+.appointment-table tr:nth-child(even) td {
+    background: #f9fafb;
+}
+.status {
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 4px 10px;
+    display: inline-block;
+}
+.status-1 { color: #e67e22; background: #fbeee0; } /* Chờ xác nhận */
+.status-2 { color: #2980b9; background: #eaf6fb; } /* Đã xác nhận */
+.status-3 { color: #27ae60; background: #eafaf1; } /* Đã hoàn thành */
+.status-4 { color: #c0392b; background: #fdeaea; } /* Đã hủy */

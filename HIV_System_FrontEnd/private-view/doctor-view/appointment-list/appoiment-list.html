@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Doctor Dashboard</title>
-    <link rel="stylesheet" href="doctor-dashboard-style.css">
+    <title>Appointment List</title>
+    <link rel="stylesheet" href="appoiment-list-style.css">
 </head>
 <body>
     <!-- Header/Navbar -->
@@ -12,17 +12,17 @@
             <div class="nav-container">
                 <div class="nav-logo">
                     <i class="fa fa-user-md"></i>
-                    Doctor Dashboard
+                    Appointment List
                 </div>
                 <ul class="nav-menu">
                     <li>
                         <a href="../../../public-view/landingpage.html">Home</a>
                     </li>
                     <li>
-                        <span class="active" style="color:#e74c3c;font-weight:bold;">Work Schedule</span>
+                        <a href="../doctor-dashboard/doctor-dashboard.html">Work Schedule</a>
                     </li>
                     <li>
-                        <a href="../appointment-list/appoiment-list.html">Appointments</a>
+                        <span class="active" style="color:#e74c3c;font-weight:bold;">Appointments</span>
                     </li>
                     <li>
                         <a href="../patient-medical-record/patient-medical-record.html">Patient Records</a>
@@ -34,28 +34,21 @@
                         <a href="../doctor-profile/doctor-profile.html">Profile</a>
                     </li>
                     <li>
-                        <a href="#" id="logoutBtn" class="btn-login">Logout</a>
+                        <a href="../../../public-view/landingpage.html" class="btn-login">Logout</a>
                     </li>
                 </ul>
             </div>
         </nav>
     </header>
-
-    <!-- Main Content -->
     <div class="dashboard-container" style="padding-top: 100px;">
         <main class="main-content">
-            <div class="dashboard-header" id="dashboardHeader">Work Schedule</div>
-            <div class="dashboard-section" id="dashboardSection">
-                <div style="margin-bottom: 16px;">
-                    <label for="weekSelector"><strong>Select week:</strong></label>
-                    <select id="weekSelector"></select>
-                </div>
-                <div id="scheduleTableContainer"></div>
+            <div class="dashboard-header">Appointment List</div>
+            <div class="dashboard-section" id="appointmentListSection">
+                <!-- Appointment list content goes here -->
             </div>
         </main>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
-    <script src="doctor-dashboard-script.js"></script>
     <footer class="footer">
       <div class="container">
         <div class="footer-content">
@@ -101,5 +94,6 @@
         </div>
       </div>
     </footer>
+    <script src="appoiment-list-script.js"></script>
 </body>
 </html>
