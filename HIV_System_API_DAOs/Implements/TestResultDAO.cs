@@ -23,7 +23,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             get
             {
-                if(_instance== null)
+                if (_instance == null)
                 {
                     _instance = new TestResultDAO();
                 }
@@ -34,7 +34,7 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<TestResult> CreateTestResult(TestResult testResult)
         {
-            if(testResult == null)
+            if (testResult == null)
             {
                 throw new ArgumentNullException(nameof(testResult), "Test Result cannot be null");
             }
@@ -45,8 +45,8 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<bool> DeleteTestResult(int id)
         {
-            var testResult= await _context.TestResults.FindAsync(id);
-            if(testResult == null)
+            var testResult = await _context.TestResults.FindAsync(id);
+            if (testResult == null)
             {
                 throw new ArgumentException("Test Result not found", nameof(id));
             }
@@ -63,7 +63,7 @@ namespace HIV_System_API_DAOs.Implements
 
         public async Task<TestResult?> GetTestResultById(int id)
         {
-            var testResult= await _context.TestResults.FindAsync(id);
+            var testResult = await _context.TestResults.FindAsync(id);
             if (testResult == null)
             {
                 throw new Exception($"Test Result with ID {id} not found.");
@@ -86,6 +86,13 @@ namespace HIV_System_API_DAOs.Implements
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<TestResult>> GetTestResultsByPatientId(int patientId)
+        {
+            return await _context.TestResults
+                .Where(tr => tr.PmrId == patientId)
+                .ToListAsync();
         }
     }
 }
