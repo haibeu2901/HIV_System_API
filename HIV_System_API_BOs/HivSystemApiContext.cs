@@ -146,6 +146,49 @@ public partial class HivSystemApiContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(500);
         });
 
+        modelBuilder.Entity<BlogImage>(entity =>
+        {
+            entity.HasKey(e => e.ImgId).HasName("PK__Blog_Ima__352F54F358BF0066");
+
+            entity.ToTable("Blog_Images");
+
+            entity.HasIndex(e => e.SblId, "IX_BlogImages_SblId");
+
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.UploadedAt)
+                .HasDefaultValueSql("(NULL)")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Sbl).WithMany(p => p.BlogImages)
+                .HasForeignKey(d => d.SblId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BlogImages_SocialBlog");
+        });
+
+        modelBuilder.Entity<BlogReaction>(entity =>
+        {
+            entity.HasKey(e => e.BrtId).HasName("PK__Blog_Rea__AFCE435CC70FDE80");
+
+            entity.ToTable("Blog_Reactions");
+
+            entity.HasIndex(e => new { e.SblId, e.AccId }, "IX_BlogReactions_SblId_AccId");
+
+            entity.Property(e => e.Comment).HasMaxLength(1000);
+            entity.Property(e => e.ReactedAt)
+                .HasDefaultValueSql("(NULL)")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Acc).WithMany(p => p.BlogReactions)
+                .HasForeignKey(d => d.AccId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BlogReactions_Account");
+
+            entity.HasOne(d => d.Sbl).WithMany(p => p.BlogReactions)
+                .HasForeignKey(d => d.SblId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BlogReactions_SocialBlog");
+        });
+
         modelBuilder.Entity<ComponentTestResult>(entity =>
         {
             entity.HasKey(e => e.CtrId).HasName("PK__Componen__23E51DA1EB60FA1E");
