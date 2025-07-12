@@ -1,0 +1,55 @@
+        body {
+            background: #f7f8fa;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .arv-container {
+            max-width: 600px;
+            margin: 48px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(44,62,80,0.10);
+            padding: 36px 32px 28px 32px;
+        }
+        .arv-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .arv-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .arv-card {
+            background: #f7f8fa;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.06);
+            padding: 18px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .arv-notes {
+            color: #333;
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+        }
+        .arv-meta {
+            color: #888;
+            font-size: 0.98rem;
+        }
+        .arv-cost {
+            color: #e67e22;
+            font-weight: 500;
+        }
+        .arv-status {
+            font-weight: 500;
+            color: #27ae60;
+        }
+        .arv-status.completed {
+            color: #2980b9;
+        }
+        .arv-status.stopped {
+            color: #e74c3c;
+        }
