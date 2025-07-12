@@ -125,5 +125,28 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
             }
         }
+
+        [HttpGet("GetPatientMRById/{patientId}")]
+        [Authorize]
+        public async Task<IActionResult> GetPatientMRById(int patientId)
+        {
+            try
+            {
+                if (patientId <= 0)
+                {
+                    return BadRequest("Patient ID must be greater than zero.");
+                }
+                var patientMR = await _patientService.GetPatientMRByIdAsync(patientId);
+                if (patientMR == null)
+                {
+                    return NotFound($"Medical record for patient with ID {patientId} not found.");
+                }
+                return Ok(patientMR);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.InnerException}");
+            }
+        }
     }
 }
