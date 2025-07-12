@@ -10,12 +10,12 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface IDoctorService
     {
-        Task<List<DoctorProfileResponse>> GetAllDoctorsAsync();
+        Task<List<DoctorResponseDTO>> GetAllDoctorsAsync();
         Task<DoctorResponseDTO?> GetDoctorByIdAsync(int id);
         Task<DoctorResponseDTO> CreateDoctorAsync(DoctorRequestDTO doctor);
         Task<DoctorResponseDTO?> UpdateDoctorAsync(int id, DoctorRequestDTO doctor);
         Task<bool> DeleteDoctorAsync(int id);
-        Task<List<DoctorProfileResponse>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime);
+        Task<List<DoctorResponseDTO>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime);
         Task<DoctorProfileResponse?> GetDoctorProfileAsync(int id);
     }
 }
