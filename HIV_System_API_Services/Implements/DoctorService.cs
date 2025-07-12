@@ -109,10 +109,10 @@ namespace HIV_System_API_Services.Implements
             return await _doctorRepo.DeleteDoctorAsync(id);
         }
 
-        public async Task<List<DoctorProfileResponse>> GetAllDoctorsAsync()
+        public async Task<List<DoctorResponseDTO>> GetAllDoctorsAsync()
         {
             var doctors = await _doctorRepo.GetAllDoctorsAsync();
-            var result = new List<DoctorProfileResponse>();
+            var result = new List<DoctorResponseDTO>();
 
             foreach (var doctor in doctors)
             {
@@ -120,15 +120,7 @@ namespace HIV_System_API_Services.Implements
                 if (doctor.Acc == null)
                     continue;
 
-                result.Add(new DoctorProfileResponse
-                {
-                    Degree = doctor.Degree,
-                    Bio = doctor.Bio,
-                    Gender = doctor.Acc.Gender,
-                    Email = doctor.Acc.Email,
-                    Fullname = doctor.Acc.Fullname,
-                    Dob = doctor.Acc.Dob
-                });
+                result.Add(MapToResponseDTO(doctor));
             }
 
             return result;
@@ -175,7 +167,7 @@ namespace HIV_System_API_Services.Implements
             return MapToResponseDTO(fullDoctor);
         }
 
-        public async Task<List<DoctorProfileResponse>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
+        public async Task<List<DoctorResponseDTO>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
         {
             // Validation: Ensure date is not default
             if (apmtDate == default)
@@ -186,7 +178,7 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Appointment time is required.", nameof(apmTime));
 
             var doctors = await _doctorRepo.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
-            var result = new List<DoctorProfileResponse>();
+            var result = new List<DoctorResponseDTO>();
 
             foreach (var doctor in doctors)
             {
@@ -194,15 +186,7 @@ namespace HIV_System_API_Services.Implements
                 if (doctor.Acc == null)
                     continue;
 
-                result.Add(new DoctorProfileResponse
-                {
-                    Email = doctor.Acc.Email,
-                    Fullname = doctor.Acc.Fullname,
-                    Dob = doctor.Acc.Dob,
-                    Gender = doctor.Acc.Gender,
-                    Degree = doctor.Degree,
-                    Bio = doctor.Bio
-                });
+                result.Add(MapToResponseDTO(doctor));
             }
 
             return result;

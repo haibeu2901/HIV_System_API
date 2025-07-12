@@ -19,7 +19,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllDoctors")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllDoctors()
         {
             var doctors = await _doctorService.GetAllDoctorsAsync();
