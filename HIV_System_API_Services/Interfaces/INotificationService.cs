@@ -11,17 +11,23 @@ namespace HIV_System_API_Services.Interfaces
 {
     public interface INotificationService
     {
-        Task<List<NotificationResponseDTO>> GetAllNotifications();
-        Task<NotificationResponseDTO> GetNotificationByIdAsync(int id);
-        Task<NotificationDetailResponseDTO> GetNotificationDetailsByIdAsync(int id);  // New method
+        Task<List<NotificationResponseDTO>> GetAllNotificationsAsync();
+        Task<NotificationResponseDTO?> GetNotificationByIdAsync(int id);
         Task<NotificationResponseDTO> CreateNotificationAsync(CreateNotificationRequestDTO notification);
         Task<bool> UpdateNotificationByIdAsync(int id, UpdateNotificationRequestDTO notification);
         Task<bool> DeleteNotificationByIdAsync(int id);
-        Task<NotificationDetailResponseDTO> SendNotificationToRoleAsync(int ntfId, byte role);  // Changed return type
-        Task<NotificationDetailResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId);  // Changed return type
-        Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId);  // New method
+        Task<NotificationResponseDTO> SendNotificationToRoleAsync(int ntfId, byte role);
+        Task<NotificationResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId);
+        Task<List<NotificationAccount>> GetNotificationRecipientsAsync(int ntfId);
+        Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId);
         Task<List<NotificationResponseDTO>> GetAllPersonalNotificationsAsync(int accId);
         Task<List<NotificationResponseDTO>> GetAllUnreadNotificationsAsync(int accId);
         Task<NotificationResponseDTO> ViewNotificationAsync(int ntfId, int accId);
+        Task<bool> MarkNotificationAsReadAsync(int ntfId, int accId);
+        Task<bool> MarkAllNotificationsAsReadAsync(int accId);
+        Task<int> GetUnreadNotificationCountAsync(int accId);
+        Task<List<NotificationAccount>> GetPersonalNotificationAccountsAsync(int accId);
+        Task<bool> DeleteNotificationForAccountAsync(int ntfId, int accId);
+        Task<NotificationDetailResponseDTO?> GetNotificationDetailsByIdAsync(int ntfId);
     }
 }
