@@ -1,0 +1,78 @@
+.medical-record-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(44,62,80,0.08);
+    padding: 32px 24px;
+}
+.medical-record-container section {
+    margin-bottom: 32px;
+}
+.record-card {
+    background: #f7f8fa;
+    border-left: 5px solid #e74c3c;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.03);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+.record-notes {
+    color: #888;
+    font-size: 0.98rem;
+    margin-left: 1.5rem;
+    flex: 1;
+}    
+        .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-top: 32px;
+        }
+        .record-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+            padding: 20px 24px 16px 24px;
+            min-height: 170px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: box-shadow 0.2s;
+        }
+        .record-card:hover {
+            box-shadow: 0 6px 24px rgba(44,62,80,0.13);
+        }
+        .record-info {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 18px;
+            line-height: 1.7;
+        }
+        .record-options {
+            display: flex;
+            justify-content: flex-end;
+            gap: 14px;
+            margin-top: auto;
+        }
+        .record-option-btn {
+            background: #f7f8fa;
+            border: 1.5px solid #bbb;
+            border-radius: 8px;
+            padding: 7px 16px;
+            font-size: 0.98rem;
+            font-weight: 500;
+            color: #e74c3c;
+            cursor: pointer;
+            transition: background 0.18s, border-color 0.18s, color 0.18s;
+            outline: none;
+        }
+        .record-option-btn:hover {
+            background: #fbeee7;
+            border-color: #e74c3c;
+            color: #b03a2e;
+        }
