@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Fetching doctors for date:', date, 'time:', formattedTime);
         
-        fetch(`https://localhost:7009/api/Doctor/GetDoctorByDateAndTime?Date=${date}&Time=${encodeURIComponent(formattedTime)}`, {
+        fetch(`https://localhost:7009/api/Doctor/GetDoctorsByDateAndTime?Date=${date}&Time=${encodeURIComponent(formattedTime)}`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'accept': '*/*'

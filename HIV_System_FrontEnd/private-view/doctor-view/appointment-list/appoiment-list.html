@@ -25,7 +25,7 @@
                         <span class="active" style="color:#e74c3c;font-weight:bold;">Appointments</span>
                     </li>
                     <li>
-                        <a href="../patient-medical-record/patient-medical-record.html">Patient Records</a>
+                        <a href="../patient-list.html">Patient List</a>
                     </li>
                     <li>
                         <a href="../medical-resources/medical-resources.html">Medical Resources</a>
@@ -45,6 +45,22 @@
             <div class="dashboard-header">Appointment List</div>
             <div class="dashboard-section" id="appointmentListSection">
                 <!-- Appointment list content goes here -->
+            </div>
+            <div id="modifyAppointmentModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close" id="closeModifyModal">&times;</span>
+                    <h2>Modify Appointment</h2>
+                    <form id="modifyAppointmentForm">
+                        <label for="modifyDate">Date:</label>
+                        <input type="date" id="modifyDate" name="modifyDate" required><br><br>
+                        <label for="modifyTime">Time:</label>
+                        <select id="modifyTime" name="modifyTime" required></select><br><br>
+                        <label for="modifyNotes">Notes:</label>
+                        <textarea id="modifyNotes" name="modifyNotes" rows="3"></textarea><br><br>
+                        <button type="submit" id="submitModifyBtn">Submit</button>
+                        <button type="button" id="cancelModifyBtn">Cancel</button>
+                    </form>
+                </div>
             </div>
         </main>
     </div>
