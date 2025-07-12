@@ -23,6 +23,8 @@ public partial class Account
 
     public bool? IsActive { get; set; }
 
+    public virtual ICollection<BlogReaction> BlogReactions { get; set; } = new List<BlogReaction>();
+
     public virtual Doctor? Doctor { get; set; }
 
     public virtual ICollection<MedicalService> MedicalServices { get; set; } = new List<MedicalService>();
