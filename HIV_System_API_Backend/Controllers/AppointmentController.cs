@@ -95,7 +95,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAppointmentById/{id}")]
-        [Authorize(Roles = "1, 2, 4, 5")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
         public async Task<ActionResult> GetAppointmentById(int id)
         {
             try
