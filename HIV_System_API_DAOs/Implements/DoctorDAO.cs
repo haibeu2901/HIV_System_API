@@ -144,32 +144,76 @@ namespace HIV_System_API_DAOs.Implements
             return true;
         }
 
-        public async Task<List<Doctor>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
+        public async Task<List<Doctor>> GetDoctorsByDateAndTimeAsync(DateOnly appointmentDate, TimeOnly appointmentTime)
         {
-            // Step 1: Determine the day of week (1=Monday, ..., 7=Sunday)
-            var dayOfWeek = (int)apmtDate.ToDateTime(TimeOnly.MinValue).DayOfWeek;
-            if (dayOfWeek == 0) dayOfWeek = 7;
+            const int APPOINTMENT_DURATION_MINUTES = 30;
+            const int CANCELLED_STATUS = 4;
 
-            // Step 2: Define appointment duration and calculate end time
-            var appointmentDuration = TimeSpan.FromMinutes(30);
-            var apmEndTime = apmTime.Add(appointmentDuration);
+            var appointmentEndTime = appointmentTime.Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES));
 
-            // Step 3: Query for available doctors
-            var availableDoctors = await _context.Doctors
+            // Step 1: Get all doctors with their work schedules for the specific date
+            var doctorsWithSchedules = await _context.Doctors
                 .Include(d => d.Acc)
-                .Include(d => d.DoctorWorkSchedules)
-                .Where(d => d.DoctorWorkSchedules.Any(ws =>
-                    ws.DayOfWeek == dayOfWeek &&
-                    ws.StartTime <= apmTime &&
-                    ws.EndTime >= apmEndTime &&
+                .Include(d => d.DoctorWorkSchedules.Where(ws =>
+                    ws.WorkDate == appointmentDate &&
                     ws.IsAvailable == true))
-                .Where(d => !_context.Appointments.Any(a =>
-                    a.DctId == d.DctId &&
-                    a.ApmtDate == apmtDate &&
-                    a.ApmTime < apmEndTime &&
-                    a.ApmTime >= apmTime &&
-                    a.ApmStatus != 4))
+                .Where(d => d.DoctorWorkSchedules.Any(ws =>
+                    ws.WorkDate == appointmentDate &&
+                    ws.IsAvailable == true))
                 .ToListAsync();
+
+            // Step 2: Get all existing appointments for these doctors on the specified date
+            var doctorIds = doctorsWithSchedules.Select(d => d.DctId).ToList();
+            var existingAppointments = await _context.Appointments
+                .Where(a =>
+                    doctorIds.Contains(a.DctId) &&
+                    a.ApmtDate == appointmentDate &&
+                    a.ApmStatus != CANCELLED_STATUS)
+                .Select(a => new {
+                    a.DctId,
+                    a.ApmTime,
+                    EndTime = a.ApmTime.Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES))
+                })
+                .ToListAsync();
+
+            // Step 3: Check each doctor's availability across all their time slots
+            var availableDoctors = new List<Doctor>();
+
+            foreach (var doctor in doctorsWithSchedules)
+            {
+                bool hasAvailableSlot = false;
+
+                // Check each work schedule/time slot for this doctor on the specific date
+                foreach (var schedule in doctor.DoctorWorkSchedules)
+                {
+                    // Check if this time slot can accommodate the appointment duration
+                    if (schedule.StartTime <= appointmentTime && schedule.EndTime >= appointmentEndTime)
+                    {
+                        // Check if there are any conflicting appointments in this time slot
+                        var conflictingAppointments = existingAppointments
+                            .Where(a => a.DctId == doctor.DctId)
+                            .Where(a =>
+                                // Check for time overlap within this specific time slot
+                                a.ApmTime < appointmentEndTime &&
+                                a.EndTime > appointmentTime &&
+                                // Ensure the conflicting appointment is also within this work schedule
+                                a.ApmTime >= schedule.StartTime &&
+                                a.ApmTime < schedule.EndTime)
+                            .ToList();
+
+                        if (!conflictingAppointments.Any())
+                        {
+                            hasAvailableSlot = true;
+                            break; // Found an available slot, no need to check other slots
+                        }
+                    }
+                }
+
+                if (hasAvailableSlot)
+                {
+                    availableDoctors.Add(doctor);
+                }
+            }
 
             return availableDoctors;
         }
