@@ -87,6 +87,69 @@
         </main>
     </div>
 
+    <!-- Create New Regimen Button and Modal -->
+    <div style="text-align: right; margin-bottom: 2rem;">
+        <button id="openRegimenModalBtn" class="primary-btn">Create New Regimen</button>
+    </div>
+    <div id="regimenModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeRegimenModalBtn">&times;</span>
+            <h2>Create New ARV Regimen</h2>
+            <form id="regimenForm">
+                <div class="form-group">
+                    <label for="regimenLevel">Regimen Level</label>
+                    <select id="regimenLevel" name="regimenLevel" required>
+                        <option value="">Select level</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="regimenTemplate">Regimen Template</label>
+                    <select id="regimenTemplate" name="regimenTemplate" required>
+                        <option value="">Select template</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="regimenNotes">Notes</label>
+                    <textarea id="regimenNotes" name="regimenNotes" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="regimenStartDate">Start Date</label>
+                    <input type="date" id="regimenStartDate" name="regimenStartDate" required />
+                </div>
+                <div class="form-group">
+                    <label for="regimenTotalCost">Total Cost</label>
+                    <input type="number" id="regimenTotalCost" name="regimenTotalCost" min="0" step="1" />
+                </div>
+                <div class="form-group">
+                    <label>Medications</label>
+                    <table id="medicationsTable" class="medications-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Dosage</th>
+                                <th>Quantity</th>
+                                <th>Manufacturer</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Medication rows will be inserted here -->
+                        </tbody>
+                    </table>
+                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Add Medication</button>
+                </div>
+                <div class="form-actions" style="margin-top: 2rem;">
+                    <button type="submit" class="primary-btn">Create Regimen</button>
+                    <button type="button" id="cancelRegimenBtn" class="secondary-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
     <script src="patient-medical-record-script.js"></script>
     
