@@ -1,0 +1,18 @@
+﻿using HIV_System_API_BOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HIV_System_API_Repositories.Interfaces
+{
+    public interface IBlogReactionRepo
+    {
+        Task<BlogReaction> CreateCommentAsync(BlogReaction comment);
+        Task<BlogReaction?> GetCommentByIdAsync(int id);
+        Task<List<BlogReaction>> GetCommentsByBlogIdAsync(int blogId);
+        Task<BlogReaction> UpdateCommentAsync(int id, string comment);
+        Task<bool> DeleteCommentAsync(int id);
+    }
+}

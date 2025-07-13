@@ -127,7 +127,8 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddHttpContextAccessor(); // Add this for user claims access
 builder.Services.AddScoped<IRegimenTemplateService, RegimenTemplateService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
-builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<ISocialBlogService, SocialBlogService>();
+builder.Services.AddScoped<IBlogReactionService, BlogReactionService>();
 
 // Add CORS policy
 // In Program.cs or Startup.cs
