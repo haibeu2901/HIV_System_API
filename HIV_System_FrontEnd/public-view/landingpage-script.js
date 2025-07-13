@@ -246,9 +246,9 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         // Redirect after showing success
         setTimeout(() => {
           if (role == 3) {
-            window.location.href = "/private-view/user-view/booking/appointment-booking.html";
+            window.location.href = "../private-view/user-view/booking/appointment-booking.html";
           } else if (role == 2) {
-            window.location.href = "/private-view/doctor-view/doctor-dashboard.html";
+            window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
           }
         }, 1000);
         
