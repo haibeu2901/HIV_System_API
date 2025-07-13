@@ -25,5 +25,9 @@ public partial class SocialBlog
 
     public virtual Account Acc { get; set; } = null!;
 
+    public virtual ICollection<BlogImage> BlogImages { get; set; } = new List<BlogImage>();
+
+    public virtual ICollection<BlogReaction> BlogReactions { get; set; } = new List<BlogReaction>();
+
     public virtual Staff? Stf { get; set; }
 }

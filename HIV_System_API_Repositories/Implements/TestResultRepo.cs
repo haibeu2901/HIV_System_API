@@ -35,5 +35,10 @@ namespace HIV_System_API_Repositories.Implements
         {
             return TestResultDAO.Instance.UpdateTestResult(id, testResult);
         }
+
+        public Task<List<TestResult>> GetTestResultsByPatientId(int patientId)
+        {
+            return TestResultDAO.Instance.GetTestResultsByPatientId(patientId);
+        }
     }
 }

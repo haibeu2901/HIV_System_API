@@ -152,5 +152,19 @@ namespace HIV_System_API_Services.Implements
 
             return responseDto;
         }
+
+        public async Task<PatientMRResponseDTO?> GetPatientMRByIdAsync(int patientId)
+        {
+            var patient = await _patientRepo.GetPatientByIdAsync(patientId);
+            if (patient == null)
+            {
+                return null;
+            }
+            // Map the entity to a response DTO (returns null if patient is null)
+            return new PatientMRResponseDTO
+            {
+                PmrId = patient.PatientMedicalRecord?.PmrId ?? 0
+            };
+        }
     }
 }

@@ -116,7 +116,55 @@ namespace HIV_System_API_Services.Implements
         }
 
         /// <summary>
-        /// Validates a username based on a set of rules.
+        /// Validates a username based on a set of rules and checks for duplicates.
+        /// </summary>
+        /// <param name="username">The username to validate.</param>
+        /// <param name="email">Optional: The user's email to ensure the username is not the same.</param>
+        /// <param name="excludeAccountId">Optional: Account ID to exclude from duplicate check (for updates).</param>
+        /// <exception cref="ArgumentException">Thrown when the username is invalid.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the username is already in use.</exception>
+        public async Task ValidateUsernameAsync(string username, string email = null, int? excludeAccountId = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("Username is required.", nameof(username));
+
+            if (username.Length < 3 || username.Length > 16)
+                throw new ArgumentException("Username must be between 3 and 16 characters.", nameof(username));
+
+            try
+            {
+                // This regex ensures the username only contains allowed characters.
+                // A timeout is specified to prevent ReDoS attacks.
+                if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$", RegexOptions.None, RegexTimeout))
+                    throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.", nameof(username));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Handle the case where the regex match takes too long.
+                throw new ArgumentException("Username validation timed out due to excessive complexity.", nameof(username));
+            }
+
+            if (!string.IsNullOrEmpty(email) && username.Equals(email, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Username cannot be the same as the email.", nameof(username));
+
+            // Check for duplicate username using repository
+            var existingAccount = await _accountRepo.GetAccountByUsernameAsync(username);
+            if (existingAccount != null)
+            {
+                // If excludeAccountId is provided, check if it's the same account (for updates)
+                if (excludeAccountId.HasValue && existingAccount.AccId == excludeAccountId.Value)
+                {
+                    // This is the same account being updated, so username is allowed
+                    return;
+                }
+
+                throw new InvalidOperationException($"Username '{username}' is already in use.");
+            }
+        }
+
+        /// <summary>
+        /// Static version of ValidateUsername for backward compatibility (without duplicate checking).
+        /// Use ValidateUsernameAsync for complete validation including duplicate checking.
         /// </summary>
         /// <param name="username">The username to validate.</param>
         /// <param name="email">Optional: The user's email to ensure the username is not the same.</param>
@@ -177,8 +225,115 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Password cannot be the same as the username.", nameof(password));
         }
 
-        // <summary>
-        /// Validates an email address based on format and length rules.
+        /// <summary>
+        /// Validates an email address based on format and length rules and checks for duplicates.
+        /// </summary>
+        /// <param name="email">The email to validate.</param>
+        /// <param name="username">Optional: The user's username to ensure the email is not the same.</param>
+        /// <param name="excludeAccountId">Optional: Account ID to exclude from duplicate check (for updates).</param>
+        /// <exception cref="ArgumentException">Thrown when the email is invalid.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the email is already in use.</exception>
+        public async Task ValidateEmailAsync(string email, string username = null, int? excludeAccountId = null)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.", nameof(email));
+
+            if (email.Length > 254)
+                throw new ArgumentException("Email must not exceed 254 characters.", nameof(email));
+
+            var parts = email.Split('@');
+            if (parts.Length != 2)
+                throw new ArgumentException("Email format is invalid (must contain exactly one '@').", nameof(email));
+
+            var localPart = parts[0];
+            var domainPart = parts[1];
+
+            if (localPart.Length == 0 || localPart.Length > 64)
+                throw new ArgumentException("Email local-part must be between 1 and 64 characters.", nameof(email));
+
+            if (domainPart.Length == 0 || domainPart.Length > 255)
+                throw new ArgumentException("Email domain must be between 1 and 255 characters.", nameof(email));
+
+            if (localPart.Contains("..") || domainPart.Contains(".."))
+                throw new ArgumentException("Email cannot contain consecutive dots.", nameof(email));
+
+            try
+            {
+                // Use a practical regex for overall format validation with a timeout to prevent ReDoS.
+                if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", RegexOptions.None, RegexTimeout))
+                    throw new ArgumentException("Email format is invalid.", nameof(email));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                throw new ArgumentException("Email validation timed out due to excessive complexity.", nameof(email));
+            }
+
+            if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Email cannot be the same as the username.", nameof(username));
+
+            // Check for duplicate email using repository
+            var existingAccount = await _accountRepo.GetAccountByEmailAsync(email);
+            if (existingAccount != null)
+            {
+                // If excludeAccountId is provided, check if it's the same account (for updates)
+                if (excludeAccountId.HasValue && existingAccount.AccId == excludeAccountId.Value)
+                {
+                    // This is the same account being updated, so email is allowed
+                    return;
+                }
+
+                throw new InvalidOperationException($"Email '{email}' is already in use.");
+            }
+        }
+
+        private static void ValidateDateOfBirth(DateTime? dob, string paramName = "dob")
+        {
+            if (!dob.HasValue)
+                throw new ArgumentException("Date of birth is required.", paramName);
+
+            var dobValue = dob.Value;
+            var today = DateTime.Today;
+
+            // Check if DOB is not in the future
+            if (dobValue.Date > today)
+                throw new ArgumentException("Date of birth cannot be in the future.", paramName);
+
+            // Check if DOB is not before 1900
+            if (dobValue < new DateTime(1900, 1, 1))
+                throw new ArgumentException("Date of birth cannot be before 1900.", paramName);
+
+            // Check if person is at least 18 years old - FIXED LOGIC
+            var age = CalculateAge(dobValue.Date, today);
+            if (age < 18)
+                throw new ArgumentException("Person must be at least 18 years old.", paramName);
+        }
+
+        /// <summary>
+        /// Calculates the exact age based on date of birth and reference date
+        /// </summary>
+        /// <param name="dateOfBirth">The date of birth</param>
+        /// <param name="referenceDate">The reference date (usually today)</param>
+        /// <returns>The age in years</returns>
+        private static int CalculateAge(DateTime dateOfBirth, DateTime referenceDate)
+        {
+            int age = referenceDate.Year - dateOfBirth.Year;
+
+            // Check if the birthday hasn't occurred yet this year
+            if (referenceDate < dateOfBirth.AddYears(age))
+                age--;
+
+            return age;
+        }
+
+        // Updated overload for DateTime parameter
+        private static void ValidateDateOfBirth(DateTime dob, string paramName = "dob")
+        {
+            ValidateDateOfBirth((DateTime?)dob, paramName);
+        }
+
+        /// <summary>
+        /// Static version of ValidateEmail for backward compatibility (without duplicate checking).
+        /// Use ValidateEmailAsync for complete validation including duplicate checking.
         /// </summary>
         /// <param name="email">The email to validate.</param>
         /// <param name="username">Optional: The user's username to ensure the email is not the same.</param>
@@ -222,50 +377,23 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Email cannot be the same as the username.", nameof(username));
         }
 
-        private static void ValidateDateOfBirth(DateTime? dob, string paramName = "dob")
-        {
-            var dobValue = dob.Value;
-            var today = DateTime.Today;
-
-            // Check if DOB is not in the future
-            if (dobValue.Date > today)
-                throw new ArgumentException("Date of birth cannot be in the future.", paramName);
-
-            // Check if DOB is not before 1900
-            if (dobValue < new DateTime(1900, 1, 1))
-                throw new ArgumentException("Date of birth cannot be before 1900.", paramName);
-
-            // Check if person is at least 18 years old
-            var age = today.Year - dobValue.Year;
-            if (dobValue.Date > today.AddYears(-age)) age--;
-            if (age < 18)
-                throw new ArgumentException("Person must be at least 18 years old.", paramName);
-        }
-
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
             if (account == null)
                 throw new ArgumentNullException(nameof(account));
 
-            // Validate username, password, and email
-            ValidateUsername(account.AccUsername, account.Email);
+            // Use new async validation methods with duplicate checking
+            await ValidateUsernameAsync(account.AccUsername, account.Email);
             ValidatePassword(account.AccPassword, account.AccUsername);
-            ValidateEmail(account.Email, account.AccUsername);
+            await ValidateEmailAsync(account.Email, account.AccUsername);
 
-            // Validate Date of Birth
+            // Validate Date of Birth - FIXED
             if (account.Dob.HasValue)
             {
-                ValidateDateOfBirth(account.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(account.Dob));
+                // Convert DateOnly to DateTime for validation
+                var dobDateTime = account.Dob.Value.ToDateTime(TimeOnly.MinValue);
+                ValidateDateOfBirth(dobDateTime, nameof(account.Dob));
             }
-
-            // Check for duplicate username
-            var existingByUsername = await _accountRepo.GetAccountByUsernameAsync(account.AccUsername);
-            if (existingByUsername != null)
-                throw new InvalidOperationException($"Username '{account.AccUsername}' is already in use.");
-
-            // Check for duplicate email
-            if (await _accountRepo.IsEmailUsedAsync(account.Email))
-                throw new InvalidOperationException($"Email '{account.Email}' is already in use.");
 
             var entity = MapToEntity(account);
             var createdAccount = await _accountRepo.CreateAccountAsync(entity);
@@ -290,7 +418,7 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(accUsername) || string.IsNullOrWhiteSpace(accPassword))
                 return null;
 
-            // Validate username and password format
+            // Use static validation for login (no need to check duplicates)
             ValidateUsername(accUsername);
             ValidatePassword(accPassword, accUsername);
 
@@ -317,14 +445,15 @@ namespace HIV_System_API_Services.Implements
             if (!string.IsNullOrWhiteSpace(updatedAccount.AccPassword))
                 ValidatePassword(updatedAccount.AccPassword);
 
-            // Validate email if provided
+            // Validate email if provided with duplicate checking, excluding current account
             if (!string.IsNullOrWhiteSpace(updatedAccount.Email))
-                ValidateEmail(updatedAccount.Email);
+                await ValidateEmailAsync(updatedAccount.Email, excludeAccountId: id);
 
-            // Validate Date of Birth if provided
+            // Validate Date of Birth if provided - FIXED
             if (updatedAccount.Dob.HasValue)
             {
-                ValidateDateOfBirth(updatedAccount.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(updatedAccount.Dob));
+                var dobDateTime = updatedAccount.Dob.Value.ToDateTime(TimeOnly.MinValue);
+                ValidateDateOfBirth(dobDateTime, nameof(updatedAccount.Dob));
             }
 
             // Check authorization
@@ -342,12 +471,6 @@ namespace HIV_System_API_Services.Implements
             var existingAccount = await _accountRepo.GetAccountByIdAsync(id);
             if (existingAccount == null)
                 throw new KeyNotFoundException($"Account with id {id} not found.");
-
-            // Check email uniqueness if updated
-            if (!string.IsNullOrWhiteSpace(updatedAccount.Email) && !updatedAccount.Email.Equals(existingAccount.Email, StringComparison.OrdinalIgnoreCase) && await _accountRepo.IsEmailUsedAsync(updatedAccount.Email))
-            {
-                throw new InvalidOperationException($"Email '{updatedAccount.Email}' is already in use.");
-            }
 
             // Update fields
             existingAccount.AccPassword = !string.IsNullOrWhiteSpace(updatedAccount.AccPassword) ? HashPassword(updatedAccount.AccPassword) : existingAccount.AccPassword;
@@ -375,26 +498,20 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(patient.Email))
                 throw new ArgumentException("Email is required.", nameof(patient.Email));
 
-            // Validate username, password, and email
-            ValidateUsername(patient.AccUsername, patient.Email);
+            // Use new async validation methods with duplicate checking
+            await ValidateUsernameAsync(patient.AccUsername, patient.Email);
             ValidatePassword(patient.AccPassword, patient.AccUsername);
-            ValidateEmail(patient.Email, patient.AccUsername);
+            await ValidateEmailAsync(patient.Email, patient.AccUsername);
 
-            // Check for duplicate username
-            var existingAccount = await _accountRepo.GetAccountByUsernameAsync(patient.AccUsername);
-            if (existingAccount != null)
+            // Validate Date of Birth - FIXED
+            if (patient.Dob.HasValue)
             {
-                throw new InvalidOperationException($"Username '{patient.AccUsername}' is already in use.");
+                ValidateDateOfBirth(patient.Dob.Value, nameof(patient.Dob));
             }
-
-            // Check if email is already used
-            if (await _accountRepo.IsEmailUsedAsync(patient.Email))
+            else
             {
-                throw new InvalidOperationException($"Email '{patient.Email}' is already in use.");
+                throw new ArgumentException("Date of birth is required for patient registration.", nameof(patient.Dob));
             }
-
-            // Validate Date of Birth using the new validation method
-            ValidateDateOfBirth(patient.Dob, nameof(patient.Dob));
 
             // Map PatientAccountRequestDTO to AccountRequestDTO
             var accountDto = new AccountRequestDTO
@@ -450,24 +567,25 @@ namespace HIV_System_API_Services.Implements
             if (existingAccount.Roles != 1 && existingAccount.Roles != 3 && existingAccount.Roles != 5)
                 throw new UnauthorizedAccessException("This account role does not support basic profile updates.");
 
-            // Validate Date of Birth if provided
+            // Validate Date of Birth if provided - FIXED
             if (profileDTO.Dob.HasValue)
             {
-                ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
+                var dobDateTime = profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue);
+                ValidateDateOfBirth(dobDateTime, nameof(profileDTO.Dob));
             }
 
             // Create account object with only updated fields (basic profile fields only)
             var accountToUpdate = new Account
             {
                 AccId = accountId,
-                AccUsername = existingAccount.AccUsername, // preserve username
-                AccPassword = existingAccount.AccPassword, // preserve password
-                Email = existingAccount.Email, // preserve email
+                AccUsername = existingAccount.AccUsername,
+                AccPassword = existingAccount.AccPassword,
+                Email = existingAccount.Email,
                 Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
                 Dob = profileDTO.Dob ?? existingAccount.Dob,
                 Gender = profileDTO.Gender ?? existingAccount.Gender,
-                Roles = existingAccount.Roles, // preserve role
-                IsActive = existingAccount.IsActive // preserve status
+                Roles = existingAccount.Roles,
+                IsActive = existingAccount.IsActive
             };
 
             var updatedAccount = await _accountRepo.UpdateAccountProfileAsync(accountId, accountToUpdate);
@@ -526,24 +644,25 @@ namespace HIV_System_API_Services.Implements
             if (existingAccount.Roles != 2)
                 throw new UnauthorizedAccessException("This account is not a doctor account.");
 
-            // Validate Date of Birth if provided
+            // Validate Date of Birth if provided - FIXED
             if (profileDTO.Dob.HasValue)
             {
-                ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
+                var dobDateTime = profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue);
+                ValidateDateOfBirth(dobDateTime, nameof(profileDTO.Dob));
             }
 
             // Create account object with only updated basic fields
             var accountToUpdate = new Account
             {
                 AccId = accountId,
-                AccUsername = existingAccount.AccUsername, // preserve username
-                AccPassword = existingAccount.AccPassword, // preserve password
-                Email = existingAccount.Email, // preserve email
+                AccUsername = existingAccount.AccUsername,
+                AccPassword = existingAccount.AccPassword,
+                Email = existingAccount.Email,
                 Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
                 Dob = profileDTO.Dob ?? existingAccount.Dob,
                 Gender = profileDTO.Gender ?? existingAccount.Gender,
-                Roles = existingAccount.Roles, // preserve role
-                IsActive = existingAccount.IsActive // preserve status
+                Roles = existingAccount.Roles,
+                IsActive = existingAccount.IsActive
             };
 
             // Update account profile
@@ -555,7 +674,6 @@ namespace HIV_System_API_Services.Implements
 
             if (doctor != null && (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio)))
             {
-                // Only update doctor fields that are provided
                 if (!string.IsNullOrWhiteSpace(profileDTO.Degree))
                     doctor.Degree = profileDTO.Degree;
 
@@ -599,24 +717,25 @@ namespace HIV_System_API_Services.Implements
             if (existingAccount.Roles != 4)
                 throw new UnauthorizedAccessException("This account is not a staff account.");
 
-            // Validate Date of Birth if provided
+            // Validate Date of Birth if provided - FIXED
             if (profileDTO.Dob.HasValue)
             {
-                ValidateDateOfBirth(profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue), nameof(profileDTO.Dob));
+                var dobDateTime = profileDTO.Dob.Value.ToDateTime(TimeOnly.MinValue);
+                ValidateDateOfBirth(dobDateTime, nameof(profileDTO.Dob));
             }
 
             // Create account object with only updated basic fields
             var accountToUpdate = new Account
             {
                 AccId = accountId,
-                AccUsername = existingAccount.AccUsername, // preserve username
-                AccPassword = existingAccount.AccPassword, // preserve password
-                Email = existingAccount.Email, // preserve email
+                AccUsername = existingAccount.AccUsername,
+                AccPassword = existingAccount.AccPassword,
+                Email = existingAccount.Email,
                 Fullname = profileDTO.Fullname ?? existingAccount.Fullname,
                 Dob = profileDTO.Dob ?? existingAccount.Dob,
                 Gender = profileDTO.Gender ?? existingAccount.Gender,
-                Roles = existingAccount.Roles, // preserve role
-                IsActive = existingAccount.IsActive // preserve status
+                Roles = existingAccount.Roles,
+                IsActive = existingAccount.IsActive
             };
 
             // Update account profile
@@ -628,7 +747,6 @@ namespace HIV_System_API_Services.Implements
 
             if (staff != null && (!string.IsNullOrWhiteSpace(profileDTO.Degree) || !string.IsNullOrWhiteSpace(profileDTO.Bio)))
             {
-                // Only update staff fields that are provided
                 if (!string.IsNullOrWhiteSpace(profileDTO.Degree))
                     staff.Degree = profileDTO.Degree;
 
@@ -753,7 +871,7 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(request.Email))
                 throw new ArgumentException("Email is required.");
 
-            // Validate email
+            // Use static validation for password reset (no need to check duplicates)
             ValidateEmail(request.Email);
 
             // Check if account exists for the email
@@ -783,18 +901,20 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(request.Email))
                 throw new ArgumentException("Email is required");
 
-            // Validate username, password, and email
-            ValidateUsername(request.AccUsername, request.Email);
+            // Use new async validation methods with duplicate checking
+            await ValidateUsernameAsync(request.AccUsername, request.Email);
             ValidatePassword(request.AccPassword, request.AccUsername);
-            ValidateEmail(request.Email, request.AccUsername);
+            await ValidateEmailAsync(request.Email, request.AccUsername);
 
-            // Check for existing account by username
-            var existingAccount = await _accountRepo.GetAccountByUsernameAsync(request.AccUsername);
-            if (existingAccount != null)
-                throw new InvalidOperationException($"Username '{request.AccUsername}' is already in use.");
-
-            if (await _accountRepo.IsEmailUsedAsync(request.Email))
-                throw new InvalidOperationException($"Email '{request.Email}' is already in use");
+            // Validate Date of Birth - FIXED
+            if (request.Dob.HasValue)
+            {
+                ValidateDateOfBirth(request.Dob.Value, nameof(request.Dob));
+            }
+            else
+            {
+                throw new ArgumentException("Date of birth is required for patient registration.", nameof(request.Dob));
+            }
 
             // Store the registration request in cache
             var pendingRegistration = new PendingPatientRegistrationDTO
