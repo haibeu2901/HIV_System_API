@@ -1,4 +1,6 @@
 using HIV_System_API_BOs;
+using HIV_System_API_DAOs.Implements.DashboardDAO;
+using HIV_System_API_Repositories.Implements.DashboardRepo;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -106,7 +108,25 @@ builder.Services.AddSwaggerGen();
 
 //Add DB Context
 builder.Services.AddDbContext<HivSystemApiContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("HIVSystemDatabase")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("HIVSystemDatabase"))
+                                                .EnableSensitiveDataLogging() // Enable sensitive data logging
+                                                .EnableDetailedErrors());     // Enable detailed errors for debugging);
+
+// Register DAOs
+builder.Services.AddScoped<BaseDashboardDAO>();
+builder.Services.AddScoped<AdminDashboardDAO>();
+builder.Services.AddScoped<DoctorDashboardDAO>();
+builder.Services.AddScoped<PatientDashboardDAO>();
+builder.Services.AddScoped<StaffDashboardDAO>();
+builder.Services.AddScoped<ManagerDashboardDAO>();
+
+// Register Repositories
+builder.Services.AddScoped<BaseDashboardRepo>();
+builder.Services.AddScoped<AdminDashboardRepo>();
+builder.Services.AddScoped<DoctorDashboardRepo>();
+builder.Services.AddScoped<PatientDashboardRepo>();
+builder.Services.AddScoped<StaffDashboardRepo>();
+builder.Services.AddScoped<ManagerDashboardRepo>();
 
 // Add Services
 builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailService>();
@@ -128,6 +148,7 @@ builder.Services.AddHttpContextAccessor(); // Add this for user claims access
 builder.Services.AddScoped<IRegimenTemplateService, RegimenTemplateService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Add CORS policy
 // In Program.cs or Startup.cs
