@@ -6,6 +6,7 @@
     <title>Admin Dashboard - CareFirst HIV Clinic</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="admin-home.css">
+    <link rel="stylesheet" href="js/components.css">
 </head>
 <body>
     <!-- Header -->
@@ -218,9 +219,11 @@
                 <div class="filter-bar">
                     <select id="account-role-filter">
                         <option value="all">All Roles</option>
-                        <option value="1">Admin</option>
+                        <option value="1">Administrator</option>
                         <option value="2">Doctor</option>
                         <option value="3">Patient</option>
+                        <option value="4">Staff</option>
+                        <option value="5">Supervisor</option>
                     </select>
                     <input type="text" id="account-search" placeholder="Search accounts...">
                 </div>
@@ -306,6 +309,15 @@
         </div>
     </div>
 
-    <script src="admin-home.js"></script>
+    <!-- Load JavaScript modules in order -->
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/appointments.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/medical-records.js"></script>
+    <script src="js/accounts.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
