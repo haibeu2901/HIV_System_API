@@ -1,4 +1,6 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.ArvMedicationDetailDTO;
+using HIV_System_API_DTOs.PatientArvMedicationDTO;
 using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
@@ -85,6 +87,26 @@ namespace HIV_System_API_Services.Implements
 
         private PatientArvRegimenResponseDTO MapToResponseDTO(PatientArvRegimen entity)
         {
+            // Get all ARV medications for this regimen
+            var arvMedications = _context.PatientArvMedications
+                .Where(pam => pam.ParId == entity.ParId)
+                .Select(pam => new PatientArvMedicationResponseDTO
+                {
+                    PatientArvMedId = pam.PamId,
+                    PatientArvRegiId = pam.ParId,
+                    ArvMedId = pam.AmdId,
+                    Quantity = pam.Quantity,
+                    MedicationDetail = pam.Amd != null ? new ArvMedicationDetailResponseDTO
+                    {
+                        ARVMedicationName = pam.Amd.MedName,
+                        ARVMedicationDescription = pam.Amd.MedDescription,
+                        ARVMedicationDosage = pam.Amd.Dosage,
+                        ARVMedicationPrice = pam.Amd.Price,
+                        ARVMedicationManufacturer = pam.Amd.Manufactorer
+                    } : null
+                })
+                .ToList();
+
             return new PatientArvRegimenResponseDTO
             {
                 PatientArvRegiId = entity.ParId,
@@ -95,7 +117,8 @@ namespace HIV_System_API_Services.Implements
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,
                 RegimenStatus = entity.RegimenStatus,
-                TotalCost = entity.TotalCost
+                TotalCost = entity.TotalCost,
+                ARVMedications = arvMedications
             };
         }
 
