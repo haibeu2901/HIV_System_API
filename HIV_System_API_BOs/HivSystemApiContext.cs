@@ -26,6 +26,10 @@ public partial class HivSystemApiContext : DbContext
 
     public virtual DbSet<ArvRegimenTemplate> ArvRegimenTemplates { get; set; }
 
+    public virtual DbSet<BlogImage> BlogImages { get; set; }
+
+    public virtual DbSet<BlogReaction> BlogReactions { get; set; }
+
     public virtual DbSet<ComponentTestResult> ComponentTestResults { get; set; }
 
     public virtual DbSet<Doctor> Doctors { get; set; }
