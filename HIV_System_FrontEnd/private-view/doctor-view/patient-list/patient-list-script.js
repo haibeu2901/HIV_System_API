@@ -49,84 +49,10 @@ function renderPatients(patients) {
     section.innerHTML = html;
     // Add event listeners for view buttons
     document.querySelectorAll('.view-details-btn').forEach(btn => {
-        btn.onclick = async function() {
+        btn.onclick = function() {
             const patientId = this.getAttribute('data-patient-id');
-            try {
-                // Step 1: Get pmrId for this patient
-                const pmrIdRes = await fetch(`https://localhost:7009/api/Patient/GetPatientMRById/${patientId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!pmrIdRes.ok) throw new Error('Could not retrieve medical record ID for this patient.');
-                const pmrIdData = await pmrIdRes.json();
-                const pmrId = pmrIdData.pmrId;
-                if (!pmrId) throw new Error('No medical record ID found for this patient.');
-
-                // Step 2: Fetch patient medical record using pmrId
-                let html = '';
-                try {
-                    const recordRes = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordById/${pmrId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    if (!recordRes.ok) throw new Error('Failed to fetch patient medical record');
-                    const record = await recordRes.json();
-                    html += `<h2>Patient Medical Record</h2>`;
-                    html += `<p><strong>Medical Record ID:</strong> ${record.pmrId}</p>`;
-                    html += `<p><strong>Patient ID:</strong> ${record.ptnId}</p>`;
-                    html += `<h3>Appointments</h3>`;
-                    if (record.appointments && record.appointments.length > 0) {
-                        html += `<ul>`;
-                        record.appointments.forEach(appt => {
-                            const statusLabel = appointmentStatusMap[appt.apmStatus] || appt.apmStatus;
-                            html += `<li><strong>Date:</strong> ${appt.apmtDate} | <strong>Doctor:</strong> ${appt.doctorName} | <strong>Status:</strong> ${statusLabel}</li>`;
-                        });
-                        html += `</ul>`;
-                    } else {
-                        html += `<p>No appointments found.</p>`;
-                    }
-                } catch (err) {
-                    html += `<p style='color:red;'>Error loading patient medical record.</p>`;
-                }
-
-                // Step 3: Fetch and display test result using pmrId
-                try {
-                    const testResultRes = await fetch(`https://localhost:7009/api/TestResult/GetById/${pmrId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    if (testResultRes.ok) {
-                        const testResult = await testResultRes.json();
-                        html += `<h3>Test Result</h3>`;
-                        html += `<p><strong>Test Date:</strong> ${testResult.testDate}</p>`;
-                        html += `<p><strong>Result:</strong> ${testResult.result ? 'Positive' : 'Negative'}</p>`;
-                        html += `<p><strong>Notes:</strong> ${testResult.notes || ''}</p>`;
-                        if (testResult.componentTestResults && testResult.componentTestResults.length > 0) {
-                            html += `<h4>Component Test Results</h4>`;
-                            html += `<ul>`;
-                            testResult.componentTestResults.forEach(comp => {
-                                html += `<li><strong>${comp.componentTestResultName}:</strong> ${comp.resultValue}`;
-                                if (comp.notes) html += ` <em>(${comp.notes})</em>`;
-                                html += `</li>`;
-                            });
-                            html += `</ul>`;
-                        }
-                    } else {
-                        html += `<p style='color:orange;'>No test result found for this medical record.</p>`;
-                    }
-                } catch (err) {
-                    html += `<p style='color:red;'>Error loading test result.</p>`;
-                }
-
-                document.getElementById('patientDetailContent').innerHTML = html;
-                document.getElementById('patientDetailModal').style.display = 'block';
-            } catch (error) {
-                document.getElementById('patientDetailContent').innerHTML = `<p style='color:red;'>${error.message || 'Error loading patient medical record.'}</p>`;
-                document.getElementById('patientDetailModal').style.display = 'block';
-            }
+            // Redirect to patient medical record page with patient ID
+            window.location.href = `../patient-medical-record/patient-medical-record.html?patientId=${patientId}`;
         };
     });
     // Modal close logic
