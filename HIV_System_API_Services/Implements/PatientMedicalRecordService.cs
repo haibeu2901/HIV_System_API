@@ -2,7 +2,10 @@
 using HIV_System_API_DAOs.Implements;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.Appointment;
+using HIV_System_API_DTOs.ComponentTestResultDTO;
+using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using HIV_System_API_DTOs.PatientMedicalRecordDTO;
+using HIV_System_API_DTOs.TestResultDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -54,13 +57,57 @@ namespace HIV_System_API_Services.Implements
                 })
                 .ToList();
 
+            // Get all test results for the patient medical record
+            var testResults = _context.TestResults
+                .Where(tr => tr.PmrId == record.PmrId)
+                .Select(tr => new TestResultResponseDTO
+                {
+                    TestResultId = tr.TrsId,
+                    PatientMedicalRecordId = tr.PmrId,
+                    TestDate = tr.TestDate,
+                    Result = tr.ResultValue,
+                    Notes = tr.Notes,
+                    ComponentTestResults = tr.ComponentTestResults
+                        .Select(ctr => new ComponentTestResultResponseDTO
+                        {
+                            ComponentTestResultId = ctr.CtrId,
+                            TestResultId = ctr.TrsId,
+                            ComponentTestResultName = ctr.CtrName,
+                            CtrDescription = ctr.CtrDescription,
+                            ResultValue = ctr.ResultValue,
+                            Notes = ctr.Notes,
+                            StaffId = ctr.StfId
+                        })
+                        .ToList()
+                })
+                .ToList();
+
+            // Get all ARV regimens for the patient medical record
+            var arvRegimens = _context.PatientArvRegimen
+                .Where(par => par.PmrId == record.PmrId)
+                .Select(par => new PatientArvRegimenResponseDTO
+                {
+                    PatientArvRegiId = par.ParId,
+                    PatientMedRecordId = par.PmrId,
+                    Notes = par.Notes,
+                    RegimenLevel = par.RegimenLevel,
+                    CreatedAt = par.CreatedAt,
+                    StartDate = par.StartDate,
+                    EndDate = par.EndDate,
+                    RegimenStatus = par.RegimenStatus,
+                    TotalCost = par.TotalCost
+                })
+                .ToList();
+
             return new PatientMedicalRecordResponseDTO
             {
                 PmrId = record.PmrId,
                 PtnId = record.PtnId,
-                Appointments = appointments
+                Appointments = appointments,
+                TestResults = testResults,
+                ARVRegimens = arvRegimens
             };
-        }
+        }   
 
         public async Task<PatientMedicalRecordResponseDTO> CreatePatientMedicalRecordAsync(PatientMedicalRecordRequestDTO record)
         {

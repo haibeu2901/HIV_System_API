@@ -245,8 +245,10 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         
         // Redirect after showing success
         setTimeout(() => {
-          if (role == 3) {
-            window.location.href = "../private-view/user-view/booking/appointment-booking.html";
+          if (role == 1) {
+            window.location.href = "/private-view/admin-view/admin-home/admin-home.html";
+          } else if (role == 3) {
+            window.location.href = "/private-view/user-view/booking/appointment-booking.html";
           } else if (role == 2) {
             window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
           }
