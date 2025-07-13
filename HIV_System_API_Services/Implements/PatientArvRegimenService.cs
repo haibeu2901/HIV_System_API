@@ -497,13 +497,13 @@ namespace HIV_System_API_Services.Implements
                 await ValidatePatientExists(patientId);
 
                 //// Check if patient already has an active ARV regimen
-                //var existingActiveRegimens = await _patientArvRegimenRepo.GetPatientArvRegimensByPatientIdAsync(patientId);
-                //var hasActiveRegimen = existingActiveRegimens?.Any(r => r.RegimenStatus == 2) == true; // Status 2 = Active
+                var existingActiveRegimens = await _patientArvRegimenRepo.GetPatientArvRegimensByPatientIdAsync(patientId);
+                var hasActiveRegimen = existingActiveRegimens?.Any(r => r.RegimenStatus == 2) == true; // Status 2 = Active
 
-                //if (hasActiveRegimen)
-                //{
-                //    throw new InvalidOperationException($"Patient with ID {patientId} already has an active ARV regimen. Cannot initiate a new one.");
-                //}
+                if (hasActiveRegimen)
+                {
+                    throw new InvalidOperationException($"Patient with ID {patientId} already has an active ARV regimen. Cannot initiate a new one.");
+                }
 
                 // Create the empty ARV regimen through the repository
                 var createdEntity = await _patientArvRegimenRepo.InitiatePatientArvRegimenAsync(patientId);
