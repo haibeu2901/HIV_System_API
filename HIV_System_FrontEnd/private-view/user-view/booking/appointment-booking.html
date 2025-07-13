@@ -14,37 +14,79 @@
     <div id="header-placeholder"></div>
 
     <div class="booking-container">
-        <h2>Book an Appointment</h2>
-        <div class="booking-options">
-            <button id="by-time-btn" class="active">Order by Time</button>
-            <button id="by-doctor-btn">Order by Doctor</button>
+        <div class="section-title">
+            <i class="fas fa-calendar-plus"></i>
+            Book an Appointment
+        </div>
+        
+        <div class="tab-buttons">
+            <button id="by-time-btn" class="tab-btn active">
+                <i class="fas fa-clock"></i> Order by Time
+            </button>
+            <button id="by-doctor-btn" class="tab-btn">
+                <i class="fas fa-user-md"></i> Order by Doctor
+            </button>
         </div>
 
         <!-- Order by Time -->
         <div id="by-time-section" class="booking-section">
-            <h3>Select Date</h3>
-            <input type="date" id="calendar-date">
-            <h3>Select Time</h3>
-            <div id="time-slot-grid"></div>
-            <div id="available-doctors-section" style="display:none;">
-                <h3>Select Doctor</h3>
-                <div id="doctor-list"></div>
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-calendar"></i> Select Date
+                </label>
+                <input type="date" id="calendar-date" class="form-input">
             </div>
-            <button id="confirm-time-booking-btn" style="display:none;">Book Appointment</button>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-clock"></i> Select Time
+                </label>
+                <div id="time-slot-grid"></div>
+            </div>
+            
+            <div id="available-doctors-section" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user-md"></i> Select Doctor
+                    </label>
+                    <div id="doctor-list"></div>
+                </div>
+            </div>
+            
+            <button id="confirm-time-booking-btn" class="btn-primary" style="display:none;">
+                <i class="fas fa-check"></i> Book Appointment
+            </button>
         </div>
 
         <!-- Order by Doctor -->
         <div id="by-doctor-section" class="booking-section" style="display:none;">
-            <h3>Select Doctor</h3>
-            <select id="doctor-select">
-                <option value="">-- Select Doctor --</option>
-            </select>
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-user-md"></i> Select Doctor
+                </label>
+                <select id="doctor-select" class="form-select">
+                    <option value="">-- Select Doctor --</option>
+                </select>
+            </div>
+            
             <div id="doctor-schedule-section" style="display:none;">
-                <h3>Select Date</h3>
-                <input type="date" id="doctor-schedule-date">
-                <h3>Select Time</h3>
-                <div id="doctor-time-slot-grid"></div>
-                <button id="confirm-doctor-booking-btn" style="display:none;">Book Appointment</button>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar"></i> Select Date
+                    </label>
+                    <input type="date" id="doctor-schedule-date" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-clock"></i> Select Time
+                    </label>
+                    <div id="doctor-time-slot-grid"></div>
+                </div>
+                
+                <button id="confirm-doctor-booking-btn" class="btn-primary" style="display:none;">
+                    <i class="fas fa-check"></i> Book Appointment
+                </button>
             </div>
         </div>
     </div>
