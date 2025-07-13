@@ -2,7 +2,9 @@
 using HIV_System_API_DAOs.Implements;
 using HIV_System_API_DTOs.AccountDTO;
 using HIV_System_API_DTOs.Appointment;
+using HIV_System_API_DTOs.ArvMedicationDetailDTO;
 using HIV_System_API_DTOs.ComponentTestResultDTO;
+using HIV_System_API_DTOs.PatientArvMedicationDTO;
 using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using HIV_System_API_DTOs.PatientMedicalRecordDTO;
 using HIV_System_API_DTOs.TestResultDTO;
@@ -82,7 +84,7 @@ namespace HIV_System_API_Services.Implements
                 })
                 .ToList();
 
-            // Get all ARV regimens for the patient medical record
+            // Get all ARV regimens for the patient medical record with their medications
             var arvRegimens = _context.PatientArvRegimen
                 .Where(par => par.PmrId == record.PmrId)
                 .Select(par => new PatientArvRegimenResponseDTO
@@ -95,7 +97,24 @@ namespace HIV_System_API_Services.Implements
                     StartDate = par.StartDate,
                     EndDate = par.EndDate,
                     RegimenStatus = par.RegimenStatus,
-                    TotalCost = par.TotalCost
+                    TotalCost = par.TotalCost,
+                    ARVMedications = par.PatientArvMedications
+                        .Select(pam => new PatientArvMedicationResponseDTO
+                        {
+                            PatientArvMedId = pam.PamId,
+                            PatientArvRegiId = pam.ParId,
+                            ArvMedId = pam.AmdId,
+                            Quantity = pam.Quantity,
+                            MedicationDetail = new ArvMedicationDetailResponseDTO
+                            {
+                                ARVMedicationName = pam.Amd.MedName,
+                                ARVMedicationDescription = pam.Amd.MedDescription,
+                                ARVMedicationDosage = pam.Amd.Dosage,
+                                ARVMedicationPrice = pam.Amd.Price,
+                                ARVMedicationManufacturer = pam.Amd.Manufactorer
+                            }
+                        })
+                        .ToList()
                 })
                 .ToList();
 
@@ -107,7 +126,7 @@ namespace HIV_System_API_Services.Implements
                 TestResults = testResults,
                 ARVRegimens = arvRegimens
             };
-        }   
+        }
 
         public async Task<PatientMedicalRecordResponseDTO> CreatePatientMedicalRecordAsync(PatientMedicalRecordRequestDTO record)
         {

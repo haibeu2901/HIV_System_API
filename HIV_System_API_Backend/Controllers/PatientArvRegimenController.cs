@@ -350,7 +350,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <returns>Initiated patient ARV regimen</returns>
         [HttpPost("InitiatePatientArvRegimen")]
         [Authorize(Roles = "1,2,5")]
-        public async Task<IActionResult> InitiatePatientArvRegimen([FromBody] int patientId)
+        public async Task<IActionResult> InitiatePatientArvRegimen(int patientId)
         {
             try
             {
