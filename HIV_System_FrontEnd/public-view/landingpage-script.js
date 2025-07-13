@@ -1,3 +1,41 @@
+// Loading Functions
+function showPageLoader() {
+  const loader = document.createElement('div');
+  loader.className = 'page-loading';
+  loader.innerHTML = `
+    <div class="loader"></div>
+    <div class="loading-text">Loading CareFirst HIV Clinic...</div>
+  `;
+  document.body.appendChild(loader);
+  return loader;
+}
+
+function hidePageLoader() {
+  const loader = document.querySelector('.page-loading');
+  if (loader) {
+    loader.classList.add('fade-out');
+    setTimeout(() => {
+      loader.remove();
+    }, 500);
+  }
+}
+
+function showButtonLoader(button, text = 'Loading...') {
+  button.disabled = true;
+  button.classList.add('btn-loading');
+  button.dataset.originalText = button.textContent;
+  button.innerHTML = `
+    <span style="opacity: 0;">${button.dataset.originalText}</span>
+    <div class="small-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+  `;
+}
+
+function hideButtonLoader(button) {
+  button.disabled = false;
+  button.classList.remove('btn-loading');
+  button.innerHTML = button.dataset.originalText || 'Submit';
+}
+
 // Mobile Navigation Toggle
 const hamburger = document.querySelector(".hamburger");
 const navMenu = document.querySelector(".nav-menu");
@@ -164,12 +202,10 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
   }
 
   if (isValid) {
-    // Simulate login process
     const submitButton = this.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-
-    submitButton.textContent = "Logging in..."; 
-    submitButton.disabled = true;
+    
+    // Show loading state
+    showButtonLoader(submitButton, 'Logging in...');
 
     const logginFunction = async (userName, password) => {
       try {
@@ -197,15 +233,27 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         localStorage.setItem("token", data.token);
         console.log("Login successful:", data);
         console.log("Role:", role);
-        localStorage.setItem("accId", data.account.accId); // Store account ID in localStorage
-        if (role == 3) {
-          window.location.href =
-            "/private-view/user-view/booking/appointment-booking.html"; // Redirect to the appointment booking page after successful login
-        } else if (role == 2) {
-          window.location.href = "/private-view/doctor-view/doctor-dashboard.html";
-
-          window.location.href = "/HIV_System_FrontEnd/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
-        } // Redirect to the doctor dashboard page after successful login
+        localStorage.setItem("accId", data.account.accId);
+        
+        // Show success message briefly
+        submitButton.innerHTML = `
+          <span style="opacity: 0;">${submitButton.dataset.originalText}</span>
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #27ae60;">
+            <i class="fas fa-check"></i> Success!
+          </div>
+        `;
+        
+        // Redirect after showing success
+        setTimeout(() => {
+          if (role == 1) {
+            window.location.href = "/private-view/admin-view/admin-home/admin-home.html";
+          } else if (role == 3) {
+            window.location.href = "/private-view/user-view/booking/appointment-booking.html";
+          } else if (role == 2) {
+            window.location.href = "/private-view/doctor-view/doctor-dashboard.html";
+          }
+        }, 1000);
+        
       } catch (error) {
         console.error("Error during login:", error);
         throw error;
@@ -214,190 +262,201 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
 
     logginFunction(username, password)
       .then(() => {
-        closeModal("loginModal");
-        this.reset();
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
+        // Success handled above
       })
       .catch((error) => {
+        hideButtonLoader(submitButton);
         showError("loginUsername", "Invalid email or password");
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
       });
   }
 });
 
 // Register Form Validation and Submission
-document
-  .getElementById("registerForm")
-  .addEventListener("submit", async function (e) {
-    e.preventDefault();
+document.getElementById("registerForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
 
-    const username = document.getElementById("username").value;
-    const fullName = document.getElementById("fullName").value;
-    const email = document.getElementById("registerEmail").value;
-    const dateOfBirth = document.getElementById("dateOfBirth").value;
-    const gender = document.querySelector('input[name="gender"]:checked');
-    const password = document.getElementById("registerPassword").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
-    const termsAccepted = document.querySelector('input[name="terms"]').checked;
+  const username = document.getElementById("username").value;
+  const fullName = document.getElementById("fullName").value;
+  const email = document.getElementById("registerEmail").value;
+  const dateOfBirth = document.getElementById("dateOfBirth").value;
+  const gender = document.querySelector('input[name="gender"]:checked');
+  const password = document.getElementById("registerPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const termsAccepted = document.querySelector('input[name="terms"]').checked;
 
-    let isValid = true;
+  let isValid = true;
 
-    // Clear previous errors
-    [
+  // Clear previous errors
+  [
+    "username",
+    "fullName",
+    "registerEmail",
+    "dateOfBirth",
+    "registerPassword",
+    "confirmPassword",
+  ].forEach(clearError);
+
+  // Validate username
+  if (!username) {
+    showError("username", "Username is required");
+    isValid = false;
+  } else if (!validateUsername(username)) {
+    showError(
       "username",
-      "fullName",
-      "registerEmail",
-      "dateOfBirth",
+      "Username must be 3-20 characters and contain only letters, numbers, and underscores"
+    );
+    isValid = false;
+  }
+
+  // Validate full name
+  if (!fullName) {
+    showError("fullName", "Full name is required");
+    isValid = false;
+  } else if (!validateName(fullName)) {
+    showError("fullName", "Full name must be at least 2 characters");
+    isValid = false;
+  }
+
+  // Validate email
+  if (!email) {
+    showError("registerEmail", "Email is required");
+    isValid = false;
+  } else if (!validateEmail(email)) {
+    showError("registerEmail", "Please enter a valid email address");
+    isValid = false;
+  }
+
+  // Validate date of birth
+  if (!dateOfBirth) {
+    showError("dateOfBirth", "Date of birth is required");
+    isValid = false;
+  } else {
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    if (age < 18) {
+      showError("dateOfBirth", "You must be at least 18 years old");
+      isValid = false;
+    }
+  }
+
+  // Validate gender
+  if (!gender) {
+    showError("gender", "Please select your gender");
+    isValid = false;
+  }
+
+  // Validate password
+  if (!password) {
+    showError("registerPassword", "Password is required");
+    isValid = false;
+  } else if (!validatePassword(password)) {
+    showError(
       "registerPassword",
-      "confirmPassword",
-    ].forEach(clearError);
+      "Password must be at least 8 characters long"
+    );
+    isValid = false;
+  }
 
-    // Validate username
-    if (!username) {
-      showError("username", "Username is required");
-      isValid = false;
-    } else if (!validateUsername(username)) {
-      showError(
-        "username",
-        "Username must be 3-20 characters and contain only letters, numbers, and underscores"
-      );
-      isValid = false;
-    }
+  // Validate confirm password
+  if (!confirmPassword) {
+    showError("confirmPassword", "Please confirm your password");
+    isValid = false;
+  } else if (password !== confirmPassword) {
+    showError("confirmPassword", "Passwords do not match");
+    isValid = false;
+  }
 
-    // Validate full name
-    if (!fullName) {
-      showError("fullName", "Full name is required");
-      isValid = false;
-    } else if (!validateName(fullName)) {
-      showError("fullName", "Full name must be at least 2 characters");
-      isValid = false;
-    }
+  // Validate terms acceptance
+  if (!termsAccepted) {
+    alert(
+      "Please accept the Terms of Service and Privacy Policy to continue."
+    );
+    isValid = false;
+  }
 
-    // Validate email
-    if (!email) {
-      showError("registerEmail", "Email is required");
-      isValid = false;
-    } else if (!validateEmail(email)) {
-      showError("registerEmail", "Please enter a valid email address");
-      isValid = false;
-    }
+  if (isValid) {
+    const submitButton = this.querySelector('button[type="submit"]');
+    
+    // Show loading state
+    showButtonLoader(submitButton, 'Creating Account...');
 
-    // Validate date of birth
-    if (!dateOfBirth) {
-      showError("dateOfBirth", "Date of birth is required");
-      isValid = false;
-    } else {
-      const birthDate = new Date(dateOfBirth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 13) {
-        showError("dateOfBirth", "You must be at least 13 years old");
-        isValid = false;
-      }
-    }
+    // Prepare data for API
+    const genderValue = gender.value === "male" ? true : false;
+    const dobISO = new Date(dateOfBirth).toISOString();
 
-    // Validate gender
-    if (!gender) {
-      showError("gender", "Please select your gender");
-      isValid = false;
-    }
+    const patientData = {
+      accUsername: username,
+      accPassword: password,
+      email: email,
+      fullname: fullName,
+      dob: dobISO,
+      gender: genderValue,
+    };
 
-    // Validate password
-    if (!password) {
-      showError("registerPassword", "Password is required");
-      isValid = false;
-    } else if (!validatePassword(password)) {
-      showError(
-        "registerPassword",
-        "Password must be at least 8 characters long"
-      );
-      isValid = false;
-    }
-
-    // Validate confirm password
-    if (!confirmPassword) {
-      showError("confirmPassword", "Please confirm your password");
-      isValid = false;
-    } else if (password !== confirmPassword) {
-      showError("confirmPassword", "Passwords do not match");
-      isValid = false;
-    }
-
-    // Validate terms acceptance
-    if (!termsAccepted) {
-      alert(
-        "Please accept the Terms of Service and Privacy Policy to continue."
-      );
-      isValid = false;
-    }
-
-    if (isValid) {
-      const submitButton = this.querySelector('button[type="submit"]');
-      const originalText = submitButton.textContent;
-
-      submitButton.textContent = "Creating Account...";
-      submitButton.disabled = true;
-
-      // Prepare data for API
-      const genderValue = gender.value === "male" ? true : false; // true for male, false for female/other
-      const dobISO = new Date(dateOfBirth).toISOString();
-
-      const patientData = {
-        accUsername: username,
-        accPassword: password,
-        email: email,
-        fullname: fullName,
-        dob: dobISO,
-        gender: genderValue,
-      };
-
-      try {
-        const response = await fetch(
-          "https://localhost:7009/api/Account/RegisterPatient",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(patientData),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Registration failed");
+    try {
+      const response = await fetch(
+        "https://localhost:7009/api/Account/RegisterPatient",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(patientData),
         }
+      );
 
-        // Success: show modal and reset form
-       closeModal("registerModal");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Registration failed");
+      }
+
+      // Show success state
+      submitButton.innerHTML = `
+        <span style="opacity: 0;">${submitButton.dataset.originalText}</span>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #27ae60;">
+          <i class="fas fa-check"></i> Success!
+        </div>
+      `;
+
+      // Success: show modal and reset form after delay
+      setTimeout(() => {
+        closeModal("registerModal");
         openVerifyModal(email);
         this.reset();
-      } catch (error) {
-        alert("Registration failed: " + error.message);
-      } finally {
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-      }
+        hideButtonLoader(submitButton);
+      }, 1500);
+
+    } catch (error) {
+      hideButtonLoader(submitButton);
+      alert("Registration failed: " + error.message);
     }
-  });
+  }
+});
 
 // Contact Form Submission
 document.getElementById("contactForm").addEventListener("submit", function (e) {
   e.preventDefault();
 
   const submitButton = this.querySelector('button[type="submit"]');
-  const originalText = submitButton.textContent;
-
-  submitButton.textContent = "Sending...";
-  submitButton.disabled = true;
+  
+  // Show loading state
+  showButtonLoader(submitButton, 'Sending...');
 
   setTimeout(() => {
-    alert("Thank you for your message! We will get back to you soon.");
-    this.reset();
-    submitButton.textContent = originalText;
-    submitButton.disabled = false;
+    // Show success state
+    submitButton.innerHTML = `
+      <span style="opacity: 0;">${submitButton.dataset.originalText}</span>
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #27ae60;">
+        <i class="fas fa-check"></i> Sent!
+      </div>
+    `;
+    
+    setTimeout(() => {
+      alert("Thank you for your message! We will get back to you soon.");
+      this.reset();
+      hideButtonLoader(submitButton);
+    }, 1500);
   }, 2000);
 });
 
@@ -440,19 +499,35 @@ function updateCountdown() {
 // Resend code
 document.getElementById("resendBtn").addEventListener("click", async function () {
   const email = document.getElementById("verifyEmail").value;
-  this.disabled = true;
+  
+  // Show loading state
+  showButtonLoader(this, 'Sending...');
+  
   try {
     await fetch("https://localhost:7009/api/Account/resend-verification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
     });
-    countdownTime = 240;
-    startCountdown();
-    alert("Verification code resent!");
+    
+    // Show success state
+    this.innerHTML = `
+      <span style="opacity: 0;">${this.dataset.originalText}</span>
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #27ae60;">
+        <i class="fas fa-check"></i> Sent!
+      </div>
+    `;
+    
+    setTimeout(() => {
+      countdownTime = 240;
+      startCountdown();
+      hideButtonLoader(this);
+      alert("Verification code resent!");
+    }, 1500);
+    
   } catch {
+    hideButtonLoader(this);
     alert("Failed to resend code. Please try again.");
-    this.disabled = false;
   }
 });
 
@@ -460,29 +535,83 @@ document.getElementById("resendBtn").addEventListener("click", async function ()
 document.getElementById("verifyForm").addEventListener("submit", async function (e) {
   e.preventDefault();
   clearError("verifyCode");
+  
   const email = document.getElementById("verifyEmail").value;
   const code = document.getElementById("verifyCode").value.trim();
+  const submitButton = this.querySelector('button[type="submit"]');
 
   if (!code) {
     showError("verifyCode", "Please enter the verification code.");
     return;
   }
 
+  // Show loading state
+  showButtonLoader(submitButton, 'Verifying...');
+
   try {
+    console.log('Sending verification request:', { email, code }); // Debug log
+    
     const res = await fetch("https://localhost:7009/api/Account/verify-registration", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code })
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ 
+        email: email, 
+        code: code 
+      })
     });
+    
+    console.log('Verification response status:', res.status); // Debug log
+    console.log('Verification response:', res); // Debug log
+    
+    // Check if response is OK
     if (!res.ok) {
-      showError("verifyCode", "Invalid or expired code.");
+      // Try to get error details from response
+      let errorMessage = "Invalid or expired code.";
+      try {
+        const errorData = await res.json();
+        console.log('Error data:', errorData); // Debug log
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        console.log('Could not parse error response'); // Debug log
+      }
+      
+      hideButtonLoader(submitButton);
+      showError("verifyCode", errorMessage);
       return;
     }
-    clearInterval(countdownInterval);
-    closeModal("verifyModal");
-    openModal("successModal");
-  } catch {
-    showError("verifyCode", "Verification failed. Try again.");
+    
+    // Try to parse the response
+    let responseData;
+    try {
+      responseData = await res.json();
+      console.log('Success response data:', responseData); // Debug log
+    } catch (e) {
+      console.log('Response might be empty or not JSON'); // Debug log
+      responseData = { success: true };
+    }
+    
+    // Show success state
+    submitButton.innerHTML = `
+      <span style="opacity: 0;">${submitButton.dataset.originalText}</span>
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #27ae60;">
+        <i class="fas fa-check"></i> Verified!
+      </div>
+    `;
+    
+    setTimeout(() => {
+      clearInterval(countdownInterval);
+      closeModal("verifyModal");
+      openModal("successModal");
+      hideButtonLoader(submitButton);
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Network error during verification:', error); // Debug log
+    hideButtonLoader(submitButton);
+    showError("verifyCode", "Network error. Please check your connection and try again.");
   }
 });
 
@@ -622,6 +751,52 @@ document.addEventListener("DOMContentLoaded", function () {
       hero.style.transition = "opacity 1s ease, transform 1s ease";
       hero.style.opacity = "1";
       hero.style.transform = "translateY(0)";
-    }, 100);
+    }, 1600); // Show after page loader
+  }
+});
+
+// Page Load Animation
+document.addEventListener('DOMContentLoaded', function() {
+  // Show page loader
+  const pageLoader = showPageLoader();
+  
+  // Simulate loading time and hide loader
+  setTimeout(() => {
+    hidePageLoader();
+  }, 1500);
+  
+  // Your existing DOMContentLoaded code here...
+  const animateElements = document.querySelectorAll(
+    ".service-card, .stat, .contact-item"
+  );
+
+  animateElements.forEach((el) => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(20px)";
+    el.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+    observer.observe(el);
+  });
+
+  // Add loading states to buttons
+  const buttons = document.querySelectorAll("button");
+  buttons.forEach((button) => {
+    button.addEventListener("click", function () {
+      if (this.type === "submit") {
+        this.style.position = "relative";
+      }
+    });
+  });
+
+  // Add smooth reveal animation to hero section
+  const hero = document.querySelector(".hero");
+  if (hero) {
+    hero.style.opacity = "0";
+    hero.style.transform = "translateY(20px)";
+
+    setTimeout(() => {
+      hero.style.transition = "opacity 1s ease, transform 1s ease";
+      hero.style.opacity = "1";
+      hero.style.transform = "translateY(0)";
+    }, 1600); // Show after page loader
   }
 });

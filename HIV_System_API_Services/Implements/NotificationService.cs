@@ -4,6 +4,7 @@ using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,94 +16,40 @@ namespace HIV_System_API_Services.Implements
     public class NotificationService : INotificationService
     {
         private readonly INotificationRepo _notificationRepo;
+        private readonly HivSystemApiContext _context;
 
         public NotificationService()
         {
             _notificationRepo = new NotificationRepo();
+            _context = new HivSystemApiContext();
         }
 
-        public async Task<NotificationResponseDTO> CreateNotificationAsync(CreateNotificationRequestDTO notificationDto)
+        // Constructor for dependency injection
+        public NotificationService(INotificationRepo notificationRepo, HivSystemApiContext context)
         {
-            var notification = new Notification
+            _notificationRepo = notificationRepo ?? throw new ArgumentNullException(nameof(notificationRepo));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
+        private static Notification MapCreateRequestToEntity(CreateNotificationRequestDTO requestDTO)
+        {
+            return new Notification
             {
-                NotiType = notificationDto.NotiType,
-                NotiMessage = notificationDto.NotiMessage,
-                SendAt = notificationDto.SendAt
+                NotiType = requestDTO.NotiType,
+                NotiMessage = requestDTO.NotiMessage,
+                SendAt = requestDTO.SendAt
             };
-
-            var created = await _notificationRepo.CreateNotificationAsync(notification);
-            return MapToResponseDTO(created);
         }
 
-        public Task<bool> DeleteNotificationByIdAsync(int id)
+        private static Notification MapUpdateRequestToEntity(int ntfId, UpdateNotificationRequestDTO requestDTO)
         {
-            return _notificationRepo.DeleteNotificationByIdAsync(id);
-        }
-
-        public async Task<List<NotificationResponseDTO>> GetAllNotifications()
-        {
-            var notifications = await _notificationRepo.GetAllNotification();
-            return notifications.Select(MapToResponseDTO).ToList();
-        }
-
-        public async Task<NotificationResponseDTO> GetNotificationByIdAsync(int id)
-        {
-            var notification = await _notificationRepo.GetNotificationByIdAsync(id);
-            return MapToResponseDTO(notification);
-        }
-
-        public async Task<NotificationDetailResponseDTO> GetNotificationDetailsByIdAsync(int id)
-        {
-            var notification = await _notificationRepo.GetNotificationByIdAsync(id);
-            var recipients = await _notificationRepo.GetNotificationRecipientsAsync(id);
-
-            var detailsDto = new NotificationDetailResponseDTO
+            return new Notification
             {
-                NotiId = notification.NtfId,
-                NotiType = notification.NotiType,
-                NotiMessage = notification.NotiMessage,
-                SendAt = notification.SendAt ?? DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                Recipients = recipients.Select(r => new NotificationRecipientDTO
-                {
-                    AccId = r.AccId,
-                    Fullname = r.Acc?.Fullname,
-                    Role = r.Acc?.Roles ?? 0
-                }).ToList()
+                NtfId = ntfId,
+                NotiType = requestDTO.NotiType,
+                NotiMessage = requestDTO.NotiMessage,
+                SendAt = requestDTO.SendAt
             };
-
-            return detailsDto;
-        }
-
-        public async Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId)
-        {
-            var notifications = await _notificationRepo.GetNotificationsByRecipientAsync(accId);
-            return notifications.Select(MapToResponseDTO).ToList();
-        }
-
-        public async Task<NotificationDetailResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId)
-        {
-            var notification = await _notificationRepo.SendNotificationToAccIdAsync(ntfId, accId);
-            return await GetNotificationDetailsByIdAsync(notification.NtfId);
-        }
-
-        public async Task<NotificationDetailResponseDTO> SendNotificationToRoleAsync(int ntfId, byte role)
-        {
-            var notification = await _notificationRepo.SendNotificationToRoleAsync(ntfId, role);
-            return await GetNotificationDetailsByIdAsync(notification.NtfId);
-        }
-
-        public async Task<bool> UpdateNotificationByIdAsync(int id, UpdateNotificationRequestDTO notificationDto)
-        {
-            var notification = new Notification
-            {
-                NtfId = id,
-                NotiType = notificationDto.NotiType,
-                NotiMessage = notificationDto.NotiMessage,
-                SendAt = notificationDto.SendAt
-            };
-
-            return await _notificationRepo.UpdateNotificationByIdAsync(notification);
         }
 
         private static NotificationResponseDTO MapToResponseDTO(Notification notification)
@@ -117,62 +64,562 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        public async Task<List<NotificationResponseDTO>> GetAllPersonalNotificationsAsync(int accId)
+        private static NotificationDetailResponseDTO MapToDetailResponseDTO(Notification notification, List<NotificationAccount> recipients)
+        {
+            return new NotificationDetailResponseDTO
+            {
+                NotiId = notification.NtfId,
+                NotiType = notification.NotiType,
+                NotiMessage = notification.NotiMessage,
+                SendAt = notification.SendAt ?? DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                Recipients = recipients.Select(r => new NotificationRecipientDTO
+                {
+                    AccId = r.AccId,
+                    Fullname = r.Acc?.Fullname,
+                    Role = r.Acc?.Roles ?? 0
+                }).ToList()
+            };
+        }
+
+        private static List<NotificationResponseDTO> MapToResponseDTOList(List<Notification> notifications)
+        {
+            return notifications.Select(MapToResponseDTO).ToList();
+        }
+
+        private static void ValidateId(int id, string paramName)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentException($"{paramName} must be greater than 0.", paramName);
+            }
+        }
+
+        private static void ValidateCreateNotificationRequestDTO(CreateNotificationRequestDTO requestDTO)
+        {
+            if (requestDTO == null)
+            {
+                throw new ArgumentNullException(nameof(requestDTO));
+            }
+
+            if (string.IsNullOrWhiteSpace(requestDTO.NotiType))
+            {
+                throw new ArgumentException("Notification type is required.", nameof(requestDTO.NotiType));
+            }
+
+            if (string.IsNullOrWhiteSpace(requestDTO.NotiMessage))
+            {
+                throw new ArgumentException("Notification message is required.", nameof(requestDTO.NotiMessage));
+            }
+
+            if (requestDTO.SendAt == default(DateTime))
+            {
+                throw new ArgumentException("Send date is required.", nameof(requestDTO.SendAt));
+            }
+        }
+
+        private static void ValidateUpdateNotificationRequestDTO(UpdateNotificationRequestDTO requestDTO)
+        {
+            if (requestDTO == null)
+            {
+                throw new ArgumentNullException(nameof(requestDTO));
+            }
+
+            if (string.IsNullOrWhiteSpace(requestDTO.NotiType))
+            {
+                throw new ArgumentException("Notification type is required.", nameof(requestDTO.NotiType));
+            }
+
+            if (string.IsNullOrWhiteSpace(requestDTO.NotiMessage))
+            {
+                throw new ArgumentException("Notification message is required.", nameof(requestDTO.NotiMessage));
+            }
+
+            if (requestDTO.SendAt == default(DateTime))
+            {
+                throw new ArgumentException("Send date is required.", nameof(requestDTO.SendAt));
+            }
+        }
+
+        private async Task ValidateAccountExists(int accId)
         {
             if (accId <= 0)
             {
-                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
+                throw new ArgumentException("Account ID must be greater than 0.", nameof(accId));
             }
 
-            var notifications = await _notificationRepo.GetAllPersonalNotificationsAsync(accId);
-            if (notifications == null)
+            var exists = await _context.Accounts.AnyAsync(a => a.AccId == accId);
+            if (!exists)
             {
-                return new List<NotificationResponseDTO>();
+                throw new InvalidOperationException($"Account with ID {accId} does not exist.");
+            }
+        }
+
+        private async Task ValidateNotificationExists(int ntfId)
+        {
+            if (ntfId <= 0)
+            {
+                throw new ArgumentException("Notification ID must be greater than 0.", nameof(ntfId));
             }
 
-            return notifications.Select(MapToResponseDTO).ToList();
+            var exists = await _context.Notifications.AnyAsync(n => n.NtfId == ntfId);
+            if (!exists)
+            {
+                throw new InvalidOperationException($"Notification with ID {ntfId} does not exist.");
+            }
+        }
+
+        private static void ValidateRole(byte role)
+        {
+            // Assuming roles are defined as: 0 = Admin, 1 = Doctor, 2 = Patient, etc.
+            // Adjust validation based on your role system
+            if (role < 0 || role > 10) // Adjust upper bound as needed
+            {
+                throw new ArgumentException("Invalid role specified.", nameof(role));
+            }
+        }
+
+        public async Task<List<NotificationResponseDTO>> GetAllNotificationsAsync()
+        {
+            try
+            {
+                var notifications = await _notificationRepo.GetAllNotificationsAsync();
+                return MapToResponseDTOList(notifications);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving all notifications: {ex.InnerException}");
+            }
+        }
+
+        public async Task<NotificationResponseDTO?> GetNotificationByIdAsync(int id)
+        {
+            try
+            {
+                ValidateId(id, nameof(id));
+
+                var notification = await _notificationRepo.GetNotificationByIdAsync(id);
+                return notification == null ? null : MapToResponseDTO(notification);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving notification: {ex.InnerException}");
+            }
+        }
+
+        public async Task<NotificationResponseDTO> CreateNotificationAsync(CreateNotificationRequestDTO notificationDto)
+        {
+            try
+            {
+                ValidateCreateNotificationRequestDTO(notificationDto);
+
+                var notification = MapCreateRequestToEntity(notificationDto);
+                var created = await _notificationRepo.CreateNotificationAsync(notification);
+
+                return MapToResponseDTO(created);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Database error while creating notification: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error creating notification: {ex.InnerException}");
+            }
+        }
+
+        public async Task<bool> UpdateNotificationByIdAsync(int id, UpdateNotificationRequestDTO notificationDto)
+        {
+            try
+            {
+                ValidateId(id, nameof(id));
+                ValidateUpdateNotificationRequestDTO(notificationDto);
+
+                await ValidateNotificationExists(id);
+
+                var notification = MapUpdateRequestToEntity(id, notificationDto);
+                return await _notificationRepo.UpdateNotificationByIdAsync(notification);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Database error while updating notification: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error updating notification: {ex.InnerException}");
+            }
+        }
+
+        public async Task<bool> DeleteNotificationByIdAsync(int id)
+        {
+            try
+            {
+                ValidateId(id, nameof(id));
+
+                // Check if the notification exists
+                await ValidateNotificationExists(id);
+
+                return await _notificationRepo.DeleteNotificationByIdAsync(id);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error deleting notification: {ex.InnerException}");
+            }
+        }
+
+        public async Task<NotificationResponseDTO> SendNotificationToRoleAsync(int ntfId, byte role)
+        {
+            try
+            {
+                ValidateId(ntfId, nameof(ntfId));
+                ValidateRole(role);
+
+                await ValidateNotificationExists(ntfId);
+
+                var notification = await _notificationRepo.SendNotificationToRoleAsync(ntfId, role);
+                return MapToResponseDTO(notification);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error sending notification to role: {ex.InnerException}");
+            }
+        }
+
+        public async Task<NotificationResponseDTO> SendNotificationToAccIdAsync(int ntfId, int accId)
+        {
+            try
+            {
+                ValidateId(ntfId, nameof(ntfId));
+                ValidateId(accId, nameof(accId));
+
+                await ValidateNotificationExists(ntfId);
+                await ValidateAccountExists(accId);
+
+                var notification = await _notificationRepo.SendNotificationToAccIdAsync(ntfId, accId);
+                return MapToResponseDTO(notification);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error sending notification to account: {ex.InnerException}");
+            }
+        }
+
+        public async Task<List<NotificationAccount>> GetNotificationRecipientsAsync(int ntfId)
+        {
+            try
+            {
+                ValidateId(ntfId, nameof(ntfId));
+                await ValidateNotificationExists(ntfId);
+
+                return await _notificationRepo.GetNotificationRecipientsAsync(ntfId);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving notification recipients: {ex.InnerException}");
+            }
+        }
+
+        public async Task<List<NotificationResponseDTO>> GetNotificationsByRecipientAsync(int accId)
+        {
+            try
+            {
+                ValidateId(accId, nameof(accId));
+                await ValidateAccountExists(accId);
+
+                var notifications = await _notificationRepo.GetNotificationsByRecipientAsync(accId);
+                return MapToResponseDTOList(notifications);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving notifications for recipient: {ex.InnerException}");
+            }
+        }
+
+        public async Task<List<NotificationResponseDTO>> GetAllPersonalNotificationsAsync(int accId)
+        {
+            try
+            {
+                ValidateId(accId, nameof(accId));
+                await ValidateAccountExists(accId);
+
+                var notifications = await _notificationRepo.GetAllPersonalNotificationsAsync(accId);
+                return notifications == null ? new List<NotificationResponseDTO>() : MapToResponseDTOList(notifications);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving personal notifications: {ex.InnerException}");
+            }
         }
 
         public async Task<List<NotificationResponseDTO>> GetAllUnreadNotificationsAsync(int accId)
         {
-            if (accId <= 0)
+            try
             {
-                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
-            }
+                ValidateId(accId, nameof(accId));
+                await ValidateAccountExists(accId);
 
-            var notifications = await _notificationRepo.GetAllUnreadNotificationsAsync(accId);
-            if (notifications == null)
+                var notifications = await _notificationRepo.GetAllUnreadNotificationsAsync(accId);
+                return notifications == null ? new List<NotificationResponseDTO>() : MapToResponseDTOList(notifications);
+            }
+            catch (ArgumentException)
             {
-                return new List<NotificationResponseDTO>();
+                throw;
             }
-
-            return notifications.Select(n => MapToResponseDTO(n)).ToList();
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving unread notifications: {ex.InnerException}");
+            }
         }
 
         public async Task<NotificationResponseDTO> ViewNotificationAsync(int ntfId, int accId)
         {
-            if (ntfId <= 0)
+            try
             {
-                throw new ArgumentException("Notification ID must be greater than zero.", nameof(ntfId));
-            }
-            if (accId <= 0)
-            {
-                throw new ArgumentException("Account ID must be greater than zero.", nameof(accId));
-            }
+                ValidateId(ntfId, nameof(ntfId));
+                ValidateId(accId, nameof(accId));
 
-            var notification = await _notificationRepo.GetNotificationByIdAsync(ntfId);
-            if (notification == null)
-            {
-                throw new KeyNotFoundException($"Notification with ID {ntfId} not found.");
-            }
+                await ValidateNotificationExists(ntfId);
+                await ValidateAccountExists(accId);
 
-            var result = await _notificationRepo.ViewNotificationAsync(ntfId, accId);
-            if (result == null)
-            {
-                throw new InvalidOperationException($"Notification with ID {ntfId} could not be marked as viewed for account {accId}.");
-            }
+                var result = await _notificationRepo.ViewNotificationAsync(ntfId, accId);
+                if (result == null)
+                {
+                    throw new InvalidOperationException($"Notification with ID {ntfId} could not be marked as viewed for account {accId}.");
+                }
 
-            return MapToResponseDTO(result);
+                return MapToResponseDTO(result);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error viewing notification: {ex.InnerException}");
+            }
+        }
+
+        public async Task<bool> MarkNotificationAsReadAsync(int ntfId, int accId)
+        {
+            try
+            {
+                ValidateId(ntfId, nameof(ntfId));
+                ValidateId(accId, nameof(accId));
+
+                await ValidateNotificationExists(ntfId);
+                await ValidateAccountExists(accId);
+
+                return await _notificationRepo.MarkNotificationAsReadAsync(ntfId, accId);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error marking notification as read: {ex.InnerException}");
+            }
+        }
+
+        public async Task<bool> MarkAllNotificationsAsReadAsync(int accId)
+        {
+            try
+            {
+                ValidateId(accId, nameof(accId));
+                await ValidateAccountExists(accId);
+
+                return await _notificationRepo.MarkAllNotificationsAsReadAsync(accId);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error marking all notifications as read: {ex.InnerException}");
+            }
+        }
+
+        public async Task<int> GetUnreadNotificationCountAsync(int accId)
+        {
+            try
+            {
+                ValidateId(accId, nameof(accId));
+                await ValidateAccountExists(accId);
+
+                return await _notificationRepo.GetUnreadNotificationCountAsync(accId);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving unread notification count: {ex.InnerException}");
+            }
+        }
+
+        public async Task<List<NotificationAccount>> GetPersonalNotificationAccountsAsync(int accId)
+        {
+            try
+            {
+                ValidateId(accId, nameof(accId));
+                await ValidateAccountExists(accId);
+
+                return await _notificationRepo.GetPersonalNotificationAccountsAsync(accId);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving personal notification accounts: {ex.InnerException}");
+            }
+        }
+
+        public async Task<bool> DeleteNotificationForAccountAsync(int ntfId, int accId)
+        {
+            try
+            {
+                ValidateId(ntfId, nameof(ntfId));
+                ValidateId(accId, nameof(accId));
+
+                await ValidateNotificationExists(ntfId);
+                await ValidateAccountExists(accId);
+
+                return await _notificationRepo.DeleteNotificationForAccountAsync(ntfId, accId);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error deleting notification for account: {ex.InnerException}");
+            }
+        }
+
+        public async Task<NotificationDetailResponseDTO?> GetNotificationDetailsByIdAsync(int ntfId)
+        {
+            try
+            {
+                ValidateId(ntfId, nameof(ntfId));
+                await ValidateNotificationExists(ntfId);
+
+                var notification = await _notificationRepo.GetNotificationByIdAsync(ntfId);
+                if (notification == null)
+                {
+                    return null;
+                }
+
+                var recipients = await _notificationRepo.GetNotificationRecipientsAsync(ntfId);
+                return MapToDetailResponseDTO(notification, recipients);
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error retrieving notification details: {ex.InnerException?.Message ?? ex.Message}");
+            }
         }
     }
 }

@@ -31,10 +31,13 @@ namespace HIV_System_API_DAOs.Implements
             if (notification == null)
                 throw new ArgumentNullException(nameof(notification));
 
+            // Set default values if not provided
+            if (notification.SendAt == null)
+                notification.SendAt = DateTime.UtcNow;
+
             await _context.Notifications.AddAsync(notification);
             await _context.SaveChangesAsync();
             return notification;
-
         }
 
         public async Task<bool> DeleteNotificationByIdAsync(int id)
@@ -42,12 +45,12 @@ namespace HIV_System_API_DAOs.Implements
             var notification = await _context.Notifications
                 .Include(n => n.NotificationAccounts)
                 .FirstOrDefaultAsync(n => n.NtfId == id);
-            
+
             if (notification == null)
                 return false;
 
             // Remove related Notification_Account records first
-            if (notification.NotificationAccounts != null)
+            if (notification.NotificationAccounts != null && notification.NotificationAccounts.Any())
             {
                 _context.NotificationAccounts.RemoveRange(notification.NotificationAccounts);
             }
@@ -58,14 +61,12 @@ namespace HIV_System_API_DAOs.Implements
             return true;
         }
 
-        public async Task<Notification> GetNotificationByIdAsync(int id)
+        public async Task<Notification?> GetNotificationByIdAsync(int id)
         {
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.NtfId == id);
-
-            if (notification == null)
-                throw new ArgumentException("Notification not found", nameof(id));
-
-            return notification;
+            return await _context.Notifications
+                .Include(n => n.NotificationAccounts)
+                .ThenInclude(na => na.Acc)
+                .FirstOrDefaultAsync(n => n.NtfId == id);
         }
 
 
@@ -76,17 +77,31 @@ namespace HIV_System_API_DAOs.Implements
                 .FirstOrDefaultAsync(n => n.NtfId == ntfId);
 
             if (notification == null)
-                throw new ArgumentException("Notification not found", nameof(ntfId));
+                throw new ArgumentException($"Notification with ID {ntfId} not found", nameof(ntfId));
+
+            // Check if account exists
+            var accountExists = await _context.Accounts.AnyAsync(a => a.AccId == accId);
+            if (!accountExists)
+                throw new ArgumentException($"Account with ID {accId} not found", nameof(accId));
+
+            // Check if notification already sent to this account
+            var existingMapping = await _context.NotificationAccounts
+                .FirstOrDefaultAsync(na => na.NtfId == ntfId && na.AccId == accId);
+
+            if (existingMapping != null)
+            {
+                // Already sent, just return the notification
+                return notification;
+            }
 
             // Create notification-account mapping
             var notificationAccount = new NotificationAccount
             {
                 NtfId = ntfId,
                 AccId = accId,
-                IsRead = false // Assuming IsRead is a boolean property to track read status
+                IsRead = false
             };
 
-            // Add and save
             await _context.NotificationAccounts.AddAsync(notificationAccount);
             await _context.SaveChangesAsync();
 
@@ -98,8 +113,9 @@ namespace HIV_System_API_DAOs.Implements
             // Find the notification
             var notification = await _context.Notifications
                 .FirstOrDefaultAsync(n => n.NtfId == ntfId);
+
             if (notification == null)
-                throw new ArgumentException("Notification not found", nameof(ntfId));
+                throw new ArgumentException($"Notification with ID {ntfId} not found", nameof(ntfId));
 
             // Get all accounts with the specified role
             var accounts = await _context.Accounts
@@ -107,47 +123,54 @@ namespace HIV_System_API_DAOs.Implements
                 .Select(a => a.AccId)
                 .ToListAsync();
 
-            if (accounts.Count == 0)
-                throw new ArgumentException("No accounts found with the specified role", nameof(role));
+            if (!accounts.Any())
+                throw new ArgumentException($"No accounts found with role {role}", nameof(role));
 
-            // Create notification-account mappings
-            var notificationAccounts = accounts.Select(accId => new NotificationAccount
+            // Get existing mappings to avoid duplicates
+            var existingMappings = await _context.NotificationAccounts
+                .Where(na => na.NtfId == ntfId && accounts.Contains(na.AccId))
+                .Select(na => na.AccId)
+                .ToListAsync();
+
+            // Create notification-account mappings for accounts that don't have them yet
+            var newMappings = accounts
+                .Where(accId => !existingMappings.Contains(accId))
+                .Select(accId => new NotificationAccount
+                {
+                    NtfId = ntfId,
+                    AccId = accId,
+                    IsRead = false
+                })
+                .ToList();
+
+            if (newMappings.Any())
             {
-                NtfId = ntfId,
-                AccId = accId,
-                IsRead = false // Assuming IsRead is a boolean property to track read status
-            });
-
-            // Add all mappings in one go
-            await _context.NotificationAccounts.AddRangeAsync(notificationAccounts);
-            await _context.SaveChangesAsync();
+                await _context.NotificationAccounts.AddRangeAsync(newMappings);
+                await _context.SaveChangesAsync();
+            }
 
             return notification;
         }
 
         public async Task<bool> UpdateNotificationByIdAsync(Notification notification)
         {
+            if (notification == null)
+                throw new ArgumentNullException(nameof(notification));
+
+            var existingNotification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.NtfId == notification.NtfId);
+
+            if (existingNotification == null)
+                return false;
+
+            // Update properties
+            existingNotification.NotiMessage = notification.NotiMessage;
+            existingNotification.SendAt = notification.SendAt;
+            existingNotification.NotiType = notification.NotiType;
+
             try
             {
-                if (notification == null)
-                    throw new ArgumentNullException(nameof(notification));
-
-                var existingNotification = await _context.Notifications
-                    .FirstOrDefaultAsync(n => n.NtfId == notification.NtfId);
-                
-                if (existingNotification == null)
-                    return false;
-
-                // Update properties
-                existingNotification.NotiMessage = notification.NotiMessage;
-                existingNotification.SendAt = notification.SendAt;
-                existingNotification.NotiType = notification.NotiType;
-
                 await _context.SaveChangesAsync();
-                
-                // Detach the entity from the context to prevent tracking issues
-                _context.Entry(existingNotification).State = EntityState.Detached;
-                
                 return true;
             }
             catch (Exception)
@@ -156,16 +179,22 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<List<Notification>> GetAllNotification()
+        public async Task<List<Notification>> GetAllNotificationsAsync()
         {
-            return await _context.Notifications.ToListAsync();
+            return await _context.Notifications
+                .Include(n => n.NotificationAccounts)
+                .ThenInclude(na => na.Acc)
+                .OrderByDescending(n => n.SendAt)
+                .ToListAsync();
         }
 
         public async Task<List<NotificationAccount>> GetNotificationRecipientsAsync(int ntfId)
         {
             return await _context.NotificationAccounts
                 .Include(na => na.Acc)
+                .Include(na => na.Ntf)
                 .Where(na => na.NtfId == ntfId)
+                .OrderBy(na => na.Acc.Fullname)
                 .ToListAsync();
         }
 
@@ -175,6 +204,7 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(na => na.Ntf)
                 .Where(na => na.AccId == accId)
                 .Select(na => na.Ntf)
+                .OrderByDescending(n => n.SendAt)
                 .ToListAsync();
         }
 
@@ -184,18 +214,17 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(na => na.Ntf)
                 .Where(na => na.AccId == accId)
                 .Select(na => na.Ntf)
+                .OrderByDescending(n => n.SendAt)
                 .ToListAsync();
         }
 
         public async Task<List<Notification>> GetAllUnreadNotificationsAsync(int accId)
         {
-            // Check if NotificationAccount has a property named 'IsRead'
-            // If not, this will throw at runtime; otherwise, it will work as intended.
             return await _context.NotificationAccounts
                 .Include(na => na.Ntf)
-                .Where(na => na.AccId == accId)
-                .Where(na => na.IsRead == false)
+                .Where(na => na.AccId == accId && na.IsRead == false)
                 .Select(na => na.Ntf)
+                .OrderByDescending(n => n.SendAt)
                 .ToListAsync();
         }
 
@@ -206,8 +235,9 @@ namespace HIV_System_API_DAOs.Implements
                 .FirstOrDefaultAsync(na => na.NtfId == ntfId && na.AccId == accId);
 
             if (notificationAccount == null)
-                throw new ArgumentException("Notification or recipient not found.");
+                throw new ArgumentException($"Notification {ntfId} not found for account {accId}");
 
+            // Mark as read if not already read
             if (!notificationAccount.IsRead)
             {
                 notificationAccount.IsRead = true;
@@ -215,6 +245,101 @@ namespace HIV_System_API_DAOs.Implements
             }
 
             return notificationAccount.Ntf;
+        }
+
+        public async Task<bool> MarkNotificationAsReadAsync(int ntfId, int accId)
+        {
+            var notificationAccount = await _context.NotificationAccounts
+                .FirstOrDefaultAsync(na => na.NtfId == ntfId && na.AccId == accId);
+
+            if (notificationAccount == null)
+                return false;
+
+            if (!notificationAccount.IsRead)
+            {
+                notificationAccount.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+
+        public async Task<bool> MarkAllNotificationsAsReadAsync(int accId)
+        {
+            var unreadNotifications = await _context.NotificationAccounts
+                .Where(na => na.AccId == accId && na.IsRead == false)
+                .ToListAsync();
+
+            if (!unreadNotifications.Any())
+                return true;
+
+            foreach (var notification in unreadNotifications)
+            {
+                notification.IsRead = true;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<int> GetUnreadNotificationCountAsync(int accId)
+        {
+            return await _context.NotificationAccounts
+                .Where(na => na.AccId == accId && na.IsRead == false)
+                .CountAsync();
+        }
+
+        public async Task<List<NotificationAccount>> GetPersonalNotificationAccountsAsync(int accId)
+        {
+            return await _context.NotificationAccounts
+                .Include(na => na.Ntf)
+                .Where(na => na.AccId == accId)
+                .OrderByDescending(na => na.Ntf.SendAt)
+                .ToListAsync();
+        }
+
+        public async Task<bool> DeleteNotificationForAccountAsync(int ntfId, int accId)
+        {
+            var notificationAccount = await _context.NotificationAccounts
+                .FirstOrDefaultAsync(na => na.NtfId == ntfId && na.AccId == accId);
+
+            if (notificationAccount == null)
+                return false;
+
+            _context.NotificationAccounts.Remove(notificationAccount);
+
+            // Check if this was the last recipient for this notification
+            var otherRecipients = await _context.NotificationAccounts
+                .Where(na => na.NtfId == ntfId && na.AccId != accId)
+                .AnyAsync();
+
+            // If no other recipients, delete the notification itself
+            if (!otherRecipients)
+            {
+                var notification = await _context.Notifications
+                    .FirstOrDefaultAsync(n => n.NtfId == ntfId);
+                if (notification != null)
+                {
+                    _context.Notifications.Remove(notification);
+                }
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

@@ -406,7 +406,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Appointment Update",
                     NotiMessage = "Lịch hẹn của bạn đã được cập nhật.",
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.UtcNow,
                 };
 
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);

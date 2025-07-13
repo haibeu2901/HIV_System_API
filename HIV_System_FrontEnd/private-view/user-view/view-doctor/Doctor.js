@@ -23,20 +23,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <i class="fas fa-user-md"></i>
                     </div>
                     <div>
-                        <h3>${doc.fullname}</h3>
+                        <h3>${doc.account.fullname}</h3>
                         <p class="degree">${doc.degree}</p>
-                        <p class="email">${doc.email}</p>
+                        <p class="email">${doc.account.email}</p>
+                        <p class="dob">DOB: ${doc.account.dob}</p>
                     </div>
                 </div>
                 <p class="bio">${doc.bio}</p>
                 <div class="doctor-actions">
-                    <a class="btn-chat" href="mailto:${doc.email}?subject=Contact%20from%20CareFirst%20HIV%20Clinic" target="_blank">
+                    <a class="btn-chat" href="mailto:${doc.account.email}?subject=Contact%20from%20CareFirst%20HIV%20Clinic" target="_blank">
                         <i class="fas fa-envelope"></i> Contact the Doctor
                     </a>
-                    <button class="btn-chat" onclick="chatToDoctor('${doc.email}', '${doc.fullname}')">
+                    <button class="btn-chat" onclick="chatToDoctor('${doc.account.email}', '${doc.account.fullname}')">
                         <i class="fas fa-comments"></i> Chat to Doctor
                     </button>
-                    <button class="btn-book" onclick="bookDoctor('${doc.email}')">
+                    <button class="btn-book" onclick="bookDoctor('${doc.account.email}', ${doc.doctorId})">
                         <i class="fas fa-calendar-plus"></i> Book Appointment
                     </button>
                 </div>
@@ -47,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// Update chatToDoctor and bookDoctor to use email as ID
+// Update chatToDoctor and bookDoctor to use the new data structure
 function chatToDoctor(doctorEmail, doctorName) {
     // Show modal
     document.getElementById('chat-modal').style.display = 'flex';
@@ -67,9 +68,9 @@ function chatToDoctor(doctorEmail, doctorName) {
     };
 }
 
-function bookDoctor(doctorEmail) {
-    // Redirect to booking page with doctorEmail as query param
-    window.location.href = `/private-view/user-view/booking/appointment-booking.html?doctorEmail=${encodeURIComponent(doctorEmail)}`;
+function bookDoctor(doctorEmail, doctorId) {
+    // Redirect to booking page with both doctorEmail and doctorId as query params
+    window.location.href = `/private-view/user-view/booking/appointment-booking.html?doctorEmail=${encodeURIComponent(doctorEmail)}&doctorId=${doctorId}`;
 }
 
 // Close modal logic

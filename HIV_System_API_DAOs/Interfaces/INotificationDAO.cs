@@ -10,8 +10,8 @@ namespace HIV_System_API_DAOs.Interfaces
 {
     public interface INotificationDAO
     {
-        Task<List<Notification>> GetAllNotification();
-        Task<Notification> GetNotificationByIdAsync(int id);
+        Task<List<Notification>> GetAllNotificationsAsync();
+        Task<Notification?> GetNotificationByIdAsync(int id);
         Task<Notification> CreateNotificationAsync(Notification notification);
         Task<bool> UpdateNotificationByIdAsync(Notification notification);
         Task<bool> DeleteNotificationByIdAsync(int id);
@@ -22,5 +22,10 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<List<Notification>> GetAllPersonalNotificationsAsync(int accId);
         Task<List<Notification>> GetAllUnreadNotificationsAsync(int accId);
         Task<Notification> ViewNotificationAsync(int ntfId, int accId);
+        Task<bool> MarkNotificationAsReadAsync(int ntfId, int accId);
+        Task<bool> MarkAllNotificationsAsReadAsync(int accId);
+        Task<int> GetUnreadNotificationCountAsync(int accId);
+        Task<List<NotificationAccount>> GetPersonalNotificationAccountsAsync(int accId);
+        Task<bool> DeleteNotificationForAccountAsync(int ntfId, int accId);
     }
 }
