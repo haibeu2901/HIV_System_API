@@ -17,7 +17,7 @@ namespace HIV_System_API_Repositories.Implements.DashboardRepo
             _adminDao = adminDao;
         }
 
-        public async Task<AdminDashboardStats> GetAdminDashboardStatsAsync(DateOnly today)
+        public async Task<AdminDashboardStats> GetAdminDashboardStatsAsync(DateTime today)
         {
             return await _adminDao.GetAdminDashboardStatsAsync(today);
         }

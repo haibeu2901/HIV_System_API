@@ -23,9 +23,9 @@ namespace HIV_System_API_Repositories.Implements.DashboardRepo
             return await _patientDao.GetPatientDashboardStatsAsync(patientId, today);
         }
 
-        public async Task<List<DashboardAlert>> GetPatientAlertsAsync(int patientId, DateTime today)
-        {
-            return await _patientDao.GetPatientAlertsAsync(patientId, today);
-        }
+        //public async Task<List<DashboardAlert>> GetPatientAlertsAsync(int patientId, DateTime today)
+        //{
+        //    return await _patientDao.GetPatientAlertsAsync(patientId, today);
+        //}
     }
 }

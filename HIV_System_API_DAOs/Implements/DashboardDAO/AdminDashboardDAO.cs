@@ -15,12 +15,9 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
         {
         }
 
-        public async Task<AdminDashboardStats> GetAdminDashboardStatsAsync(DateOnly today)
+        public async Task<AdminDashboardStats> GetAdminDashboardStatsAsync(DateTime today)
         {
-            if (today == DateOnly.Parse(DateTime.Now.ToString()))
-                throw new ArgumentException("Invalid date provided.", nameof(today));
-
-            var startOfMonth = new DateOnly(today.Year, today.Month, 1);
+            var startOfMonth = new DateTime(today.Year, today.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
             // Fetch user distribution first to avoid LINQ translation issues

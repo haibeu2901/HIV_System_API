@@ -49,10 +49,10 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
             return await _context.Appointments.CountAsync();
         }
 
-        public async Task<int> GetPendingAppointmentsAsync(DateOnly today)
+        public async Task<int> GetPendingAppointmentsAsync(DateTime today)
         {
             return await _context.Appointments
-                .Where(a => a.ApmtDate >= DateOnly.Parse(today.ToString()))
+                .Where(a => a.ApmtDate >= DateOnly.FromDateTime(today.Date))
                 .CountAsync();
         }
 
@@ -67,10 +67,10 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                 .SumAsync(p => p.Amount);
         }
 
-        public async Task<decimal> GetMonthlyRevenueAsync(DateOnly startOfMonth, DateOnly endOfMonth)
+        public async Task<decimal> GetMonthlyRevenueAsync(DateTime startOfMonth, DateTime endOfMonth)
         {
             return await _context.Payments
-                .Where(p => DateOnly.Parse(p.PaymentDate.ToString()) >= startOfMonth && DateOnly.Parse(p.PaymentDate.ToString()) <= endOfMonth)
+                .Where(p => p.PaymentDate>= startOfMonth && p.PaymentDate <= endOfMonth)
                 .SumAsync(p => p.Amount);
         }
 
@@ -90,22 +90,22 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
             return notifications.Cast<dynamic>().ToList();
         }
 
-        public async Task<List<DashboardAlert>> GetDashboardAlertsAsync(int userId, DateTime today)
-        {
-            return await _context.NotificationAccounts
-                .Where(na => na.AccId == userId && na.Ntf.SendAt >= today.AddDays(-7))
-                .Select(na => new DashboardAlert
-                {
-                    Type = na.Ntf.NotiType,
-                    Message = na.Ntf.NotiMessage,
-                    Priority = na.Ntf.NotiType == "Urgent" ? "High" : "Normal",
-                    CreatedAt = na.Ntf.SendAt.Value,
-                    ActionRequired = na.Ntf.NotiType == "Appointment" ? "View Appointment" : "Review",
-                    ActionUrl = na.Ntf.NotiType == "Appointment" ? $"/appointments/{na.NtfId}" : $"/notifications/{na.NtfId}"
-                })
-                .Take(3)
-                .ToListAsync();
-        }
+        //public async Task<List<DashboardAlert>> GetDashboardAlertsAsync(int userId, DateTime today)
+        //{
+        //    return await _context.NotificationAccounts
+        //        .Where(na => na.AccId == userId && na.Ntf.SendAt >= today.AddDays(-7))
+        //        .Select(na => new DashboardAlert
+        //        {
+        //            Type = na.Ntf.NotiType,
+        //            Message = na.Ntf.NotiMessage,
+        //            Priority = na.Ntf.NotiType == "Urgent" ? "High" : "Normal",
+        //            CreatedAt = na.Ntf.SendAt.Value,
+        //            ActionRequired = na.Ntf.NotiType == "Appointment" ? "View Appointment" : "Review",
+        //            ActionUrl = na.Ntf.NotiType == "Appointment" ? $"/appointments/{na.NtfId}" : $"/notifications/{na.NtfId}"
+        //        })
+        //        .Take(3)
+        //        .ToListAsync();
+        //}
 
         public async Task<DashboardChart> GetUserDistributionChartAsync()
         {

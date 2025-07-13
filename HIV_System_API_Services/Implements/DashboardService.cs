@@ -46,7 +46,7 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
-        public async Task<AdminDashboardStats> GetAdminDashboardStatsAsync(int userId, DateOnly today)
+        public async Task<AdminDashboardStats> GetAdminDashboardStatsAsync(int userId, DateTime today)
         {
             await ValidateRoleAsync(userId, 1); // Admin role
             return await _adminRepo.GetAdminDashboardStatsAsync(today);
@@ -76,20 +76,20 @@ namespace HIV_System_API_Services.Implements
             return await _supervisorRepo.GetManagerDashboardStatsAsync(today);
         }
 
-        public async Task<List<DashboardAlert>> GetDashboardAlertsAsync(int userId, string role, DateTime today)
-        {
-            int roleId = role.ToLower() switch
-            {
-                "admin" => 1,
-                "doctor" => 2,
-                "patient" => 3,
-                "staff" => 4,
-                "supervisor" => 5,
-                _ => throw new ArgumentException("Invalid role specified.")
-            };
-            await ValidateRoleAsync(userId, roleId);
-            return await _adminRepo.GetDashboardAlertsAsync(userId, today);
-        }
+        //public async Task<List<DashboardAlert>> GetDashboardAlertsAsync(int userId, string role, DateTime today)
+        //{
+        //    int roleId = role.ToLower() switch
+        //    {
+        //        "admin" => 1,
+        //        "doctor" => 2,
+        //        "patient" => 3,
+        //        "staff" => 4,
+        //        "manager" => 5,
+        //        _ => throw new ArgumentException("Invalid role specified.")
+        //    };
+        //    await ValidateRoleAsync(userId, roleId);
+        //    return await _adminRepo.GetDashboardAlertsAsync(userId, today);
+        //}
 
         public async Task<DashboardChart> GetUserDistributionChartAsync(int userId)
         {

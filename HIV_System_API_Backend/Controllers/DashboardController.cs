@@ -24,7 +24,7 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
-                var today = DateOnly.FromDateTime(DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7)).DateTime);
+                var today = DateTime.Now;
                 var stats = await _dashboardService.GetAdminDashboardStatsAsync(userId, today);
                 return Ok(stats);
             }

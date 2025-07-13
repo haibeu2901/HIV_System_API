@@ -17,7 +17,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
 
         public async Task<ManagerDashboardStats> GetManagerDashboardStatsAsync(DateTime today)
         {
-            var startOfMonth = new DateOnly(today.Year, today.Month, 1);
+            var startOfMonth = new DateTime(today.Year, today.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
             var stats = new ManagerDashboardStats
@@ -28,7 +28,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                 TodayAppointments = await _context.Appointments
                     .CountAsync(a => a.ApmtDate == DateOnly.FromDateTime(today)),
                 MonthlyAppointments = await _context.Appointments
-                    .CountAsync(a => a.ApmtDate >= startOfMonth && a.ApmtDate <= endOfMonth),
+                    .CountAsync(a => a.ApmtDate >= DateOnly.Parse(startOfMonth.ToString()) && a.ApmtDate <= DateOnly.Parse(endOfMonth.ToString())),
                 PendingTests = await _context.TestResults
                     .CountAsync(trs => trs.TestDate == default),
                 MonthlyRevenue = await GetMonthlyRevenueAsync(startOfMonth, endOfMonth),

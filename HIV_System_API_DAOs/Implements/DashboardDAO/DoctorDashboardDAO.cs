@@ -69,9 +69,9 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
             return stats;
         }
 
-        public async Task<List<DashboardAlert>> GetDoctorAlertsAsync(int doctorId, DateTime today)
-        {
-            return await GetDashboardAlertsAsync(doctorId, today);
-        }
+        //public async Task<List<DashboardAlert>> GetDoctorAlertsAsync(int doctorId, DateTime today)
+        //{
+        //    return await GetDashboardAlertsAsync(doctorId, today);
+        //}
     }
 }

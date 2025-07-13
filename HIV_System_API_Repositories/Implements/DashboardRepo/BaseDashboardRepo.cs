@@ -42,10 +42,10 @@ namespace HIV_System_API_Repositories.Implements.DashboardRepo
             return await _baseDao.GetTotalManagerAsync();
         }
 
-        public async Task<List<DashboardAlert>> GetDashboardAlertsAsync(int userId, DateTime today)
-        {
-            return await _baseDao.GetDashboardAlertsAsync(userId, today);
-        }
+        //public async Task<List<DashboardAlert>> GetDashboardAlertsAsync(int userId, DateTime today)
+        //{
+        //    return await _baseDao.GetDashboardAlertsAsync(userId, today);
+        //}
 
         public async Task<DashboardChart> GetUserDistributionChartAsync()
         {
