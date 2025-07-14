@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <li><strong>Username:</strong> <span>${data.accUsername}</span></li>
                     <li>
                         <strong>Email:</strong>
-                        <input type="email" id="email" name="email" value="${data.email}" required />
+                        <input type="email" id="email" name="email" value="${data.email}" readonly style="background-color: #f5f5f5; cursor: not-allowed;" />
                     </li>
                     <li>
                         <strong>Full Name:</strong>
@@ -61,28 +61,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("profileForm").addEventListener("submit", async function(e) {
             e.preventDefault();
 
-            // Email validation (simple regex)
-            const email = document.getElementById("email").value.trim();
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailPattern.test(email)) {
-                showMessage("Please enter a valid email address.", true);
-                return;
-            }
-
             const fullname = document.getElementById("fullname").value.trim();
             const dob = document.getElementById("dob").value;
             const gender = document.getElementById("gender").value === "true";
 
+            // Validate required fields
+            if (!fullname.trim()) {
+                showMessage("Please enter a valid full name.", true);
+                return;
+            }
+
+            if (!dob) {
+                showMessage("Please select a date of birth.", true);
+                return;
+            }
+
             const updateData = {
-                email,
                 fullname,
                 dob,
-                gender,
+                gender
             };
 
            
 
             try {
+                console.log('Sending update request with data:', updateData);
+                
                 const updateResponse = await fetch("https://localhost:7009/api/Account/UpdatePatientProfile", {
                     method: "PUT",
                     headers: {
@@ -92,13 +96,36 @@ document.addEventListener("DOMContentLoaded", async () => {
                     body: JSON.stringify(updateData)
                 });
 
-                if (!updateResponse.ok) {
-                    const errMsg = await updateResponse.text();
-                    throw new Error(errMsg || "Failed to update profile");
-                }
+                console.log('Update response status:', updateResponse.status);
+                console.log('Update response ok:', updateResponse.ok);
 
-                showMessage("Profile updated successfully!", false);
+                // Get response text
+                const responseText = await updateResponse.text();
+                console.log('Response text:', responseText);
+
+                // Check if the request was successful (status 200-299)
+                if (updateResponse.ok) {
+                    // Success case - status 200-299
+                    if (responseText && responseText.includes('error')) {
+                        // API returned success status but with error message
+                        showMessage("Update completed with warning: " + responseText, false);
+                    } else {
+                        // Complete success
+                        showMessage("Profile updated successfully!", false);
+                        
+                        // Optionally refresh the page after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                } else {
+                    // Error case - status 400-599
+                    console.log('Error response:', responseText);
+                    throw new Error(responseText || `HTTP Error ${updateResponse.status}`);
+                }
+                
             } catch (err) {
+                console.error('Update error:', err);
                 showMessage("Update failed: " + err.message, true);
             }
         });

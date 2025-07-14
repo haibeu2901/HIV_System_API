@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HIV_System_API_DTOs.PatientArvMedicationDTO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,5 +26,7 @@ namespace HIV_System_API_DTOs.PatientARVRegimenDTO
         public byte? RegimenStatus { get; set; }
 
         public double? TotalCost { get; set; }
+
+        public List<PatientArvMedicationResponseDTO> ARVMedications { get; set; } = new List<PatientArvMedicationResponseDTO>();
     }
 }

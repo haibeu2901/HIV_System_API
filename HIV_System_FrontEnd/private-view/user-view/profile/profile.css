@@ -164,3 +164,31 @@ input:focus, select:focus {
         gap: 0.2rem;
     }
 }
+
+/* Message styling */
+#profile-message {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    min-height: 20px;
+    transition: all 0.3s ease;
+}
+
+#profile-message:not(:empty) {
+    border: 1px solid;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#profile-message[style*="color: red"] {
+    color: #e74c3c !important;
+    background-color: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+}
+
+#profile-message[style*="color: green"] {
+    color: #27ae60 !important;
+    background-color: rgba(39, 174, 96, 0.1);
+    border-color: #27ae60;
+}

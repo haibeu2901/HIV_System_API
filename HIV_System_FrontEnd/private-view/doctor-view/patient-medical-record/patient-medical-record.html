@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient Medical Record</title>
+    <link rel="stylesheet" href="patient-medical-record-style.css">
+</head>
+<body>
+    <!-- Header/Navbar -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <i class="fa fa-user-md"></i>
+                    Patient Medical Record
+                </div>
+                <ul class="nav-menu">
+                    <li>
+                        <a href="../../../public-view/landingpage.html">Home</a>
+                    </li>
+                    <li>
+                        <a href="../doctor-dashboard/doctor-dashboard.html">Work Schedule</a>
+                    </li>
+                    <li>
+                        <a href="../appointment-list/appoiment-list.html">Appointments</a>
+                    </li>
+                    <li>
+                        <a href="../patient-list/patient-list.html">Patient List</a>
+                    </li>
+                    <li>
+                        <a href="../medical-resources/medical-resources.html">Medical Resources</a>
+                    </li>
+                    <li>
+                        <a href="../doctor-profile/doctor-profile.html">Profile</a>
+                    </li>
+                    <li>
+                        <a href="../../../public-view/landingpage.html" class="btn-login">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container" style="padding-top: 100px;">
+        <main class="main-content">
+            <div class="dashboard-header">Patient Medical Record</div>
+            
+            <!-- Patient Profile Section -->
+            <div class="patient-profile-section">
+                <div class="patient-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="patient-info">
+                    <h2 id="patientName">Loading...</h2>
+                    <div class="patient-details">
+                        <p><strong>Gender:</strong> <span id="patientGender">-</span></p>
+                        <p><strong>Date of Birth:</strong> <span id="patientDOB">-</span></p>
+                        <p><strong>Email:</strong> <span id="patientEmail">-</span></p>
+                        <p><strong>Patient ID:</strong> <span id="patientId">-</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointments Section -->
+            <div class="section">
+                <h3>All Appointments</h3>
+                <div id="appointmentsSection" class="content-section">
+                    <p>Loading appointments...</p>
+                </div>
+            </div>
+
+            <!-- Test Results Section -->
+            <div class="section">
+                <h3>All Test Results</h3>
+                <div id="testResultsSection" class="content-section">
+                    <p>Loading test results...</p>
+                </div>
+            </div>
+
+            <!-- ARV Regimens Section -->
+            <div class="section">
+                <h3>All Patient ARV Regimens</h3>
+                <div id="arvRegimensSection" class="content-section">
+                    <p>Loading ARV regimens...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create New Regimen Button and Modal -->
+    <div style="text-align: right; margin-bottom: 2rem;">
+        <button id="openRegimenModalBtn" class="primary-btn">Create New Regimen</button>
+    </div>
+    <div id="regimenModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeRegimenModalBtn">&times;</span>
+            <h2>Create New ARV Regimen</h2>
+            <form id="regimenForm">
+                <div class="form-group">
+                    <label for="regimenLevel">Regimen Level</label>
+                    <select id="regimenLevel" name="regimenLevel" required>
+                        <option value="">Select level</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="regimenTemplate">Regimen Template</label>
+                    <select id="regimenTemplate" name="regimenTemplate" required>
+                        <option value="">Select template</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="regimenNotes">Notes</label>
+                    <textarea id="regimenNotes" name="regimenNotes" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="regimenStartDate">Start Date</label>
+                    <input type="date" id="regimenStartDate" name="regimenStartDate" required />
+                </div>
+                <div class="form-group">
+                    <label for="regimenTotalCost">Total Cost</label>
+                    <input type="number" id="regimenTotalCost" name="regimenTotalCost" min="0" step="1" />
+                </div>
+                <div class="form-group">
+                    <label>Medications</label>
+                    <table id="medicationsTable" class="medications-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Dosage</th>
+                                <th>Quantity</th>
+                                <th>Manufacturer</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Medication rows will be inserted here -->
+                        </tbody>
+                    </table>
+                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Add Medication</button>
+                </div>
+                <div class="form-actions" style="margin-top: 2rem;">
+                    <button type="submit" class="primary-btn">Create Regimen</button>
+                    <button type="button" id="cancelRegimenBtn" class="secondary-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="patient-medical-record-script.js"></script>
+    
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-heartbeat"></i>
+                        <span>CareFirst HIV Clinic</span>
+                    </div>
+                    <p>Providing compassionate HIV care and support for everyone in our community.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Services</h3>
+                    <ul>
+                        <li><a href="#">HIV Testing</a></li>
+                        <li><a href="#">Treatment</a></li>
+                        <li><a href="#">Support Groups</a></li>
+                        <li><a href="#">Prevention</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Emergency</h3>
+                    <p>24/7 Hotline: <strong>(555) 911-HIV1</strong></p>
+                    <p>Crisis Support Available</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CareFirst HIV Clinic. All rights reserved. | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
