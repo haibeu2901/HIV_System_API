@@ -90,7 +90,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<BlogResponseDTO?> GetByIdAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             var blog = await _repo.GetByIdAsync(id);
             return blog == null ? null : MapToResponseDto(blog);
@@ -132,7 +132,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<BlogResponseDTO> UpdateAsync(int id, BlogUpdateRequestDTO request)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null)
@@ -151,7 +151,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             return await _repo.DeleteAsync(id);
         }
@@ -159,7 +159,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<BlogResponseDTO> UpdateBlogStatusAsync(int id, BlogVerificationRequestDTO request)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -187,8 +187,6 @@ namespace HIV_System_API_Services.Implements
 
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
-            if (request.AuthorId <= 0)
-                throw new ArgumentException("AuthorId is required and must be positive.");
 
             var draft = new SocialBlog
             {
@@ -208,7 +206,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<BlogResponseDTO>> GetDraftsByAuthorIdAsync(int authorId)
         {
             if (authorId <= 0)
-                throw new ArgumentException("Invalid author ID", nameof(authorId));
+                throw new ArgumentException("Invalid author ID");
 
             var drafts = await _repo.GetDraftsByAuthorIdAsync(authorId);
             return drafts.Select(MapToResponseDto).ToList();

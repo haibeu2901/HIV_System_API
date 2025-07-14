@@ -55,8 +55,6 @@ namespace HIV_System_API_DAOs.Implements
             existing.Content = blog.Content;
             existing.IsAnonymous = blog.IsAnonymous;
             existing.Notes = blog.Notes;
-            existing.BlogStatus = existing.BlogStatus;
-            existing.StfId = existing.StfId;
 
             await _context.SaveChangesAsync();
             return existing;
