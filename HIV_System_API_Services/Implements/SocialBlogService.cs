@@ -70,11 +70,11 @@ namespace HIV_System_API_Services.Implements
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
             if (dto.AuthorId <= 0)
-                throw new ArgumentException("AuthorId is required and must be positive.", nameof(dto.AuthorId));
+                throw new ArgumentException("AuthorId is required and must be positive.");
             if (string.IsNullOrWhiteSpace(dto.Title))
-                throw new ArgumentException("Title is required.", nameof(dto.Title));
+                throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.Content))
-                throw new ArgumentException("Content is required.", nameof(dto.Content));
+                throw new ArgumentException("Content is required.");
             if (dto.Title.Length > 200)
                 throw new ArgumentException("Title exceeds maximum length of 200 characters.");
             if (dto.Content.Length > 5000)
@@ -165,7 +165,7 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(request));
 
             if (request.StaffId <= 0)
-                throw new ArgumentException("Invalid staff ID", nameof(request.StaffId));
+                throw new ArgumentException("Invalid staff ID");
 
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null)
@@ -188,7 +188,7 @@ namespace HIV_System_API_Services.Implements
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (request.AuthorId <= 0)
-                throw new ArgumentException("AuthorId is required and must be positive.", nameof(request.AuthorId));
+                throw new ArgumentException("AuthorId is required and must be positive.");
 
             var draft = new SocialBlog
             {
