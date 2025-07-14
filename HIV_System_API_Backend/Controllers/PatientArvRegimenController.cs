@@ -389,6 +389,62 @@ namespace HIV_System_API_Backend.Controllers
                     $"Unexpected error initiating regimen: {ex.InnerException}");
             }
         }
+
+        /// <summary>
+        /// Creates a new patient ARV regimen with associated medications
+        /// </summary>
+        /// <param name="request">Object containing regimen and medication data</param>
+        /// <returns>Created patient ARV regimen with medications</returns>
+        [HttpPost("CreatePatientArvRegimenWithMedications")]
+        [Authorize(Roles = "1,2,5")]
+        public async Task<IActionResult> CreatePatientArvRegimenWithMedications([FromBody] CreatePatientArvRegimenWithMedicationsRequestDTO request)
+        {
+            if (request == null || request.Regimen == null || request.Medications == null)
+            {
+                return BadRequest("Request body is null or missing required regimen or medications data.");
+            }
+
+            try
+            {
+                var accId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+                if (accId == null)
+                {
+                    return Unauthorized("Account ID not found in token.");
+                }
+
+                var createdRegimen = await _patientArvRegimenService.CreatePatientArvRegimenWithMedicationsAsync(
+                    request.Regimen,
+                    request.Medications,
+                    accId.Value);
+
+                return CreatedAtAction(
+                    nameof(GetPatientArvRegimenById),
+                    new { parId = createdRegimen.PatientArvRegiId },
+                    createdRegimen);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest($"Missing required data: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid input: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest($"Operation failed: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Database error while creating ARV regimen with medications: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Unexpected error creating regimen with medications: {ex.InnerException?.Message ?? ex.Message}");
+            }
+        }
     }
 }
 

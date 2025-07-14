@@ -77,9 +77,9 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(requestDTO));
             }
 
-            if (requestDTO.PatientArvMedId <= 0)
+            if (requestDTO.PatientArvRegId <= 0)
             {
-                throw new ArgumentException("Patient ARV Regimen ID must be greater than 0.", nameof(requestDTO.PatientArvMedId));
+                throw new ArgumentException("Patient ARV Regimen ID must be greater than 0.", nameof(requestDTO.PatientArvRegId));
             }
 
             if (requestDTO.ArvMedDetailId <= 0)
@@ -112,7 +112,7 @@ namespace HIV_System_API_Services.Implements
             return new PatientArvMedication
             {
                 // FIXED: Corrected the mapping - PatientArvMedId should map to ParId, not ParId to ParId
-                ParId = requestDTO.PatientArvMedId,
+                ParId = requestDTO.PatientArvRegId,
                 AmdId = requestDTO.ArvMedDetailId,
                 Quantity = requestDTO.Quantity
             };
@@ -151,11 +151,11 @@ namespace HIV_System_API_Services.Implements
                 ValidateRequestDTO(patientArvMedication);
 
                 // Validate foreign keys exist
-                await ValidatePatientArvRegimenExists(patientArvMedication.PatientArvMedId);
+                await ValidatePatientArvRegimenExists(patientArvMedication.PatientArvRegId);
                 await ValidateArvMedicationDetailExists(patientArvMedication.ArvMedDetailId);
 
                 // Check for duplicate entries
-                await ValidateDuplicatePatientArvMedication(patientArvMedication.PatientArvMedId, patientArvMedication.ArvMedDetailId);
+                await ValidateDuplicatePatientArvMedication(patientArvMedication.PatientArvRegId, patientArvMedication.ArvMedDetailId);
 
                 var entity = MapToEntity(patientArvMedication);
                 var createdEntity = await _patientArvMedicationRepo.CreatePatientArvMedicationAsync(entity);
@@ -256,11 +256,11 @@ namespace HIV_System_API_Services.Implements
                 }
 
                 // Validate foreign keys exist
-                await ValidatePatientArvRegimenExists(patientArvMedication.PatientArvMedId);
+                await ValidatePatientArvRegimenExists(patientArvMedication.PatientArvRegId);
                 await ValidateArvMedicationDetailExists(patientArvMedication.ArvMedDetailId);
 
                 // Check for duplicate entries (excluding current record)
-                await ValidateDuplicatePatientArvMedication(patientArvMedication.PatientArvMedId, patientArvMedication.ArvMedDetailId, pamId);
+                await ValidateDuplicatePatientArvMedication(patientArvMedication.PatientArvRegId, patientArvMedication.ArvMedDetailId, pamId);
 
                 var entity = MapToEntity(patientArvMedication);
                 var updatedEntity = await _patientArvMedicationRepo.UpdatePatientArvMedicationAsync(pamId, entity);

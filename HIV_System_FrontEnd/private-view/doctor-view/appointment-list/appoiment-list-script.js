@@ -69,7 +69,7 @@ function renderAppointments(appointments) {
             const apmtId = this.getAttribute('data-accept-id');
             try {
                 const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?id=${apmtId}&status=2`, {
-                    method: 'PUT',
+                    method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) throw new Error('Failed to accept appointment');
@@ -172,7 +172,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
         try {
             const res = await fetch(`https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${apmtId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -182,6 +182,8 @@ window.addEventListener('DOMContentLoaded', async () => {
                     appointmentTime: time,
                     notes: notes
                 })
+               
+
             });
             if (!res.ok) throw new Error('Failed to update appointment');
             closeModifyModal();

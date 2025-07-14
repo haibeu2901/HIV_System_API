@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.PatientArvMedicationDTO;
 using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using System;
 using System.Collections.Generic;
@@ -19,5 +20,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<PatientArvRegimenResponseDTO>> GetPersonalArvRegimensAsync(int personalId);
         Task<PatientArvRegimenResponseDTO> PatchPatientArvRegimenAsync(int parId, PatientArvRegimenPatchDTO patientArvRegimen);
         Task<PatientArvRegimenResponseDTO> InitiatePatientArvRegimenAsync(int patientId);
+        Task<PatientArvRegimenResponseDTO> CreatePatientArvRegimenWithMedicationsAsync(PatientArvRegimenRequestDTO regimenRequest, List<PatientArvMedicationRequestDTO> medicationRequests, int accId);
     }
 }
