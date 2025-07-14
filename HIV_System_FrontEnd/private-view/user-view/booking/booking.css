@@ -239,6 +239,50 @@
     border-color: #e74c3c;
 }
 
+/* Time Slot Loading and No Data States */
+.loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.loader::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #e74c3c;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.no-time-slots {
+    text-align: center;
+    padding: 30px;
+    color: #888;
+    font-style: italic;
+    background: #f8f9fa;
+    border: 1px dashed #ddd;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.no-time-slots::before {
+    content: '⏰';
+    display: block;
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
 /* Button Styles */
 .btn-primary {
     background: #e74c3c;
