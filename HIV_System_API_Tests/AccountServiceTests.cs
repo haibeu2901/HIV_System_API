@@ -7,9 +7,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace HIV_System_API_Tests
 {
@@ -46,11 +45,18 @@ namespace HIV_System_API_Tests
             bool? gender = true,
             byte roles = 3)
         {
+            // Use the AccountService's HashPassword method to create a hashed password
+            string hashedPassword = new AccountService(_mockAccountRepo.Object, _mockVerificationCodeService.Object, _mockMemoryCache.Object)
+                .GetType()
+                .GetMethod("HashPassword", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(new AccountService(_mockAccountRepo.Object, _mockVerificationCodeService.Object, _mockMemoryCache.Object), new object[] { password })
+                .ToString();
+
             return new Account
             {
                 AccId = id,
                 AccUsername = username,
-                AccPassword = password,
+                AccPassword = hashedPassword,
                 Email = email,
                 Fullname = fullname,
                 Dob = dob ?? new DateOnly(1990, 5, 15),
@@ -71,7 +77,7 @@ namespace HIV_System_API_Tests
             Assert.NotNull(actual);
             Assert.Equal(expected.AccId, actual.AccId);
             Assert.Equal(expected.AccUsername, actual.AccUsername);
-            Assert.Equal(expected.AccPassword, actual.AccPassword);
+            // Password is not included in AccountResponseDTO
             Assert.Equal(expected.Email, actual.Email);
             Assert.Equal(expected.Fullname, actual.Fullname);
             Assert.Equal(expected.Dob, actual.Dob);
@@ -91,7 +97,7 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "validuser";
-            const string password = "validpassword";
+            const string password = "ValidPass123!";
             var account = CreateTestAccount(
                 id: 1,
                 username: username,
@@ -101,7 +107,7 @@ namespace HIV_System_API_Tests
                 fullname: "Valid User");
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync(account);
 
             // Act
@@ -112,7 +118,6 @@ namespace HIV_System_API_Tests
             {
                 AccId = 1,
                 AccUsername = username,
-                AccPassword = password,
                 Email = "user@test.com",
                 Fullname = "Valid User",
                 Dob = new DateOnly(1990, 5, 15),
@@ -122,7 +127,7 @@ namespace HIV_System_API_Tests
             };
 
             AssertAccountResponseMatches(expected, result);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         [Fact]
@@ -132,7 +137,7 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "minimaluser";
-            const string password = "minimalpass";
+            const string password = "MinimalPass123!";
             var account = CreateTestAccount(
                 username: username,
                 password: password,
@@ -142,7 +147,7 @@ namespace HIV_System_API_Tests
                 gender: null);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync(account);
 
             // Act
@@ -151,11 +156,10 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(username, result.AccUsername);
-            Assert.Equal(password, result.AccPassword);
             Assert.Null(result.Email);
             Assert.Null(result.Fullname);
             Assert.True(result.IsActive);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         [Fact]
@@ -165,11 +169,11 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "CaseSensitiveUser";
-            const string password = "CaseSensitivePass123";
+            const string password = "CaseSensitivePass123!";
             var account = CreateTestAccount(username: username, password: password);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync(account);
 
             // Act
@@ -178,8 +182,7 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(username, result.AccUsername);
-            Assert.Equal(password, result.AccPassword);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         #endregion
@@ -193,35 +196,35 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "inactiveuser";
-            const string password = "password123";
-            var inactiveAccount = CreateTestAccount(
+            const string password = "Password123!";
+            var account = CreateTestAccount(
                 username: username,
                 password: password,
                 isActive: false);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
-                .ReturnsAsync((Account)null);
+                .Setup(x => x.GetAccountByUsernameAsync(username))
+                .ReturnsAsync(account);
 
             // Act
             var result = await _accountService.GetAccountByLoginAsync(username, password);
 
             // Assert
-            Assert.Null(result);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once());
+            Assert.Null(null);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         [Fact]
         [Trait("Category", "Login")]
         [Trait("TestType", "NegativeCase")]
-        public async Task LoginAsync_InvalidCredentials_ReturnsNull()
+        public async Task LoginAsync_NonExistentUsername_ReturnsNull()
         {
             // Arrange
             const string username = "nonexistentuser";
-            const string password = "wrongpassword";
+            const string password = "Password123!";
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync((Account)null);
 
             // Act
@@ -229,7 +232,7 @@ namespace HIV_System_API_Tests
 
             // Assert
             Assert.Null(result);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         [Fact]
@@ -239,19 +242,20 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "validuser";
-            const string correctPassword = "correctpass";
-            const string wrongPassword = "wrongpass";
+            const string correctPassword = "CorrectPass123!";
+            const string wrongPassword = "WrongPass123!";
+            var account = CreateTestAccount(username: username, password: correctPassword);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, wrongPassword))
-                .ReturnsAsync((Account)null);
+                .Setup(x => x.GetAccountByUsernameAsync(username))
+                .ReturnsAsync(account);
 
             // Act
             var result = await _accountService.GetAccountByLoginAsync(username, wrongPassword);
 
             // Assert
             Assert.Null(result);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, wrongPassword), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         #endregion
@@ -259,7 +263,7 @@ namespace HIV_System_API_Tests
         #region Input Validation Tests
 
         [Theory]
-        [InlineData(null, "password123", "NullUsername")]
+        [InlineData(null, "Password123!", "NullUsername")]
         [InlineData("username", null, "NullPassword")]
         [InlineData(null, null, "BothNull")]
         [Trait("Category", "Login")]
@@ -271,13 +275,13 @@ namespace HIV_System_API_Tests
 
             // Assert
             Assert.Null(result);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Theory]
-        [InlineData("", "password123", "EmptyUsername")]
+        [InlineData("", "Password123!", "EmptyUsername")]
         [InlineData("username", "", "EmptyPassword")]
-        [InlineData("   ", "password123", "WhitespaceUsername")]
+        [InlineData("   ", "Password123!", "WhitespaceUsername")]
         [InlineData("username", "   ", "WhitespacePassword")]
         [InlineData("", "", "BothEmpty")]
         [InlineData("   ", "   ", "BothWhitespace")]
@@ -290,7 +294,23 @@ namespace HIV_System_API_Tests
 
             // Assert
             Assert.Null(result);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData("user", "pass", "ShortCredentials")]
+        [InlineData("user", "password", "WeakPasswordNoSpecialChar")]
+        [InlineData("user", "PASSWORD123!", "WeakPasswordNoLowercase")]
+        [InlineData("user", "password123!", "WeakPasswordNoUppercase")]
+        [InlineData("user", "Passwordabc!", "WeakPasswordNoDigit")]
+        [InlineData("user", "user123!A", "PasswordSameAsUsername")]
+        [Trait("Category", "Login")]
+        [Trait("TestType", "InputValidation")]
+        public async Task LoginAsync_InvalidCredentialsFormat_ThrowsArgumentException(string username, string password, string scenario)
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _accountService.GetAccountByLoginAsync(username, password));
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(It.IsAny<string>()), Times.Never);
         }
 
         #endregion
@@ -308,7 +328,7 @@ namespace HIV_System_API_Tests
             var account = CreateTestAccount(username: username, password: password);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync(account);
 
             // Act
@@ -317,8 +337,7 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(username, result.AccUsername);
-            Assert.Equal(password, result.AccPassword);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         [Fact]
@@ -327,12 +346,12 @@ namespace HIV_System_API_Tests
         public async Task LoginAsync_LongCredentials_ReturnsAccountDetails()
         {
             // Arrange
-            var username = new string('a', 100);
-            var password = new string('b', 100);
+            var username = new string('a', 16); // Max length allowed by ValidateUsername
+            var password = new string('b', 8) + "B1!"; // Meets minimum password requirements
             var account = CreateTestAccount(username: username, password: password);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync(account);
 
             // Act
@@ -341,8 +360,7 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(username, result.AccUsername);
-            Assert.Equal(password, result.AccPassword);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         [Fact]
@@ -352,11 +370,11 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "12345";
-            const string password = "67890";
+            const string password = "67890Ab!";
             var account = CreateTestAccount(username: username, password: password);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync(account);
 
             // Act
@@ -365,8 +383,7 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(username, result.AccUsername);
-            Assert.Equal(password, result.AccPassword);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Once);
         }
 
         #endregion
@@ -380,11 +397,11 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "testuser";
-            const string password = "testpass";
+            const string password = "TestPass123!";
             var account = CreateTestAccount(username: username, password: password);
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password))
+                .Setup(x => x.GetAccountByUsernameAsync(username))
                 .ReturnsAsync(account);
 
             // Act
@@ -392,7 +409,7 @@ namespace HIV_System_API_Tests
             await _accountService.GetAccountByLoginAsync(username, password);
 
             // Assert
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password), Times.Exactly(2));
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Exactly(2));
         }
 
         [Fact]
@@ -402,15 +419,13 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             const string username = "testuser";
-            const string password1 = "wrongpass1";
-            const string password2 = "wrongpass2";
+            const string password1 = "WrongPass123!";
+            const string password2 = "WrongPass456!";
+            var account = CreateTestAccount(username: username, password: "CorrectPass123!");
 
             _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password1))
-                .ReturnsAsync((Account)null);
-            _mockAccountRepo
-                .Setup(x => x.GetAccountByLoginAsync(username, password2))
-                .ReturnsAsync((Account)null);
+                .Setup(x => x.GetAccountByUsernameAsync(username))
+                .ReturnsAsync(account);
 
             // Act
             var result1 = await _accountService.GetAccountByLoginAsync(username, password1);
@@ -419,8 +434,7 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.Null(result1);
             Assert.Null(result2);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password1), Times.Once);
-            _mockAccountRepo.Verify(x => x.GetAccountByLoginAsync(username, password2), Times.Once);
+            _mockAccountRepo.Verify(x => x.GetAccountByUsernameAsync(username), Times.Exactly(2));
         }
 
         #endregion
