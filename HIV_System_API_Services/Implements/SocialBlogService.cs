@@ -70,11 +70,11 @@ namespace HIV_System_API_Services.Implements
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
             if (dto.AuthorId <= 0)
-                throw new ArgumentException("AuthorId is required and must be positive.", nameof(dto.AuthorId));
+                throw new ArgumentException("AuthorId is required and must be positive.");
             if (string.IsNullOrWhiteSpace(dto.Title))
-                throw new ArgumentException("Title is required.", nameof(dto.Title));
+                throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.Content))
-                throw new ArgumentException("Content is required.", nameof(dto.Content));
+                throw new ArgumentException("Content is required.");
             if (dto.Title.Length > 200)
                 throw new ArgumentException("Title exceeds maximum length of 200 characters.");
             if (dto.Content.Length > 5000)
@@ -90,7 +90,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<BlogResponseDTO?> GetByIdAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             var blog = await _repo.GetByIdAsync(id);
             return blog == null ? null : MapToResponseDto(blog);
@@ -132,7 +132,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<BlogResponseDTO> UpdateAsync(int id, BlogUpdateRequestDTO request)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null)
@@ -151,7 +151,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             return await _repo.DeleteAsync(id);
         }
@@ -159,13 +159,13 @@ namespace HIV_System_API_Services.Implements
         public async Task<BlogResponseDTO> UpdateBlogStatusAsync(int id, BlogVerificationRequestDTO request)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid blog ID", nameof(id));
+                throw new ArgumentException("Invalid blog ID");
 
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
             if (request.StaffId <= 0)
-                throw new ArgumentException("Invalid staff ID", nameof(request.StaffId));
+                throw new ArgumentException("Invalid staff ID");
 
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null)
@@ -187,8 +187,6 @@ namespace HIV_System_API_Services.Implements
 
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
-            if (request.AuthorId <= 0)
-                throw new ArgumentException("AuthorId is required and must be positive.", nameof(request.AuthorId));
 
             var draft = new SocialBlog
             {
@@ -208,7 +206,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<BlogResponseDTO>> GetDraftsByAuthorIdAsync(int authorId)
         {
             if (authorId <= 0)
-                throw new ArgumentException("Invalid author ID", nameof(authorId));
+                throw new ArgumentException("Invalid author ID");
 
             var drafts = await _repo.GetDraftsByAuthorIdAsync(authorId);
             return drafts.Select(MapToResponseDto).ToList();
