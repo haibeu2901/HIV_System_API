@@ -19,18 +19,20 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
         {
             var startOfMonth = new DateTime(today.Year, today.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
-
+            var todayDateOnly = DateOnly.FromDateTime(today);
+            var startOfMonthDateOnly = DateOnly.FromDateTime(startOfMonth);
+            var endOfMonthDateOnly = DateOnly.FromDateTime(endOfMonth);
             var stats = new ManagerDashboardStats
             {
                 TotalDoctors = await GetTotalDoctorsAsync(),
                 TotalStaff = await GetTotalStaffAsync(),
                 TotalPatients = await GetTotalPatientsAsync(),
                 TodayAppointments = await _context.Appointments
-                    .CountAsync(a => a.ApmtDate == DateOnly.FromDateTime(today)),
+                    .CountAsync(a => a.ApmtDate == todayDateOnly),
                 MonthlyAppointments = await _context.Appointments
-                    .CountAsync(a => a.ApmtDate >= DateOnly.Parse(startOfMonth.ToString()) && a.ApmtDate <= DateOnly.Parse(endOfMonth.ToString())),
+                    .CountAsync(a => a.ApmtDate >= startOfMonthDateOnly && a.ApmtDate <= endOfMonthDateOnly),
                 PendingTests = await _context.TestResults
-                    .CountAsync(trs => trs.TestDate == default),
+                    .CountAsync(trs => trs.TestDate == default(DateOnly)),
                 MonthlyRevenue = await GetMonthlyRevenueAsync(startOfMonth, endOfMonth),
                 DoctorPerformance = await _context.Doctors
                     .Select(d => new
@@ -69,7 +71,6 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                     .Cast<dynamic>()
                     .ToListAsync()
             };
-
             return stats;
         }
 
