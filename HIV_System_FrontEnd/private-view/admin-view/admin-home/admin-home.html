@@ -79,6 +79,16 @@
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="stat-content">
+                        <h3 id="total-users">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div class="stat-content">
                         <h3 id="total-patients">0</h3>
                         <p>Total Patients</p>
                     </div>
@@ -91,6 +101,16 @@
                     <div class="stat-content">
                         <h3 id="total-doctors">0</h3>
                         <p>Total Doctors</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-staff">0</h3>
+                        <p>Total Staff</p>
                     </div>
                 </div>
                 
@@ -113,15 +133,68 @@
                         <p>Pending Appointments</p>
                     </div>
                 </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-concierge-bell"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-services">0</h3>
+                        <p>Total Services</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-revenue">0</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="monthly-revenue">0</h3>
+                        <p>Monthly Revenue</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-charts">
+                <div class="chart-container">
+                    <h3 class="chart-title">User Distribution</h3>
+                    <div class="chart-canvas">
+                        <canvas id="userDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Monthly Revenue</h3>
+                    <div class="chart-canvas">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Appointment Status</h3>
+                    <div class="chart-canvas">
+                        <canvas id="appointmentChart"></canvas>
+                    </div>
+                </div>
             </div>
 
             <div class="dashboard-content">
                 <div class="dashboard-left">
                     <div class="chart-container">
-                        <h3>Monthly Appointments</h3>
+                        <h3>System Performance</h3>
                         <div class="chart-placeholder">
-                            <i class="fas fa-chart-line"></i>
-                            <p>Chart visualization will be displayed here</p>
+                            <i class="fas fa-chart-area"></i>
+                            <p>Additional metrics and analytics will be displayed here</p>
                         </div>
                     </div>
                 </div>
@@ -263,6 +336,42 @@
                     <div class="form-actions">
                         <button type="button" data-modal="createNotificationModal">Cancel</button>
                         <button type="submit">Create Notification</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Notification Modal -->
+    <div id="editNotificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Notification</h3>
+                <button class="close-btn" data-modal="editNotificationModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editNotificationForm">
+                    <input type="hidden" id="edit-notification-id">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="edit-notification-type" required>
+                            <option value="Appt Confirm">Appt Confirm</option>
+                            <option value="Appointment Update">Appointment Update</option>
+                            <option value="Appointment Request">Appointment Request</option>
+                            <option value="Appointment Reminder">Appointment Reminder</option>
+                            <option value="System Alert">System Alert</option>
+                            <option value="ARV Consultation">ARV Consultation</option>
+                            <option value="Test Result">Test Result</option>
+                            <option value="Blog Approval">Blog Approval</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea id="edit-notification-message" required rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" data-modal="editNotificationModal">Cancel</button>
+                        <button type="submit"><i class="fas fa-save"></i> Update Notification</button>
                     </div>
                 </form>
             </div>

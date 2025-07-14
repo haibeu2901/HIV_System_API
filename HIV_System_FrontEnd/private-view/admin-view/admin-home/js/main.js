@@ -31,6 +31,7 @@ class AdminApp {
             // Make managers globally available
             window.authManager = this.managers.auth;
             window.utilsManager = this.managers.utils;
+            window.utils = this.managers.utils; // Also expose as utils for compatibility
             window.modalManager = this.managers.modal;
             window.navigationManager = this.managers.navigation;
             window.dashboardManager = this.managers.dashboard;
@@ -69,8 +70,11 @@ class AdminApp {
     // Load initial data
     async loadInitialData() {
         try {
-            // Load dashboard data by default
-            await this.managers.dashboard.loadDashboardData();
+            // Ensure all modals are hidden on page load
+            this.ensureModalsAreClosed();
+            
+            // Initialize charts and load dashboard data
+            await this.managers.dashboard.initializeCharts();
             
             // Show dashboard section
             this.managers.navigation.showSection('dashboard');
@@ -78,6 +82,25 @@ class AdminApp {
         } catch (error) {
             console.error('Failed to load initial data:', error);
         }
+    }
+
+    // Ensure all modals are properly closed
+    ensureModalsAreClosed() {
+        const modalIds = [
+            'createAccountModal',
+            'createNotificationModal',
+            'editAccountModal',
+            'patientProfileModal',
+            'doctorProfileModal',
+            'generalProfileModal'
+        ];
+        
+        modalIds.forEach(modalId => {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        });
     }
 
     // Show error message
