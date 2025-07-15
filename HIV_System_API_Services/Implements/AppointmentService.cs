@@ -544,5 +544,46 @@ namespace HIV_System_API_Services.Implements
                 throw;
             }
         }
+
+        public async Task<AppointmentResponseDTO> GetPersonalAppointmentByIdAsync(int accId, int appointmentId)
+        {
+            Debug.WriteLine($"Retrieving personal appointment with ID: {appointmentId} for AccountId: {accId}");
+
+            try
+            {
+                // 1. Validate account existence
+                var account = await _context.Accounts.FindAsync(accId);
+                if (account == null)
+                {
+                    throw new ArgumentException($"Account with ID {accId} does not exist.");
+                }
+
+                // 2. Retrieve the appointment
+                var appointment = await _appointmentRepo.GetAppointmentByIdAsync(appointmentId);
+                if (appointment == null)
+                {
+                    throw new KeyNotFoundException($"Appointment with ID {appointmentId} not found.");
+                }
+
+                // 3. Authorize the user
+                // Check if the account belongs to the patient or the doctor of the appointment
+                bool isPatientOfAppointment = await _context.Patients.AnyAsync(p => p.AccId == accId && p.PtnId == appointment.PtnId);
+                bool isDoctorOfAppointment = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
+
+                if (!isPatientOfAppointment && !isDoctorOfAppointment)
+                {
+                    throw new UnauthorizedAccessException("You do not have permission to view this appointment.");
+                }
+
+                // 4. Map and return the DTO
+                return MapToResponseDTO(appointment);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error retrieving personal appointment: {ex.Message}");
+                // Re-throw the exception to be handled by the controller or middleware
+                throw;
+            }
+        }
     }
 }

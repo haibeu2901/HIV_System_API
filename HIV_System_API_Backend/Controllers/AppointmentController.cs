@@ -234,5 +234,44 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, $"Internal server error: {ex.InnerException}");
             }
         }
+
+        [HttpGet("GetPersonalAppointmentById/{id}")]
+        [Authorize]
+        public async Task<ActionResult> GetPersonalAppointmentById(int id)
+        {
+            // Extract the account ID from the JWT token claims.
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+            {
+                return Unauthorized("User session is invalid or has expired.");
+            }
+
+            try
+            {
+                // Call the service method that validates if the user has access to this specific appointment.
+                var appointment = await _appointmentService.GetPersonalAppointmentByIdAsync(accountId.Value, id);
+                return Ok(appointment);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // Occurs if the appointment with the given ID doesn't exist.
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Occurs if the user is not the patient or doctor associated with the appointment.
+                throw new UnauthorizedAccessException("You do not have permission to view this appointment.");
+            }
+            catch (ArgumentException ex)
+            {
+                // Occurs if the accountId is invalid.
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // General server error.
+                return StatusCode(500, $"An internal server error occurred: {ex.InnerException}");
+            }
+        }
     }
 }
