@@ -151,5 +151,19 @@ namespace HIV_System_API_DAOs.Implements
 
             return newRegimen;
         }
+        public async Task<PatientArvRegimen> UpdatePatientArvRegimenStatusAsync(int parId, byte status, string? notes = null)
+        {
+            var regimen = await _context.PatientArvRegimen.FindAsync(parId);
+            if (regimen == null)
+            {
+                throw new KeyNotFoundException($"No ARV regimen found with ID {parId}.");
+            }
+            // Update the regimen status and notes
+            regimen.RegimenStatus = status;
+            regimen.Notes = notes;
+            _context.PatientArvRegimen.Update(regimen);
+            await _context.SaveChangesAsync();
+            return regimen;
+        }
     }
 }

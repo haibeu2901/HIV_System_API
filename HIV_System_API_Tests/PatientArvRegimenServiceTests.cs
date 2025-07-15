@@ -14,15 +14,19 @@ namespace HIV_System_API_Tests
 {
     public class PatientArvRegimenServiceTests
     {
-        private readonly Mock<IPatientArvRegimenRepo> _mockRepo;
+        private readonly Mock<IPatientArvRegimenRepo> _mockParRepo;
         private readonly Mock<HivSystemApiContext> _mockContext;
         private readonly PatientArvRegimenService _service;
+        private readonly Mock<INotificationRepo> _mockNotiRepo;
+        private readonly Mock<IPatientArvMedicationRepo> _mockPamRepo;
 
         public PatientArvRegimenServiceTests()
         {
-            _mockRepo = new Mock<IPatientArvRegimenRepo>();
+            _mockParRepo = new Mock<IPatientArvRegimenRepo>();
             _mockContext = new Mock<HivSystemApiContext>();
-            _service = new PatientArvRegimenService(_mockRepo.Object, _mockContext.Object);
+            _mockNotiRepo = new Mock<INotificationRepo>();
+            _mockPamRepo = new Mock<IPatientArvMedicationRepo>();
+            _service = new PatientArvRegimenService(_mockParRepo.Object, _mockPamRepo.Object, _mockNotiRepo.Object, _mockContext.Object);
         }
 
         #region Helper Methods
@@ -91,7 +95,7 @@ namespace HIV_System_API_Tests
             _mockContext.Setup(c => c.PatientMedicalRecords.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<PatientMedicalRecord, bool>>>(), default))
                       .ReturnsAsync(true);
 
-            _mockRepo.Setup(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()))
+            _mockParRepo.Setup(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()))
                     .ReturnsAsync(expectedEntity);
 
             // Act
@@ -106,7 +110,7 @@ namespace HIV_System_API_Tests
             Assert.Equal(inputDto.RegimenStatus, result.RegimenStatus);
             Assert.Equal(inputDto.TotalCost, result.TotalCost);
 
-            _mockRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Once);
+            _mockParRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Once);
         }
         **/
 
@@ -123,7 +127,7 @@ namespace HIV_System_API_Tests
                 () => _service.CreatePatientArvRegimenAsync(inputDto));
 
             Assert.Equal("patientArvRegimen", exception.ParamName);
-            _mockRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
         }
 
         [Theory]
@@ -142,7 +146,7 @@ namespace HIV_System_API_Tests
                 () => _service.CreatePatientArvRegimenAsync(inputDto));
 
             Assert.Contains("Invalid Patient Medical Record ID", exception.Message);
-            _mockRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
         }
 
         /**
@@ -165,7 +169,7 @@ namespace HIV_System_API_Tests
                 () => _service.CreatePatientArvRegimenAsync(inputDto));
 
             Assert.Contains("RegimenLevel must be between 1 and 4", exception.Message);
-            _mockRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
         }
 
         [Theory]
@@ -187,7 +191,7 @@ namespace HIV_System_API_Tests
                 () => _service.CreatePatientArvRegimenAsync(inputDto));
 
             Assert.Contains("RegimenStatus must be between 1 and 5", exception.Message);
-            _mockRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
         }
 
         
@@ -209,7 +213,7 @@ namespace HIV_System_API_Tests
                 () => _service.CreatePatientArvRegimenAsync(inputDto));
 
             Assert.Contains("Start date cannot be later than end date", exception.Message);
-            _mockRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.CreatePatientArvRegimenAsync(It.IsAny<PatientArvRegimen>()), Times.Never);
         }
         **/
         #endregion
@@ -223,7 +227,7 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             var expectedEntity = CreateMockEntity();
-            _mockRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
                     .ReturnsAsync(expectedEntity);
 
             // Act
@@ -234,7 +238,7 @@ namespace HIV_System_API_Tests
             Assert.Equal(expectedEntity.ParId, result.PatientArvRegiId);
             Assert.Equal(expectedEntity.PmrId, result.PatientMedRecordId);
             Assert.Equal(expectedEntity.Notes, result.Notes);
-            _mockRepo.Verify(r => r.GetPatientArvRegimenByIdAsync(1), Times.Once);
+            _mockParRepo.Verify(r => r.GetPatientArvRegimenByIdAsync(1), Times.Once);
         }
 
         [Theory]
@@ -250,7 +254,7 @@ namespace HIV_System_API_Tests
                 () => _service.GetPatientArvRegimenByIdAsync(invalidId));
 
             Assert.Contains("Invalid Patient ARV Regimen ID", exception.Message);
-            _mockRepo.Verify(r => r.GetPatientArvRegimenByIdAsync(It.IsAny<int>()), Times.Never);
+            _mockParRepo.Verify(r => r.GetPatientArvRegimenByIdAsync(It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
@@ -259,7 +263,7 @@ namespace HIV_System_API_Tests
         public async Task GetPatientArvRegimenByIdAsync_NotFound_ReturnsNull()
         {
             // Arrange
-            _mockRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(999))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(999))
                     .ReturnsAsync((PatientArvRegimen)null);
 
             // Act
@@ -267,7 +271,7 @@ namespace HIV_System_API_Tests
 
             // Assert
             Assert.Null(result);
-            _mockRepo.Verify(r => r.GetPatientArvRegimenByIdAsync(999), Times.Once);
+            _mockParRepo.Verify(r => r.GetPatientArvRegimenByIdAsync(999), Times.Once);
         }
 
         #endregion
@@ -287,7 +291,7 @@ namespace HIV_System_API_Tests
                 CreateMockEntity(3, 3)
             };
 
-            _mockRepo.Setup(r => r.GetAllPatientArvRegimensAsync())
+            _mockParRepo.Setup(r => r.GetAllPatientArvRegimensAsync())
                     .ReturnsAsync(entities);
 
             // Act
@@ -300,7 +304,7 @@ namespace HIV_System_API_Tests
             Assert.Equal(2, result[1].PatientArvRegiId);
             Assert.Equal(3, result[2].PatientArvRegiId);
 
-            _mockRepo.Verify(r => r.GetAllPatientArvRegimensAsync(), Times.Once);
+            _mockParRepo.Verify(r => r.GetAllPatientArvRegimensAsync(), Times.Once);
         }
 
         [Fact]
@@ -309,7 +313,7 @@ namespace HIV_System_API_Tests
         public async Task GetAllPatientArvRegimensAsync_EmptyList_ReturnsEmptyList()
         {
             // Arrange
-            _mockRepo.Setup(r => r.GetAllPatientArvRegimensAsync())
+            _mockParRepo.Setup(r => r.GetAllPatientArvRegimensAsync())
                     .ReturnsAsync(new List<PatientArvRegimen>());
 
             // Act
@@ -318,7 +322,7 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.NotNull(result);
             Assert.Empty(result);
-            _mockRepo.Verify(r => r.GetAllPatientArvRegimensAsync(), Times.Once);
+            _mockParRepo.Verify(r => r.GetAllPatientArvRegimensAsync(), Times.Once);
         }
 
         #endregion
@@ -333,13 +337,13 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             var existingRegimen = CreateMockEntity();
-            _mockRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
                     .ReturnsAsync(existingRegimen);
 
             _mockContext.Setup(c => c.PatientArvMedications.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<PatientArvMedication, bool>>>(), default))
                       .ReturnsAsync(false);
 
-            _mockRepo.Setup(r => r.DeletePatientArvRegimenAsync(1))
+            _mockParRepo.Setup(r => r.DeletePatientArvRegimenAsync(1))
                     .ReturnsAsync(true);
 
             // Act
@@ -347,7 +351,7 @@ namespace HIV_System_API_Tests
 
             // Assert
             Assert.True(result);
-            _mockRepo.Verify(r => r.DeletePatientArvRegimenAsync(1), Times.Once);
+            _mockParRepo.Verify(r => r.DeletePatientArvRegimenAsync(1), Times.Once);
         }
         **/
 
@@ -364,7 +368,7 @@ namespace HIV_System_API_Tests
                 () => _service.DeletePatientArvRegimenAsync(invalidId));
 
             Assert.Contains("Invalid Patient ARV Regimen ID", exception.Message);
-            _mockRepo.Verify(r => r.DeletePatientArvRegimenAsync(It.IsAny<int>()), Times.Never);
+            _mockParRepo.Verify(r => r.DeletePatientArvRegimenAsync(It.IsAny<int>()), Times.Never);
         }
 
         /**
@@ -375,7 +379,7 @@ namespace HIV_System_API_Tests
         {
             // Arrange
             var existingRegimen = CreateMockEntity();
-            _mockRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
                     .ReturnsAsync(existingRegimen);
 
             _mockContext.Setup(c => c.PatientArvMedications.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<PatientArvMedication, bool>>>(), default))
@@ -386,7 +390,7 @@ namespace HIV_System_API_Tests
                 () => _service.DeletePatientArvRegimenAsync(1));
 
             Assert.Contains("Cannot delete ARV Regimen with ID 1 because it has associated medications", exception.Message);
-            _mockRepo.Verify(r => r.DeletePatientArvRegimenAsync(It.IsAny<int>()), Times.Never);
+            _mockParRepo.Verify(r => r.DeletePatientArvRegimenAsync(It.IsAny<int>()), Times.Never);
         }
         **/
         #endregion
@@ -403,10 +407,10 @@ namespace HIV_System_API_Tests
             var patchDto = CreateMockPatchDTO();
             var updatedEntity = CreateMockEntity();
 
-            _mockRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
                     .ReturnsAsync(existingRegimen);
 
-            _mockRepo.Setup(r => r.UpdatePatientArvRegimenAsync(1, It.IsAny<PatientArvRegimen>()))
+            _mockParRepo.Setup(r => r.UpdatePatientArvRegimenAsync(1, It.IsAny<PatientArvRegimen>()))
                     .ReturnsAsync(updatedEntity);
 
             // Act
@@ -414,7 +418,7 @@ namespace HIV_System_API_Tests
 
             // Assert
             Assert.NotNull(result);
-            _mockRepo.Verify(r => r.UpdatePatientArvRegimenAsync(1, It.IsAny<PatientArvRegimen>()), Times.Once);
+            _mockParRepo.Verify(r => r.UpdatePatientArvRegimenAsync(1, It.IsAny<PatientArvRegimen>()), Times.Once);
         }
 
         [Fact]
@@ -426,7 +430,7 @@ namespace HIV_System_API_Tests
             var existingRegimen = CreateMockEntity(regimenStatus: 5); // Completed
             var patchDto = CreateMockPatchDTO();
 
-            _mockRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
                     .ReturnsAsync(existingRegimen);
 
             // Act & Assert
@@ -434,7 +438,7 @@ namespace HIV_System_API_Tests
                 () => _service.PatchPatientArvRegimenAsync(1, patchDto));
 
             Assert.Contains("Cannot update ARV Regimen with ID 1 because it is marked as Completed", exception.Message);
-            _mockRepo.Verify(r => r.UpdatePatientArvRegimenAsync(It.IsAny<int>(), It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.UpdatePatientArvRegimenAsync(It.IsAny<int>(), It.IsAny<PatientArvRegimen>()), Times.Never);
         }
 
         [Fact]
@@ -447,7 +451,7 @@ namespace HIV_System_API_Tests
             var patchDto = CreateMockPatchDTO();
             patchDto.StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(5));
 
-            _mockRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimenByIdAsync(1))
                     .ReturnsAsync(existingRegimen);
 
             // Act & Assert
@@ -455,7 +459,7 @@ namespace HIV_System_API_Tests
                 () => _service.PatchPatientArvRegimenAsync(1, patchDto));
 
             Assert.Contains("Cannot update StartDate for ARV Regimen with ID 1 because it is Active", exception.Message);
-            _mockRepo.Verify(r => r.UpdatePatientArvRegimenAsync(It.IsAny<int>(), It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.UpdatePatientArvRegimenAsync(It.IsAny<int>(), It.IsAny<PatientArvRegimen>()), Times.Never);
         }
 
         [Fact]
@@ -468,7 +472,7 @@ namespace HIV_System_API_Tests
                 () => _service.PatchPatientArvRegimenAsync(1, null));
 
             Assert.Equal("patientArvRegimen", exception.ParamName);
-            _mockRepo.Verify(r => r.UpdatePatientArvRegimenAsync(It.IsAny<int>(), It.IsAny<PatientArvRegimen>()), Times.Never);
+            _mockParRepo.Verify(r => r.UpdatePatientArvRegimenAsync(It.IsAny<int>(), It.IsAny<PatientArvRegimen>()), Times.Never);
         }
 
         #endregion
@@ -491,7 +495,7 @@ namespace HIV_System_API_Tests
             _mockContext.Setup(c => c.Patients.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Patient, bool>>>(), default))
                       .ReturnsAsync(true);
 
-            _mockRepo.Setup(r => r.GetPatientArvRegimensByPatientIdAsync(1))
+            _mockParRepo.Setup(r => r.GetPatientArvRegimensByPatientIdAsync(1))
                     .ReturnsAsync(entities);
 
             // Act
@@ -500,7 +504,7 @@ namespace HIV_System_API_Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(2, result.Count);
-            _mockRepo.Verify(r => r.GetPatientArvRegimensByPatientIdAsync(1), Times.Once);
+            _mockParRepo.Verify(r => r.GetPatientArvRegimensByPatientIdAsync(1), Times.Once);
         }
         **/
 
@@ -517,7 +521,7 @@ namespace HIV_System_API_Tests
                 () => _service.GetPatientArvRegimensByPatientIdAsync(invalidId));
 
             Assert.Contains("Invalid Patient ID", exception.Message);
-            _mockRepo.Verify(r => r.GetPatientArvRegimensByPatientIdAsync(It.IsAny<int>()), Times.Never);
+            _mockParRepo.Verify(r => r.GetPatientArvRegimensByPatientIdAsync(It.IsAny<int>()), Times.Never);
         }
 
         #endregion
