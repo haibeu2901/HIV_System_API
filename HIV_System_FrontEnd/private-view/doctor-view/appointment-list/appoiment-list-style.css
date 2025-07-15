@@ -32,6 +32,15 @@
 .status-2 { color: #2980b9; background: #eaf6fb; } /* Đã xác nhận */
 .status-3 { color: #27ae60; background: #eafaf1; } /* Đã hoàn thành */
 .status-4 { color: #c0392b; background: #fdeaea; } /* Đã hủy */
+.status-5 {
+    color: #fff !important;
+    background: #27ae60 !important;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(39,174,96,0.08);
+    letter-spacing: 0.5px;
+}
 .button-accept {
     background: #27ae60;
     color: #fff;

@@ -1,31 +1,14 @@
+<!-- Doctor Dashboard -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Doctor Dashboard</title>
+    <link rel="stylesheet" href="../doctor-header/doctor-header-style.css">
     <link rel="stylesheet" href="doctor-dashboard-style.css">
 </head>
 <body>
-    <!-- Header/Navbar -->
-    <header class="header">
-        <nav class="navbar">
-            <div class="nav-container">
-                <div class="nav-logo">
-                    <i class="fa fa-user-md"></i>
-                    Doctor Dashboard
-                </div>
-                <ul class="nav-menu">
-                    <li><span class="active" style="color:#e74c3c;font-weight:bold;">Dashboard</span></li>
-                    <li><a href="../doctor-work-schedule/doctor-work-schedule.html">Work Schedule</a></li>
-                    <li><a href="../appointment-list/appoiment-list.html">Appointments</a></li>
-                    <li><a href="../patient-list/patient-list.html">Patient List</a></li>
-                    <li><a href="../medical-resources/medical-resources.html">Medical Resources</a></li>
-                    <li><a href="../doctor-profile/doctor-profile.html">Profile</a></li>
-                    <li><a href="../../../public-view/landingpage.html" class="btn-login">Logout</a></li>
-                </ul>
-            </div>
-        </nav>
-    </header>
+    <div id="header-placeholder"></div>
     <div class="dashboard-container" style="padding-top: 100px;">
         <main class="main-content">
             <div id="dashboardDebug" style="color: red; margin-bottom: 16px;"></div>
@@ -86,6 +69,7 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../doctor-header/doctor-header-script.js"></script>
     <script src="doctor-dashboard-script.js"></script>
 </body>
 </html>
