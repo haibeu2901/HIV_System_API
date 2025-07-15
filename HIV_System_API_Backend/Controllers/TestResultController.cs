@@ -79,7 +79,7 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpGet("personal")]
         [Authorize(Roles = "1,2,3,4,5")]
-        public async Task<ActionResult<PersonalTestResultResponseDTO>> GetPersonalTestResult()
+        public async Task<ActionResult<TestResultResponseDTO>> GetPersonalTestResult()
         {
             var accIdClaim = User.FindFirst("AccountId")?.Value;
             if (string.IsNullOrEmpty(accIdClaim) || !int.TryParse(accIdClaim, out int accId) || accId <= 0)
