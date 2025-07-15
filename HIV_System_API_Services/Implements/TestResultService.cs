@@ -83,36 +83,34 @@ namespace HIV_System_API_Services.Implements
 
             return results.Select(MapToResponse).ToList();
         }
-        public async Task<List<TestResultResponseDTO>> GetPersonalTestResult(int id)
-        {
-            var patient = await _patientRepo.GetPatientByIdAsync(id);
-            if (patient == null)
-                throw new KeyNotFoundException($"Patient with ID {id} not found.");
-
-            var results = await _testResultRepo.GetTestResultsByPatientId(patient.PatientMedicalRecord.PmrId);
-            if (results == null || !results.Any())
-                throw new KeyNotFoundException($"No test results found for patient with ID {id}.");
-
-            // Ensure component test results are included for each result
-            foreach (var result in results)
+       public async Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id)
+{
+    var patient = await _patientRepo.GetPatientByIdAsync(id);
+    if (patient == null)
+        throw new KeyNotFoundException($"Patient with ID {id} not found.");
+    var results = await _testResultRepo.GetTestResultsByPatientId(patient.PatientMedicalRecord.PmrId);
+    if (results == null || !results.Any())
+        throw new KeyNotFoundException($"No test results found for patient with ID {id}.");
+    var response = results.Select(r => new PersonalTestResultResponseDTO
+    {
+        PatientMedicalRecordId = r.PmrId,
+        TestDate = r.TestDate,
+        Result = r.ResultValue,
+        Notes = r.Notes,
+        ComponentTestResults = r.ComponentTestResults?
+            .Select(ct => new ComponentTestResultResponseDTO
             {
-                if (result.ComponentTestResults == null || !result.ComponentTestResults.Any())
-                {
-                    using var context = new HivSystemApiContext();
-                    var fullResult = await context.TestResults
-                        .Include(tr => tr.ComponentTestResults)
-                        .ThenInclude(ct => ct.Stf)
-                        .FirstOrDefaultAsync(tr => tr.TrsId == result.TrsId);
-
-                    if (fullResult != null)
-                    {
-                        result.ComponentTestResults = fullResult.ComponentTestResults;
-                    }
-                }
-            }
-
-            return results.Select(MapToResponse).ToList();
-        }
+                ComponentTestResultId = ct.CtrId,
+                TestResultId = ct.TrsId,
+                StaffId = ct.Stf.StfId,
+                ComponentTestResultName = ct.CtrName,
+                CtrDescription = ct.CtrDescription ?? string.Empty,
+                ResultValue = ct.ResultValue,
+                Notes = ct.Notes
+            }).ToList() ?? new List<ComponentTestResultResponseDTO>()
+    }).ToList();
+    return response;
+}
 
         public async Task<List<TestResultResponseDTO>> GetSustainTestResultPatient()
         {

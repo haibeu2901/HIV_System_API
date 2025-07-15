@@ -91,8 +91,10 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<List<TestResult>> GetTestResultsByPatientId(int patientId)
         {
             return await _context.TestResults
-                .Where(tr => tr.PmrId == patientId)
-                .ToListAsync();
+        .Include(tr => tr.ComponentTestResults)
+        .ThenInclude(ct => ct.Stf)
+        .Where(tr => tr.PmrId == patientId)
+        .ToListAsync();
         }
     }
 }
