@@ -42,10 +42,107 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- Order by Time Section ---
-    const timeSlots = ['09:00', '10:00', '11:00', '14:00', '15:00'];
+    async function fetchAvailableTimeSlots(date) {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            console.error('No token found');
+            return [];
+        }
+        
+        try {
+            console.log('Fetching available time slots for date:', date);
+            
+            // Generate all possible time slots for the day (8:00 AM to 6:00 PM)
+            const dayStartTime = '08:00';
+            const dayEndTime = '18:00';
+            const allPossibleTimeSlots = generateTimeSlotsBetween(dayStartTime, dayEndTime);
+            
+            console.log('All possible time slots for the day:', allPossibleTimeSlots);
+            
+            // Get all doctors to check their schedules
+            const doctorsResponse = await fetch('https://localhost:7009/api/Doctor/GetAllDoctors', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'accept': '*/*'
+                }
+            });
+            
+            if (!doctorsResponse.ok) {
+                throw new Error(`HTTP error! status: ${doctorsResponse.status}`);
+            }
+            
+            const doctors = await doctorsResponse.json();
+            console.log('All doctors:', doctors);
+            
+            if (!doctors || doctors.length === 0) {
+                return [];
+            }
+            
+            // Fetch all doctor schedules for the selected date (optimize by fetching once per doctor)
+            const doctorSchedules = [];
+            
+            for (const doctor of doctors) {
+                try {
+                    const scheduleResponse = await fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedulesByDoctorId/${doctor.doctorId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'accept': '*/*'
+                        }
+                    });
+                    
+                    if (scheduleResponse.ok) {
+                        const schedules = await scheduleResponse.json();
+                        const schedule = schedules.find(s => s.workDate === date);
+                        
+                        if (schedule && schedule.isAvailable) {
+                            doctorSchedules.push({
+                                doctorId: doctor.doctorId,
+                                startTime: schedule.startTime.substring(0, 5),
+                                endTime: schedule.endTime.substring(0, 5)
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Error fetching schedule for doctor ${doctor.doctorId}:`, error);
+                }
+            }
+            
+            // Check which time slots have at least one doctor available
+            const availableTimeSlots = allPossibleTimeSlots.filter(timeSlot => {
+                return doctorSchedules.some(schedule => 
+                    isTimeSlotWithinSchedule(timeSlot, schedule.startTime, schedule.endTime)
+                );
+            });
+            
+            console.log('Available time slots:', availableTimeSlots);
+            return availableTimeSlots;
+            
+        } catch (error) {
+            console.error('Error fetching available time slots:', error);
+            return [];
+        }
+    }
 
-    function renderTimeSlots(grid, onSelect) {
+    async function renderTimeSlots(grid, onSelect, date) {
+        grid.innerHTML = '<div class="loader">Loading available time slots...</div>';
+        
+        const allTimeSlots = await fetchAvailableTimeSlots(date);
+        
+        // Filter out past time slots
+        const timeSlots = filterFutureTimeSlots(allTimeSlots, date);
+        
         grid.innerHTML = '';
+        
+        if (timeSlots.length === 0) {
+            if (allTimeSlots.length === 0) {
+                grid.innerHTML = '<div class="no-time-slots">No available time slots for this date.</div>';
+            } else {
+                grid.innerHTML = '<div class="no-time-slots">No available time slots remaining for today.</div>';
+            }
+            return;
+        }
+        
         timeSlots.forEach(time => {
             const btn = document.createElement('button');
             btn.className = 'time-slot-btn';
@@ -55,14 +152,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    calendarDate.addEventListener('change', function() {
-        renderTimeSlots(timeSlotGrid, (time, btn) => {
+    calendarDate.addEventListener('change', async function() {
+        const selectedDate = calendarDate.value;
+        
+        if (!selectedDate) {
+            timeSlotGrid.innerHTML = '';
+            availableDoctorsSection.style.display = 'none';
+            confirmTimeBookingBtn.style.display = 'none';
+            return;
+        }
+        
+        // Check if selected date is in the past
+        const today = new Date();
+        const selected = new Date(selectedDate);
+        today.setHours(0, 0, 0, 0);
+        selected.setHours(0, 0, 0, 0);
+        
+        if (selected < today) {
+            timeSlotGrid.innerHTML = '<div class="no-time-slots">Cannot book appointments for past dates.</div>';
+            availableDoctorsSection.style.display = 'none';
+            confirmTimeBookingBtn.style.display = 'none';
+            return;
+        }
+        
+        await renderTimeSlots(timeSlotGrid, (time, btn) => {
             if (selectedTimeBtn) selectedTimeBtn.classList.remove('selected');
             btn.classList.add('selected');
             selectedTimeBtn = btn;
             selectedTimeSlot = time;
-            fetchAvailableDoctors(calendarDate.value, time);
-        });
+            fetchAvailableDoctors(selectedDate, time);
+        }, selectedDate);
+        
         availableDoctorsSection.style.display = 'none';
         confirmTimeBookingBtn.style.display = 'none';
         selectedTimeSlot = null;
@@ -252,8 +372,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        const selectedDate = doctorScheduleDate.value;
+        
+        // Check if selected date is in the past
+        const today = new Date();
+        const selected = new Date(selectedDate);
+        today.setHours(0, 0, 0, 0);
+        selected.setHours(0, 0, 0, 0);
+        
+        if (selected < today) {
+            doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Cannot book appointments for past dates.</div>';
+            confirmDoctorBookingBtn.style.display = 'none';
+            return;
+        }
+        
         selectedDoctorTimeSlot = null;
-        fetchDoctorSchedule(selectedDoctorId, doctorScheduleDate.value);
+        fetchDoctorSchedule(selectedDoctorId, selectedDate);
     });
 
     function fetchDoctorSchedule(doctorId, date) {
@@ -294,10 +428,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generate time slots
             const startTime = schedule.startTime.substring(0, 5);
             const endTime = schedule.endTime.substring(0, 5);
-            const timeSlots = generateTimeSlotsBetween(startTime, endTime);
+            const allTimeSlots = generateTimeSlotsBetween(startTime, endTime);
+            
+            // Filter out past time slots
+            const timeSlots = filterFutureTimeSlots(allTimeSlots, date);
             
             if (timeSlots.length === 0) {
-                doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">No available time slots for this date.</div>';
+                if (allTimeSlots.length === 0) {
+                    doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">No available time slots for this date.</div>';
+                } else {
+                    doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">No available time slots remaining for today.</div>';
+                }
                 confirmDoctorBookingBtn.style.display = 'none';
                 return;
             }
@@ -325,26 +466,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Utility Functions
-    function generateTimeSlotsBetween(startTime, endTime) {
+    function generateTimeSlotsBetween(startTime, endTime, intervalMinutes = 30) {
         const slots = [];
-        const [startHour, startMin] = startTime.split(':').map(Number);
-        const [endHour, endMin] = endTime.split(':').map(Number);
         
-        const start = new Date();
-        start.setHours(startHour, startMin, 0, 0);
-        
-        const end = new Date();
-        end.setHours(endHour, endMin, 0, 0);
-        
-        const current = new Date(start);
-        
-        while (current < end) {
-            const timeStr = current.toTimeString().substring(0, 5);
-            slots.push(timeStr);
-            current.setMinutes(current.getMinutes() + 30);
+        try {
+            const [startHour, startMin] = startTime.split(':').map(Number);
+            const [endHour, endMin] = endTime.split(':').map(Number);
+            
+            // Validate time inputs
+            if (startHour < 0 || startHour > 23 || startMin < 0 || startMin > 59 ||
+                endHour < 0 || endHour > 23 || endMin < 0 || endMin > 59) {
+                console.error('Invalid time format:', startTime, endTime);
+                return slots;
+            }
+            
+            const start = new Date();
+            start.setHours(startHour, startMin, 0, 0);
+            
+            const end = new Date();
+            end.setHours(endHour, endMin, 0, 0);
+            
+            // Ensure end time is after start time
+            if (end <= start) {
+                console.error('End time must be after start time:', startTime, endTime);
+                return slots;
+            }
+            
+            const current = new Date(start);
+            
+            while (current < end) {
+                const timeStr = current.toTimeString().substring(0, 5);
+                slots.push(timeStr);
+                current.setMinutes(current.getMinutes() + intervalMinutes);
+            }
+            
+            return slots;
+        } catch (error) {
+            console.error('Error generating time slots:', error);
+            return slots;
         }
-        
-        return slots;
     }
 
     function displayDoctorScheduleCalendar(schedules) {
@@ -683,4 +843,65 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize
     fetchDoctors();
+
+    // Set minimum date for date inputs to prevent past date selection
+    function setMinDateForInputs() {
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0];
+        
+        if (calendarDate) {
+            calendarDate.min = todayString;
+        }
+        
+        if (doctorScheduleDate) {
+            doctorScheduleDate.min = todayString;
+        }
+    }
+
+    // Call this function when the page loads
+    setMinDateForInputs();
+
+    // Utility function to check if time slot is in the past
+    function isTimeSlotInPast(date, time) {
+        const now = new Date();
+        const slotDateTime = new Date(date + 'T' + time + ':00');
+        return slotDateTime < now;
+    }
+
+    // Utility function to filter out past time slots
+    function filterFutureTimeSlots(timeSlots, date) {
+        const now = new Date();
+        const selectedDate = new Date(date);
+        
+        // If selected date is not today, return all slots
+        if (selectedDate.toDateString() !== now.toDateString()) {
+            return timeSlots;
+        }
+        
+        // Filter out past time slots for today
+        return timeSlots.filter(time => {
+            const [hour, minute] = time.split(':').map(Number);
+            const slotTime = new Date();
+            slotTime.setHours(hour, minute, 0, 0);
+            return slotTime > now;
+        });
+    }
+
+    // Utility function to check if a time slot falls within a doctor's schedule
+    function isTimeSlotWithinSchedule(timeSlot, startTime, endTime) {
+        try {
+            const [slotHour, slotMin] = timeSlot.split(':').map(Number);
+            const [startHour, startMin] = startTime.split(':').map(Number);
+            const [endHour, endMin] = endTime.split(':').map(Number);
+            
+            const slotMinutes = slotHour * 60 + slotMin;
+            const startMinutes = startHour * 60 + startMin;
+            const endMinutes = endHour * 60 + endMin;
+            
+            return slotMinutes >= startMinutes && slotMinutes < endMinutes;
+        } catch (error) {
+            console.error('Error checking time slot within schedule:', error);
+            return false;
+        }
+    }
 });

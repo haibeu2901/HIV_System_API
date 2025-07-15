@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard - CareFirst HIV Clinic</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="../../admin-view/admin-home/admin-home.css">
+    <link rel="stylesheet" href="../../admin-view/admin-home/js/components.css">
+    <link rel="stylesheet" href="manager-home.css">
+</head>
+<body class="manager-dashboard">
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>CareFirst HIV Clinic</span>
+            </div>
+            <div class="admin-info">
+                <span class="admin-name">Manager Dashboard</span>
+                <button class="logout-btn" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="admin-nav">
+        <div class="nav-container">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#notifications" class="nav-link" data-section="notifications">
+                        <i class="fas fa-bell"></i>
+                        Notifications
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#appointments" class="nav-link" data-section="appointments">
+                        <i class="fas fa-calendar-alt"></i>
+                        Appointments
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#medical-records" class="nav-link" data-section="medical-records">
+                        <i class="fas fa-file-medical"></i>
+                        Medical Records
+                    </a>
+                </li>
+                <!-- Note: No accounts section for manager -->
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="admin-section active">
+            <div class="section-header">
+                <h1><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h1>
+                <p>Welcome to the manager dashboard. Here's an overview of your clinic's performance.</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-users">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-patients">0</h3>
+                        <p>Total Patients</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-doctors">0</h3>
+                        <p>Total Doctors</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-staff">0</h3>
+                        <p>Total Staff</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-appointments">0</h3>
+                        <p>Total Appointments</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="pending-appointments">0</h3>
+                        <p>Pending Appointments</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-concierge-bell"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-services">0</h3>
+                        <p>Total Services</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-revenue">0</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="monthly-revenue">0</h3>
+                        <p>Monthly Revenue</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-charts">
+                <div class="chart-container">
+                    <h3 class="chart-title">User Distribution</h3>
+                    <div class="chart-canvas">
+                        <canvas id="userDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Monthly Revenue</h3>
+                    <div class="chart-canvas">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Appointment Status</h3>
+                    <div class="chart-canvas">
+                        <canvas id="appointmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="dashboard-left">
+                    <div class="chart-container">
+                        <h3>System Performance</h3>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-area"></i>
+                            <p>Additional metrics and analytics will be displayed here</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-right">
+                    <div class="recent-activity">
+                        <h3>Recent Activity</h3>
+                        <div id="recent-activity-list" class="activity-list">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notifications Section -->
+        <section id="notifications" class="admin-section">
+            <div class="section-header">
+                <h1><i class="fas fa-bell"></i> Notifications Management</h1>
+                <button class="btn-primary" id="create-notification-btn">
+                    <i class="fas fa-plus"></i>
+                    Create Notification
+                </button>
+            </div>
+            
+            <div class="notifications-container">
+                <div class="filter-bar">
+                    <select id="notification-filter">
+                        <option value="all">All Notifications</option>
+                        <option value="system">System</option>
+                        <option value="appointment">Appointment</option>
+                        <option value="reminder">Reminder</option>
+                    </select>
+                </div>
+                
+                <div id="notifications-list" class="notifications-list">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Appointments Section -->
+        <section id="appointments" class="admin-section">
+            <div class="section-header">
+                <h1><i class="fas fa-calendar-alt"></i> Appointments Management</h1>
+                <div class="header-actions">
+                    <input type="date" id="appointment-date-filter">
+                    <select id="appointment-status-filter">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="appointments-container">
+                <div id="appointments-list" class="appointments-list">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Medical Records Section -->
+        <section id="medical-records" class="admin-section">
+            <div class="section-header">
+                <h1><i class="fas fa-file-medical"></i> Patient Medical Records</h1>
+                <div class="search-bar">
+                    <input type="text" id="medical-search" placeholder="Search by patient name or ID...">
+                    <button id="medical-search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="medical-records-container">
+                <div id="medical-records-list" class="medical-records-list">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="createNotificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Notification</h3>
+                <button class="close-btn" data-modal="createNotificationModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createNotificationForm">
+                    <div class="form-group">
+                        <label>Notification Type</label>
+                        <select id="notification-type" required>
+                            <option value="">Select notification type</option>
+                            <option value="Appt Confirm">Appointment Confirmation</option>
+                            <option value="Appointment Update">Appointment Update</option>
+                            <option value="Appointment Request">Appointment Request</option>
+                            <option value="Appointment Reminder">Appointment Reminder</option>
+                            <option value="System Alert">System Alert</option>
+                            <option value="ARV Consultation">ARV Consultation</option>
+                            <option value="Test Result">Test Result</option>
+                            <option value="Blog Approval">Blog Approval</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea id="notification-message" required rows="4" placeholder="Enter notification message..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Send To</label>
+                        <select id="send-to" required>
+                            <option value="">Select recipient</option>
+                            <option value="all">All Users</option>
+                            <option value="account">Specific Account</option>
+                            <option value="1">Patients</option>
+                            <option value="2">Doctors</option>
+                            <option value="3">Managers</option>
+                            <option value="4">Admins</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="account-id-group" style="display: none;">
+                        <label>Account ID</label>
+                        <input type="number" id="account-id" placeholder="Enter account ID" min="1">
+                        <small class="form-help">Enter the specific account ID to send notification to</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" data-modal="createNotificationModal">Cancel</button>
+                        <button type="submit"><i class="fas fa-paper-plane"></i> Send Notification</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Notification Modal -->
+    <div id="editNotificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Notification</h3>
+                <button class="close-btn" data-modal="editNotificationModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editNotificationForm">
+                    <input type="hidden" id="edit-notification-id">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="edit-notification-type" required>
+                            <option value="Appt Confirm">Appt Confirm</option>
+                            <option value="Appointment Update">Appointment Update</option>
+                            <option value="Appointment Request">Appointment Request</option>
+                            <option value="Appointment Reminder">Appointment Reminder</option>
+                            <option value="System Alert">System Alert</option>
+                            <option value="ARV Consultation">ARV Consultation</option>
+                            <option value="Test Result">Test Result</option>
+                            <option value="Blog Approval">Blog Approval</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea id="edit-notification-message" required rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" data-modal="editNotificationModal">Cancel</button>
+                        <button type="submit"><i class="fas fa-save"></i> Update Notification</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript modules in order -->
+    <script src="../../shared/role-config.js"></script>
+    <script src="../../admin-view/admin-home/js/utils.js"></script>
+    <script src="../../admin-view/admin-home/js/auth.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="../../admin-view/admin-home/js/appointments.js"></script>
+    <script src="../../admin-view/admin-home/js/notifications.js"></script>
+    <script src="../../admin-view/admin-home/js/medical-records.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

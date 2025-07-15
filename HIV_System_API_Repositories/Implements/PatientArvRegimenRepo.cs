@@ -65,5 +65,9 @@ namespace HIV_System_API_Repositories.Implements
         {
             return await PatientArvRegimenDAO.Instance.UpdatePatientArvRegimenAsync(parId, patientArvRegimen);
         }
+        public async Task<PatientArvRegimen> UpdatePatientArvRegimenStatusAsync(int parId, byte status, string? notes = null)
+        {
+            return await PatientArvRegimenDAO.Instance.UpdatePatientArvRegimenStatusAsync(parId, status, notes);
+        }
     }
 }

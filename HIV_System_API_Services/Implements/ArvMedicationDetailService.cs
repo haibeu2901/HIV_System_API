@@ -58,6 +58,7 @@ namespace HIV_System_API_Services.Implements
 
             return new ArvMedicationDetailResponseDTO
             {
+                ARVMedicationId = entity.AmdId,
                 ARVMedicationName = entity.MedName,
                 ARVMedicationDescription = entity.MedDescription,
                 ARVMedicationDosage = entity.Dosage,

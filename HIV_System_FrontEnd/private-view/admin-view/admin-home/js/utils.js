@@ -23,7 +23,7 @@ class ModalManager {
     showModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.style.display = 'block';
+            modal.style.display = 'flex';
             this.openModals.add(modalId);
         }
     }
@@ -43,7 +43,7 @@ class ModalManager {
         // Close modals with Escape key
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
-                const openModal = document.querySelector('.modal[style*="block"]');
+                const openModal = document.querySelector('.modal[style*="flex"]');
                 if (openModal) {
                     this.closeModal(openModal.id);
                 }

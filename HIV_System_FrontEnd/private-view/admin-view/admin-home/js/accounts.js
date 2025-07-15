@@ -12,18 +12,6 @@ class AccountManager {
         const token = this.authManager.getToken();
         
         try {
-            const modalHTML = `
-            <div id="patientProfileModal" class="modal" style="display: flex;">
-                <div class="modal-content" style="max-width: 600px;">
-            </div>
-            <div id="doctorProfileModal" class="modal" style="display: flex;">
-                <div class="modal-content" style="max-width: 800px;">
-            </div>
-            <div id="generalProfileModal" class="modal" style="display: flex;">
-                <div class="modal-content" style="max-width: 600px;">
-                </div>
-            </div>
-        `;
             const response = await fetch('https://localhost:7009/api/Account/GetAllAccounts', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -55,7 +43,7 @@ class AccountManager {
     showCreateAccountModal() {
         const modal = document.getElementById('createAccountModal');
         if (modal) {
-            modal.style.display = 'block';
+            modal.style.display = 'flex';
         }
     }
 
@@ -255,10 +243,10 @@ class AccountManager {
                         <button class="btn-secondary" onclick="accountManager.viewAccount(${account.accId})">
                             <i class="fas fa-eye"></i> View
                         </button>
-                        <button class="btn-primary" onclick="accountManager.editAccount(${account.accId})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
                         ${userRole !== 'admin' ? `
+                            <button class="btn-primary" onclick="accountManager.editAccount(${account.accId})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
                             <button class="btn-danger" onclick="accountManager.deleteAccount(${account.accId})">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
@@ -430,7 +418,7 @@ class AccountManager {
     // Show patient profile modal
     showPatientProfileModal(patientData) {
         const modalHTML = `
-            <div id="patientProfileModal" class="modal" style="display: block;">
+            <div id="patientProfileModal" class="modal" style="display: flex;">
                 <div class="modal-content" style="max-width: 800px;">
                     <div class="modal-header">
                         <h3><i class="fas fa-user"></i> Patient Profile</h3>
@@ -530,7 +518,7 @@ class AccountManager {
     // Show doctor profile modal
     showDoctorProfileModal(doctorData) {
         const modalHTML = `
-            <div id="doctorProfileModal" class="modal" style="display: block;">
+            <div id="doctorProfileModal" class="modal" style="display: flex;">
                 <div class="modal-content" style="max-width: 800px;">
                     <div class="modal-header">
                         <h3><i class="fas fa-user-md"></i> Doctor Profile</h3>
@@ -638,7 +626,7 @@ class AccountManager {
         const roleClass = this.getRoleClass(userRole);
         
         const modalHTML = `
-            <div id="generalProfileModal" class="modal" style="display: block;">
+            <div id="generalProfileModal" class="modal" style="display: flex;">
                 <div class="modal-content" style="max-width: 600px;">
                     <div class="modal-header">
                         <h3><i class="fas ${this.getRoleIcon(userRole)}"></i> ${roleName} Profile</h3>
@@ -737,7 +725,7 @@ class AccountManager {
         const roleName = this.getRoleDisplayName(userRole);
         
         const modalHTML = `
-            <div id="editAccountModal" class="modal" style="display: flex;">
+            <div id="editAccountModal" class="modal" style="display: none;">
                 <div class="modal-content" style="max-width: 600px;">
                     <div class="modal-header">
                         <h3><i class="fas fa-edit"></i> Edit Account</h3>
@@ -810,6 +798,10 @@ class AccountManager {
         
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
+        // Show the modal with proper centering
+        const modal = document.getElementById('editAccountModal');
+        modal.style.display = 'flex';
+        
         // Add form submit event listener
         document.getElementById('editAccountForm').addEventListener('submit', (e) => this.handleUpdateAccount(e));
     }
@@ -827,15 +819,28 @@ class AccountManager {
         const roles = document.getElementById('edit-account-roles').value;
         const isActive = document.getElementById('edit-account-active').value === 'true';
         
+        // Validate required fields
+        if (!email || !fullname) {
+            window.utils.showToast('Please fill in all required fields (Email and Full Name)', 'error');
+            return;
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            window.utils.showToast('Please enter a valid email address', 'error');
+            return;
+        }
+        
         const token = this.authManager.getToken();
         
         // Prepare the request body according to the API specification
         const requestBody = {
             email: email,
             fullname: fullname,
-            dob: dob || "2025-07-13", // Default date if not provided
+            dob: dob || "2025-07-14", // Default date if not provided
             gender: gender !== "" ? gender === "true" : true, // Convert to boolean
-            roles: parseInt(roles),
+            roles: parseInt(roles) || 0,
             isActive: isActive
         };
         
@@ -845,7 +850,13 @@ class AccountManager {
         }
         
         try {
-            window.utils.showButtonLoader(e.target.querySelector('button[type="submit"]'), true);
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            }
+            
+            console.log('Updating account with data:', requestBody);
             
             const response = await fetch(`https://localhost:7009/api/Account/UpdateAccount/${accountId}`, {
                 method: 'PUT',
@@ -863,13 +874,18 @@ class AccountManager {
                 this.loadAccounts(); // Reload the accounts list
             } else {
                 const errorData = await response.text();
+                console.error('Update failed:', errorData);
                 throw new Error(errorData || `HTTP error! status: ${response.status}`);
             }
         } catch (error) {
             console.error('Error updating account:', error);
             window.utils.showToast('Error updating account. Please try again.', 'error');
         } finally {
-            window.utils.showButtonLoader(e.target.querySelector('button[type="submit"]'), false);
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-save"></i> Update Account';
+            }
         }
     }
 

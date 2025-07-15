@@ -16,6 +16,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<TestResultResponseDTO> UpdateTestResult(TestResultUpdateRequestDTO testResult, int id);
         Task<bool> DeleteTestResult(int id);
         Task<List<TestResultResponseDTO>> GetSustainTestResultPatient();
-        Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id);
+        Task<List<TestResultResponseDTO>> GetPersonalTestResult(int id);
     }
 }

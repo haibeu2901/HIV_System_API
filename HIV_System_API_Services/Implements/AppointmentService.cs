@@ -340,12 +340,15 @@ namespace HIV_System_API_Services.Implements
         public async Task<AppointmentResponseDTO> UpdateAppointmentByIdAsync(int id, AppointmentRequestDTO request)
         {
             Debug.WriteLine($"Updating appointment with ApmId: {id}");
+
             if (request == null)
-                throw new ArgumentNullException(nameof(request), "Request DTO is required.");
+                throw new ArgumentNullException(nameof(request), "Appointment update request cannot be null.");
 
+            // Check if the appointment exists
             if (!await _context.Appointments.AnyAsync(a => a.ApmId == id))
-                throw new InvalidOperationException($"Appointment with ID {id} not found.");
+                throw new KeyNotFoundException($"Appointment with ID {id} was not found.");
 
+            // Validate the appointment details (throws ArgumentException/InvalidOperationException as needed)
             await ValidateAppointmentAsync(request, validateStatus: true, apmId: id);
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -353,15 +356,29 @@ namespace HIV_System_API_Services.Implements
             {
                 var appointment = MapToEntity(request);
                 appointment.ApmId = id;
+
                 var updatedAppointment = await _appointmentRepo.UpdateAppointmentByIdAsync(id, appointment);
+
+                if (updatedAppointment == null)
+                    throw new InvalidOperationException($"Failed to update appointment with ID {id} due to a repository error.");
+
                 await transaction.CommitAsync();
                 return MapToResponseDTO(updatedAppointment);
             }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync();
+                throw new InvalidOperationException("The appointment was modified by another user. Please reload and try again.");
+            }
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+                throw new InvalidOperationException($"A database error occurred while updating the appointment: {ex.InnerException?.Message ?? ex.Message}");
+            }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Failed to update appointment: {ex.Message}");
                 await transaction.RollbackAsync();
-                throw;
+                throw new InvalidOperationException($"An unexpected error occurred while updating the appointment: {ex.Message}");
             }
         }
 

@@ -8,6 +8,7 @@ using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -215,7 +216,7 @@ namespace HIV_System_API_Services.Implements
             bool hasUppercase = password.Any(char.IsUpper);
             bool hasLowercase = password.Any(char.IsLower);
             bool hasDigit = password.Any(char.IsDigit);
-            const string specialCharacters = @"~!@#$%^&*.";
+            const string specialCharacters = @"~`!@#$%^&*.,/()-_+=[]{}\|;:<>?";
             bool hasSpecialChar = password.Any(specialCharacters.Contains);
 
             if (!hasUppercase || !hasLowercase || !hasDigit || !hasSpecialChar)
@@ -884,7 +885,7 @@ namespace HIV_System_API_Services.Implements
             // Store the code in cache with expiry
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
-            _memoryCache.Set($"forgot_password_{request.Email}", verificationCode, cacheOptions);
+            _memoryCache.Set($"password_reset_{request.Email}", verificationCode, cacheOptions);
             // TODO: Send code to user's email (email sending not implemented here)
             return verificationCode;
         }
@@ -1032,7 +1033,7 @@ namespace HIV_System_API_Services.Implements
             {
                 currentPassword = request.currentPassword,
                 newPassword = HashPassword(request.newPassword),
-                confirmNewPassword = request.confirmNewPassword
+                confirmNewPassword = HashPassword(request.confirmNewPassword)
             };
 
             var result = await _accountRepo.ChangePasswordAsync(accId, changeRequest);

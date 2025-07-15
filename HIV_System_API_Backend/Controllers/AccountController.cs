@@ -7,7 +7,6 @@ using HIV_System_API_DTOs.PatientDTO;
 using HIV_System_API_DTOs.StaffDTO;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http;
