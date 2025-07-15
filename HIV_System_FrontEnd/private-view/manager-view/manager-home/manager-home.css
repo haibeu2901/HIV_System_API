@@ -1,0 +1,184 @@
+/* Manager Dashboard Specific Styles */
+
+/* Error notification */
+.error-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #ff4757;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Activity item styling */
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: #e9ecef;
+    transform: translateY(-1px);
+}
+
+.activity-item i {
+    color: #007bff;
+    font-size: 18px;
+    margin-top: 2px;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-content p {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.activity-content small {
+    color: #666;
+    font-size: 12px;
+}
+
+/* No data message */
+.no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Loader styles */
+.loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+
+.loader::after {
+    content: '';
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Dashboard responsiveness */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    
+    .activity-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .activity-item i {
+        margin-bottom: 8px;
+    }
+}
+
+/* Chart containers */
+.chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.chart-title {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.chart-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #666;
+    font-style: italic;
+}
+
+.chart-placeholder i {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #007bff;
+}
+
+/* Manager specific overrides */
+.manager-dashboard .section-header h1 {
+    color: #28a745;
+}
+
+.manager-dashboard .stat-card .stat-icon {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+/* Form help text styling */
+.form-help {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.875rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* Account ID field styling */
+#account-id-group {
+    transition: all 0.3s ease;
+}
+
+#account-id {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#account-id:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
