@@ -32,7 +32,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetImageByID/{imgId}")]
-        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        [AllowAnonymous]
         public async Task<ActionResult<BlogImageResponseDTO>> GetImage(int imgId)
         {
             try
@@ -65,7 +65,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetImagesByBlogId/{sblId}")]
-        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        [AllowAnonymous]
         public async Task<ActionResult<List<BlogImageResponseDTO>>> GetByBlogId(int sblId)
         {
             try

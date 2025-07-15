@@ -32,7 +32,7 @@ namespace HIV_System_API_Services.Implements
                 _logger.LogWarning("ImageStorage:Path is not configured in appsettings.json. Using default path.");
                 configuredPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "blog-images");
             }
-            _logger.LogInformation($"Current Directory: {Directory.GetCurrentDirectory()}"); // Debug log
+            _logger.LogInformation("Current Directory: {CurrentDirectory}", Directory.GetCurrentDirectory());
             _storagePath = Path.GetFullPath(configuredPath);
             if (string.IsNullOrWhiteSpace(_storagePath))
             {
@@ -46,7 +46,7 @@ namespace HIV_System_API_Services.Implements
                 _logger.LogWarning("ImageStorage:BaseUrl is not configured in appsettings.json. Using default base URL '/blog-images/'.");
             }
 
-            _logger.LogInformation($"Initialized BlogImageService with storage path: {_storagePath} and base URL: {_baseUrl}");
+            _logger.LogInformation("Initialized BlogImageService with storage path: {StoragePath} and base URL: {BaseUrl}", _storagePath, _baseUrl);
         }
 
         public async Task<BlogImageResponseDTO> UploadBlogImageAsync(BlogImageRequestDTO request)
@@ -61,7 +61,7 @@ namespace HIV_System_API_Services.Implements
             const long maxFileSize = 5 * 1024 * 1024; // 5MB
             if (request.Image.Length > maxFileSize)
             {
-                _logger.LogError($"Image size {request.Image.Length} bytes exceeds limit of {maxFileSize} bytes.");
+                _logger.LogError("Image size {ImageSize} bytes exceeds limit of {MaxFileSize} bytes.", request.Image.Length, maxFileSize);
                 throw new ArgumentException($"Image size exceeds {maxFileSize / (1024 * 1024)}MB limit.");
             }
 
@@ -70,13 +70,13 @@ namespace HIV_System_API_Services.Implements
             {
                 if (!Directory.Exists(_storagePath))
                 {
-                    _logger.LogInformation($"Creating storage directory: {_storagePath}");
+                    _logger.LogInformation("Creating storage directory: {StoragePath}", _storagePath);
                     Directory.CreateDirectory(_storagePath);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to create storage directory: {_storagePath}");
+                _logger.LogError(ex, "Failed to create storage directory: {StoragePath}", _storagePath);
                 throw new InvalidOperationException("Failed to create storage directory.", ex);
             }
 
@@ -85,7 +85,7 @@ namespace HIV_System_API_Services.Implements
             var validExtensions = new[] { ".jpg", ".jpeg", ".png" };
             if (string.IsNullOrWhiteSpace(fileExtension) || !validExtensions.Contains(fileExtension))
             {
-                _logger.LogError($"Unsupported file extension: {fileExtension}");
+                _logger.LogError("Unsupported file extension: {FileExtension}", fileExtension);
                 throw new ArgumentException("Only JPG, JPEG, and PNG files are allowed.");
             }
 
@@ -99,11 +99,11 @@ namespace HIV_System_API_Services.Implements
                 {
                     await request.Image.CopyToAsync(stream);
                 }
-                _logger.LogInformation($"Successfully saved image to {filePath}");
+                _logger.LogInformation("Successfully saved image to {FilePath}", filePath);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to save image to {filePath}");
+                _logger.LogError(ex, "Failed to save image to {FilePath}", filePath);
                 throw new InvalidOperationException("Failed to save image to disk.", ex);
             }
 
@@ -119,7 +119,7 @@ namespace HIV_System_API_Services.Implements
             try
             {
                 var savedImage = await _blogImageRepository.UploadImageAsync(blogImage);
-                _logger.LogInformation($"Successfully saved image metadata to database with ImgId: {savedImage.ImgId}");
+                _logger.LogInformation("Successfully saved image metadata to database with ImgId: {ImgId}", savedImage.ImgId);
                 return new BlogImageResponseDTO
                 {
                     ImgId = savedImage.ImgId,
@@ -140,7 +140,7 @@ namespace HIV_System_API_Services.Implements
             var blogImage = await _blogImageRepository.GetByIdAsync(imgId);
             if (blogImage == null)
             {
-                _logger.LogWarning($"Image with ID {imgId} not found.");
+                _logger.LogWarning("Image with ID {ImgId} not found.", imgId);
                 throw new ArgumentException("Image not found");
             }
 
@@ -152,13 +152,14 @@ namespace HIV_System_API_Services.Implements
                 UploadedAt = blogImage.UploadedAt
             };
         }
+
         public async Task<bool> DeleteBlogImageAsync(int imgId)
         {
             var blogImage = await _blogImageRepository.GetByIdAsync(imgId);
             if (blogImage == null)
             {
-                _logger.LogWarning($"Image with ID {imgId} not found for deletion.");
-                return false; // Return false if image not found
+                _logger.LogWarning("Image with ID {ImgId} not found for deletion.", imgId);
+                return false;
             }
 
             var fileName = Path.GetFileName(blogImage.ImageUrl);
@@ -169,39 +170,40 @@ namespace HIV_System_API_Services.Implements
                 try
                 {
                     File.Delete(filePath);
-                    _logger.LogInformation($"Successfully deleted image file at {filePath}");
+                    _logger.LogInformation("Successfully deleted image file at {FilePath}", filePath);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Failed to delete image file at {filePath}");
+                    _logger.LogError(ex, "Failed to delete image file at {FilePath}", filePath);
                     throw new InvalidOperationException("Failed to delete image file from disk.", ex);
                 }
             }
             else
             {
-                _logger.LogWarning($"Image file not found at {filePath}, proceeding to delete database record.");
+                _logger.LogWarning("Image file not found at {FilePath}, proceeding to delete database record.", filePath);
             }
 
             try
             {
                 await _blogImageRepository.DeleteBlogImageAsync(imgId);
-                _logger.LogInformation($"Successfully deleted image metadata with ImgId: {imgId} from database");
-                return true; // Return true on successful deletion
+                _logger.LogInformation("Successfully deleted image metadata with ImgId: {ImgId} from database", imgId);
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to delete image metadata with ImgId: {imgId} from database");
+                _logger.LogError(ex, "Failed to delete image metadata with ImgId: {ImgId} from database", imgId);
                 throw new InvalidOperationException("Failed to delete image metadata from database.", ex);
             }
         }
-        public async Task<List<BlogImageResponseDTO>> GetByBlogIdAsync(int sblId)
+
+        public async Task<List<BlogImageResponseDTO>> GetByBlogIdAsync(int blogId)
         {
             try
             {
-                var blogImages = await _blogImageRepository.GetByBlogIdAsync(sblId);
+                var blogImages = await _blogImageRepository.GetByBlogIdAsync(blogId);
                 if (blogImages == null || !blogImages.Any())
                 {
-                    _logger.LogWarning($"No images found for SblId: {sblId}");
+                    _logger.LogWarning("No images found for SblId: {BlogId}", blogId);
                     throw new ArgumentException("No images found for the specified blog ID");
                 }
 
@@ -216,12 +218,12 @@ namespace HIV_System_API_Services.Implements
                         UploadedAt = blogImage.UploadedAt
                     });
                 }
-                _logger.LogInformation($"Retrieved {responseDtos.Count} images for SblId: {sblId}");
+                _logger.LogInformation("Retrieved {ImageCount} images for SblId: {BlogId}", responseDtos.Count, blogId);
                 return responseDtos;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to retrieve images for SblId: {sblId}");
+                _logger.LogError(ex, "Failed to retrieve images for SblId: {BlogId}", blogId);
                 throw new InvalidOperationException("Failed to retrieve images.", ex);
             }
         }

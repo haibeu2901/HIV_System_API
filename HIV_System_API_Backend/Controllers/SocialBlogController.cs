@@ -20,7 +20,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpGet("GetAllBlog")]
-        [Authorize(Roles = "1,2,3,4,5")]
+        [AllowAnonymous]
         public async Task<ActionResult<List<BlogResponseDTO>>> GetAll()
         {
             try
