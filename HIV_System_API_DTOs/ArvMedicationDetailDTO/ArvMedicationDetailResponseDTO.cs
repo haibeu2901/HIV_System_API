@@ -8,6 +8,7 @@ namespace HIV_System_API_DTOs.ArvMedicationDetailDTO
 {
     public class ArvMedicationDetailResponseDTO
     {
+        public int ARVMedicationId { get; set; }
         public string? ARVMedicationName { get; set; }
         public string? ARVMedicationDescription { get; set; }
         public string? ARVMedicationDosage { get; set; }
