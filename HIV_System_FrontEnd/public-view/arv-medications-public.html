@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARV Medications Catalog - CareFirst HIV Clinic</title>
+    <link rel="stylesheet" href="arv-medications-public.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        /* Header styles for public page */
+        .public-header {
+            background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 0;
+        }
+        
+        .public-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .public-header .subtitle {
+            margin: 10px 0 0 0;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .nav-links {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 0;
+            text-align: center;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 20px 0 0 20px;
+            padding: 10px 20px;
+            background: #fff;
+            border: 2px solid #e74c3c;
+            border-radius: 25px;
+            color: #e74c3c;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover {
+            background: #e74c3c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Public Header -->
+    <div class="public-header">
+        <h1><i class="fas fa-heartbeat"></i> CareFirst HIV Clinic</h1>
+        <p class="subtitle">Comprehensive HIV Care & Treatment</p>
+        <div class="nav-links">
+            <a href="landingpage.html"><i class="fas fa-home"></i> Home</a>
+            <a href="landingpage.html#about"><i class="fas fa-info-circle"></i> About</a>
+            <a href="landingpage.html#services"><i class="fas fa-stethoscope"></i> Services</a>
+            <a href="landingpage.html#contact"><i class="fas fa-phone"></i> Contact</a>
+        </div>
+    </div>
+
+    <a href="landingpage.html" class="back-btn">
+        <i class="fa fa-arrow-left"></i> Back to Home
+    </a>
+
+    <div class="medications-container">
+        <div class="medications-header">
+            <h1><i class="fas fa-pills"></i> ARV Medications Information</h1>
+            <p>Learn about Antiretroviral (ARV) medications used in HIV treatment</p>
+            <div class="info-notice">
+                <i class="fas fa-info-circle"></i>
+                <span>This information is for educational purposes only. Always consult with healthcare professionals for medical advice.</span>
+            </div>
+        </div>
+
+        <div class="search-filters">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search medications by name, manufacturer, or description...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All Medications</button>
+                <button class="filter-btn" data-filter="nrti">NRTI</button>
+                <button class="filter-btn" data-filter="nnrti">NNRTI</button>
+                <button class="filter-btn" data-filter="pi">PI</button>
+                <button class="filter-btn" data-filter="insti">INSTI</button>
+            </div>
+        </div>
+
+        <div class="medications-stats">
+            <div class="stat-card">
+                <i class="fas fa-pills"></i>
+                <div class="stat-info">
+                    <h3 id="totalMedications">0</h3>
+                    <p>Available Medications</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-building"></i>
+                <div class="stat-info">
+                    <h3 id="totalManufacturers">0</h3>
+                    <p>Pharmaceutical Companies</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-shield-alt"></i>
+                <div class="stat-info">
+                    <h3>FDA</h3>
+                    <p>Approved & Safe</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="education-section">
+            <h2><i class="fas fa-graduation-cap"></i> About ARV Medications</h2>
+            <div class="education-grid">
+                <div class="education-card">
+                    <i class="fas fa-dna"></i>
+                    <h3>What is ARV?</h3>
+                    <p>Antiretroviral therapy (ART) uses HIV medicines to fight HIV infection, helping people live longer, healthier lives.</p>
+                </div>
+                <div class="education-card">
+                    <i class="fas fa-shield-virus"></i>
+                    <h3>How it Works</h3>
+                    <p>ARV medications block different stages of the HIV life cycle, preventing the virus from replicating.</p>
+                </div>
+                <div class="education-card">
+                    <i class="fas fa-heart"></i>
+                    <h3>Benefits</h3>
+                    <p>Reduces viral load, strengthens immune system, and prevents transmission when taken consistently.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="medications-grid" id="medicationsGrid">
+            <!-- Medications will be loaded here -->
+        </div>
+
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+            <p>Loading ARV medications information...</p>
+        </div>
+
+        <div class="cta-section">
+            <h2>Need Professional Care?</h2>
+            <p>Our experienced healthcare team is here to help you with HIV treatment and care.</p>
+            <a href="landingpage.html#contact" class="cta-btn">
+                <i class="fas fa-calendar-plus"></i> Contact Us Today
+            </a>
+        </div>
+    </div>
+
+    <script src="arv-medications-public.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+</body>
+</html>
