@@ -216,7 +216,7 @@ namespace HIV_System_API_Services.Implements
             bool hasUppercase = password.Any(char.IsUpper);
             bool hasLowercase = password.Any(char.IsLower);
             bool hasDigit = password.Any(char.IsDigit);
-            const string specialCharacters = @"~!@#$%^&*.";
+            const string specialCharacters = @"~`!@#$%^&*.,/()-_+=[]{}\|;:<>?";
             bool hasSpecialChar = password.Any(specialCharacters.Contains);
 
             if (!hasUppercase || !hasLowercase || !hasDigit || !hasSpecialChar)
