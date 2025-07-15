@@ -148,6 +148,70 @@
             <div class="sticky-field"><b>Date:</b> <span id="sticky-date"></span></div>
             <div class="sticky-field"><b>Time:</b> <span id="sticky-time"></span></div>
             <div class="sticky-field"><b>Notes:</b> <span id="sticky-notes"></span></div>
+            <div class="sticky-actions">
+                <button id="update-appointment-btn" class="update-btn" style="display: none;">
+                    <i class="fas fa-edit"></i> Update Appointment
+                </button>
+                <button id="cancel-appointment-btn" class="cancel-btn" style="display: none;">
+                    <i class="fas fa-times"></i> Cancel Appointment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Appointment Modal -->
+    <div id="update-appointment-modal" class="update-modal hidden">
+        <div class="update-modal-content">
+            <button id="closeUpdateModal" class="update-close">&times;</button>
+            <h2><i class="fas fa-edit"></i> Update Appointment</h2>
+            <form id="update-appointment-form">
+                <div class="form-group">
+                    <label for="update-date">
+                        <i class="fas fa-calendar"></i> Appointment Date
+                    </label>
+                    <input type="date" id="update-date" name="appointmentDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="update-time">
+                        <i class="fas fa-clock"></i> Appointment Time
+                    </label>
+                    <input type="time" id="update-time" name="appointmentTime" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="update-notes">
+                        <i class="fas fa-sticky-note"></i> Notes
+                    </label>
+                    <textarea id="update-notes" name="notes" rows="4" 
+                              placeholder="Enter any additional notes or special requests..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancel-update-btn" class="btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" id="save-update-btn" class="btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div id="cancel-confirmation-modal" class="cancel-modal hidden">
+        <div class="cancel-modal-content">
+            <h2><i class="fas fa-exclamation-triangle"></i> Cancel Appointment</h2>
+            <p>Are you sure you want to cancel this appointment? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button type="button" id="cancel-confirmation-no" class="btn-secondary">
+                    <i class="fas fa-times"></i> No, Keep It
+                </button>
+                <button type="button" id="cancel-confirmation-yes" class="btn-danger">
+                    <i class="fas fa-check"></i> Yes, Cancel It
+                </button>
+            </div>
         </div>
     </div>
     <script src="../header/header.js"></script>

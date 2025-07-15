@@ -527,6 +527,34 @@ body {
     animation: l3 1.5s infinite;
 }
 
+/* Form help text styling */
+.form-help {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.875rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* Account ID field styling */
+#account-id-group {
+    transition: all 0.3s ease;
+}
+
+#account-id {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#account-id:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .admin-main {

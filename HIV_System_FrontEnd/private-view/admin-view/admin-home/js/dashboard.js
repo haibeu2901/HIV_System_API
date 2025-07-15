@@ -9,6 +9,22 @@ class DashboardManager {
     async loadDashboardData() {
         try {
             const token = this.authManager.getToken();
+            const userRole = parseInt(localStorage.getItem('userRole'));
+            const userId = localStorage.getItem('accId') || '1';
+            
+            // Determine API endpoint based on user role
+            let apiEndpoint;
+            if (userRole === 5) {
+                // Manager role - use manager API
+                apiEndpoint = `https://localhost:7009/api/Dashboard/manager?userId=${userId}`;
+                console.log('📊 Loading manager dashboard data for userId:', userId);
+            } else {
+                // Admin role - use admin API
+                apiEndpoint = `https://localhost:7009/api/Dashboard/admin?userId=${userId}`;
+                console.log('📊 Loading admin dashboard data for userId:', userId);
+            }
+            
+            const response = await fetch(apiEndpoint, {
             const response = await fetch('https://localhost:7009/api/Dashboard/admin?userId=1', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -307,21 +323,7 @@ class DashboardManager {
         }).format(amount);
     }
 
-    // Show error state
-    showErrorState() {
-        const errorElements = [
-            'total-users', 'total-patients', 'total-doctors', 'total-staff',
-            'total-appointments', 'pending-appointments', 'total-services',
-            'total-revenue', 'monthly-revenue'
-        ];
-
-        errorElements.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = 'N/A';
-                element.classList.add('error-state');
-            }
-        });
+   
 
         const activityList = document.getElementById('recent-activity-list');
         if (activityList) {
