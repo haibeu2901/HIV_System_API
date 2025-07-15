@@ -1,86 +1,32 @@
-body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #f6f8fa;
-    margin: 0;
-    padding: 0;
-}
-.header {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    z-index: 1000;
-}
-.navbar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 60px;
-}
-.nav-container {
-    width: 100%;
-    max-width: 1200px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.nav-logo {
-    font-size: 1.5rem;
-    color: #2c3e50;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.nav-menu {
-    list-style: none;
-    display: flex;
-    gap: 24px;
-    margin: 0;
-    padding: 0;
-}
-.nav-menu li {
-    display: flex;
-    align-items: center;
-}
-.nav-menu a, .nav-menu .active {
-    text-decoration: none;
-    color: #2c3e50;
-    font-weight: 500;
-    padding: 6px 12px;
-    border-radius: 4px;
-    transition: background 0.2s;
-}
-.nav-menu a:hover, .nav-menu .active {
-    background: #eaf1fb;
-    color: #e74c3c;
-}
-.btn-login {
-    background: #e74c3c;
-    color: #fff !important;
-    padding: 6px 16px;
-    border-radius: 4px;
-    font-weight: bold;
-    transition: background 0.2s;
-}
-.btn-login:hover {
-    background: #c0392b;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('../doctor-profile/doctor-profile-style.css');
+
+/* Reset and Base Styles */
+
+
+
+
+
 .dashboard-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 40px 24px 24px 24px;
+    padding: 100px 24px 24px 24px;
 }
+
 .main-content {
     margin-top: 24px;
 }
+
 .dashboard-header {
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 32px;
     color: #2c3e50;
 }
+
+/* Dashboard-specific overrides (if needed) */
 .dashboard-metrics {
     display: flex;
     flex-wrap: wrap;
@@ -89,8 +35,8 @@ body {
 }
 .metric-card {
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.07);
     padding: 24px 32px;
     min-width: 200px;
     flex: 1 1 200px;
@@ -100,7 +46,7 @@ body {
     transition: box-shadow 0.2s;
 }
 .metric-card:hover {
-    box-shadow: 0 4px 16px rgba(44,62,80,0.13);
+    box-shadow: 0 8px 24px rgba(44,62,80,0.13);
 }
 .metric-title {
     font-size: 1.1rem;
@@ -113,36 +59,41 @@ body {
     color: #e74c3c;
 }
 .dashboard-section {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(44,62,80,0.07);
-    padding: 24px;
-    margin-bottom: 32px;
+    min-height: 200px;
 }
+
 .dashboard-section h3 {
     margin-top: 0;
     color: #2c3e50;
     font-size: 1.3rem;
     margin-bottom: 16px;
 }
+
 .recent-patients-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 8px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
 }
+
 .recent-patients-table th, .recent-patients-table td {
     padding: 12px 16px;
     border-bottom: 1px solid #eaeaea;
     text-align: left;
 }
+
 .recent-patients-table th {
     background: #f6f8fa;
     color: #7b8a99;
     font-weight: 600;
 }
+
 .recent-patients-table tr:last-child td {
     border-bottom: none;
 }
+
 @media (max-width: 900px) {
     .dashboard-metrics {
         flex-direction: column;
@@ -153,6 +104,27 @@ body {
         width: 100%;
     }
     .dashboard-container {
-        padding: 24px 8px 8px 8px;
+        padding: 80px 8px 8px 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-menu {
+        gap: 1rem;
+    }
+    .dashboard-header {
+        font-size: 1.5rem;
+    }
+    .dashboard-section {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header {
+        font-size: 1.1rem;
+    }
+    .dashboard-section {
+        padding: 0.5rem;
     }
 }

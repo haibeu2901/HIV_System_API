@@ -495,3 +495,47 @@
     font-size: 2rem;
     margin-bottom: 0.5rem;
 }
+
+/* Regimen status color coding */
+.regimen-status.regimen-active {
+    background: #eafaf1;
+    color: #27ae60;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+}
+.regimen-status.regimen-inactive {
+    background: #f9f9f9;
+    color: #aaa;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+}
+.regimen-status.regimen-planned {
+    background: #e6f2fb;
+    color: #3498db;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+}
+.regimen-status.regimen-paused {
+    background: #f3f3f3;
+    color: #888;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+}
+.regimen-status.regimen-failed {
+    background: #fdecea;
+    color: #e74c3c;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+}
+.regimen-status.regimen-completed {
+    background: #f0f9eb;
+    color: #27ae60;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+}

@@ -223,9 +223,30 @@ function renderARVRegimens(regimens, medications) {
         return;
     }
 
+    // Check if any regimen is active
+    const hasActiveRegimen = regimens.some(r => r.regimenStatus === 2);
     let html = '';
     regimens.forEach(regimen => {
-        const statusClass = regimen.regimenStatus === 2 ? 'regimen-active' : 'regimen-inactive';
+        let statusClass = '';
+        switch (regimen.regimenStatus) {
+            case 1:
+                statusClass = 'regimen-planned';
+                break;
+            case 2:
+                statusClass = 'regimen-active';
+                break;
+            case 3:
+                statusClass = 'regimen-paused';
+                break;
+            case 4:
+                statusClass = 'regimen-failed';
+                break;
+            case 5:
+                statusClass = 'regimen-completed';
+                break;
+            default:
+                statusClass = 'regimen-inactive';
+        }
         const statusText = regimenStatusMap[regimen.regimenStatus] || regimen.regimenStatus;
         const levelText = regimenLevelMap[regimen.regimenLevel] || regimen.regimenLevel;
         // Filter medications for this regimen
@@ -298,12 +319,81 @@ function renderARVRegimens(regimens, medications) {
                         </table>
                     ` : `<div class='empty-state'><i class='fas fa-capsules'></i> No medications for this regimen.</div>`}
                 </div>
+                <div style="margin-top:1rem;text-align:right;">
+                    ${(regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Update Status</button>` : ''}
+                </div>
             </div>
         `;
     });
     
     section.innerHTML = html;
+    // Add event listeners for update status buttons
+    document.querySelectorAll('.update-regimen-status-btn').forEach(btn => {
+        btn.onclick = function() {
+            const regimenId = this.getAttribute('data-id');
+            const currentStatus = this.getAttribute('data-status');
+            openUpdateRegimenStatusModal(regimenId, currentStatus);
+        };
+    });
 }
+
+// Modal logic for update status
+const updateRegimenStatusModal = document.getElementById('updateRegimenStatusModal');
+const closeUpdateRegimenStatusModalBtn = document.getElementById('closeUpdateRegimenStatusModalBtn');
+const updateRegimenStatusForm = document.getElementById('updateRegimenStatusForm');
+const updateRegimenStatusSelect = document.getElementById('updateRegimenStatusSelect');
+const updateRegimenStatusNotes = document.getElementById('updateRegimenStatusNotes');
+const updateRegimenStatusId = document.getElementById('updateRegimenStatusId');
+const updateRegimenStatusMsg = document.getElementById('updateRegimenStatusMsg');
+
+function openUpdateRegimenStatusModal(regimenId, currentStatus) {
+    updateRegimenStatusId.value = regimenId;
+    updateRegimenStatusSelect.value = '';
+    updateRegimenStatusNotes.value = '';
+    updateRegimenStatusMsg.textContent = '';
+    updateRegimenStatusModal.style.display = 'block';
+}
+closeUpdateRegimenStatusModalBtn.onclick = function() {
+    updateRegimenStatusModal.style.display = 'none';
+};
+window.onclick = function(event) {
+    if (event.target === updateRegimenStatusModal) {
+        updateRegimenStatusModal.style.display = 'none';
+    }
+};
+
+updateRegimenStatusForm.onsubmit = async function(e) {
+    e.preventDefault();
+    const regimenId = updateRegimenStatusId.value;
+    const newStatus = +updateRegimenStatusSelect.value;
+    const notes = updateRegimenStatusNotes.value.trim();
+    if (!regimenId || !newStatus || !notes) {
+        updateRegimenStatusMsg.textContent = 'Please fill all fields.';
+        return;
+    }
+    // Enforce: Only one active regimen
+    const section = document.getElementById('arvRegimensSection');
+    const regimens = Array.from(section.querySelectorAll('.regimen-status')).map(el => el.textContent.trim());
+    if (newStatus === 2 && regimens.includes('Active')) {
+        updateRegimenStatusMsg.textContent = 'There is already an active regimen. Please pause/complete it first.';
+        return;
+    }
+    try {
+        const res = await fetch(`https://localhost:7009/api/PatientArvRegimen/UpdatePatientArvRegimenStatus/${regimenId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ notes, regimenStatus: newStatus })
+        });
+        if (!res.ok) {
+            updateRegimenStatusMsg.textContent = 'Failed to update status.';
+            return;
+        }
+        updateRegimenStatusModal.style.display = 'none';
+        loadPatientData();
+    } catch (err) {
+        updateRegimenStatusMsg.textContent = 'Error updating status.';
+    }
+};
 
 // --- Regimen Modal Logic ---
 let allMedicationDetails = [];
@@ -316,7 +406,14 @@ const regimenModal = document.getElementById('regimenModal');
 const closeRegimenModalBtn = document.getElementById('closeRegimenModalBtn');
 const cancelRegimenBtn = document.getElementById('cancelRegimenBtn');
 
+// Prevent creating a new regimen if one is active
 openRegimenModalBtn.onclick = async function() {
+    // Check for active regimen
+    const section = document.getElementById('arvRegimensSection');
+    if (section && section.innerHTML.includes('regimen-active')) {
+        alert('Cannot create a new regimen while one is active.');
+        return;
+    }
     regimenModal.style.display = 'block';
     await loadMedicationDetails();
     resetRegimenForm();
