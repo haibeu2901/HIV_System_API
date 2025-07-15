@@ -97,6 +97,17 @@ namespace HIV_System_API_Services.Implements
                 TestDate = r.TestDate,
                 Result = r.ResultValue,
                 Notes = r.Notes,
+                ComponentTestResults = r.ComponentTestResults?
+                    .Select(ct => new ComponentTestResultResponseDTO
+                    {
+                        ComponentTestResultId = ct.CtrId,
+                        TestResultId = ct.TrsId,
+                        StaffId = ct.Stf.StfId,
+                        ComponentTestResultName = ct.CtrName,
+                        CtrDescription = ct.CtrDescription ?? string.Empty,
+                        ResultValue = ct.ResultValue,
+                        Notes = ct.Notes
+                    }).ToList() ?? new List<ComponentTestResultResponseDTO>()
             }).ToList();
             return response;
         }
