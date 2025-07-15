@@ -14,7 +14,15 @@ namespace HIV_System_API_Services.Implements
     public class BlogReactionService : IBlogReactionService
     {
         private readonly BlogReactionRepo _repo = new BlogReactionRepo();
-
+        private static CommentResponseDTO MapToResponseDTO(BlogReaction reaction) =>
+            new()
+            {
+                ReactionId = reaction.BrtId,
+                BlogId = reaction.SblId,
+                AccountId = reaction.AccId,
+                Comment = reaction.Comment ?? string.Empty,
+                ReactedAt = reaction.ReactedAt ?? DateTime.UtcNow,
+            };
         public async Task<CommentResponseDTO> CreateCommentAsync(CommentRequestDTO dto)
         {
             var entity = new BlogReaction
@@ -48,14 +56,21 @@ namespace HIV_System_API_Services.Implements
 
         public Task<bool> DeleteCommentAsync(int id) => _repo.DeleteCommentAsync(id);
 
-        private static CommentResponseDTO MapToResponseDTO(BlogReaction reaction) =>
-            new()
+        public async Task<BlogReactionResponseDTO> UpdateBlogReactionAsync(BlogReactionRequestDTO dto)
+        {
+            var reaction = await _repo.UpdateBlogReactionAsync(dto.BlogId, dto.AccountId, dto.ReactionType);
+            return new BlogReactionResponseDTO
             {
                 ReactionId = reaction.BrtId,
                 BlogId = reaction.SblId,
                 AccountId = reaction.AccId,
-                Comment = reaction.Comment ?? string.Empty,
-                ReactedAt = reaction.ReactedAt ?? DateTime.UtcNow,
+                ReactionType = reaction.ReactionType,
+                ReactedAt = reaction.ReactedAt ?? DateTime.UtcNow
             };
+        }
+        public async Task<int> GetReactionCountByBlogIdAsync(int blogId, bool reactionType)
+        {
+            return await _repo.GetReactionCountByBlogIdAsync(blogId, reactionType);
+        }
     }
 }

@@ -14,5 +14,7 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<CommentResponseDTO>> GetCommentsByBlogIdAsync(int blogId);
         Task<CommentResponseDTO> UpdateCommentAsync(int id, UpdateCommentRequestDTO dto);
         Task<bool> DeleteCommentAsync(int id);
+        Task<BlogReactionResponseDTO> UpdateBlogReactionAsync(BlogReactionRequestDTO dto);
+        Task<int> GetReactionCountByBlogIdAsync(int blogId, bool reactionType);
     }
 }
