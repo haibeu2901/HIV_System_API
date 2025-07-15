@@ -14,5 +14,6 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<TestResult> CreateTestResult(TestResult testResult);
         Task<bool> UpdateTestResult(int id, TestResult testResult);
         Task<bool> DeleteTestResult(int id);
+        Task<List<TestResult>> GetTestResultsByPatientId(int patientId);
     }
 }

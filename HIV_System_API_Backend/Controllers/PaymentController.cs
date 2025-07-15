@@ -22,7 +22,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreatePayment")]
-        [Authorize]
+        [Authorize (Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO request)
         {
             try

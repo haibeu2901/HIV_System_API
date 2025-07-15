@@ -48,7 +48,6 @@ namespace HIV_System_API_Services.Implements
                 NtfId = ntfId,
                 NotiType = requestDTO.NotiType,
                 NotiMessage = requestDTO.NotiMessage,
-                SendAt = requestDTO.SendAt
             };
         }
 
@@ -133,11 +132,6 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(requestDTO.NotiMessage))
             {
                 throw new ArgumentException("Notification message is required.", nameof(requestDTO.NotiMessage));
-            }
-
-            if (requestDTO.SendAt == default(DateTime))
-            {
-                throw new ArgumentException("Send date is required.", nameof(requestDTO.SendAt));
             }
         }
 
@@ -621,5 +615,49 @@ namespace HIV_System_API_Services.Implements
                 throw new InvalidOperationException($"Error retrieving notification details: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
+
+        public async Task<NotificationResponseDTO> CreateAndSendToAccountIdAsync(CreateNotificationRequestDTO dto, int accId)
+        {
+            ValidateCreateNotificationRequestDTO(dto);
+            await ValidateAccountExists(accId);
+
+            var notification = MapCreateRequestToEntity(dto);
+            var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+
+            await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, accId);
+
+            return MapToResponseDTO(createdNotification);
+        }
+
+        public async Task<NotificationResponseDTO> CreateAndSendToRoleAsync(CreateNotificationRequestDTO dto, byte role)
+        {
+            ValidateCreateNotificationRequestDTO(dto);
+            ValidateRole(role);
+
+            var notification = MapCreateRequestToEntity(dto);
+            var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+
+            await _notificationRepo.SendNotificationToRoleAsync(createdNotification.NtfId, role);
+
+            return MapToResponseDTO(createdNotification);
+        }
+
+        public async Task<NotificationResponseDTO> CreateAndSendToAllAsync(CreateNotificationRequestDTO dto)
+        {
+            ValidateCreateNotificationRequestDTO(dto);
+
+            var notification = MapCreateRequestToEntity(dto);
+            var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+
+            var allAccountIds = await _context.Accounts.Select(a => a.AccId).ToListAsync();
+
+            foreach (var accId in allAccountIds)
+            {
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, accId);
+            }
+
+            return MapToResponseDTO(createdNotification);
+        }
+
     }
 }

@@ -147,18 +147,26 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddHttpContextAccessor(); // Add this for user claims access
 builder.Services.AddScoped<IRegimenTemplateService, RegimenTemplateService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
+builder.Services.AddScoped<ISocialBlogService, SocialBlogService>();
+builder.Services.AddScoped<IBlogReactionService, BlogReactionService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Add CORS policy
+// In Program.cs or Startup.cs
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp",
-        policy => policy
-            .WithOrigins("http://127.0.0.1:5500", "https://localhost:7009", "http://localhost:5500") // No trailing slash
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
 });
+
+// And in your middleware configuration:
 
 var app = builder.Build();
 var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
@@ -177,7 +185,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("AllowReactApp");
+app.UseCors("AllowAll");
 app.MapControllers();
 
 app.Run();

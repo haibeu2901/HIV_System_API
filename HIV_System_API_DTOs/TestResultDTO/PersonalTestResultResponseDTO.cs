@@ -8,6 +8,7 @@ namespace HIV_System_API_DTOs.TestResultDTO
 {
     public class PersonalTestResultResponseDTO
     {
+        public int PatientMedicalRecordId { get; set; }
         public bool? Result { get; set; }
         public DateOnly TestDate { get; set; }
         public string? Notes { get; set; }

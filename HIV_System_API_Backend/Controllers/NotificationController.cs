@@ -571,7 +571,7 @@ namespace HIV_System_API_Backend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<List<NotificationAccount>>> GetNotificationRecipients(int ntfId)
+        public async Task<ActionResult<List<NotificationRecipientDTO>>> GetNotificationRecipients(int ntfId)
         {
             if (ntfId <= 0)
             {
@@ -581,20 +581,20 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var recipients = await _notificationService.GetNotificationRecipientsAsync(ntfId);
-                return Ok(recipients);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(new { message = ex.Message });
+
+                var dtoList = recipients.Select(r => new NotificationRecipientDTO
+                {
+                    AccId = r.AccId,
+                    Fullname = r.Acc?.Fullname,
+                    Role = r.Acc?.Roles ?? 0,
+                    IsRead = r.IsRead
+                }).ToList();
+
+                return Ok(dtoList);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { message = "An error occurred while retrieving notification recipients", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving notification recipients.", error = ex.Message });
             }
         }
 
@@ -646,5 +646,72 @@ namespace HIV_System_API_Backend.Controllers
                     new { message = "An error occurred while deleting notification for account", error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Create notification and send to specific account
+        /// </summary>
+        [HttpPost("CreateAndSendToAccount/{accId:int}")]
+        [Authorize(Roles = "1,5")]
+        public async Task<ActionResult<NotificationResponseDTO>> CreateAndSendToAccount(int accId, [FromBody] CreateNotificationRequestDTO dto)
+        {
+            if (dto == null)
+                return BadRequest(new { message = "Notification data is required." });
+
+            if (accId <= 0)
+                return BadRequest(new { message = "Invalid account ID." });
+
+            try
+            {
+                var notification = await _notificationService.CreateAndSendToAccountIdAsync(dto, accId);
+                return CreatedAtAction(nameof(GetNotificationById), new { id = notification.NotiId }, notification);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating and sending notification.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Create notification and send to specific role
+        /// </summary>
+        [HttpPost("CreateAndSendToRole/{role}")]
+        [Authorize(Roles = "1,5")]
+        public async Task<ActionResult<NotificationResponseDTO>> CreateAndSendToRole(byte role, [FromBody] CreateNotificationRequestDTO dto)
+        {
+            if (dto == null)
+                return BadRequest(new { message = "Notification data is required." });
+
+            try
+            {
+                var notification = await _notificationService.CreateAndSendToRoleAsync(dto, role);
+                return CreatedAtAction(nameof(GetNotificationById), new { id = notification.NotiId }, notification);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating and sending notification.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Create notification and send to all users
+        /// </summary>
+        [HttpPost("CreateAndSendToAll")]
+        [Authorize(Roles = "1,5")]
+        public async Task<ActionResult<NotificationResponseDTO>> CreateAndSendToAll([FromBody] CreateNotificationRequestDTO dto)
+        {
+            if (dto == null)
+                return BadRequest(new { message = "Notification data is required." });
+
+            try
+            {
+                var notification = await _notificationService.CreateAndSendToAllAsync(dto);
+                return CreatedAtAction(nameof(GetNotificationById), new { id = notification.NotiId }, notification);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating and sending notification to all.", error = ex.Message });
+            }
+        }
+
     }
 }
