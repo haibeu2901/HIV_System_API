@@ -290,7 +290,6 @@ function renderARVRegimens(regimens, medications) {
                         <table class="medications-table">
                             <thead>
                                 <tr>
-                                    <th>Status</th>
                                     <th>Name</th>
                                     <th>Dosage</th>
                                     <th>Quantity</th>
@@ -302,11 +301,6 @@ function renderARVRegimens(regimens, medications) {
                             <tbody>
                                 ${regimenMeds.map(med => `
                                     <tr>
-                                        <td>
-                                            ${regimen.regimenStatus === 2
-                                                ? `<span class="medication-status active"><i class="fas fa-check-circle"></i>Active</span>`
-                                                : `<span class="medication-status inactive"><i class="fas fa-times-circle"></i>Inactive</span>`}
-                                        </td>
                                         <td>${med.medicationDetail.arvMedicationName}</td>
                                         <td>${med.medicationDetail.arvMedicationDosage}</td>
                                         <td>${med.quantity}</td>
