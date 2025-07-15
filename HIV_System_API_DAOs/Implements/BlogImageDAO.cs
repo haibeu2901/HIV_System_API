@@ -35,6 +35,12 @@ namespace HIV_System_API_DAOs.Implements
             await _context.SaveChangesAsync();
             return blogImage;
         }
+        public async Task<List<BlogImage>> UploadImageListAsync(List<BlogImage> blogImages)
+        {
+            _context.BlogImages.AddRange(blogImages);
+            await _context.SaveChangesAsync();
+            return blogImages;
+        }
 
         public async Task<BlogImage> GetByIdAsync(int imgId)
         {

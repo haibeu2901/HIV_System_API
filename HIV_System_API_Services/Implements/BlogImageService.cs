@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HIV_System_API_Services.Implements
@@ -226,6 +227,99 @@ namespace HIV_System_API_Services.Implements
                 _logger.LogError(ex, "Failed to retrieve images for SblId: {BlogId}", blogId);
                 throw new InvalidOperationException("Failed to retrieve images.", ex);
             }
+        }
+        public async Task<List<BlogImageResponseDTO>> UploadImageListAsync(BlogImageListRequestDTO request)
+        {
+            if (request == null || request.Images == null || !request.Images.Any())
+            {
+                _logger.LogError("Upload request or images are null or empty.");
+                throw new ArgumentException("No images provided");
+            }
+
+            const long maxFileSize = 5 * 1024 * 1024; // 5MB
+            var validExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            var responseDtos = new List<BlogImageResponseDTO>();
+
+            // Ensure storage directory exists
+            try
+            {
+                if (!Directory.Exists(_storagePath))
+                {
+                    _logger.LogInformation("Creating storage directory: {StoragePath}", _storagePath);
+                    Directory.CreateDirectory(_storagePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create storage directory: {StoragePath}", _storagePath);
+                throw new InvalidOperationException("Failed to create storage directory.", ex);
+            }
+
+            foreach (var image in request.Images)
+            {
+                // Size limit check
+                if (image.Length > maxFileSize)
+                {
+                    _logger.LogError("Image size {ImageSize} bytes exceeds limit of {MaxFileSize} bytes.", image.Length, maxFileSize);
+                    throw new ArgumentException($"Image '{image.FileName}' size exceeds {maxFileSize / (1024 * 1024)}MB limit.");
+                }
+
+                // Validate file extension
+                var fileExtension = Path.GetExtension(image.FileName).ToLower();
+                if (string.IsNullOrWhiteSpace(fileExtension) || !validExtensions.Contains(fileExtension))
+                {
+                    _logger.LogError("Unsupported file extension for image '{FileName}': {FileExtension}", image.FileName, fileExtension);
+                    throw new ArgumentException($"Image '{image.FileName}' has unsupported file extension. Only JPG, JPEG, and PNG files are allowed.");
+                }
+
+                // Generate unique file name
+                var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(_storagePath, fileName);
+
+                // Save file to disk
+                try
+                {
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await image.CopyToAsync(stream);
+                    }
+                    _logger.LogInformation("Successfully saved image '{FileName}' to {FilePath}", image.FileName, filePath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to save image '{FileName}' to {FilePath}", image.FileName, filePath);
+                    throw new InvalidOperationException($"Failed to save image '{image.FileName}' to disk.", ex);
+                }
+
+                // Create BlogImage entity
+                var blogImage = new BlogImage
+                {
+                    SblId = request.SblId,
+                    ImageUrl = $"{_baseUrl}{fileName}",
+                    UploadedAt = DateTime.UtcNow
+                };
+
+                // Save to database
+                try
+                {
+                    var savedImage = await _blogImageRepository.UploadImageAsync(blogImage);
+                    _logger.LogInformation("Successfully saved image metadata to database with ImgId: {ImgId}", savedImage.ImgId);
+                    responseDtos.Add(new BlogImageResponseDTO
+                    {
+                        ImgId = savedImage.ImgId,
+                        SblId = savedImage.SblId,
+                        ImageUrl = savedImage.ImageUrl,
+                        UploadedAt = savedImage.UploadedAt
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to save image metadata for '{FileName}' to database.", image.FileName);
+                    throw new InvalidOperationException($"Failed to save image metadata for '{image.FileName}'.", ex);
+                }
+            }
+
+            return responseDtos;
         }
     }
 }
