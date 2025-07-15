@@ -220,7 +220,7 @@ namespace HIV_System_API_Services.Implements
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
                 }
-                else if (updatedAppointment.ApmStatus == 2) // If status is confirmed
+                else if (updatedAppointment.ApmStatus == 2 || updatedAppointment.ApmStatus == 3) // If status is confirmed
                 {
                     // Create notification for confirmation
                     var notification = new Notification

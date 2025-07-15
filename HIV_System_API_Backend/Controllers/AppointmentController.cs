@@ -248,29 +248,15 @@ namespace HIV_System_API_Backend.Controllers
 
             try
             {
-                // Call the service method that validates if the user has access to this specific appointment.
                 var appointment = await _appointmentService.GetPersonalAppointmentByIdAsync(accountId.Value, id);
+                if (appointment == null)
+                    return NotFound($"Appointment with ID {id} not found.");
+
                 return Ok(appointment);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                // Occurs if the appointment with the given ID doesn't exist.
-                return NotFound(ex.Message);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Occurs if the user is not the patient or doctor associated with the appointment.
-                throw new UnauthorizedAccessException("You do not have permission to view this appointment.");
-            }
-            catch (ArgumentException ex)
-            {
-                // Occurs if the accountId is invalid.
-                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                // General server error.
-                return StatusCode(500, $"An internal server error occurred: {ex.InnerException}");
+                return StatusCode(500, $"{ex.Message}");
             }
         }
     }
