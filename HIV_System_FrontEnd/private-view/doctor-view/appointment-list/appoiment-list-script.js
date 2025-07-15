@@ -2,11 +2,12 @@
 const token = localStorage.getItem('token');
 
 // Appointment status mapping
-const statusMap = {
-    1: 'Chờ xác nhận',
-    2: 'Đã xác nhận',
-    3: 'Đã xác nhận lại',
-    4: 'Đã hủy'
+const appointmentStatusMap = {
+  1: "Pending",
+  2: "Scheduled",
+  3: "Rescheduled",
+  4: "Cancelled",
+  5: "Completed"
 };
 
 async function fetchAppointments() {
@@ -50,17 +51,22 @@ function renderAppointments(appointments) {
                     <td>${apmt.apmtDate}</td>
                     <td>${apmt.apmTime.slice(0,5)}</td>
                     <td>${apmt.notes || ''}</td>
-                    <td class="status status-${apmt.apmStatus}">${statusMap[apmt.apmStatus] || 'Không rõ'}</td>
+                    <td class="status status-${apmt.apmStatus}">${appointmentStatusMap[apmt.apmStatus] || 'Không rõ'}</td>
                     <td>
                         ${apmt.apmStatus === 1 ? `
                             <button class="button-accept" data-accept-id="${apmt.appointmentId}">Accept</button>
                             <button class="button-modify" data-modify-id="${apmt.appointmentId}">Modify</button>
                         ` : ''}
+                        ${(apmt.apmStatus !== 4 && apmt.apmStatus !== 5) ? `
+                            <button class="button-reject" data-reject-id="${apmt.appointmentId}">Reject</button>
+                            <button class="button-complete" data-complete-id="${apmt.appointmentId}">Complete</button>
+                        ` : ''}
                     </td>
                 </tr>
             `).join('')}
         </tbody>
-    </table>`;
+    </table>
+    <div id="appointment-message" style="margin-top:10px;"></div>`;
     section.innerHTML = html;
 
     // Accept button logic
@@ -78,6 +84,52 @@ function renderAppointments(appointments) {
                 renderAppointments(appointments);
             } catch (err) {
                 alert('Error accepting appointment.');
+            }
+        };
+    });
+
+    // Reject button logic
+    document.querySelectorAll('.button-reject').forEach(btn => {
+        btn.onclick = async function() {
+            const apmtId = this.getAttribute('data-reject-id');
+            if (!confirm('Are you sure you want to reject (cancel) this appointment?')) return;
+            this.disabled = true;
+            setMessage('Processing...', false);
+            try {
+                const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?id=${apmtId}&status=4`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Failed to reject appointment');
+                setMessage('Appointment rejected successfully!', true);
+                let appointments = await fetchAppointments();
+                renderAppointments(appointments);
+            } catch (err) {
+                setMessage('Error rejecting appointment.', false);
+                this.disabled = false;
+            }
+        };
+    });
+
+    // Complete button logic
+    document.querySelectorAll('.button-complete').forEach(btn => {
+        btn.onclick = async function() {
+            const apmtId = this.getAttribute('data-complete-id');
+            if (!confirm('Mark this appointment as completed?')) return;
+            this.disabled = true;
+            setMessage('Processing...', false);
+            try {
+                const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?id=${apmtId}&status=5`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Failed to complete appointment');
+                setMessage('Appointment marked as completed!', true);
+                let appointments = await fetchAppointments();
+                renderAppointments(appointments);
+            } catch (err) {
+                setMessage('Error completing appointment.', false);
+                this.disabled = false;
             }
         };
     });
@@ -155,7 +207,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         const apmtId = this.getAttribute('data-apmt-id');
         const date = document.getElementById('modifyDate').value;
-        const time = document.getElementById('modifyTime').value;
+        let time = document.getElementById('modifyTime').value;
         const notes = document.getElementById('modifyNotes').value;
         // Validate date (not in the past)
         const today = new Date();
@@ -170,6 +222,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             alert('Please select a valid time.');
             return;
         }
+        // Ensure time is in HH:mm:ss format
+        if (time.length === 5) time += ':00';
         try {
             const res = await fetch(`https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${apmtId}`, {
                 method: 'POST',
@@ -182,8 +236,6 @@ window.addEventListener('DOMContentLoaded', async () => {
                     appointmentTime: time,
                     notes: notes
                 })
-               
-
             });
             if (!res.ok) throw new Error('Failed to update appointment');
             closeModifyModal();
@@ -194,3 +246,13 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     };
 });
+
+// Helper for showing messages
+function setMessage(msg, success) {
+    const msgDiv = document.getElementById('appointment-message');
+    msgDiv.textContent = msg;
+    msgDiv.style.color = success ? '#27ae60' : '#e74c3c';
+    if (success) {
+        setTimeout(() => { msgDiv.textContent = ''; }, 2000);
+    }
+}

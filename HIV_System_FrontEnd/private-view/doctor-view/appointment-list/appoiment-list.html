@@ -15,27 +15,14 @@
                     Appointment List
                 </div>
                 <ul class="nav-menu">
-                    <li>
-                        <a href="../../../public-view/landingpage.html">Home</a>
-                    </li>
-                    <li>
-                        <a href="../doctor-dashboard/doctor-dashboard.html">Work Schedule</a>
-                    </li>
-                    <li>
-                        <span class="active" style="color:#e74c3c;font-weight:bold;">Appointments</span>
-                    </li>
-                    <li>
-                        <a href="../patient-list/patient-list.html">Patient List</a>
-                    </li>
-                    <li>
-                        <a href="../medical-resources/medical-resources.html">Medical Resources</a>
-                    </li>
-                    <li>
-                        <a href="../doctor-profile/doctor-profile.html">Profile</a>
-                    </li>
-                    <li>
-                        <a href="../../../public-view/landingpage.html" class="btn-login">Logout</a>
-                    </li>
+                    <li><a href="../../../public-view/landingpage.html">Home</a></li>
+                    <li><a href="../doctor-dashboard/doctor-dashboard.html">Dashboard</a></li>
+                    <li><a href="../doctor-work-schedule/doctor-work-schedule.html">Work Schedule</a></li>
+                    <li><span class="active" style="color:#e74c3c;font-weight:bold;">Appointments</span></li>
+                    <li><a href="../patient-list/patient-list.html">Patient List</a></li>
+                    <li><a href="../medical-resources/medical-resources.html">Medical Resources</a></li>
+                    <li><a href="../doctor-profile/doctor-profile.html">Profile</a></li>
+                    <li><a href="../../../public-view/landingpage.html" class="btn-login">Logout</a></li>
                 </ul>
             </div>
         </nav>
@@ -57,8 +44,8 @@
                         <select id="modifyTime" name="modifyTime" required></select><br><br>
                         <label for="modifyNotes">Notes:</label>
                         <textarea id="modifyNotes" name="modifyNotes" rows="3"></textarea><br><br>
-                        <button type="submit" id="submitModifyBtn">Submit</button>
-                        <button type="button" id="cancelModifyBtn">Cancel</button>
+                        <button type="submit" id="submitModifyBtn" class="modal-submit">Submit</button>
+                        <button type="button" id="cancelModifyBtn" class="modal-cancel">Cancel</button>
                     </form>
                 </div>
             </div>

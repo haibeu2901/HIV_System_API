@@ -9,6 +9,21 @@ const appointmentStatusMap = {
     4: 'Đã hủy'
 };
 
+// ARV Regimen level and status mapping
+const regimenLevelMap = {
+  1: "Level 1",
+  2: "Level 2",
+  3: "Level 3",
+  4: "Special Case"
+};
+const regimenStatusMap = {
+  1: "Planned",
+  2: "Active",
+  3: "Paused",
+  4: "Failed",
+  5: "Completed"
+};
+
 // Get patient ID from URL parameters
 function getPatientIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -132,7 +147,7 @@ function renderAppointments(appointments) {
                 <td>${appt.doctorName || '-'}</td>
                 <td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
                 <td>${appt.notes || '-'}</td>
-            </tr>
+                    </tr>
         `;
     });
 
@@ -211,7 +226,8 @@ function renderARVRegimens(regimens, medications) {
     let html = '';
     regimens.forEach(regimen => {
         const statusClass = regimen.regimenStatus === 2 ? 'regimen-active' : 'regimen-inactive';
-        const statusText = regimen.regimenStatus === 2 ? 'Active' : 'Inactive';
+        const statusText = regimenStatusMap[regimen.regimenStatus] || regimen.regimenStatus;
+        const levelText = regimenLevelMap[regimen.regimenLevel] || regimen.regimenLevel;
         // Filter medications for this regimen
         const regimenMeds = (medications || []).filter(med => med.patientArvRegiId === regimen.patientArvRegiId);
         html += `
@@ -231,7 +247,7 @@ function renderARVRegimens(regimens, medications) {
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Regimen Level</div>
-                        <div class="regimen-detail-value">${regimen.regimenLevel}</div>
+                        <div class="regimen-detail-value">${levelText}</div>
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Total Cost</div>
@@ -479,56 +495,41 @@ regimenForm.onsubmit = async function(e) {
         alert('Cannot find patient medical record.');
         return;
     }
-    const payload = {
+    // Build medications array for API
+    const medications = selectedTemplateMedications.map(med => ({
+        patientArvRegId: 0,
+        arvMedDetailId: med.arvMedDetailId,
+        quantity: med.quantity
+    }));
+    // Build regimen object
+    const regimen = {
         patientMedRecordId: mrData.pmrId,
         notes: regimenNotes.value,
         regimenLevel: +regimenLevel.value,
         createdAt: new Date().toISOString(),
         startDate: regimenStartDate.value,
         endDate: null,
-        regimenStatus: 2, // active
-        totalCost: +regimenTotalCost.value || 0
+        regimenStatus: 1, // active
+        totalCost: 0 // Let backend calculate
     };
-    // Create regimen
-    let newRegimenId = null;
+    // Call new API
     try {
-        const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimen', {
+        const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ regimen, medications })
         });
-        if (res.ok) {
-            const data = await res.json();
-            newRegimenId = data.patientArvRegiId || data.id || data;
-        } else {
+        if (!res.ok) {
             alert('Failed to create regimen.');
             return;
         }
+        alert('Regimen and medications created successfully!');
+        regimenModal.style.display = 'none';
+        // Refresh data
+        loadPatientData();
     } catch (err) {
         alert('Error creating regimen.');
-        return;
     }
-    // Create medications
-    for (const med of selectedTemplateMedications) {
-        try {
-            await fetch('https://localhost:7009/api/PatientArvMedication/CreatePatientArvMedication', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    patientArvMedId: 0,
-                    arvMedDetailId: med.arvMedDetailId,
-                    quantity: med.quantity
-                })
-            });
-        } catch (err) {
-            alert('Error creating medication: ' + med.arvMedicationName);
-        }
-    }
-    // Success
-    alert('Regimen and medications created successfully!');
-    regimenModal.style.display = 'none';
-    // Refresh data
-    loadPatientData();
 };
 
 // Main function to load all patient data

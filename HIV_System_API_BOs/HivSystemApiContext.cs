@@ -57,8 +57,7 @@ public partial class HivSystemApiContext : DbContext
     public virtual DbSet<Staff> Staff { get; set; }
 
     public virtual DbSet<TestResult> TestResults { get; set; }
-    public virtual DbSet<BlogImage> BlogImages { get; set; }
-    public virtual DbSet<BlogReaction> BlogReactions { get; set; }
+
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

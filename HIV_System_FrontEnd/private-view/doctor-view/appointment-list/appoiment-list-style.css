@@ -59,6 +59,45 @@
 .button-modify:hover {
     background: #ca7c1b;
 }
+.button-reject {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.button-reject:hover:not(:disabled) {
+    background: #c0392b;
+}
+.button-reject:disabled {
+    background: #f5b7b1;
+    color: #fff;
+    cursor: not-allowed;
+}
+
+.button-complete {
+    background: #2980b9;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.button-complete:hover:not(:disabled) {
+    background: #1c5a85;
+}
+.button-complete:disabled {
+    background: #b2c9e0;
+    color: #fff;
+    cursor: not-allowed;
+}
 /* Modal styles */
 .modal {
   display: none;
@@ -110,4 +149,43 @@
 }
 #modifyAppointmentForm button {
   margin-top: 8px;
+}
+
+.modal-submit {
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.modal-submit:hover:not(:disabled) {
+    background: #219150;
+}
+.modal-submit:disabled {
+    background: #b7e1cd;
+    color: #fff;
+    cursor: not-allowed;
+}
+
+.modal-cancel {
+    background: #e67e22;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.modal-cancel:hover:not(:disabled) {
+    background: #ca7c1b;
+}
+.modal-cancel:disabled {
+    background: #f8cfa0;
+    color: #fff;
+    cursor: not-allowed;
 }
