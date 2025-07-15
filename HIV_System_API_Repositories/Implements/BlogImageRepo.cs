@@ -29,5 +29,9 @@ namespace HIV_System_API_Repositories.Implements
         {
             return await BlogImageDAO.Instance.GetByBlogIdAsync(blogId);
         }
+        public async Task<List<BlogImage>> UploadImageListAsync(List<BlogImage> blogImages)
+        {
+            return await BlogImageDAO.Instance.UploadImageListAsync(blogImages);
+        }
     }
 }

@@ -13,5 +13,6 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<BlogImage> GetByIdAsync(int imgId);
         Task<bool> DeleteBlogImageAsync(int imgId);
         Task<List<BlogImage>> GetByBlogIdAsync(int blogId);
+        Task<List<BlogImage>> UploadImageListAsync(List<BlogImage> blogImages);
     }
 }
