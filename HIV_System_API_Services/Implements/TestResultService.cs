@@ -83,34 +83,34 @@ namespace HIV_System_API_Services.Implements
 
             return results.Select(MapToResponse).ToList();
         }
-       public async Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id)
-{
-    var patient = await _patientRepo.GetPatientByIdAsync(id);
-    if (patient == null)
-        throw new KeyNotFoundException($"Patient with ID {id} not found.");
-    var results = await _testResultRepo.GetTestResultsByPatientId(patient.PatientMedicalRecord.PmrId);
-    if (results == null || !results.Any())
-        throw new KeyNotFoundException($"No test results found for patient with ID {id}.");
-    var response = results.Select(r => new PersonalTestResultResponseDTO
-    {
-        PatientMedicalRecordId = r.PmrId,
-        TestDate = r.TestDate,
-        Result = r.ResultValue,
-        Notes = r.Notes,
-        ComponentTestResults = r.ComponentTestResults?
-            .Select(ct => new ComponentTestResultResponseDTO
+        public async Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id)
             {
-                ComponentTestResultId = ct.CtrId,
-                TestResultId = ct.TrsId,
-                StaffId = ct.Stf.StfId,
-                ComponentTestResultName = ct.CtrName,
-                CtrDescription = ct.CtrDescription ?? string.Empty,
-                ResultValue = ct.ResultValue,
-                Notes = ct.Notes
-            }).ToList() ?? new List<ComponentTestResultResponseDTO>()
-    }).ToList();
-    return response;
-}
+                var patient = await _patientRepo.GetPatientByIdAsync(id);
+                if (patient == null)
+                    throw new KeyNotFoundException($"Patient with ID {id} not found.");
+                var results = await _testResultRepo.GetTestResultsByPatientId(patient.PatientMedicalRecord.PmrId);
+                if (results == null || !results.Any())
+                    throw new KeyNotFoundException($"No test results found for patient with ID {id}.");
+                var response = results.Select(r => new PersonalTestResultResponseDTO
+                {
+                    PatientMedicalRecordId = r.PmrId,
+                    TestDate = r.TestDate,
+                    Result = r.ResultValue,
+                    Notes = r.Notes,
+                    ComponentTestResults = r.ComponentTestResults?
+                        .Select(ct => new ComponentTestResultResponseDTO
+                        {
+                            ComponentTestResultId = ct.CtrId,
+                            TestResultId = ct.TrsId,
+                            StaffId = ct.Stf.StfId,
+                            ComponentTestResultName = ct.CtrName,
+                            CtrDescription = ct.CtrDescription ?? string.Empty,
+                            ResultValue = ct.ResultValue,
+                            Notes = ct.Notes
+                        }).ToList() ?? new List<ComponentTestResultResponseDTO>()
+                }).ToList();
+                return response;
+            }
 
         public async Task<List<TestResultResponseDTO>> GetSustainTestResultPatient()
         {
