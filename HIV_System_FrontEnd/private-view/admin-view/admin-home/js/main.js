@@ -21,6 +21,9 @@ class AdminApp {
                 return;
             }
 
+            // Set up role-based access
+            this.setupRoleBasedAccess();
+
             // Initialize feature managers
             this.managers.dashboard = new DashboardManager(this.managers.auth);
             this.managers.appointment = new AppointmentManager(this.managers.auth);
@@ -53,6 +56,41 @@ class AdminApp {
             console.error('Failed to initialize admin application:', error);
             this.showError('Failed to initialize application. Please refresh the page.');
         }
+    }
+
+    // Setup role-based access
+    setupRoleBasedAccess() {
+        const userRole = parseInt(localStorage.getItem('userRole'));
+        const dashboardTitle = document.getElementById('dashboard-title');
+        const pageTitle = document.getElementById('page-title');
+        
+        // Update dashboard title and page title based on role
+        if (userRole === 5) {
+            if (dashboardTitle) {
+                dashboardTitle.textContent = 'Manager Dashboard';
+            }
+            if (pageTitle) {
+                pageTitle.textContent = 'Manager Dashboard - CareFirst HIV Clinic';
+            }
+        } else {
+            if (dashboardTitle) {
+                dashboardTitle.textContent = 'Admin Dashboard';
+            }
+            if (pageTitle) {
+                pageTitle.textContent = 'Admin Dashboard - CareFirst HIV Clinic';
+            }
+        }
+        
+        // Hide accounts section for managers
+        if (userRole === 5) {
+            const adminOnlyElements = document.querySelectorAll('[data-role="admin-only"]');
+            adminOnlyElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            console.log('🔒 Manager access: Accounts section hidden');
+        }
+        
+        console.log('🔑 Role-based access set up for role:', userRole);
     }
 
     // Initialize all managers
