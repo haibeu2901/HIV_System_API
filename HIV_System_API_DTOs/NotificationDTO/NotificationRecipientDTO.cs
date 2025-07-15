@@ -11,5 +11,7 @@ namespace HIV_System_API_DTOs.NotificationDTO
         public int AccId { get; set; }
         public string? Fullname { get; set; }
         public byte Role { get; set; }
+        public bool IsRead { get; set; }
+
     }
 }

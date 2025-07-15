@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient List</title>
+    <link rel="stylesheet" href="patient-list-style.css">
+</head>
+<body>
+    <!-- Header/Navbar -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <i class="fa fa-user-md"></i>
+                    Patient Medical Records
+                </div>
+                <ul class="nav-menu">
+                  <li>
+                    <a href="../../../public-view/landingpage.html">Home</a>
+                </li>
+                <li>
+                    <a href="../doctor-dashboard/doctor-dashboard.html">Work Schedule</a>
+                </li>
+                <li>
+                    <a href="../appointment-list/appoiment-list.html">Appointments</a>
+                </li>
+                <li>
+                  <span class="active" style="color:#e74c3c;font-weight:bold;">Patient List</span>
+                </li>
+                <li>
+                    <a href="../medical-resources/medical-resources.html">Medical Resources</a>
+                </li>
+                <li>
+                    <a href="../doctor-profile/doctor-profile.html">Profile</a>
+                </li>
+                <li>
+                    <a href="../../../public-view/landingpage.html" class="btn-login">Logout</a>
+                </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+    <div class="dashboard-container" style="padding-top: 100px;">
+        <main class="main-content">
+            <div class="dashboard-header">Patient List</div>
+            <div class="search-bar">
+                <input type="text" id="patientSearchInput" placeholder="Tìm kiếm bệnh nhân theo tên hoặc email..." />
+            </div>
+            <div class="dashboard-section" id="patientMedicalRecordSection">
+                <!-- Patient medical records content goes here -->
+            </div>
+        </main>
+    </div>
+    <div id="patientDetailModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" id="closePatientModal">&times;</span>
+        <div id="patientDetailContent">
+          <!-- Patient details will be injected here -->
+        </div>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="patient-list-script.js"></script>
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <div class="footer-logo">
+              <i class="fas fa-heartbeat"></i>
+              <span>CareFirst HIV Clinic</span>
+            </div>
+            <p>
+              Providing compassionate HIV care and support for everyone in our
+              community.
+            </p>
+          </div>
+          <div class="footer-section">
+            <h3>Quick Links</h3>
+            <ul>
+              <li><a href="#home">Home</a></li>
+              <li><a href="#services">Services</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Services</h3>
+            <ul>
+              <li><a href="#">HIV Testing</a></li>
+              <li><a href="#">Treatment</a></li>
+              <li><a href="#">Support Groups</a></li>
+              <li><a href="#">Prevention</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Emergency</h3>
+            <p>24/7 Hotline: <strong>(555) 911-HIV1</strong></p>
+            <p>Crisis Support Available</p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>
+            &copy; 2025 CareFirst HIV Clinic. All rights reserved. | Privacy
+            Policy | Terms of Service
+          </p>
+        </div>
+      </div>
+    </footer>
+</body>
+</html>

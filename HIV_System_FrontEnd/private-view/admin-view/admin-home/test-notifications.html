@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Notifications</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Notifications Implementation Test</h1>
+    
+    <div class="test-section">
+        <h2>✅ Implementation Summary</h2>
+        <ul>
+            <li><strong>Edit Notification:</strong> Added API integration with PUT /api/Notification/UpdateNotification/{id}</li>
+            <li><strong>Delete Notification:</strong> Added API integration with DELETE /api/Notification/DeleteNotification/{id}</li>
+            <li><strong>Modal Management:</strong> Integrated with existing modal manager for proper display/hide</li>
+            <li><strong>Form Handling:</strong> Added form validation and error handling</li>
+            <li><strong>UI Updates:</strong> Added edit notification modal with proper styling</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Implementation Details</h2>
+        <h3>Edit Notification:</h3>
+        <ul>
+            <li>Fetches notification data from API to populate edit form</li>
+            <li>Supports editing notification type and message</li>
+            <li>Uses PUT request with proper authentication headers</li>
+            <li>Shows loading state during update</li>
+            <li>Displays success/error messages</li>
+            <li>Reloads notifications list after successful update</li>
+        </ul>
+        
+        <h3>Delete Notification:</h3>
+        <ul>
+            <li>Shows confirmation dialog before deletion</li>
+            <li>Uses DELETE request with proper authentication headers</li>
+            <li>Displays success/error messages</li>
+            <li>Reloads notifications list after successful deletion</li>
+        </ul>
+        
+        <h3>Modal Integration:</h3>
+        <ul>
+            <li>Uses existing modal manager for consistent behavior</li>
+            <li>Properly centers modal on screen</li>
+            <li>Supports escape key and click-outside-to-close</li>
+            <li>Resets form when modal is closed</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Expected API Endpoints</h2>
+        <ul>
+            <li><strong>GET</strong> /api/Notification/GetAllNotifications - Get all notifications</li>
+            <li><strong>PUT</strong> /api/Notification/UpdateNotification/{id} - Update notification</li>
+            <li><strong>DELETE</strong> /api/Notification/DeleteNotification/{id} - Delete notification</li>
+        </ul>
+        
+        <h3>Edit Request Body:</h3>
+        <code>
+        {
+            "notiType": "string",
+            "notiMessage": "string"
+        }
+        </code>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 How to Test</h2>
+        <ol>
+            <li>Open the admin dashboard</li>
+            <li>Navigate to the Notifications section</li>
+            <li>Click "Edit" on any notification to open the edit modal</li>
+            <li>Modify the notification type or message</li>
+            <li>Click "Update Notification" to save changes</li>
+            <li>Click "Delete" on any notification to remove it</li>
+            <li>Confirm the deletion in the dialog</li>
+        </ol>
+    </div>
+</body>
+</html>

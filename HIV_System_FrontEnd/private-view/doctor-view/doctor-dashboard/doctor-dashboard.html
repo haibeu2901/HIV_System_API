@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Doctor Dashboard</title>
-    <link rel="stylesheet" href="doctorStyle.css">
+    <link rel="stylesheet" href="doctor-dashboard-style.css">
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header/Navbar -->
     <header class="header">
         <nav class="navbar">
             <div class="nav-container">
@@ -19,6 +19,21 @@
                         <a href="../../../public-view/landingpage.html">Home</a>
                     </li>
                     <li>
+                        <span class="active" style="color:#e74c3c;font-weight:bold;">Work Schedule</span>
+                    </li>
+                    <li>
+                        <a href="../appointment-list/appoiment-list.html">Appointments</a>
+                    </li>
+                    <li>
+                        <a href="../patient-list/patient-list.html">Patient List</a>
+                    </li>
+                    <li>
+                        <a href="../medical-resources/medical-resources.html">Medical Resources</a>
+                    </li>
+                    <li>
+                        <a href="../doctor-profile/doctor-profile.html">Profile</a>
+                    </li>
+                    <li>
                         <a href="#" id="logoutBtn" class="btn-login">Logout</a>
                     </li>
                 </ul>
@@ -26,21 +41,16 @@
         </nav>
     </header>
 
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h2>Welcome, Doctor</h2>
-            <nav class="sidebar-nav">
-                <button id="btnSchedule" class="active">View Work Schedule</button>
-                <button id="btnProfile">View Profile</button>
-                <button id="btnLogout" style="color:#e74c3c;">Logout</button>
-            </nav>
-        </aside>
-        <!-- Main Content -->
+    <!-- Main Content -->
+    <div class="dashboard-container" style="padding-top: 100px;">
         <main class="main-content">
             <div class="dashboard-header" id="dashboardHeader">Work Schedule</div>
             <div class="dashboard-section" id="dashboardSection">
-                <p>Loading work schedule...</p>
+                <div style="margin-bottom: 16px;">
+                    <label for="weekSelector"><strong>Select week:</strong></label>
+                    <select id="weekSelector"></select>
+                </div>
+                <div id="scheduleTableContainer"></div>
             </div>
         </main>
     </div>
