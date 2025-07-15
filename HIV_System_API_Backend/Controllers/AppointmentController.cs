@@ -172,7 +172,7 @@ namespace HIV_System_API_Backend.Controllers
                 return Unauthorized("Invalid user session.");
             try
             {
-                var updatedAppointment = await _appointmentService.UpdateAppointmentAsync(id, dto, accountId.Value);
+                var updatedAppointment = await _appointmentService.UpdateAppointmentRequestAsync(id, dto, accountId.Value);
                 return Ok(updatedAppointment);
             }
             catch (ArgumentException ex)
@@ -257,6 +257,36 @@ namespace HIV_System_API_Backend.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"{ex.Message}");
+            }
+        }
+
+        [HttpPatch("ChangePersonalAppointmentStatus")]
+        [Authorize]
+        public async Task<IActionResult> ChangePersonalAppointmentStatusAsync(int appointmentId, byte status)
+        {
+            // Extract the account ID from the JWT token claims.
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+            {
+                return Unauthorized("User session is invalid or has expired.");
+            }
+
+            try
+            {
+                var updatedAppointment = await _appointmentService.ChangePersonalAppointmentStatusAsync(accountId.Value, appointmentId, status);
+                return Ok(updatedAppointment);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.InnerException);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.InnerException);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
     }

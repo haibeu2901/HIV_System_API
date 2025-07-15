@@ -382,7 +382,7 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
-        public async Task<AppointmentResponseDTO> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO appointment, int accId)
+        public async Task<AppointmentResponseDTO> UpdateAppointmentRequestAsync(int appointmentId, UpdateAppointmentRequestDTO appointment, int accId)
         {
             Debug.WriteLine($"Updating appointment for AccountId: {accId}");
 
@@ -584,6 +584,28 @@ namespace HIV_System_API_Services.Implements
                 // Re-throw the exception to be handled by the controller or middleware
                 throw;
             }
+        }
+
+        public async Task<AppointmentResponseDTO> ChangePersonalAppointmentStatusAsync(int accId, int appointmentId, byte status)
+        {
+            Debug.WriteLine($"Changing personal appointment status for AppointmentId: {appointmentId}, AccountId: {accId} to status: {status}");
+
+            // Validate account existence and authorization
+            var account = await _context.Accounts.FindAsync(accId)
+                ?? throw new ArgumentException($"Account with ID {accId} does not exist.");
+
+            var appointment = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.ApmId == appointmentId)
+                ?? throw new InvalidOperationException($"Appointment with ID {appointmentId} not found.");
+
+            bool isPatient = await _context.Patients.AnyAsync(p => p.AccId == accId && p.PtnId == appointment.PtnId);
+            bool isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
+
+            if (!isPatient && !isDoctor)
+                throw new UnauthorizedAccessException("Only the patient or doctor of this appointment can change its status.");
+
+            // Delegate to ChangeAppointmentStatusAsync for the rest of the logic
+            return await ChangeAppointmentStatusAsync(appointmentId, status);
         }
     }
 }
