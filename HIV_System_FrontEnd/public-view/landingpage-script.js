@@ -224,7 +224,23 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         );
 
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          let errorMessage = "Login failed";
+          
+          try {
+            // Try to parse error response as JSON
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (parseError) {
+            // If parsing fails, try to get text response
+            try {
+              const errorText = await response.text();
+              errorMessage = errorText || `Login failed (Status: ${response.status})`;
+            } catch (textError) {
+              errorMessage = `Login failed (Status: ${response.status})`;
+            }
+          }
+          
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
@@ -247,11 +263,11 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         // Redirect after showing success
         setTimeout(() => {
           if (role == 1) {
-            window.location.href = "/private-view/admin-view/admin-home/admin-home.html";
+            window.location.href = "../private-view/admin-view/admin-home/admin-home.html";
           } else if (role == 5) {
-            window.location.href = "/private-view/manager-view/manager-home/manager-home.html";
+            window.location.href = "../private-view/manager-view/manager-home/manager-home.html";
           } else if (role == 3) {
-            window.location.href = "/private-view/user-view/booking/appointment-booking.html";
+            window.location.href = "../private-view/user-view/booking/appointment-booking.html";
           } else if (role == 2) {
             window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
           }
@@ -269,7 +285,11 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
       })
       .catch((error) => {
         hideButtonLoader(submitButton);
-        showError("loginUsername", "Invalid email or password");
+        console.error("Login error:", error);
+        
+        // Show error message under username field instead of generic message
+        const errorMessage = error.message || "Invalid email or password";
+        showError("loginUsername", errorMessage);
       });
   }
 });
@@ -410,8 +430,55 @@ document.getElementById("registerForm").addEventListener("submit", async functio
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
+        let errorMessage = "Registration failed";
+        
+        try {
+          // Try to parse error response as JSON
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          // If parsing fails, try to get text response
+          try {
+            const errorText = await response.text();
+            errorMessage = errorText || `Registration failed (Status: ${response.status})`;
+          } catch (textError) {
+            errorMessage = `Registration failed (Status: ${response.status})`;
+          }
+        }
+        
+        // Handle specific error cases based on status code and message
+        if (response.status === 409) {
+          // Conflict - username or email already exists
+          if (errorMessage.toLowerCase().includes('username')) {
+            showError("username", errorMessage);
+          } else if (errorMessage.toLowerCase().includes('email')) {
+            showError("registerEmail", errorMessage);
+          } else {
+            showError("username", errorMessage);
+          }
+        } else if (response.status === 400) {
+          // Bad request - validation errors
+          if (errorMessage.toLowerCase().includes('username')) {
+            showError("username", errorMessage);
+          } else if (errorMessage.toLowerCase().includes('email')) {
+            showError("registerEmail", errorMessage);
+          } else if (errorMessage.toLowerCase().includes('password')) {
+            showError("registerPassword", errorMessage);
+          } else if (errorMessage.toLowerCase().includes('fullname') || errorMessage.toLowerCase().includes('full name')) {
+            showError("fullName", errorMessage);
+          } else if (errorMessage.toLowerCase().includes('date') || errorMessage.toLowerCase().includes('birth')) {
+            showError("dateOfBirth", errorMessage);
+          } else {
+            // Show general error if we can't determine the field
+            showError("username", errorMessage);
+          }
+        } else {
+          // Other status codes - show general error
+          showError("username", `Registration failed: ${errorMessage}`);
+        }
+        
+        hideButtonLoader(submitButton);
+        return;
       }
 
       // Show success state
@@ -432,7 +499,8 @@ document.getElementById("registerForm").addEventListener("submit", async functio
 
     } catch (error) {
       hideButtonLoader(submitButton);
-      alert("Registration failed: " + error.message);
+      console.error("Registration error:", error);
+      alert("Registration failed: Network error or server unavailable. Please try again later.");
     }
   }
 });

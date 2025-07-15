@@ -588,4 +588,420 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         return classes[notiType] || 'type-general';
     }
+
+    // Facebook-style notification popup system
+    let notificationQueue = [];
+    let isShowingNotification = false;
+    let lastNotificationCheck = Date.now();
+    let notificationSound = null;
+
+    // Initialize notification sound
+    function initializeNotificationSound() {
+        // You can add a notification sound file here
+        // notificationSound = new Audio('/path/to/notification-sound.mp3');
+        // notificationSound.volume = 0.3;
+    }
+
+    // Create Facebook-style notification popup
+    function createFacebookNotificationPopup(notification) {
+        const popup = document.createElement('div');
+        popup.className = 'facebook-notification-popup';
+        popup.setAttribute('data-notification-id', notification.notiId);
+        
+        const isUnread = true; // New notifications are always unread
+        const timeAgo = 'Just now';
+        
+        popup.innerHTML = `
+            <div class="fb-notification-header">
+                <div class="fb-notification-icon ${getNotificationTypeClass(notification.notiType)}">
+                    <i class="${getNotificationIcon(notification.notiType)}"></i>
+                </div>
+                <div class="fb-notification-title">
+                    <span class="fb-notification-type">${notification.notiType}</span>
+                    <span class="fb-notification-time">${timeAgo}</span>
+                </div>
+                <button class="fb-notification-close" aria-label="Close notification">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="fb-notification-content">
+                <div class="fb-notification-message">${notification.notiMessage}</div>
+            </div>
+            <div class="fb-notification-actions">
+                <button class="fb-notification-action mark-read" data-notification-id="${notification.notiId}">
+                    <i class="fa-solid fa-check"></i> Mark as Read
+                </button>
+                <button class="fb-notification-action view-all">
+                    <i class="fa-solid fa-bell"></i> View All
+                </button>
+            </div>
+        `;
+        
+        return popup;
+    }
+
+    // Show Facebook-style notification
+    function showFacebookNotification(notification) {
+        if (isShowingNotification) {
+            notificationQueue.push(notification);
+            return;
+        }
+        
+        isShowingNotification = true;
+        
+        // Play notification sound if available
+        if (notificationSound) {
+            notificationSound.play().catch(console.error);
+        }
+        
+        const popup = createFacebookNotificationPopup(notification);
+        document.body.appendChild(popup);
+        
+        // Animate in
+        setTimeout(() => {
+            popup.classList.add('show');
+        }, 100);
+        
+        // Auto-dismiss after 5 seconds
+        const autoDismissTimer = setTimeout(() => {
+            dismissFacebookNotification(popup);
+        }, 5000);
+        
+        // Add event listeners
+        const closeBtn = popup.querySelector('.fb-notification-close');
+        const markReadBtn = popup.querySelector('.mark-read');
+        const viewAllBtn = popup.querySelector('.view-all');
+        
+        closeBtn.addEventListener('click', () => {
+            clearTimeout(autoDismissTimer);
+            dismissFacebookNotification(popup);
+        });
+        
+        markReadBtn.addEventListener('click', () => {
+            clearTimeout(autoDismissTimer);
+            markAsRead(notification.notiId);
+            dismissFacebookNotification(popup);
+        });
+        
+        viewAllBtn.addEventListener('click', () => {
+            clearTimeout(autoDismissTimer);
+            dismissFacebookNotification(popup);
+            window.location.href = '/private-view/user-view/notification/notification.html';
+        });
+        
+        // Click on notification to view all
+        popup.addEventListener('click', (e) => {
+            if (!e.target.closest('.fb-notification-actions') && !e.target.closest('.fb-notification-close')) {
+                clearTimeout(autoDismissTimer);
+                dismissFacebookNotification(popup);
+                window.location.href = '/private-view/user-view/notification/notification.html';
+            }
+        });
+        
+        // Store timer reference for cleanup
+        popup.autoDismissTimer = autoDismissTimer;
+    }
+
+    // Dismiss Facebook-style notification
+    function dismissFacebookNotification(popup) {
+        popup.classList.add('hide');
+        
+        setTimeout(() => {
+            if (popup.parentNode) {
+                popup.parentNode.removeChild(popup);
+            }
+            isShowingNotification = false;
+            
+            // Show next notification in queue
+            if (notificationQueue.length > 0) {
+                const nextNotification = notificationQueue.shift();
+                setTimeout(() => showFacebookNotification(nextNotification), 300);
+            }
+        }, 300);
+    }
+
+    // Check for new notifications periodically
+    async function checkForNewNotifications() {
+        try {
+            const currentNotifications = await fetchNotifications('/api/Notification/GetPersonalNotifications');
+            
+            if (currentNotifications && currentNotifications.length > 0) {
+                // Find new notifications (those created after last check)
+                const newNotifications = currentNotifications.filter(notification => {
+                    const notificationTime = new Date(notification.sendAt).getTime();
+                    return notificationTime > lastNotificationCheck;
+                });
+                
+                // Show new notifications as Facebook-style popups
+                newNotifications.forEach(notification => {
+                    showFacebookNotification(notification);
+                });
+                
+                // Update last check time
+                lastNotificationCheck = Date.now();
+            }
+        } catch (error) {
+            console.error('Error checking for new notifications:', error);
+        }
+    }
+
+    // Start periodic notification checking
+    function startNotificationPolling() {
+        // Check every 10 seconds for new notifications
+        setInterval(checkForNewNotifications, 10000);
+        
+        // Also check when page becomes visible again
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                checkForNewNotifications();
+            }
+        });
+    }
+
+    // Initialize Facebook-style notifications
+    function initializeFacebookNotifications() {
+        initializeNotificationSound();
+        startNotificationPolling();
+        
+        // Add CSS styles for Facebook-style notifications
+        if (!document.getElementById('facebook-notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'facebook-notification-styles';
+            styles.textContent = `
+                .facebook-notification-popup {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    width: 320px;
+                    background: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                    z-index: 10000;
+                    opacity: 0;
+                    transform: translateX(100%);
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                    border-left: 4px solid #1877f2;
+                }
+                
+                .facebook-notification-popup.show {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                
+                .facebook-notification-popup.hide {
+                    opacity: 0;
+                    transform: translateX(100%);
+                }
+                
+                .facebook-notification-popup:hover {
+                    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+                }
+                
+                .fb-notification-header {
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 16px 8px;
+                    gap: 8px;
+                }
+                
+                .fb-notification-icon {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 14px;
+                    color: white;
+                }
+                
+                .fb-notification-icon.type-appointment-confirm,
+                .fb-notification-icon.type-appointment-update,
+                .fb-notification-icon.type-appointment-reminder {
+                    background: #1877f2;
+                }
+                
+                .fb-notification-icon.type-test-result {
+                    background: #42b883;
+                }
+                
+                .fb-notification-icon.type-medical-record {
+                    background: #e74c3c;
+                }
+                
+                .fb-notification-icon.type-system {
+                    background: #95a5a6;
+                }
+                
+                .fb-notification-icon.type-general {
+                    background: #1877f2;
+                }
+                
+                .fb-notification-title {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+                
+                .fb-notification-type {
+                    font-weight: 600;
+                    font-size: 14px;
+                    color: #1c1e21;
+                }
+                
+                .fb-notification-time {
+                    font-size: 12px;
+                    color: #65676b;
+                }
+                
+                .fb-notification-close {
+                    background: none;
+                    border: none;
+                    font-size: 16px;
+                    color: #65676b;
+                    cursor: pointer;
+                    padding: 4px;
+                    border-radius: 4px;
+                    transition: background-color 0.2s;
+                }
+                
+                .fb-notification-close:hover {
+                    background-color: #f0f2f5;
+                }
+                
+                .fb-notification-content {
+                    padding: 0 16px 8px;
+                }
+                
+                .fb-notification-message {
+                    font-size: 14px;
+                    color: #1c1e21;
+                    line-height: 1.4;
+                    word-wrap: break-word;
+                }
+                
+                .fb-notification-actions {
+                    display: flex;
+                    gap: 8px;
+                    padding: 8px 16px 12px;
+                }
+                
+                .fb-notification-action {
+                    flex: 1;
+                    background: #f0f2f5;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: #1c1e21;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 4px;
+                }
+                
+                .fb-notification-action:hover {
+                    background: #e4e6ea;
+                }
+                
+                .fb-notification-action.mark-read {
+                    background: #e7f3ff;
+                    color: #1877f2;
+                }
+                
+                .fb-notification-action.mark-read:hover {
+                    background: #d0e7ff;
+                }
+                
+                /* Animation for stacking notifications */
+                .facebook-notification-popup:nth-child(n+2) {
+                    top: 40px;
+                    transform: translateX(5px) scale(0.95);
+                    opacity: 0.8;
+                }
+                
+                .facebook-notification-popup:nth-child(n+3) {
+                    top: 60px;
+                    transform: translateX(10px) scale(0.9);
+                    opacity: 0.6;
+                }
+                
+                /* Mobile responsive */
+                @media (max-width: 768px) {
+                    .facebook-notification-popup {
+                        width: 300px;
+                        right: 10px;
+                        top: 10px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .facebook-notification-popup {
+                        width: calc(100vw - 20px);
+                        right: 10px;
+                        left: 10px;
+                    }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+    }
+
+    // Manual trigger for testing Facebook-style notifications
+    function triggerTestNotification() {
+        const testNotification = {
+            notiId: Date.now(),
+            notiType: 'Test Notification',
+            notiMessage: 'This is a test Facebook-style notification popup!',
+            sendAt: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+        };
+        
+        showFacebookNotification(testNotification);
+    }
+
+    // Add test button for development (you can remove this in production)
+    function addTestButton() {
+        const testBtn = document.createElement('button');
+        testBtn.innerHTML = '<i class="fa-solid fa-bell"></i> Test FB Notification';
+        testBtn.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+            transition: all 0.3s ease;
+        `;
+        
+        testBtn.addEventListener('click', triggerTestNotification);
+        testBtn.addEventListener('mouseenter', () => {
+            testBtn.style.background = '#166fe5';
+            testBtn.style.transform = 'translateY(-2px)';
+        });
+        testBtn.addEventListener('mouseleave', () => {
+            testBtn.style.background = '#1877f2';
+            testBtn.style.transform = 'translateY(0)';
+        });
+        
+        document.body.appendChild(testBtn);
+    }
+
+    // Add test button for development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        addTestButton();
+    }
+
+    // ...existing code...
 });
