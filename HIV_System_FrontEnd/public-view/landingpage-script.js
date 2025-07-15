@@ -231,9 +231,10 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         const fullName = data.account.fullName;
         const role = data.account.roles;
         localStorage.setItem("token", data.token);
-        console.log("Login successful:", data);
-        console.log("Role:", role);
         localStorage.setItem("accId", data.account.accId);
+        localStorage.setItem("userId", data.account.accId); // Use accId as userId
+        localStorage.setItem("userRole", role); // Store user role
+        localStorage.setItem("fullName", fullName); // Store full name
         
         // Show success message briefly
         submitButton.innerHTML = `
@@ -247,11 +248,12 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
         setTimeout(() => {
           if (role == 1) {
             window.location.href = "/private-view/admin-view/admin-home/admin-home.html";
+          } else if (role == 5) {
+            window.location.href = "/private-view/manager-view/manager-home/manager-home.html";
           } else if (role == 3) {
             window.location.href = "/private-view/user-view/booking/appointment-booking.html";
           } else if (role == 2) {
             window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
-
           }
         }, 1000);
         

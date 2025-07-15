@@ -1,6 +1,10 @@
 using HIV_System_API_BOs;
+using HIV_System_API_DAOs.Implements;
 using HIV_System_API_DAOs.Implements.DashboardDAO;
+using HIV_System_API_DAOs.Interfaces;
+using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Implements.DashboardRepo;
+using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -151,7 +155,9 @@ builder.Services.AddScoped<ISocialBlogService, SocialBlogService>();
 builder.Services.AddScoped<IBlogReactionService, BlogReactionService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-
+builder.Services.AddScoped<IBlogImageDAO, BlogImageDAO>();
+builder.Services.AddScoped<IBlogImageRepo, BlogImageRepo>();
+builder.Services.AddScoped<IBlogImageService, BlogImageService>();
 // Add CORS policy
 // In Program.cs or Startup.cs
 builder.Services.AddCors(options =>
@@ -187,5 +193,5 @@ app.UseAuthorization();
 
 app.UseCors("AllowAll");
 app.MapControllers();
-
+app.UseStaticFiles();
 app.Run();
