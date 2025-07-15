@@ -223,7 +223,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <param name="patientId">Patient ID</param>
         /// <returns>List of ARV regimens for the patient</returns>
         [HttpGet("GetPatientArvRegimensByPatientId")]
-        [Authorize(Roles="1,2,4,5")]
+        [Authorize(Roles = "1,2,4,5")]
         public async Task<IActionResult> GetPatientArvRegimensByPatientId(int patientId)
         {
             try
@@ -443,6 +443,32 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     $"Unexpected error creating regimen with medications: {ex.InnerException?.Message ?? ex.Message}");
+            }
+        }
+        [HttpPost("UpdatePatientArvRegimenStatus/{parId}")]
+        [Authorize (Roles = "1,2,5")]
+        public async Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenStatusAsync(int parId,PatientArvRegimenStatusRequestDTO request)
+        {
+            try
+            {
+                var updatedStatus = await _patientArvRegimenService.UpdatePatientArvRegimenStatusAsync(parId, request);
+                return updatedStatus;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ArgumentException($"Invalid input: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Operation failed: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new DbUpdateException($"Database error while updating ARV regimen status: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error updating regimen status: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
     }

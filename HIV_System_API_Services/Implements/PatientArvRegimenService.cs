@@ -674,5 +674,46 @@ namespace HIV_System_API_Services.Implements
                 throw;
             }
         }
+        public async Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenStatusAsync(int parId, PatientArvRegimenStatusRequestDTO request)
+        {
+            if (parId <= 0)
+                throw new ArgumentException("Invalid Patient ARV Regimen ID");
+            // Validate status
+            await ValidateRegimenStatus(request.RegimenStatus);
+            try
+            {
+                var existingRegimen = await _patientArvRegimenRepo.GetPatientArvRegimenByIdAsync(parId);
+                if (existingRegimen == null)
+                {
+                    throw new InvalidOperationException($"Patient ARV Regimen with ID {parId} does not exist.");
+                }
+                // Check if the regimen is already completed
+                if (existingRegimen.RegimenStatus == 5) // Completed
+                {
+                    throw new InvalidOperationException($"Cannot update ARV Regimen with ID {parId} because it is marked as Completed.");
+                }
+                // Update status and notes
+                existingRegimen.RegimenStatus = request.RegimenStatus;
+                existingRegimen.Notes = request.Notes;
+                var updatedEntity = await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, existingRegimen);
+                return MapToResponseDTO(updatedEntity);
+            }
+            catch (ArgumentException)
+            {
+                throw; // Re-throw validation exceptions
+            }
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw business logic exceptions
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Database error while updating ARV regimen status: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error updating ARV regimen status: {ex.InnerException}");
+            }
+        }
     }
 }
