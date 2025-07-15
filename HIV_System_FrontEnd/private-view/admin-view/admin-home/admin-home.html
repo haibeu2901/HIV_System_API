@@ -397,6 +397,42 @@
         </div>
     </div>
 
+    <!-- Edit Notification Modal -->
+    <div id="editNotificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Notification</h3>
+                <button class="close-btn" data-modal="editNotificationModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editNotificationForm">
+                    <input type="hidden" id="edit-notification-id">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="edit-notification-type" required>
+                            <option value="Appt Confirm">Appt Confirm</option>
+                            <option value="Appointment Update">Appointment Update</option>
+                            <option value="Appointment Request">Appointment Request</option>
+                            <option value="Appointment Reminder">Appointment Reminder</option>
+                            <option value="System Alert">System Alert</option>
+                            <option value="ARV Consultation">ARV Consultation</option>
+                            <option value="Test Result">Test Result</option>
+                            <option value="Blog Approval">Blog Approval</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea id="edit-notification-message" required rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" data-modal="editNotificationModal">Cancel</button>
+                        <button type="submit"><i class="fas fa-save"></i> Update Notification</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div id="createAccountModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">

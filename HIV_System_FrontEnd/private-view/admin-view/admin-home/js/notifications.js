@@ -65,6 +65,17 @@ class NotificationManager {
                     <div class="notification-message">${notification.notiMessage}</div>
                     <div class="notification-meta">
                         <small>Created: ${this.formatTime(notification.createdAt)}</small>
+
+                    </div>
+                    <div class="notification-badge ${this.getNotificationBadgeClass(notification.notiType)}">
+                        ${notification.notiType}
+                    </div>
+                </div>
+                
+                <div class="notification-content">
+                    <div class="notification-message">${notification.notiMessage}</div>
+                    <div class="notification-meta">
+                        <small>Created: ${this.formatTime(notification.createdAt)}</small>
                     </div>
                 </div>
                 
@@ -76,6 +87,7 @@ class NotificationManager {
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
+
             </div>
         `).join('');
         
@@ -541,6 +553,7 @@ class NotificationManager {
                 alert('Error sending notification to all users. Please try again.');
             }
             return false;
+
         }
     }
 
@@ -625,6 +638,18 @@ class NotificationManager {
                 submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send Notification';
             }
         }
+
+        alert('Notification created successfully!');
+        if (window.modalManager && window.modalManager.closeModal) {
+            window.modalManager.closeModal('createNotificationModal');
+        } else {
+            // Fallback if modalManager is not available
+            const modal = document.getElementById('createNotificationModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        this.loadNotifications();
     }
 
     // Initialize
@@ -682,6 +707,7 @@ class NotificationManager {
                 }
             }
         }
+
     }
 }
 
