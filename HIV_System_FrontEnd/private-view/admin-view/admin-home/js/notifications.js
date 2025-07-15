@@ -65,6 +65,17 @@ class NotificationManager {
                     <div class="notification-message">${notification.notiMessage}</div>
                     <div class="notification-meta">
                         <small>Created: ${this.formatTime(notification.createdAt)}</small>
+
+                    </div>
+                    <div class="notification-badge ${this.getNotificationBadgeClass(notification.notiType)}">
+                        ${notification.notiType}
+                    </div>
+                </div>
+                
+                <div class="notification-content">
+                    <div class="notification-message">${notification.notiMessage}</div>
+                    <div class="notification-meta">
+                        <small>Created: ${this.formatTime(notification.createdAt)}</small>
                     </div>
                 </div>
                 
@@ -76,6 +87,7 @@ class NotificationManager {
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
+
             </div>
         `).join('');
         
@@ -431,7 +443,94 @@ class NotificationManager {
             }
         } catch (error) {
             console.error('Error sending notification to account:', error);
-            throw error;
+            if (window.utils && window.utils.showToast) {
+                window.utils.showToast('Error sending notification to account. Please try again.', 'error');
+            } else {
+                alert('Error sending notification to account. Please try again.');
+            }
+            return false;
+        }
+    }
+
+    // Validate notification data
+    validateNotificationData(notiType, notiMessage, sendTo, accountId) {
+        if (!notiType || !notiMessage) {
+            return 'Please fill in all required fields';
+        }
+        
+        if (sendTo === 'account' && !accountId) {
+            return 'Please provide an account ID';
+        }
+        
+        return null;
+    }
+
+    // Get role name for display
+    getRoleName(roleId) {
+        const roles = {
+            '1': 'Admin',
+            '2': 'Doctor',
+            '3': 'Patient',
+            '4': 'Manager'
+        };
+        return roles[roleId] || 'Unknown Role';
+    }
+
+    // Handle edit notification form
+    async handleEditNotification(e) {
+        e.preventDefault();
+        
+        const notiId = document.getElementById('edit-notification-id').value;
+        const notiType = document.getElementById('edit-notification-type').value;
+        const notiMessage = document.getElementById('edit-notification-message').value;
+        
+        if (!notiType || !notiMessage) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        const token = this.authManager.getToken();
+        
+        const requestBody = {
+            notiId: parseInt(notiId),
+            notiType: notiType,
+            notiMessage: notiMessage,
+            sendAt: new Date().toISOString()
+        };
+        
+        try {
+            const response = await fetch(`https://localhost:7009/api/Notification/UpdateNotification/${notiId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'accept': '*/*'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (response.ok) {
+                alert('Notification updated successfully!');
+                
+                // Close modal
+                if (window.modalManager && window.modalManager.closeModal) {
+                    window.modalManager.closeModal('editNotificationModal');
+                } else {
+                    const modal = document.getElementById('editNotificationModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                }
+                
+                // Reload notifications
+                this.loadNotifications();
+            } else {
+                const errorData = await response.text();
+                throw new Error(errorData || `HTTP error! status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error updating notification:', error);
+            alert('Error updating notification. Please try again.');
         }
     }
 
@@ -453,6 +552,32 @@ class NotificationManager {
         const createNotificationForm = document.getElementById('createNotificationForm');
         if (createNotificationForm) {
             createNotificationForm.addEventListener('submit', (e) => this.handleCreateNotification(e));
+        }
+        
+        const editNotificationForm = document.getElementById('editNotificationForm');
+        if (editNotificationForm) {
+            editNotificationForm.addEventListener('submit', (e) => this.handleEditNotification(e));
+        }
+        
+        console.log('NotificationManager initialized successfully');
+    }
+
+    // Handle send-to dropdown change
+    handleSendToChange() {
+        const sendTo = document.getElementById('send-to').value;
+        const accountIdGroup = document.getElementById('account-id-group');
+        
+        if (accountIdGroup) {
+            if (sendTo === 'account') {
+                accountIdGroup.style.display = 'block';
+            } else {
+                accountIdGroup.style.display = 'none';
+                // Clear account ID when hidden
+                const accountIdField = document.getElementById('account-id');
+                if (accountIdField) {
+                    accountIdField.value = '';
+                }
+            }
         }
     }
 }

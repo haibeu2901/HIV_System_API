@@ -25,6 +25,7 @@ class DashboardManager {
             }
             
             const response = await fetch(apiEndpoint, {
+            const response = await fetch('https://localhost:7009/api/Dashboard/admin?userId=1', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'accept': '*/*'
@@ -322,38 +323,11 @@ class DashboardManager {
         }).format(amount);
     }
 
-    // Show error state
-    showErrorState() {
-        console.log('📊 API failed, showing fallback data...');
-        
-        // Show sample data instead of N/A for better user experience
-        const sampleData = {
-            totalUsers: 142,
-            totalPatients: 98,
-            totalDoctors: 12,
-            totalStaff: 8,
-            totalAppointments: 324,
-            pendingAppointments: 15,
-            totalServices: 6,
-            totalRevenue: 45000,
-            monthlyRevenue: 12500
-        };
-        
-        this.updateStatisticsCards(sampleData);
-        
+   
+
         const activityList = document.getElementById('recent-activity-list');
         if (activityList) {
-            activityList.innerHTML = `
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p>Dashboard data temporarily unavailable</p>
-                        <span class="activity-time">Showing sample data</span>
-                    </div>
-                </div>
-            `;
+            activityList.innerHTML = '<div class="error-message">Failed to load recent activities</div>';
         }
     }
 
