@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using HIV_System_API_Repositories.Implements;
+using HIV_System_API_DTOs.BlogReactionDTO;
 
 namespace HIV_System_API_Services.Implements
 {
@@ -15,27 +16,20 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly ISocialBlogRepo _repo;
         private readonly INotificationRepo _notificationRepo;
+        private readonly HivSystemApiContext _context;
+        private readonly IBlogReactionRepo _blogReactionRepo;
 
         public SocialBlogService()
         {
             _repo = new SocialBlogRepo();
             _notificationRepo = new NotificationRepo();
-        }
-
-        public SocialBlogService(ISocialBlogRepo repo)
-        {
-            _repo = repo ?? throw new ArgumentNullException(nameof(repo));
-        }
-
-        public SocialBlogService(ISocialBlogRepo repo, INotificationRepo notificationService)
-        {
-            _repo = repo ?? throw new ArgumentNullException(nameof(repo));
-            _notificationRepo = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _context = new HivSystemApiContext();
+            _blogReactionRepo = new BlogReactionRepo();
         }
 
         // --- Mapping and Validation ---
 
-        private static SocialBlog MapToEntity(BlogCreateRequestDTO dto)
+        private SocialBlog MapToEntity(BlogCreateRequestDTO dto)
         {
             return new SocialBlog
             {
@@ -49,8 +43,18 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        private static BlogResponseDTO MapToResponseDto(SocialBlog blog)
+        private BlogResponseDTO MapToResponseDto(SocialBlog blog)
         {
+            var blogReaction = _context.BlogReactions.Where(a=>a.SblId == blog.SblId).Select(a=> new CommentResponseDTO
+            {
+                ReactionId = a.BrtId,
+                BlogId = a.SblId,
+                AccountId = a.AccId,
+                ReactedAt = a.ReactedAt,
+                Comment = a.Comment
+            }).ToList();
+            var like = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId,true).Result;
+            var dislike = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId, false).Result;
             return new BlogResponseDTO
             {
                 Id = blog.SblId,
@@ -61,7 +65,10 @@ namespace HIV_System_API_Services.Implements
                 PublishedDate = blog.PublishedAt,
                 IsAnonymous = blog.IsAnonymous,
                 Notes = blog.Notes,
-                BlogStatus = blog.BlogStatus
+                BlogStatus = blog.BlogStatus,
+                BlogReaction = blogReaction,
+                LikesCount = like,
+                DislikesCount = dislike
             };
         }
 
