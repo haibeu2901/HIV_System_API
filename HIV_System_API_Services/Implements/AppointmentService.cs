@@ -190,6 +190,17 @@ namespace HIV_System_API_Services.Implements
                 if (appointment == null)
                     throw new InvalidOperationException($"Không tìm thấy cuộc hẹn với ID {id}.");
 
+                // Check if appointment is at least 12 hours away
+                var appointmentDateTime = appointment.ApmtDate.ToDateTime(appointment.ApmTime);
+                var currentDateTime = DateTime.UtcNow;
+                var timeDifference = appointmentDateTime - currentDateTime;
+
+                if (timeDifference.TotalHours < 12)
+                    throw new InvalidOperationException("Không thể thay đổi trạng thái cuộc hẹn vì thời gian hẹn nhỏ hơn 12 giờ từ bây giờ.");
+
+                var doctorName = MapToResponseDTO(appointment).DoctorName;
+                var patientName = MapToResponseDTO(appointment).PatientName;
+
                 var updatedAppointment = await _appointmentRepo.ChangeAppointmentStatusAsync(id, status);
 
                 if (updatedAppointment == null)
@@ -200,8 +211,8 @@ namespace HIV_System_API_Services.Implements
                     // Create notification for cancellation
                     var notification = new Notification
                     {
-                        NotiType = "Appt Cancel", // <= 12 chars
-                        NotiMessage = "Cuộc hẹn của bạn đã bị huỷ.",
+                        NotiType = "Hủy lịch hẹn", // <= 20 chars
+                        NotiMessage = $"Cuộc hẹn của bạn vào {updatedAppointment.ApmtDate:yyyy-MM-dd} lúc {updatedAppointment.ApmTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã bị huỷ.",
                         SendAt = DateTime.UtcNow
                     };
                     var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
@@ -213,8 +224,8 @@ namespace HIV_System_API_Services.Implements
                     // Create notification for confirmation
                     var notification = new Notification
                     {
-                        NotiType = "Appt Confirm", // <= 12 chars
-                        NotiMessage = "Cuộc hẹn của bạn đã được xác nhận.",
+                        NotiType = "Xác nhận lịch hẹn", // <= 20 chars
+                        NotiMessage = $"Cuộc hẹn của bạn vào {updatedAppointment.ApmtDate:yyyy-MM-dd} lúc {updatedAppointment.ApmTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã được xác nhận.",
                         SendAt = DateTime.UtcNow
                     };
                     var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
@@ -226,8 +237,8 @@ namespace HIV_System_API_Services.Implements
                     // Create notification for completion
                     var notification = new Notification
                     {
-                        NotiType = "Appt Complete", // <= 12 chars
-                        NotiMessage = "Cuộc hẹn của bạn đã thành công.",
+                        NotiType = "Hoàn tất lịch hẹn", // <= 20 chars
+                        NotiMessage = $"Cuộc hẹn của bạn vào {updatedAppointment.ApmtDate:yyyy-MM-dd} lúc {updatedAppointment.ApmTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã thành công.",
                         SendAt = DateTime.UtcNow
                     };
                     var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
@@ -268,21 +279,18 @@ namespace HIV_System_API_Services.Implements
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Yêu cầu DTO là bắt buộc.");
 
-            // Validate patient existence
             var patient = await _context.Patients
                 .Include(p => p.Acc)
                 .FirstOrDefaultAsync(p => p.PtnId == accId);
             if (patient == null)
                 throw new ArgumentException("Bệnh nhân không tồn tại.");
 
-            // Validate doctor existence
             var doctor = await _context.Doctors
                 .Include(d => d.Acc)
                 .FirstOrDefaultAsync(d => d.DctId == request.DoctorId);
             if (doctor == null)
                 throw new ArgumentException("Bác sĩ không tồn tại.");
 
-            // Validate appointment (schedule, overlap, etc.)
             var appointmentRequestDto = new AppointmentRequestDTO
             {
                 PatientId = accId,
@@ -290,7 +298,7 @@ namespace HIV_System_API_Services.Implements
                 ApmtDate = request.AppointmentDate,
                 ApmTime = request.AppointmentTime,
                 Notes = request.Notes,
-                ApmStatus = 1 // Default status for creation
+                ApmStatus = 1
             };
             await ValidateAppointmentAsync(appointmentRequestDto, validateStatus: false);
 
@@ -298,19 +306,22 @@ namespace HIV_System_API_Services.Implements
             try
             {
                 var createdAppointment = await _appointmentRepo.CreateAppointmentAsync(request, accId);
-                await transaction.CommitAsync();
+                var appointmentDto = MapToResponseDTO(createdAppointment);
+                var doctorName = appointmentDto.DoctorName;
+                var patientName = appointmentDto.PatientName;
 
-                // Create notification and send to doctor
                 var notification = new Notification
                 {
-                    NotiType = "Appointment Request",
-                    NotiMessage = "Có 1 yêu cầu đặt lịch hẹn mới, vui lòng phản hồi.",
+                    NotiType = "Yêu cầu lịch hẹn",
+                    NotiMessage = $"Cuộc hẹn của bạn vào {createdAppointment.ApmtDate:yyyy-MM-dd} lúc {createdAppointment.ApmTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã được yêu cầu.",
                     SendAt = DateTime.UtcNow
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
-                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, doctor.AccId);
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, createdAppointment.PtnId);
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, createdAppointment.DctId);
 
-                return MapToResponseDTO(createdAppointment);
+                await transaction.CommitAsync();
+                return appointmentDto;
             }
             catch (Exception ex)
             {
@@ -419,11 +430,13 @@ namespace HIV_System_API_Services.Implements
                 existingAppointment.Notes = appointment.Notes;
 
                 var updatedAppointment = await _appointmentRepo.UpdateAppointmentAsync(appointmentId, appointment, accId);
+                var doctorName = MapToResponseDTO(updatedAppointment).DoctorName;
+                var patientName = MapToResponseDTO(updatedAppointment).PatientName;
 
                 var notification = new Notification
                 {
-                    NotiType = "Appointment Update",
-                    NotiMessage = "Lịch hẹn của bạn đã được cập nhật.",
+                    NotiType = "Thay đổi lịch hẹn",
+                    NotiMessage = $"Cuộc hẹn của bạn vào {updatedAppointment.ApmtDate:yyyy-MM-dd} lúc {updatedAppointment.ApmTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã được cập nhật.",
                     SendAt = DateTime.UtcNow,
                 };
 
@@ -549,14 +562,14 @@ namespace HIV_System_API_Services.Implements
                 var account = await _context.Accounts.FindAsync(accId);
                 if (account == null)
                 {
-                    throw new ArgumentException($"Account with ID {accId} does not exist.");
+                    throw new ArgumentException($"Tài khoản với {accId} không tồn tại.");
                 }
 
                 // 2. Retrieve the appointment
                 var appointment = await _appointmentRepo.GetAppointmentByIdAsync(appointmentId);
                 if (appointment == null)
                 {
-                    throw new KeyNotFoundException($"Appointment with ID {appointmentId} not found.");
+                    throw new KeyNotFoundException($"Cuộc hẹn với ID {appointmentId} không tìm thấy.");
                 }
 
                 // 3. Authorize the user
@@ -566,7 +579,7 @@ namespace HIV_System_API_Services.Implements
 
                 if (!isPatientOfAppointment && !isDoctorOfAppointment)
                 {
-                    throw new UnauthorizedAccessException("You do not have permission to view this appointment.");
+                    throw new UnauthorizedAccessException("Bạn không có quyền xem cuộc hẹn này.");
                 }
 
                 // 4. Map and return the DTO
@@ -586,17 +599,17 @@ namespace HIV_System_API_Services.Implements
 
             // Validate account existence and authorization
             var account = await _context.Accounts.FindAsync(accId)
-                ?? throw new ArgumentException($"Account with ID {accId} does not exist.");
+                ?? throw new ArgumentException($"Tài khoản với {accId} không tồn tại.");
 
             var appointment = await _context.Appointments
                 .FirstOrDefaultAsync(a => a.ApmId == appointmentId)
-                ?? throw new InvalidOperationException($"Appointment with ID {appointmentId} not found.");
+                ?? throw new InvalidOperationException($"Cuộc hẹn với ID {appointmentId} không tìm thấy.");
 
             bool isPatient = await _context.Patients.AnyAsync(p => p.AccId == accId && p.PtnId == appointment.PtnId);
             bool isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
 
             if (!isPatient && !isDoctor)
-                throw new UnauthorizedAccessException("Only the patient or doctor of this appointment can change its status.");
+                throw new UnauthorizedAccessException("Chỉ có bác sĩ hoặc bệnh nhân của cuộc hẹn này mới có thể thay đổi thông tin.");
 
             // Delegate to ChangeAppointmentStatusAsync for the rest of the logic
             return await ChangeAppointmentStatusAsync(appointmentId, status);
