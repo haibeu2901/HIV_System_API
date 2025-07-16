@@ -38,10 +38,11 @@ namespace HIV_System_API_DAOs.Implements
         {
             return await _context.Appointments
                 .Include(a => a.Dct)
-                .Include(a => a.Ptn)
                     .ThenInclude(d => d.Acc)
                 .Include(a => a.Ptn)
                     .ThenInclude(p => p.Acc)
+                .OrderByDescending(a => a.ApmtDate)
+                .ThenByDescending(a => a.ApmTime)
                 .ToListAsync();
         }
 
@@ -242,7 +243,10 @@ namespace HIV_System_API_DAOs.Implements
                     throw new UnauthorizedAccessException("Invalid role for appointment access");
                 }
 
-                return await query.ToListAsync();
+                return await query
+                    .OrderByDescending(a => a.ApmtDate)
+                    .ThenByDescending(a => a.ApmTime)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -298,6 +302,8 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(a => a.Ptn)
                     .ThenInclude(p => p.Acc)
                 .Where(a => a.Ptn.AccId == accId || a.Dct.AccId == accId)
+                .OrderByDescending(a => a.ApmtDate)
+                .ThenByDescending(a => a.ApmTime)
                 .ToListAsync();
         }
     }

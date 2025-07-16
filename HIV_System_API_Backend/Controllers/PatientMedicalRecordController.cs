@@ -45,7 +45,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreatePatientMedicalRecord")]
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "1,2,5")]
         public async Task<IActionResult> CreatePatientMedicalRecord([FromBody] PatientMedicalRecordRequestDTO requestDTO)
         {
             if (requestDTO == null)
@@ -69,7 +69,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdatePatientMedicalRecord/{id}")]
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "1,2,5")]
         public async Task<IActionResult> UpdatePatientMedicalRecord(int id, [FromBody] PatientMedicalRecordRequestDTO requestDTO)
         {
             if (requestDTO == null)
@@ -93,7 +93,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpDelete("DeletePatientMedicalRecord/{id}")]
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "1,2,5")]
         public async Task<IActionResult> DeletePatientMedicalRecord(int id)
         {
             try

@@ -21,6 +21,9 @@ class AdminApp {
                 return;
             }
 
+            // Set up role-based access
+            this.setupRoleBasedAccess();
+
             // Initialize feature managers
             this.managers.dashboard = new DashboardManager(this.managers.auth);
             this.managers.appointment = new AppointmentManager(this.managers.auth);
@@ -31,6 +34,7 @@ class AdminApp {
             // Make managers globally available
             window.authManager = this.managers.auth;
             window.utilsManager = this.managers.utils;
+            window.utils = this.managers.utils; // Also expose as utils for compatibility
             window.modalManager = this.managers.modal;
             window.navigationManager = this.managers.navigation;
             window.dashboardManager = this.managers.dashboard;
@@ -54,6 +58,41 @@ class AdminApp {
         }
     }
 
+    // Setup role-based access
+    setupRoleBasedAccess() {
+        const userRole = parseInt(localStorage.getItem('userRole'));
+        const dashboardTitle = document.getElementById('dashboard-title');
+        const pageTitle = document.getElementById('page-title');
+        
+        // Update dashboard title and page title based on role
+        if (userRole === 5) {
+            if (dashboardTitle) {
+                dashboardTitle.textContent = 'Manager Dashboard';
+            }
+            if (pageTitle) {
+                pageTitle.textContent = 'Manager Dashboard - CareFirst HIV Clinic';
+            }
+        } else {
+            if (dashboardTitle) {
+                dashboardTitle.textContent = 'Admin Dashboard';
+            }
+            if (pageTitle) {
+                pageTitle.textContent = 'Admin Dashboard - CareFirst HIV Clinic';
+            }
+        }
+        
+        // Hide accounts section for managers
+        if (userRole === 5) {
+            const adminOnlyElements = document.querySelectorAll('[data-role="admin-only"]');
+            adminOnlyElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            console.log('🔒 Manager access: Accounts section hidden');
+        }
+        
+        console.log('🔑 Role-based access set up for role:', userRole);
+    }
+
     // Initialize all managers
     async initializeManagers() {
         const initPromises = Object.values(this.managers).map(manager => {
@@ -69,8 +108,11 @@ class AdminApp {
     // Load initial data
     async loadInitialData() {
         try {
-            // Load dashboard data by default
-            await this.managers.dashboard.loadDashboardData();
+            // Ensure all modals are hidden on page load
+            this.ensureModalsAreClosed();
+            
+            // Initialize charts and load dashboard data
+            await this.managers.dashboard.initializeCharts();
             
             // Show dashboard section
             this.managers.navigation.showSection('dashboard');
@@ -78,6 +120,25 @@ class AdminApp {
         } catch (error) {
             console.error('Failed to load initial data:', error);
         }
+    }
+
+    // Ensure all modals are properly closed
+    ensureModalsAreClosed() {
+        const modalIds = [
+            'createAccountModal',
+            'createNotificationModal',
+            'editAccountModal',
+            'patientProfileModal',
+            'doctorProfileModal',
+            'generalProfileModal'
+        ];
+        
+        modalIds.forEach(modalId => {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        });
     }
 
     // Show error message

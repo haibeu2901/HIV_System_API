@@ -195,6 +195,7 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(na => na.Ntf)
                 .Where(na => na.NtfId == ntfId)
                 .OrderBy(na => na.Acc.Fullname)
+                .OrderByDescending(na => na.Ntf.SendAt)
                 .ToListAsync();
         }
 

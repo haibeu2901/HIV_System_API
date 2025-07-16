@@ -1,223 +1,148 @@
-// Get doctorId from localStorage (stored as accId)
-const doctorId = localStorage.getItem('accId');
-
-// Function to fetch doctor's work schedule with JWT from localStorage
-async function getWorkSchedule(doctorId) {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedules?doctorId=${doctorId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        if (!response.ok) {
-            throw new Error('Failed to fetch work schedule');
-        }
-        const data = await response.json();
-        return data; // Expecting an array of schedules
-    } catch (error) {
-        console.error('Error fetching work schedule:', error);
-        return null;
+document.addEventListener('DOMContentLoaded', function () {
+    const debugDiv = document.getElementById('dashboardDebug');
+    function debug(msg) {
+        if (debugDiv) debugDiv.innerText = msg;
+        console.log('[Dashboard Debug]', msg);
     }
-}
 
-// Helper to convert dayOfWeek to day name
-function getDayName(dayOfWeek) {
-    const days = [null, "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    return days[dayOfWeek] || "Unknown";
-}
+    debug('Script loaded.');
+    // Get doctorId and token from localStorage
+    const doctorId = localStorage.getItem('accId');
+    const token = localStorage.getItem('token');
+    debug('accId: ' + doctorId + ', token: ' + (token ? '[present]' : '[missing]'));
 
-// Helper to get the start of the week (Monday)
-function getWeekStart(date) {
-    const d = new Date(date);
-    const day = d.getDay() || 7; // Sunday is 0, set to 7
-    if (day !== 1) d.setHours(-24 * (day - 1));
-    d.setHours(0, 0, 0, 0);
-    return d;
-}
-
-// Helper to get the end of the week (Sunday)
-function getWeekEnd(date) {
-    const start = getWeekStart(date);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return end;
-}
-
-// Helper to format date as yyyy-mm-dd
-function formatDate(date) {
-    return date.toISOString().split('T')[0];
-}
-
-// Group schedules by week start date
-function groupSchedulesByWeek(schedules) {
-    const weeks = {};
-    schedules.forEach(item => {
-        const workDate = new Date(item.workDate);
-        const weekStart = formatDate(getWeekStart(workDate));
-        const weekEnd = formatDate(getWeekEnd(workDate));
-        const weekKey = `${weekStart}~${weekEnd}`;
-        if (!weeks[weekKey]) weeks[weekKey] = [];
-        weeks[weekKey].push(item);
-    });
-    return weeks;
-}
-
-// Helper: get all days in a week (Monday to Sunday)
-function getWeekDays(weekStart) {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(weekStart);
-        d.setDate(d.getDate() + i);
-        days.push(d);
-    }
-    return days;
-}
-
-// Render the week dropdown and schedule calendar grid (timeframes as rows)
-async function renderWorkSchedule(doctorId, containerId) {
-    const container = document.getElementById(containerId);
-    const tableContainer = document.getElementById('scheduleTableContainer');
-    container.querySelector('#weekSelector').innerHTML = '<option>Loading...</option>';
-    tableContainer.innerHTML = "<p>Loading work schedule...</p>";
-
-    const schedules = await getWorkSchedule(doctorId);
-    if (!schedules || schedules.length === 0) {
-        tableContainer.innerHTML = "<p>No work schedule found.</p>";
-        container.querySelector('#weekSelector').innerHTML = '';
+    if (!doctorId || !token) {
+        debug('Doctor ID or token not found. Please log in again.');
         return;
     }
 
-    // Group by week
-    const weeks = groupSchedulesByWeek(schedules);
-    const weekKeys = Object.keys(weeks).sort();
-
-    // Populate dropdown
-    const weekSelector = container.querySelector('#weekSelector');
-    weekSelector.innerHTML = weekKeys.map(weekKey => {
-        const [start, end] = weekKey.split('~');
-        return `<option value="${weekKey}">${start} to ${end}</option>`;
-    }).join('');
-
-    // Render calendar for selected week
-    function renderCalendar(weekKey) {
-        const weekSchedules = weeks[weekKey] || [];
-        if (weekSchedules.length === 0) {
-            tableContainer.innerHTML = "<p>No work schedule for this week.</p>";
-            return;
+    debug('Fetching: https://localhost:7009/api/Dashboard/doctor/' + doctorId);
+    fetch(`https://localhost:7009/api/Dashboard/doctor/${doctorId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
         }
+    })
+        .then(response => {
+            debug('Fetch response status: ' + response.status);
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            debug('Data loaded: ' + JSON.stringify(data));
+            // Metrics
+            document.getElementById('todayAppointments').textContent = data.todayAppointments || 0;
+            document.getElementById('weeklyAppointments').textContent = data.weeklyAppointments || 0;
+            document.getElementById('monthlyAppointments').textContent = data.monthlyAppointments || 0;
+            document.getElementById('totalPatients').textContent = data.totalPatients || 0;
+            document.getElementById('upcomingAppointments').textContent = data.upcomingAppointments || 0;
+            document.getElementById('completedAppointments').textContent = data.completedAppointments || 0;
 
-        // 1. Get all unique timeframes for this week
-        const timeframeSet = new Set();
-        weekSchedules.forEach(item => {
-            timeframeSet.add(`${item.startTime}-${item.endTime}`);
-        });
-        // Sort timeframes by startTime
-        const timeframes = Array.from(timeframeSet).sort((a, b) => {
-            const aStart = a.split('-')[0];
-            const bStart = b.split('-')[0];
-            return aStart.localeCompare(bStart);
-        });
-
-        // 2. Build a map: { [dayOfWeek][timeframe]: schedule }
-        const scheduleMap = {};
-        weekSchedules.forEach(item => {
-            const tfKey = `${item.startTime}-${item.endTime}`;
-            if (!scheduleMap[item.dayOfWeek]) scheduleMap[item.dayOfWeek] = {};
-            scheduleMap[item.dayOfWeek][tfKey] = item;
-        });
-
-        // 3. Render table
-        let html = `<table class="calendar-table" style="width:100%;border-collapse:collapse;text-align:center;">
-            <thead>
-                <tr>
-                    <th style="background:#f3f4f6;">Timeframe</th>
-                    ${[1,2,3,4,5,6,7].map(dayNum => `<th style="background:#f3f4f6;">${getDayName(dayNum)}</th>`).join('')}
-                </tr>
-            </thead>
-            <tbody>
-                ${timeframes.map(tf => {
-                    const [start, end] = tf.split('-');
-                    return `<tr>
-                        <td style="font-weight:bold;">${start.slice(0,5)} - ${end.slice(0,5)}</td>
-                        ${[1,2,3,4,5,6,7].map(dayNum => {
-                            const sched = (scheduleMap[dayNum] && scheduleMap[dayNum][tf]) ? scheduleMap[dayNum][tf] : null;
-                            if (sched) {
-                                return `<td style="background:#e0f7fa;padding:8px;">
-                                    <div>${sched.isAvailable ? '<span style="color:green;">Available</span>' : '<span style="color:red;">Not Available</span>'}</div>
-                                    <div>${sched.workDate ? new Date(sched.workDate).toLocaleDateString() : ''}</div>
-                                </td>`;
-                            } else {
-                                return `<td style="background:#fff;padding:8px;">-</td>`;
-                            }
-                        }).join('')}
-                    </tr>`;
-                }).join('')}
-            </tbody>
-        </table>`;
-
-        tableContainer.innerHTML = html;
-    }
-
-    // Initial render
-    renderCalendar(weekSelector.value);
-
-    // Change event
-    weekSelector.onchange = () => renderCalendar(weekSelector.value);
-}
-
-// Function to fetch doctor profile (excluding workSchedule)
-async function getDoctorProfile(accId) {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`https://localhost:7009/api/Doctor/GetDoctorProfile?accId=${accId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
+            // Chart.js: Appointments Overview
+            if (window.appointmentsChart && typeof window.appointmentsChart.destroy === 'function') {
+                window.appointmentsChart.destroy();
             }
+            const ctx = document.getElementById('appointmentsChart').getContext('2d');
+            window.appointmentsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Today', 'This Week', 'This Month', 'Completed', 'Upcoming'],
+                    datasets: [{
+                        label: 'Appointments',
+                        data: [
+                            data.todayAppointments || 0,
+                            data.weeklyAppointments || 0,
+                            data.monthlyAppointments || 0,
+                            data.completedAppointments || 0,
+                            data.upcomingAppointments || 0
+                        ],
+                        backgroundColor: [
+                            '#e74c3c',
+                            '#3498db',
+                            '#764ba2',
+                            '#27ae60',
+                            '#f1c40f'
+                        ],
+                        borderRadius: 8,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+            debug('Chart rendered.');
+
+            // Today's Schedule
+            const scheduleDiv = document.getElementById('todaySchedule');
+            scheduleDiv.innerHTML = '';
+            if (Array.isArray(data.todaySchedule) && data.todaySchedule.length > 0) {
+                const ul = document.createElement('ul');
+                data.todaySchedule.forEach(item => {
+                    // Fallback for missing fields
+                    const patientName = item.patientName || 'Unknown';
+                    const time = item.time || item.appointmentTime || '';
+                    const reason = item.reason || '';
+                    let text = time ? `${time} - ${patientName}` : patientName;
+                    if (reason) text += ` (${reason})`;
+                    const li = document.createElement('li');
+                    li.textContent = text;
+                    ul.appendChild(li);
+                });
+                scheduleDiv.appendChild(ul);
+            } else {
+                scheduleDiv.innerHTML = '<p>No schedule for today.</p>';
+            }
+            debug('Schedule rendered.');
+
+            // Recent Patients
+            const recentPatientsBody = document.getElementById('recentPatientsBody');
+            recentPatientsBody.innerHTML = '';
+            if (Array.isArray(data.recentPatients) && data.recentPatients.length > 0) {
+                data.recentPatients.forEach(patient => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${patient.patientName || 'Unknown'}</td>
+                        <td>${patient.lastVisit || ''}</td>
+                        <td>${patient.lastVisitTime || ''}</td>
+                    `;
+                    recentPatientsBody.appendChild(tr);
+                });
+            } else {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="3">No recent patients.</td>';
+                recentPatientsBody.appendChild(tr);
+            }
+            debug('Recent patients rendered.');
+            // Remove the visible debug message on success, but keep it in the console
+            if (debugDiv) debugDiv.innerText = '';
+            console.log('[Dashboard Debug]', 'Dashboard loaded successfully.');
+        })
+        .catch(error => {
+            debug('Error: ' + error.message);
+            // Show error state for all sections
+            document.getElementById('todayAppointments').textContent = '-';
+            document.getElementById('weeklyAppointments').textContent = '-';
+            document.getElementById('monthlyAppointments').textContent = '-';
+            document.getElementById('totalPatients').textContent = '-';
+            document.getElementById('upcomingAppointments').textContent = '-';
+            document.getElementById('completedAppointments').textContent = '-';
+            document.getElementById('todaySchedule').innerHTML = '<p style="color:red;">Failed to load schedule.</p>';
+            document.getElementById('recentPatientsBody').innerHTML = '<tr><td colspan="3" style="color:red;">Failed to load recent patients.</td></tr>';
         });
-        if (!response.ok) throw new Error('Failed to fetch doctor profile');
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching doctor profile:', error);
-        return null;
-    }
-}
-
-// Render doctor profile (excluding workSchedule)
-async function renderDoctorProfile(accId, containerId) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = "<p>Loading profile...</p>";
-    const profile = await getDoctorProfile(accId);
-    if (profile) {
-        container.innerHTML = `
-            <div class="profile-header">
-                <h2>${profile.account.fullname}</h2>
-                <p>${profile.account.email}</p>
-                <p>${profile.degree}</p>
-                <p>${profile.bio}</p>
-            </div>
-        `;
-    } else {
-        container.innerHTML = "<p>Failed to load profile.</p>";
-    }
-}
-
-// Navigation and event logic
-function setActive(btn) {
-    const btnSchedule = document.getElementById('btnSchedule');
-    const btnProfile = document.getElementById('btnProfile');
-    [btnSchedule, btnProfile].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
-
-function logout() {
-    window.location.href = "../../../public-view/landingpage.html";
-}
-
-// Attach event listeners after DOM is loaded
-window.addEventListener('DOMContentLoaded', () => {
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) logoutBtn.onclick = logout;
-    // Always render the work schedule by default
-    renderWorkSchedule(doctorId, 'dashboardSection');
 });
