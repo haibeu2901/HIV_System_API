@@ -3,43 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Patient Medical Record</title>
+    <link rel="stylesheet" href="../doctor-header/doctor-header-style.css">
     <link rel="stylesheet" href="patient-medical-record-style.css">
 </head>
 <body>
-    <!-- Header/Navbar -->
-    <header class="header">
-        <nav class="navbar">
-            <div class="nav-container">
-                <div class="nav-logo">
-                    <i class="fa fa-user-md"></i>
-                    Patient Medical Record
-                </div>
-                <ul class="nav-menu">
-                    <li>
-                        <a href="../../../public-view/landingpage.html">Home</a>
-                    </li>
-                    <li>
-                        <a href="../doctor-dashboard/doctor-dashboard.html">Work Schedule</a>
-                    </li>
-                    <li>
-                        <a href="../appointment-list/appoiment-list.html">Appointments</a>
-                    </li>
-                    <li>
-                        <a href="../patient-list/patient-list.html">Patient List</a>
-                    </li>
-                    <li>
-                        <a href="../medical-resources/medical-resources.html">Medical Resources</a>
-                    </li>
-                    <li>
-                        <a href="../doctor-profile/doctor-profile.html">Profile</a>
-                    </li>
-                    <li>
-                        <a href="../../../public-view/landingpage.html" class="btn-login">Logout</a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-    </header>
+    <div id="header-placeholder"></div>
 
     <div class="dashboard-container" style="padding-top: 100px;">
         <main class="main-content">
@@ -103,7 +71,7 @@
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
-                        <option value="4">4</option>
+                        <option value="4">Special Case</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -150,7 +118,37 @@
         </div>
     </div>
 
+    <!-- Update Regimen Status Modal -->
+    <div id="updateRegimenStatusModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeUpdateRegimenStatusModalBtn">&times;</span>
+            <h2>Update ARV Regimen Status</h2>
+            <form id="updateRegimenStatusForm">
+                <div class="form-group">
+                    <label for="updateRegimenStatusSelect">New Status</label>
+                    <select id="updateRegimenStatusSelect" name="regimenStatus" required>
+                        <option value="">Select status</option>
+                        <option value="2">Active</option>
+                        <option value="3">Paused</option>
+                        <option value="4">Failed</option>
+                        <option value="5">Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="updateRegimenStatusNotes">Notes</label>
+                    <textarea id="updateRegimenStatusNotes" name="notes" rows="2" required></textarea>
+                </div>
+                <input type="hidden" id="updateRegimenStatusId" name="regimenId" />
+                <div class="form-group" style="text-align:right;">
+                    <button type="submit" class="primary-btn">Update Status</button>
+                </div>
+            </form>
+            <div id="updateRegimenStatusMsg" style="color:red;margin-top:10px;"></div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="../doctor-header/doctor-header-script.js"></script>
     <script src="patient-medical-record-script.js"></script>
     
     <footer class="footer">

@@ -2,11 +2,12 @@
 const token = localStorage.getItem('token');
 
 // Appointment status mapping
-const statusMap = {
-    1: 'Chờ xác nhận',
-    2: 'Đã xác nhận',
-    3: 'Đã xác nhận lại',
-    4: 'Đã hủy'
+const appointmentStatusMap = {
+  1: "Pending",
+  2: "Scheduled",
+  3: "Rescheduled",
+  4: "Cancelled",
+  5: "Completed"
 };
 
 async function fetchAppointments() {
@@ -50,17 +51,24 @@ function renderAppointments(appointments) {
                     <td>${apmt.apmtDate}</td>
                     <td>${apmt.apmTime.slice(0,5)}</td>
                     <td>${apmt.notes || ''}</td>
-                    <td class="status status-${apmt.apmStatus}">${statusMap[apmt.apmStatus] || 'Không rõ'}</td>
+                    <td class="status status-${apmt.apmStatus}">${appointmentStatusMap[apmt.apmStatus] || 'Không rõ'}</td>
                     <td>
                         ${apmt.apmStatus === 1 ? `
                             <button class="button-accept" data-accept-id="${apmt.appointmentId}">Accept</button>
                             <button class="button-modify" data-modify-id="${apmt.appointmentId}">Modify</button>
                         ` : ''}
+                        ${(apmt.apmStatus !== 4 && apmt.apmStatus !== 5) ? `
+                            <button class="button-reject" data-reject-id="${apmt.appointmentId}">Reject</button>
+                        ` : ''}
+                        ${(apmt.apmStatus === 2 || apmt.apmStatus === 3) ? `
+                            <button class="button-complete" data-complete-id="${apmt.appointmentId}">Complete</button>
+                        ` : ''}
                     </td>
                 </tr>
             `).join('')}
         </tbody>
-    </table>`;
+    </table>
+    <div id="appointment-message" style="margin-top:10px;"></div>`;
     section.innerHTML = html;
 
     // Accept button logic
@@ -81,6 +89,95 @@ function renderAppointments(appointments) {
             }
         };
     });
+
+    // Reject button logic
+    document.querySelectorAll('.button-reject').forEach(btn => {
+        btn.onclick = async function() {
+            const apmtId = this.getAttribute('data-reject-id');
+            if (!confirm('Are you sure you want to reject (cancel) this appointment?')) return;
+            this.disabled = true;
+            setMessage('Processing...', false);
+            try {
+                const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?id=${apmtId}&status=4`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Failed to reject appointment');
+                setMessage('Appointment rejected successfully!', true);
+                let appointments = await fetchAppointments();
+                renderAppointments(appointments);
+            } catch (err) {
+                setMessage('Error rejecting appointment.', false);
+                this.disabled = false;
+            }
+        };
+    });
+
+    // Complete button logic
+    document.querySelectorAll('.button-complete').forEach(btn => {
+        btn.onclick = function() {
+            const apmtId = this.getAttribute('data-complete-id');
+            // Open modal and store appointment ID
+            const completeModal = document.getElementById('completeAppointmentModal');
+            const completeForm = document.getElementById('completeAppointmentForm');
+            const completeNotes = document.getElementById('completeNotes');
+            if (completeModal && completeForm && completeNotes) {
+                completeModal.style.display = 'block';
+                completeForm.setAttribute('data-apmt-id', apmtId);
+                completeNotes.value = '';
+            }
+        };
+    });
+}
+
+// Modal logic
+window.addEventListener('DOMContentLoaded', async () => {
+    let appointments = await fetchAppointments();
+    console.log('Fetched appointments:', appointments); // Debug line
+    renderAppointments(appointments);
+
+    // Modal close/cancel (set up once)
+    const closeCompleteModalBtn = document.getElementById('closeCompleteModal');
+    if (closeCompleteModalBtn) closeCompleteModalBtn.onclick = closeCompleteModal;
+    const cancelCompleteBtn = document.getElementById('cancelCompleteBtn');
+    if (cancelCompleteBtn) cancelCompleteBtn.onclick = closeCompleteModal;
+    function closeCompleteModal() {
+        const completeModal = document.getElementById('completeAppointmentModal');
+        const completeForm = document.getElementById('completeAppointmentForm');
+        if (completeModal && completeForm) {
+            completeModal.style.display = 'none';
+            completeForm.reset();
+        }
+    }
+    const completeAppointmentForm = document.getElementById('completeAppointmentForm');
+    if (completeAppointmentForm) {
+        completeAppointmentForm.onsubmit = async function(e) {
+            e.preventDefault();
+            const apmtId = this.getAttribute('data-apmt-id');
+            const notes = document.getElementById('completeNotes') ? document.getElementById('completeNotes').value : '';
+            const submitBtn = document.getElementById('submitCompleteBtn');
+            if (submitBtn) submitBtn.disabled = true;
+            setMessage('Processing...', false);
+            try {
+                const res = await fetch(`https://localhost:7009/api/Appointment/CompleteAppointment?appointmentId=${apmtId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes })
+                });
+                if (!res.ok) throw new Error('Failed to complete appointment');
+                setMessage('Appointment marked as completed!', true);
+                closeCompleteModal();
+                let appointments = await fetchAppointments();
+                renderAppointments(appointments);
+            } catch (err) {
+                setMessage('Error completing appointment.', false);
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        };
+    }
 
     // Modify button logic
     document.querySelectorAll('.button-modify').forEach(btn => {
@@ -135,12 +232,6 @@ function renderAppointments(appointments) {
             }
         };
     });
-}
-
-// Modal logic
-window.addEventListener('DOMContentLoaded', async () => {
-    let appointments = await fetchAppointments();
-    renderAppointments(appointments);
 
     // Modal close/cancel
     document.getElementById('closeModifyModal').onclick = closeModifyModal;
@@ -148,6 +239,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     function closeModifyModal() {
         document.getElementById('modifyAppointmentModal').style.display = 'none';
         document.getElementById('modifyAppointmentForm').reset();
+        document.getElementById('modifyDateMessage').textContent = '';
+        document.getElementById('modifyTime').innerHTML = '';
     }
 
     // Modal submit
@@ -155,7 +248,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         const apmtId = this.getAttribute('data-apmt-id');
         const date = document.getElementById('modifyDate').value;
-        const time = document.getElementById('modifyTime').value;
+        let time = document.getElementById('modifyTime').value;
         const notes = document.getElementById('modifyNotes').value;
         // Validate date (not in the past)
         const today = new Date();
@@ -170,6 +263,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             alert('Please select a valid time.');
             return;
         }
+        // Ensure time is in HH:mm:ss format
+        if (time.length === 5) time += ':00';
         try {
             const res = await fetch(`https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${apmtId}`, {
                 method: 'POST',
@@ -180,17 +275,22 @@ window.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify({
                     appointmentDate: date,
                     appointmentTime: time,
-                    notes: notes
+                    notes
                 })
-               
-
             });
             if (!res.ok) throw new Error('Failed to update appointment');
+            setMessage('Appointment updated successfully!', true);
             closeModifyModal();
             let appointments = await fetchAppointments();
             renderAppointments(appointments);
         } catch (err) {
-            alert('Error updating appointment.');
+            setMessage('Error updating appointment.', false);
         }
     };
 });
+
+function setMessage(msg, success) {
+    const msgDiv = document.getElementById('appointment-message');
+    msgDiv.textContent = msg;
+    msgDiv.style.color = success ? '#27ae60' : '#c0392b';
+}
