@@ -29,5 +29,8 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<NotificationAccount>> GetPersonalNotificationAccountsAsync(int accId);
         Task<bool> DeleteNotificationForAccountAsync(int ntfId, int accId);
         Task<NotificationDetailResponseDTO?> GetNotificationDetailsByIdAsync(int ntfId);
+        Task<NotificationResponseDTO> CreateAndSendToAllAsync(CreateNotificationRequestDTO dto);
+        Task<NotificationResponseDTO> CreateAndSendToRoleAsync(CreateNotificationRequestDTO dto, byte role);
+        Task<NotificationResponseDTO> CreateAndSendToAccountIdAsync(CreateNotificationRequestDTO dto, int accId);
     }
 }
