@@ -233,6 +233,19 @@ namespace HIV_System_API_Services.Implements
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
                 }
+                else if (updatedAppointment.ApmStatus == 5) // If status is completed
+                {
+                    // Create notification for completion
+                    var notification = new Notification
+                    {
+                        NotiType = "Appt Complete", // <= 12 chars
+                        NotiMessage = "Cuộc hẹn của bạn đã thành công.",
+                        SendAt = DateTime.UtcNow
+                    };
+                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
+                }
 
                 await transaction.CommitAsync();
                 return MapToResponseDTO(updatedAppointment);
@@ -489,6 +502,7 @@ namespace HIV_System_API_Services.Implements
                 var account = await _context.Accounts.FindAsync(accId);
                 if (account == null)
                     throw new ArgumentException($"Account with ID {accId} does not exist.");
+
                 var isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
                 if (!isDoctor)
                     throw new UnauthorizedAccessException("Only the doctor of this appointment can complete it.");
@@ -503,25 +517,11 @@ namespace HIV_System_API_Services.Implements
                 if (!string.IsNullOrWhiteSpace(dto.Notes))
                 {
                     appointment.Notes = dto.Notes;
+                    _context.Appointments.Update(appointment);
+                    await _context.SaveChangesAsync();
                 }
 
-                // Change status to completed (5)
-                appointment.ApmStatus = 5;
-                _context.Appointments.Update(appointment);
-                await _context.SaveChangesAsync();
-
-                // Create notification for both patient and doctor
-                var notification = new Notification
-                {
-                    NotiType = "Appt Complete",
-                    NotiMessage = "Cuộc hẹn của bạn đã thành công.",
-                    SendAt = DateTime.UtcNow
-                };
-                var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
-                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, appointment.PtnId);
-                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, appointment.DctId);
-
-                // Ensure patient medical record exists
+                // Ensure patient medical record exists before completing
                 var patientMedicalRecord = await _context.PatientMedicalRecords
                     .FirstOrDefaultAsync(r => r.PtnId == appointment.PtnId);
                 if (patientMedicalRecord == null)
@@ -534,8 +534,14 @@ namespace HIV_System_API_Services.Implements
                     await _context.SaveChangesAsync();
                 }
 
+                // Commit current transaction before calling ChangeAppointmentStatusAsync
                 await transaction.CommitAsync();
-                return MapToResponseDTO(appointment);
+
+                // Use ChangeAppointmentStatusAsync to handle status change and notifications
+                // This will create its own transaction internally
+                var result = await ChangeAppointmentStatusAsync(appointmentId, 5); // 5 = Completed
+
+                return result;
             }
             catch (Exception ex)
             {
