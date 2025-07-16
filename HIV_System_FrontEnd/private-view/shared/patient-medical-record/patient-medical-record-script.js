@@ -6,7 +6,8 @@ const appointmentStatusMap = {
     1: 'Chờ xác nhận',
     2: 'Đã xác nhận',
     3: 'Đã xác nhận lại',
-    4: 'Đã hủy'
+    4: 'Đã hủy',
+    5: 'Đã hoàn thành'
 };
 
 // ARV Regimen level and status mapping

@@ -1,5 +1,8 @@
-/* Doctor Header Styles - Consistent with doctor-profile-style.css and patient header */
-.doctor-header-nav {
+/* All menu labels and content should be in Vietnamese for consistency */
+.hidden { display: none !important; }
+
+/* Shared Header Styles - Adapted from doctor-header-style.css */
+.shared-header-nav {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -12,7 +15,7 @@
     top: 0;
     z-index: 100;
 }
-.doctor-header-logo {
+.shared-header-logo {
     display: flex;
     align-items: center;
     gap: 0.7rem;
@@ -20,19 +23,24 @@
     margin-left: 0;
     flex: 1;
 }
-.doctor-header-logo i {
+.shared-header-logo i {
     color: #e74c3c;
     font-size: 2rem;
 }
-.doctor-header-logo a {
+.shared-header-logo .logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
     color: #e74c3c;
     font-size: 1.7rem;
     font-weight: 700;
     text-decoration: none;
-    letter-spacing: 1px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-.doctor-header-links {
+.shared-header-logo .logo-link i {
+    font-size: 2rem;
+}
+.shared-header-links {
     display: flex;
     gap: 24px;
     list-style: none;
@@ -42,7 +50,7 @@
     align-items: center;
     order: 1;
 }
-.doctor-header-links li a, .doctor-header-links li button.btn-logout {
+.shared-header-links li a, .shared-header-links li button.btn-logout {
     color: #333;
     font-size: 1rem;
     font-weight: 500;
@@ -58,7 +66,7 @@
     border: none;
     cursor: pointer;
 }
-.doctor-header-links li a.active, .doctor-header-links li a:hover, .doctor-header-links li button.btn-logout:hover {
+.shared-header-links li a.active, .shared-header-links li a:hover, .shared-header-links li button.btn-logout:hover {
     background: #e74c3c;
     color: #fff;
 }
@@ -80,7 +88,7 @@
     background: #c0392b;
     color: #fff;
 }
-.doctor-header-hamburger {
+.shared-header-hamburger {
     display: none;
     flex-direction: column;
     justify-content: center;
@@ -93,7 +101,7 @@
     z-index: 200;
     margin-left: 16px;
 }
-.doctor-header-hamburger span {
+.shared-header-hamburger span {
     display: block;
     width: 28px;
     height: 3px;
@@ -107,7 +115,7 @@
     position: relative;
     display: inline-block;
 }
-.btn-doctor-dropdown {
+.btn-shared-dropdown {
     background: transparent;
     color: #333;
     border: none;
@@ -121,7 +129,7 @@
     gap: 0.7rem;
     transition: background 0.2s, color 0.2s;
 }
-.btn-doctor-dropdown:hover, .dropdown.open .btn-doctor-dropdown {
+.btn-shared-dropdown:hover, .dropdown.open .btn-shared-dropdown {
     background: #e74c3c;
     color: #fff;
 }
@@ -158,8 +166,7 @@
     background-color: #f2f2f2;
     color: #c0392b;
 }
-/* Notification Bell */
-.doctor-header-bell {
+.shared-header-bell {
     margin-left: 1.2rem;
     background: none;
     border: none;
@@ -187,7 +194,6 @@
     font-weight: bold;
     display: none;
 }
-/* Notification Popup */
 .notification-popup {
     position: absolute;
     top: 70px;
@@ -245,63 +251,4 @@
 }
 .notification-popup:not(.hidden) {
     display: flex;
-}
-@media (max-width: 900px) {
-    .doctor-header-nav {
-        flex-direction: column;
-        align-items: flex-start;
-        height: auto;
-        padding: 0 8px;
-        border-radius: 0 0 10px 10px;
-    }
-    .doctor-header-hamburger {
-        display: flex;
-    }
-    .doctor-header-links {
-        position: absolute;
-        top: 70px;
-        left: 0;
-        width: 100%;
-        flex-direction: column;
-        background: #fff;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-        border-radius: 0 0 15px 15px;
-        padding: 16px 0;
-        gap: 0;
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(-10px);
-        transition: all 0.3s;
-    }
-    .doctor-header-links.show {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-    }
-    .doctor-header-links li {
-        width: 100%;
-        text-align: center;
-        margin: 0;
-    }
-    .doctor-header-links li a, .doctor-header-links li button.btn-logout {
-        display: block;
-        width: 100%;
-        padding: 16px 0;
-        border-radius: 0;
-        font-size: 1.1rem;
-    }
-    .doctor-header-bell {
-        margin-left: 0;
-        align-self: flex-end;
-    }
-    .doctor-header-logo {
-        margin-left: 0;
-        margin-top: 8px;
-        flex: unset;
-    }
-    .notification-popup {
-        right: 8px;
-        width: 98vw;
-        min-width: 0;
-    }
-}
+} 

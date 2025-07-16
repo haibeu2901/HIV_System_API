@@ -1,35 +1,51 @@
-// Doctor Header Loader and Logic
-
-// Dynamically load the header HTML into #header-placeholder
-function loadDoctorHeader() {
-    // Use an absolute path so it works from any doctor-view subdirectory
-    fetch('/private-view/doctor-view/doctor-header/doctor-header.html')
+// Shared Header Loader and Logic (adapted from doctor-header)
+function loadSharedHeader() {
+    fetch('/private-view/shared/header/header.html')
         .then(res => res.text())
         .then(html => {
             const placeholder = document.getElementById('header-placeholder');
             if (placeholder) {
                 placeholder.innerHTML = html;
-                setActiveDoctorNav();
+                setActiveSharedNav();
                 setLogoutHandler();
                 setHamburgerHandler();
                 setDropdownHandler();
                 setNotificationBellHandler();
-                updateDoctorUnreadBadge();
+                updateSharedUnreadBadge();
+                // Role-based menu logic
+                const userRoleId = window.roleUtils && window.roleUtils.getUserRole ? window.roleUtils.getUserRole() : null;
+                const userRoleName = (window.roleUtils && window.roleUtils.ROLE_NAMES && userRoleId) ? window.roleUtils.ROLE_NAMES[userRoleId] : 'guest';
+                // Hide Work Schedule for all roles except doctor
+                if (userRoleName !== 'doctor') {
+                    document.getElementById('nav-work-schedule')?.classList.add('hidden');
+                } else {
+                    document.getElementById('nav-work-schedule')?.classList.remove('hidden');
+                }
+                // Set dashboard link and dropdown label per role (only doctor and staff for now)
+                let dashboardLink = '/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html';
+                let dropdownLabel = '<i class="fas fa-user-md"></i> Bác sĩ <i class="fas fa-caret-down"></i>';
+                if (userRoleName === 'staff') {
+                    dashboardLink = '/private-view/staff-view/staff-dashboard/staff-dashboard.html';
+                    dropdownLabel = '<i class="fas fa-user"></i> Nhân viên <i class="fas fa-caret-down"></i>';
+                }
+                // For admin and manager, use doctor dashboard and label for now
+                const dashboardAnchor = document.getElementById('nav-dashboard');
+                if (dashboardAnchor) dashboardAnchor.setAttribute('href', dashboardLink);
+                document.getElementById('sharedDropdownBtn').innerHTML = dropdownLabel;
             }
         });
 }
 
-// Highlight the active nav link based on current page
-function setActiveDoctorNav() {
+function setActiveSharedNav() {
     const path = window.location.pathname;
     const navLinks = [
-        { id: 'nav-dashboard', path: '/HIV_System_FrontEnd/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html' },
-        { id: 'nav-work-schedule', path: '/HIV_System_FrontEnd/private-view/doctor-view/doctor-work-schedule/doctor-work-schedule.html' },
-        { id: 'nav-appointments', path: '/HIV_System_FrontEnd/private-view/doctor-view/appointment-list/appoiment-list.html' },
-        { id: 'nav-patient-list', path: '/HIV_System_FrontEnd/private-view/doctor-view/patient-list/patient-list.html' },
-        { id: 'nav-medical-resources', path: '/HIV_System_FrontEnd/private-view/doctor-view/medical-resources/medical-resources.html' },
-        { id: 'nav-notifications', path: '/HIV_System_FrontEnd/private-view/doctor-view/doctor-notifications/doctor-notifications.html' },
-        { id: 'nav-profile', path: '/HIV_System_FrontEnd/private-view/doctor-view/doctor-profile/doctor-profile.html' }
+        { id: 'nav-dashboard', path: '/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html' },
+        { id: 'nav-work-schedule', path: '/private-view/doctor-view/doctor-work-schedule/doctor-work-schedule.html' },
+        { id: 'nav-appointments', path: '/private-view/shared/appointment-list/appoiment-list.html' },
+        { id: 'nav-patient-list', path: '/private-view/doctor-view/patient-list/patient-list.html' },
+        { id: 'nav-medical-resources', path: '/private-view/shared/medical-resources/medical-resources.html' },
+        { id: 'nav-notifications', path: '/private-view/shared/notifications/notifications.html' },
+        { id: 'nav-profile', path: '/private-view/shared/user-profile/user-profile.html' }
     ];
     navLinks.forEach(link => {
         const el = document.getElementById(link.id);
@@ -39,7 +55,6 @@ function setActiveDoctorNav() {
     });
 }
 
-// Logout handler
 function setLogoutHandler() {
     const logoutBtn = document.getElementById('nav-logout');
     if (logoutBtn) {
@@ -47,20 +62,18 @@ function setLogoutHandler() {
             e.preventDefault();
             localStorage.clear();
             sessionStorage.clear();
-            window.location.href = '/HIV_System_FrontEnd/public-view/landingpage.html';
+            window.location.href = '/public-view/landingpage.html';
         });
     }
 }
 
-// Hamburger menu handler
 function setHamburgerHandler() {
-    const hamburger = document.getElementById('doctor-header-hamburger');
-    const navLinks = document.getElementById('doctor-header-links');
+    const hamburger = document.getElementById('shared-header-hamburger');
+    const navLinks = document.getElementById('shared-header-links');
     if (hamburger && navLinks) {
         hamburger.addEventListener('click', () => {
             navLinks.classList.toggle('show');
         });
-        // Close menu when a link is clicked (for mobile UX)
         navLinks.querySelectorAll('a,button').forEach(link => {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('show');
@@ -69,10 +82,9 @@ function setHamburgerHandler() {
     }
 }
 
-// Dropdown menu handler for doctor menu
 function setDropdownHandler() {
-    const dropdown = document.getElementById('doctorDropdown');
-    const btn = document.getElementById('doctorDropdownBtn');
+    const dropdown = document.getElementById('sharedDropdown');
+    const btn = document.getElementById('sharedDropdownBtn');
     if (dropdown && btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -92,7 +104,6 @@ function setDropdownHandler() {
     }
 }
 
-// Notification bell popup handler
 function setNotificationBellHandler() {
     const bell = document.getElementById('notificationBell');
     const popup = document.getElementById('notification-popup');
@@ -119,8 +130,7 @@ function setNotificationBellHandler() {
     }
 }
 
-// Update unread badge for notifications
-function updateDoctorUnreadBadge() {
+function updateSharedUnreadBadge() {
     const token = localStorage.getItem('token');
     if (!token) return;
     fetch('https://localhost:7009/api/Notification/GetUnreadCount', {
@@ -132,8 +142,8 @@ function updateDoctorUnreadBadge() {
     })
     .then(res => res.ok ? res.json() : 0)
     .then(count => {
-        const badge = document.getElementById('doctor-unread-badge');
-        const badgeHeader = document.getElementById('doctor-unread-badge-header');
+        const badge = document.getElementById('shared-unread-badge');
+        const badgeHeader = document.getElementById('shared-unread-badge-header');
         if (badge) {
             if (count > 0) {
                 badge.textContent = count > 99 ? '99+' : count;
@@ -154,7 +164,6 @@ function updateDoctorUnreadBadge() {
     .catch(() => {});
 }
 
-// Load notifications for popup (reuse logic from doctor-notifications-script.js if needed)
 function loadPopupNotifications() {
     const token = localStorage.getItem('token');
     const popupList = document.getElementById('popup-notification-list');
@@ -215,9 +224,8 @@ function formatDateTime(dateStr) {
     }
 }
 
-// Load header on DOMContentLoaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadDoctorHeader);
+    document.addEventListener('DOMContentLoaded', loadSharedHeader);
 } else {
-    loadDoctorHeader();
-}
+    loadSharedHeader();
+} 
