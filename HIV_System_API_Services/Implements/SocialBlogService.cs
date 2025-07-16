@@ -18,6 +18,7 @@ namespace HIV_System_API_Services.Implements
         private readonly INotificationRepo _notificationRepo;
         private readonly HivSystemApiContext _context;
         private readonly IBlogReactionRepo _blogReactionRepo;
+        private readonly IAccountRepo _accountRepo;
 
         public SocialBlogService()
         {
@@ -25,6 +26,7 @@ namespace HIV_System_API_Services.Implements
             _notificationRepo = new NotificationRepo();
             _context = new HivSystemApiContext();
             _blogReactionRepo = new BlogReactionRepo();
+            _accountRepo = new AccountRepo();
         }
 
         // --- Mapping and Validation ---
@@ -45,16 +47,18 @@ namespace HIV_System_API_Services.Implements
 
         private BlogResponseDTO MapToResponseDto(SocialBlog blog)
         {
-            var blogReaction = _context.BlogReactions.Where(a=>a.SblId == blog.SblId).Select(a=> new CommentResponseDTO
+            var blogReaction = _context.BlogReactions.Where(a=>a.SblId == blog.SblId).Select(a=> new FullBlogReactionResponseDTO
             {
                 ReactionId = a.BrtId,
                 BlogId = a.SblId,
                 AccountId = a.AccId,
                 ReactedAt = a.ReactedAt,
-                Comment = a.Comment
+                Comment = a.Comment,
+                ReactionType = a.ReactionType
             }).ToList();
             var like = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId,true).Result;
             var dislike = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId, false).Result;
+            var authorName = _accountRepo.GetAccountByIdAsync(blog.AccId).Result?.Fullname ?? "Unknown Author";
             return new BlogResponseDTO
             {
                 Id = blog.SblId,
@@ -68,7 +72,8 @@ namespace HIV_System_API_Services.Implements
                 BlogStatus = blog.BlogStatus,
                 BlogReaction = blogReaction,
                 LikesCount = like,
-                DislikesCount = dislike
+                DislikesCount = dislike,
+                AuthorName = authorName
             };
         }
 
@@ -101,6 +106,13 @@ namespace HIV_System_API_Services.Implements
 
             var blog = await _repo.GetByIdAsync(id);
             return blog == null ? null : MapToResponseDto(blog);
+        }
+        public async Task<List<BlogResponseDTO>> GetByAuthorIdAsync(int authorId)
+        {
+            if (authorId <= 0)
+                throw new ArgumentException("ID tác giả không hợp lệ");
+            var blogs = await _repo.GetByAuthorIdAsync(authorId);
+            return blogs.Select(MapToResponseDto).ToList();
         }
 
         public async Task<BlogResponseDTO> CreateAsync(BlogCreateRequestDTO request)
@@ -152,6 +164,23 @@ namespace HIV_System_API_Services.Implements
             if (request.Notes != null) existing.Notes = request.Notes;
 
             var updated = await _repo.UpdateAsync(id, existing);
+            return MapToResponseDto(updated);
+        }
+        public async Task<BlogResponseDTO> UpdatePersonalAsync(int blogId, int authorId, BlogUpdateRequestDTO request)
+        {
+            if (blogId <= 0 || authorId <= 0)
+                throw new ArgumentException("ID tác giả hoặc ID blog không hợp lệ");
+            var existing = await _repo.GetByIdAsync(blogId);
+            if (existing == null)
+                throw new KeyNotFoundException($"Blog với ID {blogId} không tồn tại.");
+            if (existing.AccId != authorId)
+                throw new UnauthorizedAccessException("Bạn chỉ có thể cập nhật blog của bản thân.");
+            // Update only provided fields
+            if (request.Title != null) existing.Title = request.Title;
+            if (request.Content != null) existing.Content = request.Content;
+            if (request.IsAnonymous.HasValue) existing.IsAnonymous = request.IsAnonymous;
+            if (request.Notes != null) existing.Notes = request.Notes;
+            var updated = await _repo.UpdateAsync(blogId, existing);
             return MapToResponseDto(updated);
         }
 

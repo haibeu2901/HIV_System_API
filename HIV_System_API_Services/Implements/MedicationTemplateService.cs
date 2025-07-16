@@ -26,6 +26,9 @@ namespace HIV_System_API_Services.Implements
 
         private ArvMedicationTemplate MapToEntity(MedicationTemplateRequestDTO dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto), "Yêu cầu DTO mẫu thuốc không được để trống.");
+
             return new ArvMedicationTemplate
             {
                 AmtId = 0, // Assuming 0 for new entities; set appropriately if updating
@@ -38,11 +41,13 @@ namespace HIV_System_API_Services.Implements
         private async Task<MedicationTemplateResponseDTO> MapToResponseDTOAsync(ArvMedicationTemplate entity)
         {
             if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
+                throw new ArgumentNullException(nameof(entity), "Thực thể mẫu thuốc không được để trống.");
 
             // Attempt to use navigation properties if available, otherwise fetch from repositories
-            var medicationDetail = entity.Amd ?? await _medicationDetailRepo.GetArvMedicationDetailByIdAsync(entity.AmdId);
-            var regimenTemplate = entity.Art ?? await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(entity.ArtId);
+            var medicationDetail = entity.Amd ?? await _medicationDetailRepo.GetArvMedicationDetailByIdAsync(entity.AmdId)
+                ?? throw new InvalidOperationException($"Không tìm thấy chi tiết thuốc ARV với ID {entity.AmdId}.");
+            var regimenTemplate = entity.Art ?? await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(entity.ArtId)
+                ?? throw new InvalidOperationException($"Không tìm thấy phác đồ với ID {entity.ArtId}.");
 
             return new MedicationTemplateResponseDTO
             {
@@ -60,32 +65,34 @@ namespace HIV_System_API_Services.Implements
         public async Task<MedicationTemplateResponseDTO> CreateMedicationTemplateAsync(MedicationTemplateRequestDTO medicationTemplate)
         {
             if (medicationTemplate == null)
-                throw new ArgumentNullException(nameof(medicationTemplate));
+                throw new ArgumentNullException(nameof(medicationTemplate), "Yêu cầu DTO mẫu thuốc không được để trống.");
 
             // Validation
             if (medicationTemplate.ArtId <= 0)
-                throw new ArgumentException("Id (ArtId) của mẫu phát đồ không hợp lệ.", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException("ID phác đồ không hợp lệ.", nameof(medicationTemplate.ArtId));
 
             if (medicationTemplate.AmdId <= 0)
-                throw new ArgumentException("Id (AmdId) mẫu thông tin thuốc không hợp lệ.", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ.", nameof(medicationTemplate.AmdId));
 
-            if (medicationTemplate.Quantity is not null && medicationTemplate.Quantity < 0)
-                throw new ArgumentException("SỐ lượng không thể âm.", nameof(medicationTemplate.Quantity));
+            if (medicationTemplate.Quantity.HasValue && medicationTemplate.Quantity < 0)
+                throw new ArgumentException("Số lượng không được là số âm.", nameof(medicationTemplate.Quantity));
 
             // Ensure referenced entities exist
             var regimen = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(medicationTemplate.ArtId);
             if (regimen == null)
-                throw new ArgumentException($"Mãu phác đồ với Id {medicationTemplate.ArtId} không tồn tại.", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException($"Không tìm thấy phác đồ với ID {medicationTemplate.ArtId}.", nameof(medicationTemplate.ArtId));
 
             var medicationDetail = await _medicationDetailRepo.GetArvMedicationDetailByIdAsync(medicationTemplate.AmdId);
             if (medicationDetail == null)
-                throw new ArgumentException($"Mẫu thông tin thuốc với Id {medicationTemplate.AmdId} không tồn tại.", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException($"Không tìm thấy chi tiết thuốc ARV với ID {medicationTemplate.AmdId}.", nameof(medicationTemplate.AmdId));
 
             // Map DTO to entity
             var entity = MapToEntity(medicationTemplate);
 
             // Create in repository
             var createdEntity = await _medicationTemplateRepo.CreateMedicationTemplateAsync(entity);
+            if (createdEntity == null)
+                throw new InvalidOperationException("Không thể tạo mẫu thuốc.");
 
             // Map to response DTO
             var response = await MapToResponseDTOAsync(createdEntity);
@@ -96,40 +103,50 @@ namespace HIV_System_API_Services.Implements
         public async Task<bool> DeleteMedicationTemplateAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Id mẫu thuốc không hợp lệ.", nameof(id));
+                throw new ArgumentException("ID mẫu thuốc không hợp lệ.", nameof(id));
 
             // Check if the entity exists before attempting delete
             var existing = await _medicationTemplateRepo.GetMedicationTemplateByIdAsync(id);
             if (existing == null)
-                throw new ArgumentException($"Mẫu thuốc với Id {id} không tồn tại.", nameof(id));
+                throw new KeyNotFoundException($"Không tìm thấy mẫu thuốc với ID {id}.");
 
             var result = await _medicationTemplateRepo.DeleteMedicationTemplateAsync(id);
-            return result;
+            if (!result)
+                throw new InvalidOperationException($"Không thể xóa mẫu thuốc với ID {id}.");
+
+            return true;
         }
 
         public async Task<List<MedicationTemplateResponseDTO>> GetAllMedicationTemplatesAsync()
         {
-            var entities = await _medicationTemplateRepo.GetAllMedicationTemplatesAsync();
-            if (entities == null || !entities.Any())
-                return new List<MedicationTemplateResponseDTO>();
-
-            var responseList = new List<MedicationTemplateResponseDTO>();
-            foreach (var entity in entities)
+            try
             {
-                var dto = await MapToResponseDTOAsync(entity);
-                responseList.Add(dto);
+                var entities = await _medicationTemplateRepo.GetAllMedicationTemplatesAsync();
+                if (entities == null || !entities.Any())
+                    throw new InvalidOperationException("Không tìm thấy mẫu thuốc nào.");
+
+                var responseList = new List<MedicationTemplateResponseDTO>();
+                foreach (var entity in entities)
+                {
+                    var dto = await MapToResponseDTOAsync(entity);
+                    responseList.Add(dto);
+                }
+                return responseList;
             }
-            return responseList;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Không thể truy xuất danh sách mẫu thuốc.", ex);
+            }
         }
 
         public async Task<MedicationTemplateResponseDTO?> GetMedicationTemplateByIdAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Id mẫu thuốc không hợp lệ.", nameof(id));
+                throw new ArgumentException("ID mẫu thuốc không hợp lệ.", nameof(id));
 
             var entity = await _medicationTemplateRepo.GetMedicationTemplateByIdAsync(id);
             if (entity == null)
-                return null;
+                throw new KeyNotFoundException($"Không tìm thấy mẫu thuốc với ID {id}.");
 
             var dto = await MapToResponseDTOAsync(entity);
             return dto;
@@ -138,11 +155,11 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<MedicationTemplateResponseDTO>> GetMedicationTemplatesByAmdIdAsync(int amdId)
         {
             if (amdId <= 0)
-                throw new ArgumentException("Thông tin thuốc Id (AmdId) không hợp lệ.", nameof(amdId));
+                throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ.", nameof(amdId));
 
             var entities = await _medicationTemplateRepo.GetMedicationTemplatesByAmdIdAsync(amdId);
             if (entities == null || !entities.Any())
-                return new List<MedicationTemplateResponseDTO>();
+                throw new InvalidOperationException($"Không tìm thấy mẫu thuốc nào với ID chi tiết thuốc ARV {amdId}.");
 
             var responseList = new List<MedicationTemplateResponseDTO>();
             foreach (var entity in entities)
@@ -156,11 +173,11 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<MedicationTemplateResponseDTO>> GetMedicationTemplatesByArtIdAsync(int artId)
         {
             if (artId <= 0)
-                throw new ArgumentException("Mãu phác đồ Id (ArtId) không hợp lệ.", nameof(artId));
+                throw new ArgumentException("ID phác đồ không hợp lệ.", nameof(artId));
 
             var entities = await _medicationTemplateRepo.GetMedicationTemplatesByArtIdAsync(artId);
             if (entities == null || !entities.Any())
-                return new List<MedicationTemplateResponseDTO>();
+                throw new InvalidOperationException($"Không tìm thấy mẫu thuốc nào với ID phác đồ {artId}.");
 
             var responseList = new List<MedicationTemplateResponseDTO>();
             foreach (var entity in entities)
@@ -174,38 +191,40 @@ namespace HIV_System_API_Services.Implements
         public async Task<MedicationTemplateResponseDTO> UpdateMedicationTemplateAsync(MedicationTemplateRequestDTO medicationTemplate)
         {
             if (medicationTemplate == null)
-                throw new ArgumentNullException(nameof(medicationTemplate));
+                throw new ArgumentNullException(nameof(medicationTemplate), "Yêu cầu DTO mẫu thuốc không được để trống.");
 
             // Validation
             if (medicationTemplate.ArtId <= 0)
-                throw new ArgumentException("Mãu phác đồ Id (ArtId) không hợp lệ.", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException("ID phác đồ không hợp lệ.", nameof(medicationTemplate.ArtId));
 
             if (medicationTemplate.AmdId <= 0)
-                throw new ArgumentException("Mãu thông tin thuốc không hợp lệ.", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ.", nameof(medicationTemplate.AmdId));
 
-            if (medicationTemplate.Quantity is not null && medicationTemplate.Quantity < 0)
-                throw new ArgumentException("Số lượng không thể âm.", nameof(medicationTemplate.Quantity));
+            if (medicationTemplate.Quantity.HasValue && medicationTemplate.Quantity < 0)
+                throw new ArgumentException("Số lượng không được là số âm.", nameof(medicationTemplate.Quantity));
 
             // Find existing entity
-            var existing = await _medicationTemplateRepo.GetMedicationTemplatesByArtIdAsync(medicationTemplate.ArtId);
-            var entityToUpdate = existing?.FirstOrDefault(e => e.AmdId == medicationTemplate.AmdId);
+            var existingTemplates = await _medicationTemplateRepo.GetMedicationTemplatesByArtIdAsync(medicationTemplate.ArtId);
+            var entityToUpdate = existingTemplates?.FirstOrDefault(e => e.AmdId == medicationTemplate.AmdId);
             if (entityToUpdate == null)
-                throw new ArgumentException($"Mẫu thuốc với ArtId {medicationTemplate.ArtId} và AmdId {medicationTemplate.AmdId} không tồn tại.");
+                throw new KeyNotFoundException($"Không tìm thấy mẫu thuốc với ID phác đồ {medicationTemplate.ArtId} và ID chi tiết thuốc ARV {medicationTemplate.AmdId}.");
 
             // Ensure referenced entities exist
             var regimen = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(medicationTemplate.ArtId);
             if (regimen == null)
-                throw new ArgumentException($"Mãu phác đồ với Id {medicationTemplate.ArtId} không tồn tại.", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException($"Không tìm thấy phác đồ với ID {medicationTemplate.ArtId}.", nameof(medicationTemplate.ArtId));
 
             var medicationDetail = await _medicationDetailRepo.GetArvMedicationDetailByIdAsync(medicationTemplate.AmdId);
             if (medicationDetail == null)
-                throw new ArgumentException($"Mẫu thông tin thuốc với Id {medicationTemplate.AmdId} không tồn tại.", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException($"Không tìm thấy chi tiết thuốc ARV với ID {medicationTemplate.AmdId}.", nameof(medicationTemplate.AmdId));
 
             // Update fields
             entityToUpdate.Quantity = medicationTemplate.Quantity;
 
             // Update in repository
             var updatedEntity = await _medicationTemplateRepo.UpdateMedicationTemplateAsync(entityToUpdate);
+            if (updatedEntity == null)
+                throw new InvalidOperationException($"Không thể cập nhật mẫu thuốc với ID phác đồ {medicationTemplate.ArtId} và ID chi tiết thuốc ARV {medicationTemplate.AmdId}.");
 
             // Map to response DTO
             var response = await MapToResponseDTOAsync(updatedEntity);

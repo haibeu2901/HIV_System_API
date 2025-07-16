@@ -42,6 +42,7 @@ namespace HIV_System_API_DAOs.Implements
             return await _context.PatientArvRegimen
                 .Include(p => p.Pmr)
                 .Include(p => p.PatientArvMedications)
+                .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
         }
 
@@ -110,6 +111,7 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(p => p.Pmr)
                 .Include(p => p.PatientArvMedications)
                 .Where(p => p.Pmr.PtnId == patientId)
+                .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
         }
 
@@ -119,6 +121,7 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(p => p.Pmr)
                 .Include(p => p.PatientArvMedications)
                 .Where(p => p.Pmr.PtnId == personalId)
+                .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
         }
 

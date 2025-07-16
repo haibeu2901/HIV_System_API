@@ -42,9 +42,11 @@ namespace HIV_System_API_Services.Implements
 
         private PatientMedicalRecordResponseDTO MapToResponseDTO(PatientMedicalRecord record)
         {
-            // Get all appointments for the patient
+            // Get all appointments for the patient - SORTED BY LATEST DATE FIRST
             var appointments = _context.Appointments
                 .Where(a => a.PtnId == record.PtnId)
+                .OrderByDescending(a => a.ApmtDate)
+                .ThenByDescending(a => a.ApmTime)
                 .Select(a => new AppointmentResponseDTO
                 {
                     AppointmentId = a.ApmId,
@@ -59,9 +61,10 @@ namespace HIV_System_API_Services.Implements
                 })
                 .ToList();
 
-            // Get all test results for the patient medical record
+            // Get all test results for the patient medical record - SORTED BY LATEST DATE FIRST
             var testResults = _context.TestResults
                 .Where(tr => tr.PmrId == record.PmrId)
+                .OrderByDescending(tr => tr.TestDate)
                 .Select(tr => new TestResultResponseDTO
                 {
                     TestResultId = tr.TrsId,
@@ -84,9 +87,10 @@ namespace HIV_System_API_Services.Implements
                 })
                 .ToList();
 
-            // Get all ARV regimens for the patient medical record with their medications
+            // Get all ARV regimens for the patient medical record - SORTED BY LATEST CREATED DATE FIRST
             var arvRegimens = _context.PatientArvRegimen
                 .Where(par => par.PmrId == record.PmrId)
+                .OrderByDescending(par => par.CreatedAt)
                 .Select(par => new PatientArvRegimenResponseDTO
                 {
                     PatientArvRegiId = par.ParId,

@@ -6,7 +6,5 @@ namespace HIV_System_API_DTOs.SocialBlogDTO
         public string? Content { get; set; }
         public bool? IsAnonymous { get; set; }
         public string? Notes { get; set; }
-        public byte? BlogStatus { get; set; }
-        public int? StaffId { get; set; }
     }
 }

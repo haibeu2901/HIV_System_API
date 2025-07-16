@@ -32,6 +32,15 @@
 .status-2 { color: #2980b9; background: #eaf6fb; } /* Đã xác nhận */
 .status-3 { color: #27ae60; background: #eafaf1; } /* Đã hoàn thành */
 .status-4 { color: #c0392b; background: #fdeaea; } /* Đã hủy */
+.status-5 {
+    color: #fff !important;
+    background: #27ae60 !important;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(39,174,96,0.08);
+    letter-spacing: 0.5px;
+}
 .button-accept {
     background: #27ae60;
     color: #fff;
@@ -58,6 +67,45 @@
 }
 .button-modify:hover {
     background: #ca7c1b;
+}
+.button-reject {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.button-reject:hover:not(:disabled) {
+    background: #c0392b;
+}
+.button-reject:disabled {
+    background: #f5b7b1;
+    color: #fff;
+    cursor: not-allowed;
+}
+
+.button-complete {
+    background: #2980b9;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.button-complete:hover:not(:disabled) {
+    background: #1c5a85;
+}
+.button-complete:disabled {
+    background: #b2c9e0;
+    color: #fff;
+    cursor: not-allowed;
 }
 /* Modal styles */
 .modal {
@@ -110,4 +158,43 @@
 }
 #modifyAppointmentForm button {
   margin-top: 8px;
+}
+
+.modal-submit {
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.modal-submit:hover:not(:disabled) {
+    background: #219150;
+}
+.modal-submit:disabled {
+    background: #b7e1cd;
+    color: #fff;
+    cursor: not-allowed;
+}
+
+.modal-cancel {
+    background: #e67e22;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.modal-cancel:hover:not(:disabled) {
+    background: #ca7c1b;
+}
+.modal-cancel:disabled {
+    background: #f8cfa0;
+    color: #fff;
+    cursor: not-allowed;
 }
