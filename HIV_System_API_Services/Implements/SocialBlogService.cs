@@ -18,6 +18,7 @@ namespace HIV_System_API_Services.Implements
         private readonly INotificationRepo _notificationRepo;
         private readonly HivSystemApiContext _context;
         private readonly IBlogReactionRepo _blogReactionRepo;
+        private readonly IAccountRepo _accountRepo;
 
         public SocialBlogService()
         {
@@ -25,6 +26,7 @@ namespace HIV_System_API_Services.Implements
             _notificationRepo = new NotificationRepo();
             _context = new HivSystemApiContext();
             _blogReactionRepo = new BlogReactionRepo();
+            _accountRepo = new AccountRepo();
         }
 
         // --- Mapping and Validation ---
@@ -45,16 +47,18 @@ namespace HIV_System_API_Services.Implements
 
         private BlogResponseDTO MapToResponseDto(SocialBlog blog)
         {
-            var blogReaction = _context.BlogReactions.Where(a=>a.SblId == blog.SblId).Select(a=> new CommentResponseDTO
+            var blogReaction = _context.BlogReactions.Where(a=>a.SblId == blog.SblId).Select(a=> new FullBlogReactionResponseDTO
             {
                 ReactionId = a.BrtId,
                 BlogId = a.SblId,
                 AccountId = a.AccId,
                 ReactedAt = a.ReactedAt,
-                Comment = a.Comment
+                Comment = a.Comment,
+                ReactionType = a.ReactionType
             }).ToList();
             var like = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId,true).Result;
             var dislike = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId, false).Result;
+            var authorName = _accountRepo.GetAccountByIdAsync(blog.AccId).Result?.Fullname ?? "Unknown Author";
             return new BlogResponseDTO
             {
                 Id = blog.SblId,
@@ -68,7 +72,8 @@ namespace HIV_System_API_Services.Implements
                 BlogStatus = blog.BlogStatus,
                 BlogReaction = blogReaction,
                 LikesCount = like,
-                DislikesCount = dislike
+                DislikesCount = dislike,
+                AuthorName = authorName
             };
         }
 
