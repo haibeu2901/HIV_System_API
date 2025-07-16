@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
 /* Reset and Base Styles */
 * {
     margin: 0;
@@ -244,6 +242,37 @@ body {
 .service-card p {
     color: #666;
     line-height: 1.6;
+}
+
+.service-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #e74c3c;
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.service-link:hover {
+    background: #c0392b;
+    transform: translateX(5px);
+}
+
+.medication-info-card {
+    background: linear-gradient(135deg, #fff, #f8f9fa);
+    border: 2px solid #e74c3c;
+    border-radius: 15px;
+}
+
+.medication-info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(231, 76, 60, 0.2);
 }
 
 /* About Section */

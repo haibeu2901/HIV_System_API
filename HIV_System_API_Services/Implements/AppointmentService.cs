@@ -208,13 +208,26 @@ namespace HIV_System_API_Services.Implements
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
                     await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
                 }
-                else if (updatedAppointment.ApmStatus == 2) // If status is confirmed
+                else if (updatedAppointment.ApmStatus == 2 || updatedAppointment.ApmStatus == 3) // If status is confirmed
                 {
                     // Create notification for confirmation
                     var notification = new Notification
                     {
                         NotiType = "Appt Confirm", // <= 12 chars
                         NotiMessage = "Cuộc hẹn của bạn đã được xác nhận.",
+                        SendAt = DateTime.UtcNow
+                    };
+                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.PtnId);
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, updatedAppointment.DctId);
+                }
+                else if (updatedAppointment.ApmStatus == 5) // If status is completed
+                {
+                    // Create notification for completion
+                    var notification = new Notification
+                    {
+                        NotiType = "Appt Complete", // <= 12 chars
+                        NotiMessage = "Cuộc hẹn của bạn đã thành công.",
                         SendAt = DateTime.UtcNow
                     };
                     var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
@@ -370,7 +383,7 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
-        public async Task<AppointmentResponseDTO> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO appointment, int accId)
+        public async Task<AppointmentResponseDTO> UpdateAppointmentRequestAsync(int appointmentId, UpdateAppointmentRequestDTO appointment, int accId)
         {
             Debug.WriteLine($"Updating appointment for AccountId: {accId}");
 
@@ -477,8 +490,8 @@ namespace HIV_System_API_Services.Implements
                 var account = await _context.Accounts.FindAsync(accId);
                 if (account == null)
                     throw new ArgumentException($"Không tìm thấy tài khoản với ID {accId}.");
-
-                var isDoctor = await _context.Doctors.AnyAsync(d => d.DctId == accId && d.DctId == appointment.DctId);
+                    
+                var isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
                 if (!isDoctor)
                     throw new UnauthorizedAccessException("Chỉ bác sĩ của cuộc hẹn này mới có thể hoàn thành nó.");
 
@@ -492,25 +505,11 @@ namespace HIV_System_API_Services.Implements
                 if (!string.IsNullOrWhiteSpace(dto.Notes))
                 {
                     appointment.Notes = dto.Notes;
+                    _context.Appointments.Update(appointment);
+                    await _context.SaveChangesAsync();
                 }
 
-                // Change status to completed (5)
-                appointment.ApmStatus = 5;
-                _context.Appointments.Update(appointment);
-                await _context.SaveChangesAsync();
-
-                // Create notification for both patient and doctor
-                var notification = new Notification
-                {
-                    NotiType = "Appt Complete",
-                    NotiMessage = "Cuộc hẹn của bạn đã thành công.",
-                    SendAt = DateTime.UtcNow
-                };
-                var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
-                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, appointment.PtnId);
-                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, appointment.DctId);
-
-                // Ensure patient medical record exists
+                // Ensure patient medical record exists before completing
                 var patientMedicalRecord = await _context.PatientMedicalRecords
                     .FirstOrDefaultAsync(r => r.PtnId == appointment.PtnId);
                 if (patientMedicalRecord == null)
@@ -523,8 +522,14 @@ namespace HIV_System_API_Services.Implements
                     await _context.SaveChangesAsync();
                 }
 
+                // Commit current transaction before calling ChangeAppointmentStatusAsync
                 await transaction.CommitAsync();
-                return MapToResponseDTO(appointment);
+
+                // Use ChangeAppointmentStatusAsync to handle status change and notifications
+                // This will create its own transaction internally
+                var result = await ChangeAppointmentStatusAsync(appointmentId, 5); // 5 = Completed
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -532,6 +537,69 @@ namespace HIV_System_API_Services.Implements
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<AppointmentResponseDTO> GetPersonalAppointmentByIdAsync(int accId, int appointmentId)
+        {
+            Debug.WriteLine($"Retrieving personal appointment with ID: {appointmentId} for AccountId: {accId}");
+
+            try
+            {
+                // 1. Validate account existence
+                var account = await _context.Accounts.FindAsync(accId);
+                if (account == null)
+                {
+                    throw new ArgumentException($"Account with ID {accId} does not exist.");
+                }
+
+                // 2. Retrieve the appointment
+                var appointment = await _appointmentRepo.GetAppointmentByIdAsync(appointmentId);
+                if (appointment == null)
+                {
+                    throw new KeyNotFoundException($"Appointment with ID {appointmentId} not found.");
+                }
+
+                // 3. Authorize the user
+                // Check if the account belongs to the patient or the doctor of the appointment
+                bool isPatientOfAppointment = await _context.Patients.AnyAsync(p => p.AccId == accId && p.PtnId == appointment.PtnId);
+                bool isDoctorOfAppointment = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
+
+                if (!isPatientOfAppointment && !isDoctorOfAppointment)
+                {
+                    throw new UnauthorizedAccessException("You do not have permission to view this appointment.");
+                }
+
+                // 4. Map and return the DTO
+                return MapToResponseDTO(appointment);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error retrieving personal appointment: {ex.Message}");
+                // Re-throw the exception to be handled by the controller or middleware
+                throw;
+            }
+        }
+
+        public async Task<AppointmentResponseDTO> ChangePersonalAppointmentStatusAsync(int accId, int appointmentId, byte status)
+        {
+            Debug.WriteLine($"Changing personal appointment status for AppointmentId: {appointmentId}, AccountId: {accId} to status: {status}");
+
+            // Validate account existence and authorization
+            var account = await _context.Accounts.FindAsync(accId)
+                ?? throw new ArgumentException($"Account with ID {accId} does not exist.");
+
+            var appointment = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.ApmId == appointmentId)
+                ?? throw new InvalidOperationException($"Appointment with ID {appointmentId} not found.");
+
+            bool isPatient = await _context.Patients.AnyAsync(p => p.AccId == accId && p.PtnId == appointment.PtnId);
+            bool isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
+
+            if (!isPatient && !isDoctor)
+                throw new UnauthorizedAccessException("Only the patient or doctor of this appointment can change its status.");
+
+            // Delegate to ChangeAppointmentStatusAsync for the rest of the logic
+            return await ChangeAppointmentStatusAsync(appointmentId, status);
         }
     }
 }

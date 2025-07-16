@@ -9,6 +9,21 @@ const appointmentStatusMap = {
     4: 'Đã hủy'
 };
 
+// ARV Regimen level and status mapping
+const regimenLevelMap = {
+  1: "Level 1",
+  2: "Level 2",
+  3: "Level 3",
+  4: "Special Case"
+};
+const regimenStatusMap = {
+  1: "Planned",
+  2: "Active",
+  3: "Paused",
+  4: "Failed",
+  5: "Completed"
+};
+
 // Get patient ID from URL parameters
 function getPatientIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -132,7 +147,7 @@ function renderAppointments(appointments) {
                 <td>${appt.doctorName || '-'}</td>
                 <td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
                 <td>${appt.notes || '-'}</td>
-            </tr>
+                    </tr>
         `;
     });
 
@@ -208,10 +223,32 @@ function renderARVRegimens(regimens, medications) {
         return;
     }
 
+    // Check if any regimen is active
+    const hasActiveRegimen = regimens.some(r => r.regimenStatus === 2);
     let html = '';
     regimens.forEach(regimen => {
-        const statusClass = regimen.regimenStatus === 2 ? 'regimen-active' : 'regimen-inactive';
-        const statusText = regimen.regimenStatus === 2 ? 'Active' : 'Inactive';
+        let statusClass = '';
+        switch (regimen.regimenStatus) {
+            case 1:
+                statusClass = 'regimen-planned';
+                break;
+            case 2:
+                statusClass = 'regimen-active';
+                break;
+            case 3:
+                statusClass = 'regimen-paused';
+                break;
+            case 4:
+                statusClass = 'regimen-failed';
+                break;
+            case 5:
+                statusClass = 'regimen-completed';
+                break;
+            default:
+                statusClass = 'regimen-inactive';
+        }
+        const statusText = regimenStatusMap[regimen.regimenStatus] || regimen.regimenStatus;
+        const levelText = regimenLevelMap[regimen.regimenLevel] || regimen.regimenLevel;
         // Filter medications for this regimen
         const regimenMeds = (medications || []).filter(med => med.patientArvRegiId === regimen.patientArvRegiId);
         html += `
@@ -231,7 +268,7 @@ function renderARVRegimens(regimens, medications) {
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Regimen Level</div>
-                        <div class="regimen-detail-value">${regimen.regimenLevel}</div>
+                        <div class="regimen-detail-value">${levelText}</div>
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Total Cost</div>
@@ -253,7 +290,6 @@ function renderARVRegimens(regimens, medications) {
                         <table class="medications-table">
                             <thead>
                                 <tr>
-                                    <th>Status</th>
                                     <th>Name</th>
                                     <th>Dosage</th>
                                     <th>Quantity</th>
@@ -265,11 +301,6 @@ function renderARVRegimens(regimens, medications) {
                             <tbody>
                                 ${regimenMeds.map(med => `
                                     <tr>
-                                        <td>
-                                            ${regimen.regimenStatus === 2
-                                                ? `<span class="medication-status active"><i class="fas fa-check-circle"></i>Active</span>`
-                                                : `<span class="medication-status inactive"><i class="fas fa-times-circle"></i>Inactive</span>`}
-                                        </td>
                                         <td>${med.medicationDetail.arvMedicationName}</td>
                                         <td>${med.medicationDetail.arvMedicationDosage}</td>
                                         <td>${med.quantity}</td>
@@ -282,12 +313,81 @@ function renderARVRegimens(regimens, medications) {
                         </table>
                     ` : `<div class='empty-state'><i class='fas fa-capsules'></i> No medications for this regimen.</div>`}
                 </div>
+                <div style="margin-top:1rem;text-align:right;">
+                    ${(regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Update Status</button>` : ''}
+                </div>
             </div>
         `;
     });
     
     section.innerHTML = html;
+    // Add event listeners for update status buttons
+    document.querySelectorAll('.update-regimen-status-btn').forEach(btn => {
+        btn.onclick = function() {
+            const regimenId = this.getAttribute('data-id');
+            const currentStatus = this.getAttribute('data-status');
+            openUpdateRegimenStatusModal(regimenId, currentStatus);
+        };
+    });
 }
+
+// Modal logic for update status
+const updateRegimenStatusModal = document.getElementById('updateRegimenStatusModal');
+const closeUpdateRegimenStatusModalBtn = document.getElementById('closeUpdateRegimenStatusModalBtn');
+const updateRegimenStatusForm = document.getElementById('updateRegimenStatusForm');
+const updateRegimenStatusSelect = document.getElementById('updateRegimenStatusSelect');
+const updateRegimenStatusNotes = document.getElementById('updateRegimenStatusNotes');
+const updateRegimenStatusId = document.getElementById('updateRegimenStatusId');
+const updateRegimenStatusMsg = document.getElementById('updateRegimenStatusMsg');
+
+function openUpdateRegimenStatusModal(regimenId, currentStatus) {
+    updateRegimenStatusId.value = regimenId;
+    updateRegimenStatusSelect.value = '';
+    updateRegimenStatusNotes.value = '';
+    updateRegimenStatusMsg.textContent = '';
+    updateRegimenStatusModal.style.display = 'block';
+}
+closeUpdateRegimenStatusModalBtn.onclick = function() {
+    updateRegimenStatusModal.style.display = 'none';
+};
+window.onclick = function(event) {
+    if (event.target === updateRegimenStatusModal) {
+        updateRegimenStatusModal.style.display = 'none';
+    }
+};
+
+updateRegimenStatusForm.onsubmit = async function(e) {
+    e.preventDefault();
+    const regimenId = updateRegimenStatusId.value;
+    const newStatus = +updateRegimenStatusSelect.value;
+    const notes = updateRegimenStatusNotes.value.trim();
+    if (!regimenId || !newStatus || !notes) {
+        updateRegimenStatusMsg.textContent = 'Please fill all fields.';
+        return;
+    }
+    // Enforce: Only one active regimen
+    const section = document.getElementById('arvRegimensSection');
+    const regimens = Array.from(section.querySelectorAll('.regimen-status')).map(el => el.textContent.trim());
+    if (newStatus === 2 && regimens.includes('Active')) {
+        updateRegimenStatusMsg.textContent = 'There is already an active regimen. Please pause/complete it first.';
+        return;
+    }
+    try {
+        const res = await fetch(`https://localhost:7009/api/PatientArvRegimen/UpdatePatientArvRegimenStatus/${regimenId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ notes, regimenStatus: newStatus })
+        });
+        if (!res.ok) {
+            updateRegimenStatusMsg.textContent = 'Failed to update status.';
+            return;
+        }
+        updateRegimenStatusModal.style.display = 'none';
+        loadPatientData();
+    } catch (err) {
+        updateRegimenStatusMsg.textContent = 'Error updating status.';
+    }
+};
 
 // --- Regimen Modal Logic ---
 let allMedicationDetails = [];
@@ -300,7 +400,14 @@ const regimenModal = document.getElementById('regimenModal');
 const closeRegimenModalBtn = document.getElementById('closeRegimenModalBtn');
 const cancelRegimenBtn = document.getElementById('cancelRegimenBtn');
 
+// Prevent creating a new regimen if one is active
 openRegimenModalBtn.onclick = async function() {
+    // Check for active regimen
+    const section = document.getElementById('arvRegimensSection');
+    if (section && section.innerHTML.includes('regimen-active')) {
+        alert('Cannot create a new regimen while one is active.');
+        return;
+    }
     regimenModal.style.display = 'block';
     await loadMedicationDetails();
     resetRegimenForm();
@@ -479,56 +586,41 @@ regimenForm.onsubmit = async function(e) {
         alert('Cannot find patient medical record.');
         return;
     }
-    const payload = {
+    // Build medications array for API
+    const medications = selectedTemplateMedications.map(med => ({
+        patientArvRegId: 0,
+        arvMedDetailId: med.arvMedDetailId,
+        quantity: med.quantity
+    }));
+    // Build regimen object
+    const regimen = {
         patientMedRecordId: mrData.pmrId,
         notes: regimenNotes.value,
         regimenLevel: +regimenLevel.value,
         createdAt: new Date().toISOString(),
         startDate: regimenStartDate.value,
         endDate: null,
-        regimenStatus: 2, // active
-        totalCost: +regimenTotalCost.value || 0
+        regimenStatus: 1, // active
+        totalCost: 0 // Let backend calculate
     };
-    // Create regimen
-    let newRegimenId = null;
+    // Call new API
     try {
-        const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimen', {
+        const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ regimen, medications })
         });
-        if (res.ok) {
-            const data = await res.json();
-            newRegimenId = data.patientArvRegiId || data.id || data;
-        } else {
+        if (!res.ok) {
             alert('Failed to create regimen.');
             return;
         }
+        alert('Regimen and medications created successfully!');
+        regimenModal.style.display = 'none';
+        // Refresh data
+        loadPatientData();
     } catch (err) {
         alert('Error creating regimen.');
-        return;
     }
-    // Create medications
-    for (const med of selectedTemplateMedications) {
-        try {
-            await fetch('https://localhost:7009/api/PatientArvMedication/CreatePatientArvMedication', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    patientArvMedId: 0,
-                    arvMedDetailId: med.arvMedDetailId,
-                    quantity: med.quantity
-                })
-            });
-        } catch (err) {
-            alert('Error creating medication: ' + med.arvMedicationName);
-        }
-    }
-    // Success
-    alert('Regimen and medications created successfully!');
-    regimenModal.style.display = 'none';
-    // Refresh data
-    loadPatientData();
 };
 
 // Main function to load all patient data
