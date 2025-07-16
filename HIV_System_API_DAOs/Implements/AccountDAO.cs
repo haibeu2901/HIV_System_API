@@ -46,7 +46,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Account?> GetAccountByLoginAsync(string accUsername, string accPassword)
         {
             var account = await _context.Accounts
-                .SingleOrDefaultAsync(a => a.AccUsername == accUsername && a.AccPassword == accPassword && a.IsActive == true);
+                .SingleOrDefaultAsync(a => (a.AccUsername == accUsername || a.Email == accUsername) && a.AccPassword == accPassword && a.IsActive == true);
             return account;
         }
 
