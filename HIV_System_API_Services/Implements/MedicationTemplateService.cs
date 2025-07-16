@@ -64,22 +64,22 @@ namespace HIV_System_API_Services.Implements
 
             // Validation
             if (medicationTemplate.ArtId <= 0)
-                throw new ArgumentException("Invalid Regimen Template Id (ArtId).", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException("Id (ArtId) của mẫu phát đồ không hợp lệ.", nameof(medicationTemplate.ArtId));
 
             if (medicationTemplate.AmdId <= 0)
-                throw new ArgumentException("Invalid Medication Detail Id (AmdId).", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException("Id (AmdId) mẫu thông tin thuốc không hợp lệ.", nameof(medicationTemplate.AmdId));
 
             if (medicationTemplate.Quantity is not null && medicationTemplate.Quantity < 0)
-                throw new ArgumentException("Quantity cannot be negative.", nameof(medicationTemplate.Quantity));
+                throw new ArgumentException("SỐ lượng không thể âm.", nameof(medicationTemplate.Quantity));
 
             // Ensure referenced entities exist
             var regimen = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(medicationTemplate.ArtId);
             if (regimen == null)
-                throw new ArgumentException($"Regimen Template with Id {medicationTemplate.ArtId} does not exist.", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException($"Mãu phác đồ với Id {medicationTemplate.ArtId} không tồn tại.", nameof(medicationTemplate.ArtId));
 
             var medicationDetail = await _medicationDetailRepo.GetArvMedicationDetailByIdAsync(medicationTemplate.AmdId);
             if (medicationDetail == null)
-                throw new ArgumentException($"Medication Detail with Id {medicationTemplate.AmdId} does not exist.", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException($"Mẫu thông tin thuốc với Id {medicationTemplate.AmdId} không tồn tại.", nameof(medicationTemplate.AmdId));
 
             // Map DTO to entity
             var entity = MapToEntity(medicationTemplate);
@@ -96,12 +96,12 @@ namespace HIV_System_API_Services.Implements
         public async Task<bool> DeleteMedicationTemplateAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid Medication Template Id.", nameof(id));
+                throw new ArgumentException("Id mẫu thuốc không hợp lệ.", nameof(id));
 
             // Check if the entity exists before attempting delete
             var existing = await _medicationTemplateRepo.GetMedicationTemplateByIdAsync(id);
             if (existing == null)
-                throw new ArgumentException($"Medication Template with Id {id} does not exist.", nameof(id));
+                throw new ArgumentException($"Mẫu thuốc với Id {id} không tồn tại.", nameof(id));
 
             var result = await _medicationTemplateRepo.DeleteMedicationTemplateAsync(id);
             return result;
@@ -125,7 +125,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<MedicationTemplateResponseDTO?> GetMedicationTemplateByIdAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid Medication Template Id.", nameof(id));
+                throw new ArgumentException("Id mẫu thuốc không hợp lệ.", nameof(id));
 
             var entity = await _medicationTemplateRepo.GetMedicationTemplateByIdAsync(id);
             if (entity == null)
@@ -138,7 +138,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<MedicationTemplateResponseDTO>> GetMedicationTemplatesByAmdIdAsync(int amdId)
         {
             if (amdId <= 0)
-                throw new ArgumentException("Invalid Medication Detail Id (AmdId).", nameof(amdId));
+                throw new ArgumentException("Thông tin thuốc Id (AmdId) không hợp lệ.", nameof(amdId));
 
             var entities = await _medicationTemplateRepo.GetMedicationTemplatesByAmdIdAsync(amdId);
             if (entities == null || !entities.Any())
@@ -156,7 +156,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<MedicationTemplateResponseDTO>> GetMedicationTemplatesByArtIdAsync(int artId)
         {
             if (artId <= 0)
-                throw new ArgumentException("Invalid Regimen Template Id (ArtId).", nameof(artId));
+                throw new ArgumentException("Mãu phác đồ Id (ArtId) không hợp lệ.", nameof(artId));
 
             var entities = await _medicationTemplateRepo.GetMedicationTemplatesByArtIdAsync(artId);
             if (entities == null || !entities.Any())
@@ -178,28 +178,28 @@ namespace HIV_System_API_Services.Implements
 
             // Validation
             if (medicationTemplate.ArtId <= 0)
-                throw new ArgumentException("Invalid Regimen Template Id (ArtId).", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException("Mãu phác đồ Id (ArtId) không hợp lệ.", nameof(medicationTemplate.ArtId));
 
             if (medicationTemplate.AmdId <= 0)
-                throw new ArgumentException("Invalid Medication Detail Id (AmdId).", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException("Mãu thông tin thuốc không hợp lệ.", nameof(medicationTemplate.AmdId));
 
             if (medicationTemplate.Quantity is not null && medicationTemplate.Quantity < 0)
-                throw new ArgumentException("Quantity cannot be negative.", nameof(medicationTemplate.Quantity));
+                throw new ArgumentException("Số lượng không thể âm.", nameof(medicationTemplate.Quantity));
 
             // Find existing entity
             var existing = await _medicationTemplateRepo.GetMedicationTemplatesByArtIdAsync(medicationTemplate.ArtId);
             var entityToUpdate = existing?.FirstOrDefault(e => e.AmdId == medicationTemplate.AmdId);
             if (entityToUpdate == null)
-                throw new ArgumentException($"Medication Template with ArtId {medicationTemplate.ArtId} and AmdId {medicationTemplate.AmdId} does not exist.");
+                throw new ArgumentException($"Mẫu thuốc với ArtId {medicationTemplate.ArtId} và AmdId {medicationTemplate.AmdId} không tồn tại.");
 
             // Ensure referenced entities exist
             var regimen = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(medicationTemplate.ArtId);
             if (regimen == null)
-                throw new ArgumentException($"Regimen Template with Id {medicationTemplate.ArtId} does not exist.", nameof(medicationTemplate.ArtId));
+                throw new ArgumentException($"Mãu phác đồ với Id {medicationTemplate.ArtId} không tồn tại.", nameof(medicationTemplate.ArtId));
 
             var medicationDetail = await _medicationDetailRepo.GetArvMedicationDetailByIdAsync(medicationTemplate.AmdId);
             if (medicationDetail == null)
-                throw new ArgumentException($"Medication Detail with Id {medicationTemplate.AmdId} does not exist.", nameof(medicationTemplate.AmdId));
+                throw new ArgumentException($"Mẫu thông tin thuốc với Id {medicationTemplate.AmdId} không tồn tại.", nameof(medicationTemplate.AmdId));
 
             // Update fields
             entityToUpdate.Quantity = medicationTemplate.Quantity;

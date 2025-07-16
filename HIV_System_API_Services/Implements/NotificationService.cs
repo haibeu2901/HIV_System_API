@@ -90,7 +90,7 @@ namespace HIV_System_API_Services.Implements
         {
             if (id <= 0)
             {
-                throw new ArgumentException($"{paramName} must be greater than 0.", paramName);
+                throw new ArgumentException($"{paramName} phải lớn hơn 0.", paramName);
             }
         }
 
@@ -103,17 +103,17 @@ namespace HIV_System_API_Services.Implements
 
             if (string.IsNullOrWhiteSpace(requestDTO.NotiType))
             {
-                throw new ArgumentException("Notification type is required.", nameof(requestDTO.NotiType));
+                throw new ArgumentException("Loại thông báo là bắt buộc.", nameof(requestDTO.NotiType));
             }
 
             if (string.IsNullOrWhiteSpace(requestDTO.NotiMessage))
             {
-                throw new ArgumentException("Notification message is required.", nameof(requestDTO.NotiMessage));
+                throw new ArgumentException("Nội dung thông báo là bắt buộc.", nameof(requestDTO.NotiMessage));
             }
 
             if (requestDTO.SendAt == default(DateTime))
             {
-                throw new ArgumentException("Send date is required.", nameof(requestDTO.SendAt));
+                throw new ArgumentException("Ngày gửi là bắt buộc.", nameof(requestDTO.SendAt));
             }
         }
 
@@ -126,12 +126,12 @@ namespace HIV_System_API_Services.Implements
 
             if (string.IsNullOrWhiteSpace(requestDTO.NotiType))
             {
-                throw new ArgumentException("Notification type is required.", nameof(requestDTO.NotiType));
+                throw new ArgumentException("Loại thông báo là bắt buộc.", nameof(requestDTO.NotiType));
             }
 
             if (string.IsNullOrWhiteSpace(requestDTO.NotiMessage))
             {
-                throw new ArgumentException("Notification message is required.", nameof(requestDTO.NotiMessage));
+                throw new ArgumentException("Nội dung thông báo là bắt buộc.", nameof(requestDTO.NotiMessage));
             }
         }
 
@@ -139,13 +139,13 @@ namespace HIV_System_API_Services.Implements
         {
             if (accId <= 0)
             {
-                throw new ArgumentException("Account ID must be greater than 0.", nameof(accId));
+                throw new ArgumentException("ID tài khoản phải lớn hơn 0.", nameof(accId));
             }
 
             var exists = await _context.Accounts.AnyAsync(a => a.AccId == accId);
             if (!exists)
             {
-                throw new InvalidOperationException($"Account with ID {accId} does not exist.");
+                throw new InvalidOperationException($"Tài khoản với ID {accId} không tồn tại.");
             }
         }
 
@@ -153,13 +153,13 @@ namespace HIV_System_API_Services.Implements
         {
             if (ntfId <= 0)
             {
-                throw new ArgumentException("Notification ID must be greater than 0.", nameof(ntfId));
+                throw new ArgumentException("ID thông báo phải lớn hơn 0.", nameof(ntfId));
             }
 
             var exists = await _context.Notifications.AnyAsync(n => n.NtfId == ntfId);
             if (!exists)
             {
-                throw new InvalidOperationException($"Notification with ID {ntfId} does not exist.");
+                throw new InvalidOperationException($"Thông báo với ID {ntfId} không tồn tại.");
             }
         }
 
@@ -169,7 +169,7 @@ namespace HIV_System_API_Services.Implements
             // Adjust validation based on your role system
             if (role < 0 || role > 10) // Adjust upper bound as needed
             {
-                throw new ArgumentException("Invalid role specified.", nameof(role));
+                throw new ArgumentException("Vai trò được chỉ định không hợp lệ.", nameof(role));
             }
         }
 
@@ -182,7 +182,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving all notifications: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy tất cả thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -201,7 +201,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving notification: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -222,11 +222,11 @@ namespace HIV_System_API_Services.Implements
             }
             catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException($"Database error while creating notification: {ex.InnerException?.Message ?? ex.Message}");
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi tạo thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error creating notification: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi tạo thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -252,11 +252,11 @@ namespace HIV_System_API_Services.Implements
             }
             catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException($"Database error while updating notification: {ex.InnerException?.Message ?? ex.Message}");
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi cập nhật thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error updating notification: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi cập nhật thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -281,7 +281,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error deleting notification: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi xóa thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -307,7 +307,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error sending notification to role: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi gửi thông báo đến vai trò: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -334,7 +334,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error sending notification to account: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi gửi thông báo đến tài khoản: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -357,7 +357,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving notification recipients: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy danh sách người nhận thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -381,7 +381,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving notifications for recipient: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy thông báo cho người nhận: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -405,7 +405,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving personal notifications: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy thông báo cá nhân: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -429,7 +429,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving unread notifications: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy thông báo chưa đọc: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -446,7 +446,7 @@ namespace HIV_System_API_Services.Implements
                 var result = await _notificationRepo.ViewNotificationAsync(ntfId, accId);
                 if (result == null)
                 {
-                    throw new InvalidOperationException($"Notification with ID {ntfId} could not be marked as viewed for account {accId}.");
+                    throw new InvalidOperationException($"Thông báo với ID {ntfId} không thể được đánh dấu là đã xem cho tài khoản {accId}.");
                 }
 
                 return MapToResponseDTO(result);
@@ -461,7 +461,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error viewing notification: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi xem thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -487,7 +487,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error marking notification as read: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi đánh dấu thông báo là đã đọc: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -510,7 +510,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error marking all notifications as read: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi đánh dấu tất cả thông báo là đã đọc: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -533,7 +533,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving unread notification count: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy số lượng thông báo chưa đọc: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -556,7 +556,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving personal notification accounts: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy tài khoản thông báo cá nhân: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -582,7 +582,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error deleting notification for account: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi xóa thông báo cho tài khoản: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -612,7 +612,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving notification details: {ex.InnerException?.Message ?? ex.Message}");
+                throw new InvalidOperationException($"Lỗi khi lấy chi tiết thông báo: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 
@@ -658,6 +658,5 @@ namespace HIV_System_API_Services.Implements
 
             return MapToResponseDTO(createdNotification);
         }
-
     }
 }

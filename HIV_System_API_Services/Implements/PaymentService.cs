@@ -93,7 +93,7 @@ namespace HIV_System_API_Services.Implements
 
             var email = pmr?.Ptn?.Acc?.Email;
             if (string.IsNullOrEmpty(email))
-                throw new InvalidOperationException("Patient email not found.");
+                throw new InvalidOperationException("Không tìm thấy email bệnh nhân.");
 
             var customerService = new CustomerService();
             var customerList = await customerService.ListAsync(new CustomerListOptions { Email = email });
@@ -162,7 +162,7 @@ namespace HIV_System_API_Services.Implements
         {
             var entity = await _paymentRepo.GetPaymentByIdAsync(id);
             if (entity == null)
-                throw new KeyNotFoundException($"Payment with ID {id} not found.");
+                throw new KeyNotFoundException($"Thanh toán với ID {id} không tìm thấy.");
             return MapToResponseDTO(entity);
         }
 

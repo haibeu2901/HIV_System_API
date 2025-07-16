@@ -87,10 +87,10 @@ namespace HIV_System_API_Services.Implements
             {
                 var patient = await _patientRepo.GetPatientByIdAsync(id);
                 if (patient == null)
-                    throw new KeyNotFoundException($"Patient with ID {id} not found.");
+                    throw new KeyNotFoundException($"Bệnh nhân với ID {id} không tìm thấy.");
                 var results = await _testResultRepo.GetTestResultsByPatientId(patient.PatientMedicalRecord.PmrId);
                 if (results == null || !results.Any())
-                    throw new KeyNotFoundException($"No test results found for patient with ID {id}.");
+                    throw new KeyNotFoundException($"Không tìm thấy kết quả xét nghiệm cho bệnh nhân với ID {id}.");
                 var response = results.Select(r => new PersonalTestResultResponseDTO
                 {
                     PatientMedicalRecordId = r.PmrId,
@@ -140,7 +140,7 @@ namespace HIV_System_API_Services.Implements
             }
 
             if (testResult == null)
-                throw new KeyNotFoundException($"Test result with ID {id} not found.");
+                throw new KeyNotFoundException($"Kết quả xét nghiệm với ID {id} không tìm thấy.");
 
             return MapToResponse(testResult);
         }
@@ -149,7 +149,7 @@ namespace HIV_System_API_Services.Implements
         {
             var existing = await _testResultRepo.GetTestResultById(id);
             if (existing == null)
-                throw new KeyNotFoundException($"Test result with ID {id} not found.");
+                throw new KeyNotFoundException($"Kết quả xét nghiệm với ID {id} không tìm thấy.");
 
             if (testResult.TestDate.HasValue)
                 existing.TestDate = testResult.TestDate.Value;
@@ -160,7 +160,7 @@ namespace HIV_System_API_Services.Implements
 
             var updated = await _testResultRepo.UpdateTestResult(id, existing);
             if (!updated)
-                throw new Exception("Update failed.");
+                throw new Exception("Cập nhật thất bại.");
 
             var updatedResult = await _testResultRepo.GetTestResultById(id);
             return MapToResponse(updatedResult!);
