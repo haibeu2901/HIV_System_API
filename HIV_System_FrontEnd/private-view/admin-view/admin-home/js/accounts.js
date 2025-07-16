@@ -243,6 +243,9 @@ class AccountManager {
                         <button class="btn-secondary" onclick="accountManager.viewAccount(${account.accId})">
                             <i class="fas fa-eye"></i> View
                         </button>
+                        <button class="btn-info" onclick="accountManager.showSendNotificationModal(${account.accId}, '${account.accUsername}', '${account.fullname || 'N/A'}')">
+                            <i class="fas fa-bell"></i> Send Notification
+                        </button>
                         ${userRole !== 'admin' ? `
                             <button class="btn-primary" onclick="accountManager.editAccount(${account.accId})">
                                 <i class="fas fa-edit"></i> Edit
@@ -925,6 +928,175 @@ class AccountManager {
         const createAccountForm = document.getElementById('createAccountForm');
         if (createAccountForm) {
             createAccountForm.addEventListener('submit', (e) => this.handleCreateAccount(e));
+        }
+    }
+
+    // Show send notification modal
+    showSendNotificationModal(accountId, username, fullname) {
+        const modalHTML = `
+            <div id="sendNotificationModal" class="modal" style="display: flex;">
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-bell"></i> Send Notification</h3>
+                        <button class="close-btn" onclick="accountManager.closeSendNotificationModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="recipient-info">
+                            <div class="recipient-card">
+                                <div class="recipient-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="recipient-details">
+                                    <h4>${fullname}</h4>
+                                    <p class="recipient-username">@${username}</p>
+                                    <p class="recipient-id">Account ID: ${accountId}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="sendNotificationForm">
+                            <input type="hidden" id="notification-account-id" value="${accountId}">
+                            
+                            <div class="form-group">
+                                <label for="notification-type">Notification Type</label>
+                                <select id="notification-type" required>
+                                    <option value="">Select notification type</option>
+                                    <option value="System Alert">System Alert</option>
+                                    <option value="Appt Confirm">Appointment Confirmation</option>
+                                    <option value="Appointment Update">Appointment Update</option>
+                                    <option value="Appointment Request">Appointment Request</option>
+                                    <option value="Appointment Reminder">Appointment Reminder</option>
+                                    <option value="ARV Consultation">ARV Consultation</option>
+                                    <option value="Test Result">Test Result</option>
+                                    <option value="Blog Approval">Blog Approval</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notification-message">Message</label>
+                                <textarea id="notification-message" rows="4" placeholder="Enter your notification message here..." required></textarea>
+                                <small class="form-text">This message will be sent to ${fullname} (@${username})</small>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" onclick="accountManager.closeSendNotificationModal()">Cancel</button>
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Send Notification
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if it exists
+        const existingModal = document.getElementById('sendNotificationModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add new modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Add form submit event listener
+        document.getElementById('sendNotificationForm').addEventListener('submit', (e) => this.handleSendNotification(e));
+    }
+
+    // Close send notification modal
+    closeSendNotificationModal() {
+        const modal = document.getElementById('sendNotificationModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    // Handle send notification form submission
+    async handleSendNotification(e) {
+        e.preventDefault();
+        
+        const accountId = document.getElementById('notification-account-id').value;
+        const notiType = document.getElementById('notification-type').value;
+        const notiMessage = document.getElementById('notification-message').value;
+        
+        // Validate input data
+        if (!notiType || !notiMessage) {
+            if (window.utils && window.utils.showToast) {
+                window.utils.showToast('Please fill in all required fields', 'error');
+            } else {
+                alert('Please fill in all required fields');
+            }
+            return;
+        }
+        
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        }
+        
+        try {
+            const success = await this.sendNotificationToAccount(accountId, notiType, notiMessage);
+            
+            if (success) {
+                if (window.utils && window.utils.showToast) {
+                    window.utils.showToast('Notification sent successfully!', 'success');
+                } else {
+                    alert('Notification sent successfully!');
+                }
+                
+                // Close modal and reset form
+                this.closeSendNotificationModal();
+            }
+        } catch (error) {
+            console.error('Error sending notification:', error);
+            if (window.utils && window.utils.showToast) {
+                window.utils.showToast('Error sending notification. Please try again.', 'error');
+            } else {
+                alert('Error sending notification. Please try again.');
+            }
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send Notification';
+            }
+        }
+    }
+
+    // Send notification to specific account
+    async sendNotificationToAccount(accountId, notiType, notiMessage) {
+        const token = this.authManager.getToken();
+        
+        const requestBody = {
+            notiType: notiType,
+            notiMessage: notiMessage,
+            sendAt: new Date().toISOString()
+        };
+        
+        try {
+            console.log(`Sending notification to account ID: ${accountId}`, requestBody);
+            
+            const response = await fetch(`https://localhost:7009/api/Notification/CreateAndSendToAccount/${accountId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'accept': '*/*'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (response.ok) {
+                console.log('Notification sent successfully to account:', accountId);
+                return true;
+            } else {
+                const errorData = await response.text();
+                console.error('Failed to send notification:', errorData);
+                throw new Error(errorData || `HTTP error! status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error sending notification to account:', error);
+            throw error;
         }
     }
 }
