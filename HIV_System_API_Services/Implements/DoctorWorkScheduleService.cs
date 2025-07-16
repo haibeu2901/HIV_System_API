@@ -16,13 +16,16 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IDoctorWorkScheduleRepo _doctorWorkScheduleRepo;
 
-        public DoctorWorkScheduleService()
+        public DoctorWorkScheduleService(IDoctorWorkScheduleRepo doctorWorkScheduleRepo)
         {
-            _doctorWorkScheduleRepo= new DoctorWorkScheduleRepo();
+            _doctorWorkScheduleRepo = doctorWorkScheduleRepo ?? throw new ArgumentNullException(nameof(doctorWorkScheduleRepo), "Kho lưu trữ lịch làm việc bác sĩ không được để trống.");
         }
 
         private DoctorWorkSchedule MapToEntity(DoctorWorkScheduleRequestDTO requestDTO)
         {
+            if (requestDTO == null)
+                throw new ArgumentNullException(nameof(requestDTO), "Yêu cầu DTO lịch làm việc bác sĩ không được để trống.");
+
             return new DoctorWorkSchedule
             {
                 DoctorId = requestDTO.DoctorId,
@@ -36,6 +39,9 @@ namespace HIV_System_API_Services.Implements
 
         private DoctorWorkScheduleResponseDTO MapToResponseDTO(DoctorWorkSchedule doctorWorkSchedule)
         {
+            if (doctorWorkSchedule == null)
+                throw new ArgumentNullException(nameof(doctorWorkSchedule), "Thực thể lịch làm việc bác sĩ không được để trống.");
+
             return new DoctorWorkScheduleResponseDTO
             {
                 DocWorkScheduleId = doctorWorkSchedule.DwsId,
@@ -51,75 +57,70 @@ namespace HIV_System_API_Services.Implements
         public async Task<DoctorWorkScheduleResponseDTO> CreateDoctorWorkScheduleAsync(DoctorWorkScheduleRequestDTO doctorWorkSchedule)
         {
             if (doctorWorkSchedule == null)
-                throw new ArgumentNullException(nameof(doctorWorkSchedule));
+                throw new ArgumentNullException(nameof(doctorWorkSchedule), "Yêu cầu DTO lịch làm việc bác sĩ không được để trống.");
+
             if (doctorWorkSchedule.DoctorId <= 0)
-                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorWorkSchedule.DoctorId));
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(doctorWorkSchedule.DoctorId));
+
             if (doctorWorkSchedule.DayOfWeek < 1 || doctorWorkSchedule.DayOfWeek > 7)
-                throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "DayOfWeek must be between 1 (Sunday) and 7 (Saturday).");
+                throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "Ngày trong tuần phải nằm trong khoảng từ 1 (Chủ Nhật) đến 7 (Thứ Bảy).");
+
             if (doctorWorkSchedule.StartTime >= doctorWorkSchedule.EndTime)
-                throw new ArgumentException("StartTime must be earlier than EndTime.");
+                throw new ArgumentException("Thời gian bắt đầu phải sớm hơn thời gian kết thúc.", nameof(doctorWorkSchedule.StartTime));
+
             if (doctorWorkSchedule.WorkDate < DateOnly.FromDateTime(DateTime.Now))
-                throw new ArgumentException("WorkDate cannot be in the past.", nameof(doctorWorkSchedule.WorkDate));
+                throw new ArgumentException("Ngày làm việc không được là ngày trong quá khứ.", nameof(doctorWorkSchedule.WorkDate));
 
             try
             {
                 var entity = MapToEntity(doctorWorkSchedule);
                 var createdEntity = await _doctorWorkScheduleRepo.CreateDoctorWorkScheduleAsync(entity);
+                if (createdEntity == null)
+                    throw new InvalidOperationException("Không thể tạo lịch làm việc bác sĩ.");
+
                 return MapToResponseDTO(createdEntity);
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException($"Failed to create doctor work schedule: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("An unexpected error occurred while creating doctor work schedule.", ex.InnerException);
+                throw new InvalidOperationException("Đã xảy ra lỗi khi tạo lịch làm việc bác sĩ.", ex);
             }
         }
 
         public async Task<bool> DeleteDoctorWorkScheduleAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("ID must be a positive integer.", nameof(id));
+                throw new ArgumentException("ID lịch làm việc không hợp lệ.", nameof(id));
 
             try
             {
                 var result = await _doctorWorkScheduleRepo.DeleteDoctorWorkScheduleAsync(id);
                 if (!result)
-                    throw new KeyNotFoundException($"Doctor work schedule with ID {id} not found.");
+                    throw new KeyNotFoundException($"Không tìm thấy lịch làm việc bác sĩ với ID {id}.");
 
                 return true;
             }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException($"Failed to delete doctor work schedule with ID {id}: {ex.Message}", ex);
-            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"An unexpected error occurred while deleting doctor work schedule with ID {id}.", ex.InnerException);
+                throw new InvalidOperationException($"Không thể xóa lịch làm việc bác sĩ với ID {id}.", ex);
             }
         }
 
         public async Task<DoctorWorkScheduleResponseDTO?> GetDoctorWorkScheduleByIdAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("ID must be a positive integer.", nameof(id));
+                throw new ArgumentException("ID lịch làm việc không hợp lệ.", nameof(id));
 
             try
             {
                 var entity = await _doctorWorkScheduleRepo.GetDoctorWorkScheduleByIdAsync(id);
                 if (entity == null)
-                    return null;
+                    throw new KeyNotFoundException($"Không tìm thấy lịch làm việc bác sĩ với ID {id}.");
 
                 return MapToResponseDTO(entity);
             }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException($"Failed to retrieve doctor work schedule with ID {id}: {ex.Message}", ex);
-            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"An unexpected error occurred while retrieving doctor work schedule with ID {id}.", ex.InnerException);
+                throw new InvalidOperationException($"Không thể truy xuất lịch làm việc bác sĩ với ID {id}.", ex);
             }
         }
 
@@ -129,71 +130,67 @@ namespace HIV_System_API_Services.Implements
             {
                 var entities = await _doctorWorkScheduleRepo.GetDoctorWorkSchedulesAsync();
                 if (entities == null || !entities.Any())
-                    return new List<DoctorWorkScheduleResponseDTO>();
+                    throw new InvalidOperationException("Không tìm thấy lịch làm việc bác sĩ nào.");
 
                 return entities.Select(MapToResponseDTO).ToList();
             }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException($"Failed to retrieve doctor work schedules: {ex.Message}", ex);
-            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("An unexpected error occurred while retrieving doctor work schedules.", ex.InnerException);
+                throw new InvalidOperationException("Không thể truy xuất danh sách lịch làm việc bác sĩ.", ex);
             }
         }
 
         public async Task<DoctorWorkScheduleResponseDTO> UpdateDoctorWorkScheduleAsync(int id, DoctorWorkScheduleRequestDTO doctorWorkSchedule)
         {
             if (id <= 0)
-                throw new ArgumentException("Id must be a positive integer.", nameof(id));
+                throw new ArgumentException("ID lịch làm việc không hợp lệ.", nameof(id));
+
             if (doctorWorkSchedule == null)
-                throw new ArgumentNullException(nameof(doctorWorkSchedule));
+                throw new ArgumentNullException(nameof(doctorWorkSchedule), "Yêu cầu DTO lịch làm việc bác sĩ không được để trống.");
+
             if (doctorWorkSchedule.DoctorId <= 0)
-                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorWorkSchedule.DoctorId));
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(doctorWorkSchedule.DoctorId));
+
             if (doctorWorkSchedule.DayOfWeek < 1 || doctorWorkSchedule.DayOfWeek > 7)
-                throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "DayOfWeek must be between 1 (Sunday) and 7 (Saturday).");
+                throw new ArgumentOutOfRangeException(nameof(doctorWorkSchedule.DayOfWeek), "Ngày trong tuần phải nằm trong khoảng từ 1 (Chủ Nhật) đến 7 (Thứ Bảy).");
+
             if (doctorWorkSchedule.StartTime >= doctorWorkSchedule.EndTime)
-                throw new ArgumentException("StartTime must be earlier than EndTime.");
+                throw new ArgumentException("Thời gian bắt đầu phải sớm hơn thời gian kết thúc.", nameof(doctorWorkSchedule.StartTime));
+
             if (doctorWorkSchedule.WorkDate < DateOnly.FromDateTime(DateTime.Now))
-                throw new ArgumentException("WorkDate cannot be in the past.", nameof(doctorWorkSchedule.WorkDate));
+                throw new ArgumentException("Ngày làm việc không được là ngày trong quá khứ.", nameof(doctorWorkSchedule.WorkDate));
 
             try
             {
                 var entity = MapToEntity(doctorWorkSchedule);
                 var updatedEntity = await _doctorWorkScheduleRepo.UpdateDoctorWorkScheduleAsync(id, entity);
+                if (updatedEntity == null)
+                    throw new KeyNotFoundException($"Không tìm thấy lịch làm việc bác sĩ với ID {id}.");
+
                 return MapToResponseDTO(updatedEntity);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                throw new KeyNotFoundException($"Doctor work schedule with ID {id} not found.", ex);
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException($"Failed to update doctor work schedule with ID {id}: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"An unexpected error occurred while updating doctor work schedule with ID {id}.", ex.InnerException);
+                throw new InvalidOperationException($"Không thể cập nhật lịch làm việc bác sĩ với ID {id}.", ex);
             }
         }
 
         public async Task<List<PersonalWorkScheduleResponseDTO>> GetPersonalWorkSchedulesAsync(int doctorId)
         {
             if (doctorId <= 0)
-                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorId));
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(doctorId));
 
             try
             {
                 var schedules = await _doctorWorkScheduleRepo.GetPersonalWorkSchedulesAsync(doctorId);
                 if (schedules == null || !schedules.Any())
-                    return new List<PersonalWorkScheduleResponseDTO>();
+                    throw new InvalidOperationException($"Không tìm thấy lịch làm việc cá nhân cho bác sĩ với ID {doctorId}.");
 
                 var result = new List<PersonalWorkScheduleResponseDTO>();
                 foreach (var schedule in schedules)
                 {
                     if (!schedule.DayOfWeek.HasValue)
-                        continue;
+                        throw new InvalidOperationException("Ngày trong tuần không được để trống trong lịch làm việc cá nhân.");
 
                     result.Add(new PersonalWorkScheduleResponseDTO
                     {
@@ -207,36 +204,28 @@ namespace HIV_System_API_Services.Implements
 
                 return result;
             }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException($"Failed to retrieve work schedules for doctor with ID {doctorId}: {ex.Message}", ex);
-            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId}.", ex.InnerException);
+                throw new InvalidOperationException($"Không thể truy xuất lịch làm việc cá nhân cho bác sĩ với ID {doctorId}.", ex);
             }
         }
 
         public async Task<List<DoctorWorkScheduleResponseDTO>> GetDoctorWorkSchedulesByDoctorIdAsync(int doctorId)
         {
             if (doctorId <= 0)
-                throw new ArgumentException("DoctorId must be a positive integer.", nameof(doctorId));
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(doctorId));
 
             try
             {
                 var entities = await _doctorWorkScheduleRepo.GetDoctorWorkSchedulesByDoctorIdAsync(doctorId);
                 if (entities == null || !entities.Any())
-                    return new List<DoctorWorkScheduleResponseDTO>();
+                    throw new InvalidOperationException($"Không tìm thấy lịch làm việc cho bác sĩ với ID {doctorId}.");
 
                 return entities.Select(MapToResponseDTO).ToList();
             }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException($"Failed to retrieve work schedules for doctor with ID {doctorId}: {ex.Message}", ex);
-            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"An unexpected error occurred while retrieving work schedules for doctor with ID {doctorId}.", ex.InnerException);
+                throw new InvalidOperationException($"Không thể truy xuất lịch làm việc cho bác sĩ với ID {doctorId}.", ex);
             }
         }
     }

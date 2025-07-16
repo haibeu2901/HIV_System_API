@@ -29,13 +29,13 @@ namespace HIV_System_API_Services.Implements
         private void ValidateArvMedicationDetailDTO(ArvMedicationDetailResponseDTO dto)
         {
             if (dto == null)
-                throw new ArgumentNullException(nameof(dto), "ARV Medication Detail cannot be null.");
+                throw new ArgumentNullException(nameof(dto), "Chi tiết thuốc ARV không được để trống.");
 
             if (string.IsNullOrWhiteSpace(dto.ARVMedicationName))
-                throw new ArgumentException("ARV Medication Name is required.", nameof(dto.ARVMedicationName));
+                throw new ArgumentException("Tên thuốc ARV là bắt buộc.", nameof(dto.ARVMedicationName));
 
             if (dto.ARVMedicationPrice < 0)
-                throw new ArgumentException("ARV Medication Price cannot be negative.", nameof(dto.ARVMedicationPrice));
+                throw new ArgumentException("Giá thuốc ARV không được âm.", nameof(dto.ARVMedicationPrice));
         }
 
         private ArvMedicationDetail MapToEntity(ArvMedicationDetailResponseDTO dto)
@@ -54,7 +54,7 @@ namespace HIV_System_API_Services.Implements
         private ArvMedicationDetailResponseDTO MapToResponseDTO(ArvMedicationDetail entity)
         {
             if (entity == null)
-                throw new ArgumentNullException(nameof(entity), "ARV Medication Detail entity cannot be null.");
+                throw new ArgumentNullException(nameof(entity), "Thực thể chi tiết thuốc ARV không được để trống.");
 
             return new ArvMedicationDetailResponseDTO
             {
@@ -77,7 +77,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<bool> DeleteArvMedicationDetailAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid ARV Medication Detail ID.", nameof(id));
+                throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ.", nameof(id));
             return await _arvMedicationDetailRepo.DeleteArvMedicationDetailAsync(id);
         }
 
@@ -90,7 +90,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<ArvMedicationDetailResponseDTO> GetArvMedicationDetailByIdAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid ARV Medication Detail ID.", nameof(id));
+                throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ.", nameof(id));
             var entity = await _arvMedicationDetailRepo.GetArvMedicationDetailByIdAsync(id);
             return entity != null ? MapToResponseDTO(entity) : null;
         }
@@ -98,7 +98,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<ArvMedicationDetailResponseDTO>> SearchArvMedicationDetailsByNameAsync(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
-                throw new ArgumentException("Search term cannot be empty.", nameof(searchTerm));
+                throw new ArgumentException("Từ khóa tìm kiếm không được để trống.", nameof(searchTerm));
             var entities = await _arvMedicationDetailRepo.SearchArvMedicationDetailsByNameAsync(searchTerm);
             return entities.Select(MapToResponseDTO).ToList();
         }
@@ -106,7 +106,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<ArvMedicationDetailResponseDTO> UpdateArvMedicationDetailAsync(int id, ArvMedicationDetailResponseDTO arvMedicationDetail)
         {
             if (id <= 0)
-                throw new ArgumentException("Invalid ARV Medication Detail ID.", nameof(id));
+                throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ.", nameof(id));
             ValidateArvMedicationDetailDTO(arvMedicationDetail);
             var entity = MapToEntity(arvMedicationDetail);
             var updated = await _arvMedicationDetailRepo.UpdateArvMedicationDetailAsync(id, entity);
