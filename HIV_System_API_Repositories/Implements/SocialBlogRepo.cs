@@ -18,7 +18,7 @@ namespace HIV_System_API_Repositories.Implements
             return await SocialBlogDAO.Instance.GetByIdAsync(id);
         }
 
-        public async Task<SocialBlog?> GetByAuthorIdAsync(int id)
+        public async Task<List<SocialBlog?>> GetByAuthorIdAsync(int id)
         {
             return await SocialBlogDAO.Instance.GetByAuthorIdAsync(id);
         }

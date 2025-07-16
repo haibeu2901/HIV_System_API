@@ -1,4 +1,4 @@
-using HIV_System_API_DTOs.SocialBlogDTO;
+﻿using HIV_System_API_DTOs.SocialBlogDTO;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +50,22 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+        [HttpGet("GetBlogByAuthorId/{authorId}")]
+        [Authorize(Roles = "1,2,3,4,5")]
+        public async Task<ActionResult<List<BlogResponseDTO>>> GetByAuthorId(int authorId)
+        {
+            try
+            {
+                var blogs = await _service.GetByAuthorIdAsync(authorId);
+                if (blogs == null || blogs.Count == 0)
+                    return NotFound(new { message = $"Không tồn tại blog nào thuộc ID {authorId}." });
+                return Ok(blogs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
 
         [HttpPost("CreateBlog")]
         [Authorize(Roles = "1,2,3,4,5")]
@@ -77,6 +93,28 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var updated = await _service.UpdateAsync(id, request);
+                return Ok(updated);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+        [HttpPut("UpdatePersonalBlog/{id}")]
+        [Authorize (Roles = "1,2,3,4,5")]
+        public async Task<ActionResult<BlogResponseDTO>> UpdatePersonalBlog(int blogId, int authorId, [FromBody] BlogUpdateRequestDTO request)
+        {
+            try
+            {
+                var updated = await _service.UpdatePersonalAsync(blogId, authorId, request);
                 return Ok(updated);
             }
             catch (KeyNotFoundException ex)

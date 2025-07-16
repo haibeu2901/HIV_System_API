@@ -38,9 +38,11 @@ namespace HIV_System_API_DAOs.Implements
             return await _context.SocialBlogs.FindAsync(id);
         }
 
-        public async Task<SocialBlog?> GetByAuthorIdAsync(int id)
+        public async Task<List<SocialBlog?>> GetByAuthorIdAsync(int id)
         {
-            return await _context.SocialBlogs.FirstOrDefaultAsync(b => b.AccId == id);
+            return await _context.SocialBlogs
+                .Where(b => b.AccId == id)
+                .ToListAsync();
         }
 
         public async Task<SocialBlog> CreateAsync(SocialBlog blog)
