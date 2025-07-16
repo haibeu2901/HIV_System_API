@@ -106,9 +106,21 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Notification type is required.", nameof(requestDTO.NotiType));
             }
 
+            // New validation for NotiType length
+            if (requestDTO.NotiType.Length > 20)
+            {
+                throw new ArgumentException("Notification type cannot exceed 20 characters.", nameof(requestDTO.NotiType));
+            }
+
             if (string.IsNullOrWhiteSpace(requestDTO.NotiMessage))
             {
                 throw new ArgumentException("Notification message is required.", nameof(requestDTO.NotiMessage));
+            }
+
+            // New validation for NotiMessage length
+            if (requestDTO.NotiMessage.Length > 300)
+            {
+                throw new ArgumentException("Notification type cannot exceed 300 characters.", nameof(requestDTO.NotiMessage));
             }
 
             if (requestDTO.SendAt == default(DateTime))
