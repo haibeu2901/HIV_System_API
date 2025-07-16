@@ -149,15 +149,15 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.InnerException);
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(ex.InnerException);
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.InnerException}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
         
