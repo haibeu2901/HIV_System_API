@@ -34,6 +34,7 @@ namespace HIV_System_API_DAOs.Implements
             return await _context.PatientArvMedications
                 .Include(pam => pam.Amd) // Include ARV Medication Detail
                 .Include(pam => pam.Par) // Include Patient ARV Regimen
+                .OrderByDescending(pam => pam.Par.CreatedAt)
                 .ToListAsync();
         }
 
@@ -114,6 +115,7 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(pam => pam.Par)
                 .Where(pam => pam.ParId == parId)
                 .OrderBy(pam => pam.Amd.MedName)
+                .OrderByDescending(pam => pam.Par.CreatedAt)
                 .ToListAsync();
         }
 
