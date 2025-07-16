@@ -13,19 +13,9 @@ namespace HIV_System_API_Services.Implements
 {
     public class BlogReactionService : IBlogReactionService
     {
-        private readonly IBlogReactionRepo _repo;
-
-        public BlogReactionService(IBlogReactionRepo repo)
-        {
-            _repo = repo ?? throw new ArgumentNullException(nameof(repo), "Kho lưu trữ phản hồi blog không được để trống.");
-        }
-
-        private static CommentResponseDTO MapToResponseDTO(BlogReaction reaction)
-        {
-            if (reaction == null)
-                throw new ArgumentNullException(nameof(reaction), "Thực thể phản hồi không được để trống.");
-
-            return new CommentResponseDTO
+        private readonly BlogReactionRepo _repo = new BlogReactionRepo();
+        private static CommentResponseDTO MapToResponseDTO(BlogReaction reaction) =>
+            new()
             {
                 ReactionId = reaction.BrtId,
                 BlogId = reaction.SblId,
@@ -33,7 +23,6 @@ namespace HIV_System_API_Services.Implements
                 Comment = reaction.Comment ?? string.Empty,
                 ReactedAt = reaction.ReactedAt ?? DateTime.UtcNow,
             };
-        }
 
         public async Task<CommentResponseDTO> CreateCommentAsync(CommentRequestDTO dto)
         {

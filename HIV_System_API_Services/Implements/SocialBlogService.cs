@@ -1,4 +1,4 @@
-using HIV_System_API_BOs;
+﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.SocialBlogDTO;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -107,6 +107,13 @@ namespace HIV_System_API_Services.Implements
             var blog = await _repo.GetByIdAsync(id);
             return blog == null ? null : MapToResponseDto(blog);
         }
+        public async Task<List<BlogResponseDTO>> GetByAuthorIdAsync(int authorId)
+        {
+            if (authorId <= 0)
+                throw new ArgumentException("ID tác giả không hợp lệ");
+            var blogs = await _repo.GetByAuthorIdAsync(authorId);
+            return blogs.Select(MapToResponseDto).ToList();
+        }
 
         public async Task<BlogResponseDTO> CreateAsync(BlogCreateRequestDTO request)
         {
@@ -157,6 +164,23 @@ namespace HIV_System_API_Services.Implements
             if (request.Notes != null) existing.Notes = request.Notes;
 
             var updated = await _repo.UpdateAsync(id, existing);
+            return MapToResponseDto(updated);
+        }
+        public async Task<BlogResponseDTO> UpdatePersonalAsync(int blogId, int authorId, BlogUpdateRequestDTO request)
+        {
+            if (blogId <= 0 || authorId <= 0)
+                throw new ArgumentException("ID tác giả hoặc ID blog không hợp lệ");
+            var existing = await _repo.GetByIdAsync(blogId);
+            if (existing == null)
+                throw new KeyNotFoundException($"Blog với ID {blogId} không tồn tại.");
+            if (existing.AccId != authorId)
+                throw new UnauthorizedAccessException("Bạn chỉ có thể cập nhật blog của bản thân.");
+            // Update only provided fields
+            if (request.Title != null) existing.Title = request.Title;
+            if (request.Content != null) existing.Content = request.Content;
+            if (request.IsAnonymous.HasValue) existing.IsAnonymous = request.IsAnonymous;
+            if (request.Notes != null) existing.Notes = request.Notes;
+            var updated = await _repo.UpdateAsync(blogId, existing);
             return MapToResponseDto(updated);
         }
 

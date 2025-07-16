@@ -16,10 +16,10 @@ namespace HIV_System_API_Services.Implements
         private readonly IMedicalServiceRepo _medicalServiceRepo;
         private readonly HivSystemApiContext _context;
 
-        public MedicalServiceService(IMedicalServiceRepo medicalServiceRepo, HivSystemApiContext context)
+        public MedicalServiceService()
         {
-            _medicalServiceRepo = medicalServiceRepo ?? throw new ArgumentNullException(nameof(medicalServiceRepo), "Kho lưu trữ dịch vụ y tế không được để trống.");
-            _context = context ?? throw new ArgumentNullException(nameof(context), "Bối cảnh cơ sở dữ liệu không được để trống.");
+            _medicalServiceRepo = new MedicalServiceRepo();
+            _context = new HivSystemApiContext();
         }
 
         private async Task ValidateAccountExists(int accId)

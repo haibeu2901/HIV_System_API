@@ -8,7 +8,7 @@ namespace HIV_System_API_DAOs.Interfaces
     {
         Task<List<SocialBlog>> GetAllAsync();
         Task<SocialBlog?> GetByIdAsync(int id);
-        Task<SocialBlog?> GetByAuthorIdAsync(int id);
+        Task<List<SocialBlog?>> GetByAuthorIdAsync(int id);
         Task<SocialBlog> CreateAsync(SocialBlog blog);
         Task<SocialBlog> UpdateAsync(int id, SocialBlog blog);
         Task<SocialBlog> UpdatePersonalAsync(int blogId, int authorId, SocialBlog blog);
