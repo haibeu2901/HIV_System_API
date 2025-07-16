@@ -45,5 +45,23 @@ namespace HIV_System_API_DAOs.Implements
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<BlogReaction> UpdateBlogReactionAsync(int blogId, int accountId, bool reactionType)
+        {
+            var reaction = new BlogReaction
+            {
+                SblId = blogId,
+                AccId = accountId,
+                ReactionType = reactionType,
+                ReactedAt = DateTime.UtcNow
+            };
+            await _context.BlogReactions.AddAsync(reaction);
+            await _context.SaveChangesAsync();
+            return reaction;
+        }
+        public async Task<int> GetReactionCountByBlogIdAsync(int blogId, bool reactionType)
+        {
+            return await _context.BlogReactions
+                .CountAsync(r => r.SblId == blogId && r.ReactionType == reactionType);
+        }
     }
 }

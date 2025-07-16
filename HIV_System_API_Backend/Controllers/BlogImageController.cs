@@ -82,5 +82,19 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+        [HttpPost("UploadImageList")]
+        [Authorize(Roles = "1, 2, 3, 4, 5")]
+        public async Task<ActionResult<List<BlogImageResponseDTO>>> UploadImageList([FromForm] BlogImageListRequestDTO request)
+        {
+            try
+            {
+                var blogImageResponseDtos = await _blogImageService.UploadImageListAsync(request);
+                return Ok(blogImageResponseDtos);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

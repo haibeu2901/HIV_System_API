@@ -7,6 +7,8 @@ class DashboardManager {
 
     // Load dashboard data
     async loadDashboardData() {
+        console.log('🔄 Loading dashboard data...');
+        
         try {
             const token = this.authManager.getToken();
             const userRole = parseInt(localStorage.getItem('userRole'));
@@ -24,8 +26,9 @@ class DashboardManager {
                 console.log('📊 Loading admin dashboard data for userId:', userId);
             }
             
+            console.log('🌐 Fetching data from:', apiEndpoint);
+            
             const response = await fetch(apiEndpoint, {
-            const response = await fetch('https://localhost:7009/api/Dashboard/admin?userId=1', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'accept': '*/*'
@@ -34,7 +37,7 @@ class DashboardManager {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('Dashboard data:', data);
+                console.log('✅ Dashboard data loaded successfully:', data);
                 
                 // Update statistics cards
                 this.updateStatisticsCards(data);
@@ -47,17 +50,22 @@ class DashboardManager {
                 // Update recent activities
                 this.updateRecentActivities(data.recentActivities);
                 
+                console.log('✅ Dashboard updated successfully');
+                
             } else {
+                console.error('❌ HTTP error:', response.status);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
         } catch (error) {
-            console.error('Error loading dashboard data:', error);
+            console.error('❌ Error loading dashboard data:', error);
             this.showErrorState();
         }
     }
 
     // Update statistics cards
     updateStatisticsCards(data) {
+        console.log('📈 Updating statistics cards with data:', data);
+        
         const stats = [
             { id: 'total-users', value: data.totalUsers, label: 'Total Users' },
             { id: 'total-patients', value: data.totalPatients, label: 'Total Patients' },
@@ -75,23 +83,36 @@ class DashboardManager {
             if (element) {
                 element.textContent = stat.value;
                 element.classList.add('stat-updated');
+                console.log(`✅ Updated ${stat.label}: ${stat.value}`);
                 
                 // Add animation
                 setTimeout(() => {
                     element.classList.remove('stat-updated');
                 }, 500);
+            } else {
+                console.warn(`⚠️ Element not found: ${stat.id}`);
             }
         });
     }
 
     // Update user distribution chart
     updateUserDistributionChart(userDistribution) {
+        console.log('📊 Updating user distribution chart with:', userDistribution);
+        
         const ctx = document.getElementById('userDistributionChart');
-        if (!ctx) return;
+        if (!ctx) {
+            console.warn('⚠️ User distribution chart canvas not found');
+            return;
+        }
 
         // Destroy existing chart if it exists
         if (this.charts.userDistribution) {
             this.charts.userDistribution.destroy();
+        }
+
+        if (!userDistribution || Object.keys(userDistribution).length === 0) {
+            console.warn('⚠️ No user distribution data available');
+            return;
         }
 
         const labels = Object.keys(userDistribution);
@@ -99,6 +120,8 @@ class DashboardManager {
         const colors = [
             '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
         ];
+
+        console.log('📊 Creating user distribution chart with labels:', labels, 'data:', data);
 
         this.charts.userDistribution = new Chart(ctx, {
             type: 'doughnut',
@@ -135,6 +158,8 @@ class DashboardManager {
                 }
             }
         });
+        
+        console.log('✅ User distribution chart created successfully');
     }
 
     // Update revenue chart
@@ -323,8 +348,33 @@ class DashboardManager {
         }).format(amount);
     }
 
-   
+    // Show error state
+    showErrorState() {
+        // Update statistics cards with error state
+        const errorStats = [
+            'total-users', 'total-patients', 'total-doctors', 'total-staff',
+            'total-appointments', 'pending-appointments', 'total-services',
+            'total-revenue', 'monthly-revenue'
+        ];
 
+        errorStats.forEach(statId => {
+            const element = document.getElementById(statId);
+            if (element) {
+                element.textContent = 'Error';
+                element.classList.add('stat-error');
+            }
+        });
+
+        // Show error message in charts
+        const chartContainers = ['userDistributionChart', 'revenueChart', 'appointmentChart'];
+        chartContainers.forEach(chartId => {
+            const container = document.getElementById(chartId);
+            if (container) {
+                container.innerHTML = '<div class="chart-error">Failed to load chart data</div>';
+            }
+        });
+
+        // Show error message in recent activities
         const activityList = document.getElementById('recent-activity-list');
         if (activityList) {
             activityList.innerHTML = '<div class="error-message">Failed to load recent activities</div>';
@@ -376,6 +426,29 @@ class DashboardManager {
     async loadRecentActivity() {
         // This method is now handled by loadDashboardData
         console.warn('loadRecentActivity is deprecated, use loadDashboardData instead');
+    }
+
+    // Initialize dashboard
+    init() {
+        console.log('Initializing DashboardManager...');
+        this.initializeCharts();
+        
+        // Set up refresh button if it exists
+        const refreshButton = document.getElementById('refresh-dashboard');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => {
+                console.log('Refreshing dashboard...');
+                this.loadDashboardData();
+            });
+        }
+        
+        // Auto-refresh every 5 minutes
+        setInterval(() => {
+            console.log('Auto-refreshing dashboard...');
+            this.loadDashboardData();
+        }, 300000); // 5 minutes
+        
+        console.log('DashboardManager initialized successfully');
     }
 }
 
