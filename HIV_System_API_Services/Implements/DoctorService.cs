@@ -16,10 +16,9 @@ namespace HIV_System_API_Services.Implements
     public class DoctorService : IDoctorService
     {
         private readonly IDoctorRepo _doctorRepo;
-
-        public DoctorService(IDoctorRepo doctorRepo)
+        public DoctorService()
         {
-            _doctorRepo = doctorRepo ?? throw new ArgumentNullException(nameof(doctorRepo), "Kho lưu trữ bác sĩ không được để trống.");
+            _doctorRepo = new DoctorRepo();
         }
 
         private Doctor MapToEntity(DoctorRequestDTO dto)

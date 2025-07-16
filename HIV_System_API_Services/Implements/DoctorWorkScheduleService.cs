@@ -16,9 +16,9 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IDoctorWorkScheduleRepo _doctorWorkScheduleRepo;
 
-        public DoctorWorkScheduleService(IDoctorWorkScheduleRepo doctorWorkScheduleRepo)
+        public DoctorWorkScheduleService()
         {
-            _doctorWorkScheduleRepo = doctorWorkScheduleRepo ?? throw new ArgumentNullException(nameof(doctorWorkScheduleRepo), "Kho lưu trữ lịch làm việc bác sĩ không được để trống.");
+            _doctorWorkScheduleRepo = new DoctorWorkScheduleRepo();
         }
 
         private DoctorWorkSchedule MapToEntity(DoctorWorkScheduleRequestDTO requestDTO)

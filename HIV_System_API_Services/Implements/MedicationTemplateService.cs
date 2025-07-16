@@ -17,11 +17,11 @@ namespace HIV_System_API_Services.Implements
         private readonly IRegimenTemplateRepo _regimenTemplateRepo;
         private readonly IArvMedicationDetailRepo _medicationDetailRepo;
 
-        public MedicationTemplateService(IMedicationTemplateRepo medicationTemplateRepo, IRegimenTemplateRepo regimenTemplateRepo, IArvMedicationDetailRepo medicationDetailRepo)
+        public MedicationTemplateService()
         {
-            _medicationTemplateRepo = medicationTemplateRepo ?? throw new ArgumentNullException(nameof(medicationTemplateRepo), "Kho lưu trữ mẫu thuốc không được để trống.");
-            _regimenTemplateRepo = regimenTemplateRepo ?? throw new ArgumentNullException(nameof(regimenTemplateRepo), "Kho lưu trữ mẫu phác đồ không được để trống.");
-            _medicationDetailRepo = medicationDetailRepo ?? throw new ArgumentNullException(nameof(medicationDetailRepo), "Kho lưu trữ chi tiết thuốc ARV không được để trống.");
+            _medicationTemplateRepo = new MedicationTemplateRepo();
+            _medicationDetailRepo = new ArvMedicationDetailRepo();
+            _regimenTemplateRepo = new RegimenTemplateRepo();
         }
 
         private ArvMedicationTemplate MapToEntity(MedicationTemplateRequestDTO dto)
