@@ -3,7 +3,7 @@
 // Dynamically load the header HTML into #header-placeholder
 function loadDoctorHeader() {
     // Use an absolute path so it works from any doctor-view subdirectory
-    fetch('/HIV_System_FrontEnd/private-view/doctor-view/doctor-header/doctor-header.html')
+    fetch('/private-view/doctor-view/doctor-header/doctor-header.html')
         .then(res => res.text())
         .then(html => {
             const placeholder = document.getElementById('header-placeholder');
