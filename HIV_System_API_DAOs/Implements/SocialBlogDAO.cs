@@ -38,6 +38,11 @@ namespace HIV_System_API_DAOs.Implements
             return await _context.SocialBlogs.FindAsync(id);
         }
 
+        public async Task<SocialBlog?> GetByAuthorIdAsync(int id)
+        {
+            return await _context.SocialBlogs.FirstOrDefaultAsync(b => b.AccId == id);
+        }
+
         public async Task<SocialBlog> CreateAsync(SocialBlog blog)
         {
             _context.SocialBlogs.Add(blog);
@@ -56,6 +61,19 @@ namespace HIV_System_API_DAOs.Implements
             existing.IsAnonymous = blog.IsAnonymous;
             existing.Notes = blog.Notes;
 
+            await _context.SaveChangesAsync();
+            return existing;
+        }
+
+        public async Task<SocialBlog> UpdatePersonalAsync(int blogId, int authorId, SocialBlog blog)
+        {
+            var existing = await _context.SocialBlogs.FindAsync(blogId);
+            if (existing == null || existing.AccId != authorId)
+                throw new KeyNotFoundException($"Blog with ID {blogId} not found or does not belong to author with ID {authorId}.");
+            existing.Title = blog.Title;
+            existing.Content = blog.Content;
+            existing.IsAnonymous = blog.IsAnonymous;
+            existing.Notes = blog.Notes;
             await _context.SaveChangesAsync();
             return existing;
         }

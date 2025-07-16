@@ -18,6 +18,11 @@ namespace HIV_System_API_Repositories.Implements
             return await SocialBlogDAO.Instance.GetByIdAsync(id);
         }
 
+        public async Task<SocialBlog?> GetByAuthorIdAsync(int id)
+        {
+            return await SocialBlogDAO.Instance.GetByAuthorIdAsync(id);
+        }
+
         public async Task<SocialBlog> CreateAsync(SocialBlog blog)
         {
             return await SocialBlogDAO.Instance.CreateAsync(blog);
@@ -26,6 +31,10 @@ namespace HIV_System_API_Repositories.Implements
         public async Task<SocialBlog> UpdateAsync(int id, SocialBlog blog)
         {
             return await SocialBlogDAO.Instance.UpdateAsync(id, blog);
+        }
+        public async Task<SocialBlog> UpdatePersonalAsync(int blogId, int authorId, SocialBlog blog)
+        {
+            return await SocialBlogDAO.Instance.UpdatePersonalAsync(blogId, authorId, blog);
         }
 
         public async Task<bool> DeleteAsync(int id)
