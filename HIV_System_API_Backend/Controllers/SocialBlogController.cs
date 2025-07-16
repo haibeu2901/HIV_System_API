@@ -86,13 +86,13 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpPut("UpdateBlog/{id}")]
+        [HttpPut("UpdateBlog/{blogId}")]
         [Authorize(Roles = "1,2,3,4,5")]
-        public async Task<ActionResult<BlogResponseDTO>> Update(int id, [FromBody] BlogUpdateRequestDTO request)
+        public async Task<ActionResult<BlogResponseDTO>> Update(int blogId, [FromBody] BlogUpdateRequestDTO request)
         {
             try
             {
-                var updated = await _service.UpdateAsync(id, request);
+                var updated = await _service.UpdateAsync(blogId, request);
                 return Ok(updated);
             }
             catch (KeyNotFoundException ex)
@@ -108,7 +108,7 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-        [HttpPut("UpdatePersonalBlog/{id}")]
+        [HttpPut("UpdatePersonalBlog/{blogId}")]
         [Authorize (Roles = "1,2,3,4,5")]
         public async Task<ActionResult<BlogResponseDTO>> UpdatePersonalBlog(int blogId, int authorId, [FromBody] BlogUpdateRequestDTO request)
         {

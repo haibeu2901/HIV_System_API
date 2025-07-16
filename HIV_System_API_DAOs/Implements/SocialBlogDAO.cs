@@ -1,4 +1,4 @@
-using HIV_System_API_BOs;
+﻿using HIV_System_API_BOs;
 using HIV_System_API_DAOs.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -56,7 +56,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             var existing = await _context.SocialBlogs.FindAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException($"Blog with ID {id} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy blog với ID {id} .");
 
             existing.Title = blog.Title;
             existing.Content = blog.Content;
@@ -71,7 +71,7 @@ namespace HIV_System_API_DAOs.Implements
         {
             var existing = await _context.SocialBlogs.FindAsync(blogId);
             if (existing == null || existing.AccId != authorId)
-                throw new KeyNotFoundException($"Blog with ID {blogId} not found or does not belong to author with ID {authorId}.");
+                throw new KeyNotFoundException($"Blog với ID {blogId} không tồn tại hoặc không phải của người dùng với ID {authorId}.");
             existing.Title = blog.Title;
             existing.Content = blog.Content;
             existing.IsAnonymous = blog.IsAnonymous;
