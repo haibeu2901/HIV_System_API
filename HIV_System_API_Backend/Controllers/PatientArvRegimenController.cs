@@ -445,6 +445,7 @@ namespace HIV_System_API_Backend.Controllers
                     $"Unexpected error creating regimen with medications: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
+
         [HttpPost("UpdatePatientArvRegimenStatus/{parId}")]
         [Authorize (Roles = "1,2,5")]
         public async Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenStatusAsync(int parId,PatientArvRegimenStatusRequestDTO request)
