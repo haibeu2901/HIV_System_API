@@ -8,8 +8,10 @@ namespace HIV_System_API_Services.Interfaces
     {
         Task<List<BlogResponseDTO>> GetAllAsync();
         Task<BlogResponseDTO?> GetByIdAsync(int id);
+        Task<List<BlogResponseDTO?>> GetByAuthorIdAsync(int authorId);
         Task<BlogResponseDTO> CreateAsync(BlogCreateRequestDTO request);
         Task<BlogResponseDTO> UpdateAsync(int id, BlogUpdateRequestDTO request);
+        Task<BlogResponseDTO> UpdatePersonalAsync(int blogId, int authorId, BlogUpdateRequestDTO request);
         Task<bool> DeleteAsync(int id);
         Task<BlogResponseDTO> UpdateBlogStatusAsync(int id, BlogVerificationRequestDTO request);
         Task<BlogResponseDTO> CreateDraftAsync(BlogCreateRequestDTO request);

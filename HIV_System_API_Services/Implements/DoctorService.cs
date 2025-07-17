@@ -23,7 +23,8 @@ namespace HIV_System_API_Services.Implements
 
         private Doctor MapToEntity(DoctorRequestDTO dto)
         {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto), "Yêu cầu DTO bác sĩ không được để trống.");
 
             return new Doctor
             {
@@ -37,7 +38,8 @@ namespace HIV_System_API_Services.Implements
 
         private DoctorResponseDTO MapToResponseDTO(Doctor doctor)
         {
-            if (doctor == null) throw new ArgumentNullException(nameof(doctor));
+            if (doctor == null)
+                throw new ArgumentNullException(nameof(doctor), "Thực thể bác sĩ không được để trống.");
 
             var workSchedules = doctor.DoctorWorkSchedules?
                 .Select(ws => new DoctorWorkScheduleResponseDTO
@@ -74,138 +76,222 @@ namespace HIV_System_API_Services.Implements
         public async Task<DoctorResponseDTO> CreateDoctorAsync(DoctorRequestDTO doctor)
         {
             if (doctor == null)
-                throw new ArgumentNullException(nameof(doctor));
+                throw new ArgumentNullException(nameof(doctor), "Yêu cầu DTO bác sĩ không được để trống.");
 
             // Validation: AccId must be positive
             if (doctor.AccId <= 0)
-                throw new ArgumentException("Account ID must be a positive integer.", nameof(doctor.AccId));
+                throw new ArgumentException("ID tài khoản không hợp lệ.", nameof(doctor.AccId));
 
             // Validation: Degree is required and should not be empty
             if (string.IsNullOrWhiteSpace(doctor.Degree))
-                throw new ArgumentException("Degree is required.", nameof(doctor.Degree));
+                throw new ArgumentException("Bằng cấp là bắt buộc.", nameof(doctor.Degree));
 
             // Validation: Bio is required and should not be empty
             if (string.IsNullOrWhiteSpace(doctor.Bio))
-                throw new ArgumentException("Bio is required.", nameof(doctor.Bio));
+                throw new ArgumentException("Tiểu sử là bắt buộc.", nameof(doctor.Bio));
 
             // Map DTO to entity
             var doctorEntity = MapToEntity(doctor);
 
-            // Create doctor in repository
-            var createdDoctor = await _doctorRepo.CreateDoctorAsync(doctorEntity);
+            try
+            {
+                // Create doctor in repository
+                var createdDoctor = await _doctorRepo.CreateDoctorAsync(doctorEntity);
 
-            // Fetch the full doctor entity with navigation properties (e.g., Acc)
-            var fullDoctor = await _doctorRepo.GetDoctorByIdAsync(createdDoctor.DctId);
-            if (fullDoctor == null)
-                throw new InvalidOperationException("Failed to retrieve the created doctor.");
+                // Fetch the full doctor entity with navigation properties (e.g., Acc)
+                var fullDoctor = await _doctorRepo.GetDoctorByIdAsync(createdDoctor.DctId);
+                if (fullDoctor == null)
+                    throw new InvalidOperationException("Không thể truy xuất thông tin bác sĩ vừa tạo.");
 
-            // Map to response DTO
-            return MapToResponseDTO(fullDoctor);
+                // Map to response DTO
+                return MapToResponseDTO(fullDoctor);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Không thể tạo mới bác sĩ.", ex);
+            }
         }
 
         public async Task<bool> DeleteDoctorAsync(int id)
         {
-            // Call the repository to delete the doctor by id
-            return await _doctorRepo.DeleteDoctorAsync(id);
+            if (id <= 0)
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(id));
+
+            try
+            {
+                var result = await _doctorRepo.DeleteDoctorAsync(id);
+                if (!result)
+                    throw new InvalidOperationException($"Không tìm thấy bác sĩ với ID {id} để xóa.");
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Không thể xóa bác sĩ với ID {id}.", ex);
+            }
         }
 
         public async Task<List<DoctorResponseDTO>> GetAllDoctorsAsync()
         {
-            var doctors = await _doctorRepo.GetAllDoctorsAsync();
-            var result = new List<DoctorResponseDTO>();
-
-            foreach (var doctor in doctors)
+            try
             {
-                // Defensive: skip if Acc is null (should not happen if DB is correct)
-                if (doctor.Acc == null)
-                    continue;
+                var doctors = await _doctorRepo.GetAllDoctorsAsync();
+                if (doctors == null || !doctors.Any())
+                    throw new InvalidOperationException("Không tìm thấy bác sĩ nào.");
 
-                result.Add(MapToResponseDTO(doctor));
+                var result = new List<DoctorResponseDTO>();
+
+                foreach (var doctor in doctors)
+                {
+                    // Defensive: skip if Acc is null (should not happen if DB is correct)
+                    if (doctor.Acc == null)
+                        continue;
+
+                    result.Add(MapToResponseDTO(doctor));
+                }
+
+                return result;
             }
-
-            return result;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Không thể truy xuất danh sách bác sĩ.", ex);
+            }
         }
 
         public async Task<DoctorResponseDTO?> GetDoctorByIdAsync(int id)
         {
-            // Fetch the doctor entity by id from the repository
-            var doctor = await _doctorRepo.GetDoctorByIdAsync(id);
+            if (id <= 0)
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(id));
 
-            // If not found or Acc navigation property is null, return null
-            if (doctor == null || doctor.Acc == null)
-                return null;
+            try
+            {
+                // Fetch the doctor entity by id from the repository
+                var doctor = await _doctorRepo.GetDoctorByIdAsync(id);
 
-            // Map to response DTO
-            return MapToResponseDTO(doctor);
+                // If not found or Acc navigation property is null, throw exception
+                if (doctor == null || doctor.Acc == null)
+                    throw new KeyNotFoundException($"Không tìm thấy bác sĩ với ID {id}.");
+
+                // Map to response DTO
+                return MapToResponseDTO(doctor);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Không thể truy xuất bác sĩ với ID {id}.", ex);
+            }
         }
 
         public async Task<DoctorResponseDTO?> UpdateDoctorAsync(int id, DoctorRequestDTO doctor)
         {
-            if (doctor == null) throw new ArgumentNullException(nameof(doctor));
+            if (id <= 0)
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(id));
 
-            // Fetch the existing doctor entity
-            var existingDoctor = await _doctorRepo.GetDoctorByIdAsync(id);
-            if (existingDoctor == null)
-                return null;
+            if (doctor == null)
+                throw new ArgumentNullException(nameof(doctor), "Yêu cầu DTO bác sĩ không được để trống.");
 
-            // Update properties
-            existingDoctor.Degree = doctor.Degree;
-            existingDoctor.Bio = doctor.Bio;
-            existingDoctor.AccId = doctor.AccId;
+            // Validation: AccId must be positive
+            if (doctor.AccId <= 0)
+                throw new ArgumentException("ID tài khoản không hợp lệ.", nameof(doctor.AccId));
 
-            // Update in repository
-            var updatedDoctor = await _doctorRepo.UpdateDoctorAsync(id, existingDoctor);
-            if (updatedDoctor == null)
-                return null;
+            // Validation: Degree is required and should not be empty
+            if (string.IsNullOrWhiteSpace(doctor.Degree))
+                throw new ArgumentException("Bằng cấp là bắt buộc.", nameof(doctor.Degree));
 
-            // Fetch the full doctor entity with navigation properties (e.g., Acc)
-            var fullDoctor = await _doctorRepo.GetDoctorByIdAsync(updatedDoctor.DctId);
-            if (fullDoctor == null || fullDoctor.Acc == null)
-                return null;
+            // Validation: Bio is required and should not be empty
+            if (string.IsNullOrWhiteSpace(doctor.Bio))
+                throw new ArgumentException("Tiểu sử là bắt buộc.", nameof(doctor.Bio));
 
-            // Map to response DTO
-            return MapToResponseDTO(fullDoctor);
+            try
+            {
+                // Fetch the existing doctor entity
+                var existingDoctor = await _doctorRepo.GetDoctorByIdAsync(id);
+                if (existingDoctor == null)
+                    throw new KeyNotFoundException($"Không tìm thấy bác sĩ với ID {id}.");
+
+                // Update properties
+                existingDoctor.Degree = doctor.Degree;
+                existingDoctor.Bio = doctor.Bio;
+                existingDoctor.AccId = doctor.AccId;
+
+                // Update in repository
+                var updatedDoctor = await _doctorRepo.UpdateDoctorAsync(id, existingDoctor);
+                if (updatedDoctor == null)
+                    throw new InvalidOperationException($"Không thể cập nhật bác sĩ với ID {id}.");
+
+                // Fetch the full doctor entity with navigation properties (e.g., Acc)
+                var fullDoctor = await _doctorRepo.GetDoctorByIdAsync(updatedDoctor.DctId);
+                if (fullDoctor == null || fullDoctor.Acc == null)
+                    throw new InvalidOperationException($"Không thể truy xuất thông tin bác sĩ vừa cập nhật với ID {id}.");
+
+                // Map to response DTO
+                return MapToResponseDTO(fullDoctor);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Không thể cập nhật bác sĩ với ID {id}.", ex);
+            }
         }
 
         public async Task<List<DoctorResponseDTO>> GetDoctorsByDateAndTimeAsync(DateOnly apmtDate, TimeOnly apmTime)
         {
             // Validation: Ensure date is not default
             if (apmtDate == default)
-                throw new ArgumentException("Appointment date is required.", nameof(apmtDate));
+                throw new ArgumentException("Ngày cuộc hẹn là bắt buộc.", nameof(apmtDate));
 
             // Validation: Ensure time is not default
             if (apmTime == default)
-                throw new ArgumentException("Appointment time is required.", nameof(apmTime));
+                throw new ArgumentException("Thời gian cuộc hẹn là bắt buộc.", nameof(apmTime));
 
-            var doctors = await _doctorRepo.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
-            var result = new List<DoctorResponseDTO>();
-
-            foreach (var doctor in doctors)
+            try
             {
-                // Defensive: skip if Acc is null (should not happen if DB is correct)
-                if (doctor.Acc == null)
-                    continue;
+                var doctors = await _doctorRepo.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
+                if (doctors == null || !doctors.Any())
+                    throw new InvalidOperationException($"Không tìm thấy bác sĩ nào phù hợp với ngày {apmtDate} và thời gian {apmTime}.");
 
-                result.Add(MapToResponseDTO(doctor));
+                var result = new List<DoctorResponseDTO>();
+
+                foreach (var doctor in doctors)
+                {
+                    // Defensive: skip if Acc is null (should not happen if DB is correct)
+                    if (doctor.Acc == null)
+                        continue;
+
+                    result.Add(MapToResponseDTO(doctor));
+                }
+
+                return result;
             }
-
-            return result;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Không thể truy xuất danh sách bác sĩ cho ngày {apmtDate} và thời gian {apmTime}.", ex);
+            }
         }
 
         public async Task<DoctorProfileResponse?> GetDoctorProfileAsync(int id)
         {
-            var doctor = await _doctorRepo.GetDoctorByIdAsync(id);
-            if (doctor == null || doctor.Acc == null)
-                return null;
-            return new DoctorProfileResponse
+            if (id <= 0)
+                throw new ArgumentException("ID bác sĩ không hợp lệ.", nameof(id));
+
+            try
             {
-                Degree = doctor.Degree,
-                Bio = doctor.Bio,
-                Gender = doctor.Acc.Gender,
-                Email = doctor.Acc.Email,
-                Fullname = doctor.Acc.Fullname,
-                Dob = doctor.Acc.Dob
-            };
+                var doctor = await _doctorRepo.GetDoctorByIdAsync(id);
+                if (doctor == null || doctor.Acc == null)
+                    throw new KeyNotFoundException($"Không tìm thấy bác sĩ với ID {id}.");
+
+                return new DoctorProfileResponse
+                {
+                    Degree = doctor.Degree,
+                    Bio = doctor.Bio,
+                    Gender = doctor.Acc.Gender,
+                    Email = doctor.Acc.Email,
+                    Fullname = doctor.Acc.Fullname,
+                    Dob = doctor.Acc.Dob
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Không thể truy xuất hồ sơ bác sĩ với ID {id}.", ex);
+            }
         }
     }
 }

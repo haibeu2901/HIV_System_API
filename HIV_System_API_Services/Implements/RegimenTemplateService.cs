@@ -78,13 +78,13 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(regimenTemplate));
 
             if (string.IsNullOrWhiteSpace(regimenTemplate.Description))
-                throw new ArgumentException("Description is required.", nameof(regimenTemplate.Description));
+                throw new ArgumentException("Mô tả là bắt buộc.", nameof(regimenTemplate.Description));
 
             if (regimenTemplate.Level == null)
-                throw new ArgumentException("Level is required.", nameof(regimenTemplate.Level));
+                throw new ArgumentException("Cấp độ là bắt buộc.", nameof(regimenTemplate.Level));
 
             if (regimenTemplate.Duration == null)
-                throw new ArgumentException("Duration is required.", nameof(regimenTemplate.Duration));
+                throw new ArgumentException("Thời gian là bắt buộc.", nameof(regimenTemplate.Duration));
 
             // Map DTO to Entity
             var entity = MapToEntity(regimenTemplate);
@@ -104,12 +104,12 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation
             if (id <= 0)
-                throw new ArgumentException("Id must be greater than zero.", nameof(id));
+                throw new ArgumentException("Id phải lớn hơn 0.", nameof(id));
 
             // Check if the regimen template exists
             var existing = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException($"Regimen template with id {id} not found.");
+                throw new KeyNotFoundException($"Mẫu phác đồ với id {id} không tìm thấy.");
 
             // Delete the regimen template
             return await _regimenTemplateRepo.DeleteRegimenTemplateAsync(id);
@@ -122,7 +122,7 @@ namespace HIV_System_API_Services.Implements
 
             // Validation: Check if the result is null
             if (entities == null)
-                throw new InvalidOperationException("Failed to retrieve regimen templates.");
+                throw new InvalidOperationException("Không thể lấy danh sách mẫu phác đồ.");
 
             // Map entities to response DTOs
             var responseList = entities
@@ -137,7 +137,7 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation
             if (id <= 0)
-                throw new ArgumentException("Id must be greater than zero.", nameof(id));
+                throw new ArgumentException("Id phải lớn hơn 0.", nameof(id));
 
             // Retrieve the regimen template from the repository
             var entity = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(id);
@@ -154,14 +154,14 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation
             if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException("Description must not be null or empty.", nameof(description));
+                throw new ArgumentException("Mô tả không được null hoặc rỗng.", nameof(description));
 
             // Retrieve matching regimen templates from the repository
             var entities = await _regimenTemplateRepo.GetRegimenTemplatesByDescriptionAsync(description);
 
             // Validation: Check if the result is null
             if (entities == null)
-                throw new InvalidOperationException("Failed to retrieve regimen templates by description.");
+                throw new InvalidOperationException("Không thể lấy mẫu phác đồ theo mô tả.");
 
             // Map entities to response DTOs
             var responseList = entities
@@ -176,14 +176,14 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation
             if (level == 0)
-                throw new ArgumentException("Level must be greater than zero.", nameof(level));
+                throw new ArgumentException("Cấp độ phải lớn hơn 0.", nameof(level));
 
             // Retrieve matching regimen templates from the repository
             var entities = await _regimenTemplateRepo.GetRegimenTemplatesByLevelAsync(level);
 
             // Validation: Check if the result is null
             if (entities == null)
-                throw new InvalidOperationException("Failed to retrieve regimen templates by level.");
+                throw new InvalidOperationException("Không thể lấy mẫu phác đồ theo cấp độ.");
 
             // Map entities to response DTOs
             var responseList = entities
@@ -198,24 +198,24 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation
             if (id <= 0)
-                throw new ArgumentException("Id must be greater than zero.", nameof(id));
+                throw new ArgumentException("Id phải lớn hơn 0.", nameof(id));
 
             if (regimenTemplate == null)
                 throw new ArgumentNullException(nameof(regimenTemplate));
 
             if (string.IsNullOrWhiteSpace(regimenTemplate.Description))
-                throw new ArgumentException("Description is required.", nameof(regimenTemplate.Description));
+                throw new ArgumentException("Mô tả là bắt buộc.", nameof(regimenTemplate.Description));
 
             if (regimenTemplate.Level == null)
-                throw new ArgumentException("Level is required.", nameof(regimenTemplate.Level));
+                throw new ArgumentException("Cấp độ là bắt buộc.", nameof(regimenTemplate.Level));
 
             if (regimenTemplate.Duration == null)
-                throw new ArgumentException("Duration is required.", nameof(regimenTemplate.Duration));
+                throw new ArgumentException("Thời gian là bắt buộc.", nameof(regimenTemplate.Duration));
 
             // Retrieve existing entity
             var existing = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException($"Regimen template with id {id} not found.");
+                throw new KeyNotFoundException($"Mẫu phác đồ với id {id} không tìm thấy.");
 
             // Update fields
             existing.Description = regimenTemplate.Description;
