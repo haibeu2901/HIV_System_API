@@ -190,7 +190,7 @@ namespace HIV_System_API_Services.Implements
             }
 
             if (testResult == null)
-                throw new KeyNotFoundException($"Kết quả xét nghiệm với ID {id} không tồn tại.");
+                throw new KeyNotFoundException($"Kết quả xét nghiệm với ID {id} không tìm thấy.");
 
             return MapToResponse(testResult);
         }
@@ -205,7 +205,7 @@ namespace HIV_System_API_Services.Implements
 
             var existing = await _testResultRepo.GetTestResultById(id);
             if (existing == null)
-                throw new KeyNotFoundException($"Kết quả xét nghiệm với ID {id} không tồn tại.");
+                throw new KeyNotFoundException($"Kết quả xét nghiệm với ID {id} không tìm thấy.");
 
             if (testResult.TestDate.HasValue)
                 existing.TestDate = testResult.TestDate.Value;
@@ -216,7 +216,7 @@ namespace HIV_System_API_Services.Implements
 
             var updated = await _testResultRepo.UpdateTestResult(id, existing);
             if (!updated)
-                throw new Exception("Cập nhập thất bại.");
+                throw new Exception("Cập nhật thất bại.");
 
             var updatedResult = await _testResultRepo.GetTestResultById(id);
             return MapToResponse(updatedResult!);

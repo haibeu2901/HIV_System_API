@@ -44,7 +44,31 @@ function renderAppointments(appointments) {
             </tr>
         </thead>
         <tbody>
-            ${appointments.map((apmt, idx) => `
+            ${appointments.map((apmt, idx) => {
+                let actionButtons = '';
+                // Staff: Only Accept and Reject
+                if (userRoleName === 'staff') {
+                    if (apmt.apmStatus === 1) {
+                        actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Accept</button>`;
+                    }
+                    if (apmt.apmStatus !== 4 && apmt.apmStatus !== 5) {
+                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}">Reject</button>`;
+                    }
+                }
+                // Doctor: Accept, Modify, Reject, Complete
+                else if (userRoleName === 'doctor') {
+                    if (apmt.apmStatus === 1) {
+                        actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Accept</button>`;
+                        actionButtons += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Modify</button>`;
+                    }
+                    if (apmt.apmStatus !== 4 && apmt.apmStatus !== 5) {
+                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}">Reject</button>`;
+                    }
+                    if (apmt.apmStatus === 2 || apmt.apmStatus === 3) {
+                        actionButtons += `<button class="button-complete" data-complete-id="${apmt.appointmentId}">Complete</button>`;
+                    }
+                }
+                return `
                 <tr data-apmt-id="${apmt.appointmentId}" data-apmt-date="${apmt.apmtDate}" data-apmt-time="${apmt.apmTime}" data-apmt-notes="${apmt.notes || ''}">
                     <td>${idx + 1}</td>
                     <td>${apmt.patientName}</td>
@@ -52,20 +76,10 @@ function renderAppointments(appointments) {
                     <td>${apmt.apmTime.slice(0,5)}</td>
                     <td>${apmt.notes || ''}</td>
                     <td class="status status-${apmt.apmStatus}">${appointmentStatusMap[apmt.apmStatus] || 'Không rõ'}</td>
-                    <td>
-                        ${apmt.apmStatus === 1 ? `
-                            <button class="button-accept" data-accept-id="${apmt.appointmentId}">Accept</button>
-                            <button class="button-modify" data-modify-id="${apmt.appointmentId}">Modify</button>
-                        ` : ''}
-                        ${(apmt.apmStatus !== 4 && apmt.apmStatus !== 5) ? `
-                            <button class="button-reject" data-reject-id="${apmt.appointmentId}">Reject</button>
-                        ` : ''}
-                        ${(apmt.apmStatus === 2 || apmt.apmStatus === 3) ? `
-                            <button class="button-complete" data-complete-id="${apmt.appointmentId}">Complete</button>
-                        ` : ''}
-                    </td>
+                    <td>${actionButtons}</td>
                 </tr>
-            `).join('')}
+                `;
+            }).join('')}
         </tbody>
     </table>
     <div id="appointment-message" style="margin-top:10px;"></div>`;
@@ -179,114 +193,116 @@ window.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // Modify button logic
-    document.querySelectorAll('.button-modify').forEach(btn => {
-        btn.onclick = async function() {
-            const apmtId = this.getAttribute('data-modify-id');
-            const row = this.closest('tr');
-            // Prefill modal
-            document.getElementById('modifyDate').value = row.getAttribute('data-apmt-date');
-            document.getElementById('modifyNotes').value = row.getAttribute('data-apmt-notes');
-            document.getElementById('modifyAppointmentModal').style.display = 'block';
-            document.getElementById('modifyAppointmentForm').setAttribute('data-apmt-id', apmtId);
-            // Fetch available times for doctor
-            const accId = localStorage.getItem('accId');
-            let timeSelect = document.getElementById('modifyTime');
-            timeSelect.innerHTML = '';
-            try {
-                const wsRes = await fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedulesByDoctorId/${accId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (wsRes.ok) {
-                    const schedules = await wsRes.json();
-                    // Flatten all available times
-                    let times = [];
-                    schedules.forEach(sch => {
-                        if (sch.startTime && sch.endTime) {
-                            // Assume times are in HH:mm:ss format
-                            let start = sch.startTime.slice(0,5);
-                            let end = sch.endTime.slice(0,5);
-                            // Add every 30 min slot between start and end
-                            let [h1, m1] = start.split(':').map(Number);
-                            let [h2, m2] = end.split(':').map(Number);
-                            let t1 = h1 * 60 + m1;
-                            let t2 = h2 * 60 + m2;
-                            for (let t = t1; t <= t2; t += 30) {
-                                let h = Math.floor(t/60).toString().padStart(2,'0');
-                                let m = (t%60).toString().padStart(2,'0');
-                                times.push(`${h}:${m}`);
+    // Only doctors can modify appointments
+    if (userRoleName === 'doctor') {
+        // Modify button logic
+        document.querySelectorAll('.button-modify').forEach(btn => {
+            btn.onclick = async function() {
+                const apmtId = this.getAttribute('data-modify-id');
+                const row = this.closest('tr');
+                // Prefill modal
+                document.getElementById('modifyDate').value = row.getAttribute('data-apmt-date');
+                document.getElementById('modifyNotes').value = row.getAttribute('data-apmt-notes');
+                document.getElementById('modifyAppointmentModal').style.display = 'block';
+                document.getElementById('modifyAppointmentForm').setAttribute('data-apmt-id', apmtId);
+                // Fetch available times for doctor
+                const accId = localStorage.getItem('accId');
+                let timeSelect = document.getElementById('modifyTime');
+                timeSelect.innerHTML = '';
+                try {
+                    const wsRes = await fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedulesByDoctorId/${accId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (wsRes.ok) {
+                        const schedules = await wsRes.json();
+                        // Flatten all available times
+                        let times = [];
+                        schedules.forEach(sch => {
+                            if (sch.startTime && sch.endTime) {
+                                // Assume times are in HH:mm:ss format
+                                let start = sch.startTime.slice(0,5);
+                                let end = sch.endTime.slice(0,5);
+                                // Add every 30 min slot between start and end
+                                let [h1, m1] = start.split(':').map(Number);
+                                let [h2, m2] = end.split(':').map(Number);
+                                let t1 = h1 * 60 + m1;
+                                let t2 = h2 * 60 + m2;
+                                for (let t = t1; t <= t2; t += 30) {
+                                    let h = Math.floor(t/60).toString().padStart(2,'0');
+                                    let m = (t%60).toString().padStart(2,'0');
+                                    times.push(`${h}:${m}`);
+                                }
                             }
-                        }
-                    });
-                    // Remove duplicates
-                    times = [...new Set(times)];
-                    times.forEach(time => {
-                        let opt = document.createElement('option');
-                        opt.value = time;
-                        opt.textContent = time;
-                        timeSelect.appendChild(opt);
-                    });
+                        });
+                        // Remove duplicates
+                        times = [...new Set(times)];
+                        times.forEach(time => {
+                            let opt = document.createElement('option');
+                            opt.value = time;
+                            opt.textContent = time;
+                            timeSelect.appendChild(opt);
+                        });
+                    }
+                } catch (err) {
+                    timeSelect.innerHTML = '<option value="">No available times</option>';
                 }
+            };
+        });
+
+        // Modal close/cancel for modify
+        document.getElementById('closeModifyModal').onclick = closeModifyModal;
+        document.getElementById('cancelModifyBtn').onclick = closeModifyModal;
+        function closeModifyModal() {
+            document.getElementById('modifyAppointmentModal').style.display = 'none';
+            document.getElementById('modifyAppointmentForm').reset();
+            document.getElementById('modifyTime').innerHTML = '';
+        }
+
+        // Modal submit for modify
+        document.getElementById('modifyAppointmentForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const apmtId = this.getAttribute('data-apmt-id');
+            const date = document.getElementById('modifyDate').value;
+            let time = document.getElementById('modifyTime').value;
+            const notes = document.getElementById('modifyNotes').value;
+            // Validate date (not in the past)
+            const today = new Date();
+            const selDate = new Date(date);
+            today.setHours(0,0,0,0);
+            selDate.setHours(0,0,0,0);
+            if (selDate < today) {
+                alert('Appointment date cannot be in the past.');
+                return;
+            }
+            if (!time) {
+                alert('Please select a valid time.');
+                return;
+            }
+            // Ensure time is in HH:mm:ss format
+            if (time.length === 5) time += ':00';
+            try {
+                const res = await fetch(`https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${apmtId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appointmentDate: date,
+                        appointmentTime: time,
+                        notes
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to update appointment');
+                setMessage('Appointment updated successfully!', true);
+                closeModifyModal();
+                let appointments = await fetchAppointments();
+                renderAppointments(appointments);
             } catch (err) {
-                timeSelect.innerHTML = '<option value="">No available times</option>';
+                setMessage('Error updating appointment.', false);
             }
         };
-    });
-
-    // Modal close/cancel
-    document.getElementById('closeModifyModal').onclick = closeModifyModal;
-    document.getElementById('cancelModifyBtn').onclick = closeModifyModal;
-    function closeModifyModal() {
-        document.getElementById('modifyAppointmentModal').style.display = 'none';
-        document.getElementById('modifyAppointmentForm').reset();
-        document.getElementById('modifyDateMessage').textContent = '';
-        document.getElementById('modifyTime').innerHTML = '';
     }
-
-    // Modal submit
-    document.getElementById('modifyAppointmentForm').onsubmit = async function(e) {
-        e.preventDefault();
-        const apmtId = this.getAttribute('data-apmt-id');
-        const date = document.getElementById('modifyDate').value;
-        let time = document.getElementById('modifyTime').value;
-        const notes = document.getElementById('modifyNotes').value;
-        // Validate date (not in the past)
-        const today = new Date();
-        const selDate = new Date(date);
-        today.setHours(0,0,0,0);
-        selDate.setHours(0,0,0,0);
-        if (selDate < today) {
-            alert('Appointment date cannot be in the past.');
-            return;
-        }
-        if (!time) {
-            alert('Please select a valid time.');
-            return;
-        }
-        // Ensure time is in HH:mm:ss format
-        if (time.length === 5) time += ':00';
-        try {
-            const res = await fetch(`https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${apmtId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    appointmentDate: date,
-                    appointmentTime: time,
-                    notes
-                })
-            });
-            if (!res.ok) throw new Error('Failed to update appointment');
-            setMessage('Appointment updated successfully!', true);
-            closeModifyModal();
-            let appointments = await fetchAppointments();
-            renderAppointments(appointments);
-        } catch (err) {
-            setMessage('Error updating appointment.', false);
-        }
-    };
 });
 
 function setMessage(msg, success) {
@@ -294,3 +310,6 @@ function setMessage(msg, success) {
     msgDiv.textContent = msg;
     msgDiv.style.color = success ? '#27ae60' : '#c0392b';
 }
+// Get user role utilities
+const userRoleId = window.roleUtils && window.roleUtils.getUserRole ? window.roleUtils.getUserRole() : null;
+const userRoleName = (window.roleUtils && window.roleUtils.ROLE_NAMES && userRoleId) ? window.roleUtils.ROLE_NAMES[userRoleId] : 'guest';

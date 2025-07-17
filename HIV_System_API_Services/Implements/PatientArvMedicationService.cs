@@ -1,4 +1,4 @@
-using HIV_System_API_BOs;
+﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.ArvMedicationDetailDTO;
 using HIV_System_API_DTOs.PatientArvMedicationDTO;
 using HIV_System_API_Repositories.Implements;
@@ -30,13 +30,13 @@ namespace HIV_System_API_Services.Implements
         {
             if (parId <= 0)
             {
-                throw new ArgumentException("Patient ARV Regimen ID must be greater than 0.", nameof(parId));
+                throw new ArgumentException("ID phác đồ ARV của bệnh nhân phải lớn hơn 0.", nameof(parId));
             }
 
             var exists = await _context.PatientArvRegimen.AnyAsync(par => par.ParId == parId);
             if (!exists)
             {
-                throw new InvalidOperationException($"Patient ARV Regimen with ID {parId} does not exist.");
+                throw new InvalidOperationException($"Phác đồ ARV của bệnh nhân với ID {parId} không tồn tại.");
             }
         }
 
@@ -44,13 +44,13 @@ namespace HIV_System_API_Services.Implements
         {
             if (amdId <= 0)
             {
-                throw new ArgumentException("ARV Medication Detail ID must be greater than 0.", nameof(amdId));
+                throw new ArgumentException("ID chi tiết thuốc ARV phải lớn hơn 0.", nameof(amdId));
             }
 
             var exists = await _context.ArvMedicationDetails.AnyAsync(amd => amd.AmdId == amdId);
             if (!exists)
             {
-                throw new InvalidOperationException($"ARV Medication Detail with ID {amdId} does not exist.");
+                throw new InvalidOperationException($"Chi tiết thuốc ARV với ID {amdId} không tồn tại.");
             }
         }
 
@@ -58,7 +58,7 @@ namespace HIV_System_API_Services.Implements
         {
             if (!quantity.HasValue || quantity.Value <= 0)
             {
-                throw new ArgumentException("Quantity must be greater than 0.");
+                throw new ArgumentException("Số lượng phải lớn hơn 0.");
             }
         }
 
@@ -66,7 +66,7 @@ namespace HIV_System_API_Services.Implements
         {
             if (id <= 0)
             {
-                throw new ArgumentException($"{paramName} must be greater than 0.", paramName);
+                throw new ArgumentException($"{paramName} phải lớn hơn 0.", paramName);
             }
         }
 
@@ -79,12 +79,12 @@ namespace HIV_System_API_Services.Implements
 
             if (requestDTO.PatientArvRegId <= 0)
             {
-                throw new ArgumentException("Patient ARV Regimen ID must be greater than 0.", nameof(requestDTO.PatientArvRegId));
+                throw new ArgumentException("ID phác đồ ARV của bệnh nhân phải lớn hơn 0.", nameof(requestDTO.PatientArvRegId));
             }
 
             if (requestDTO.ArvMedDetailId <= 0)
             {
-                throw new ArgumentException("ARV Medication Detail ID must be greater than 0.", nameof(requestDTO.ArvMedDetailId));
+                throw new ArgumentException("ID chi tiết thuốc ARV phải lớn hơn 0.", nameof(requestDTO.ArvMedDetailId));
             }
 
             ValidateQuantity(requestDTO.Quantity);
@@ -103,7 +103,7 @@ namespace HIV_System_API_Services.Implements
             var exists = await query.AnyAsync();
             if (exists)
             {
-                throw new InvalidOperationException($"Patient ARV Medication already exists for Regimen ID {parId} and Medication ID {amdId}.");
+                throw new InvalidOperationException($"Thuốc ARV của bệnh nhân đã tồn tại cho ID phác đồ {parId} và ID thuốc {amdId}.");
             }
         }
 
@@ -172,11 +172,11 @@ namespace HIV_System_API_Services.Implements
             }
             catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException($"Database error while creating ARV medication: {ex.InnerException?.Message ?? ex.Message}");
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi tạo thuốc ARV: {ex.InnerException?.Message ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error creating ARV medication: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi tạo thuốc ARV: {ex.InnerException}");
             }
         }
 
@@ -190,7 +190,7 @@ namespace HIV_System_API_Services.Implements
                 var existingEntity = await _patientArvMedicationRepo.GetPatientArvMedicationByIdAsync(pamId);
                 if (existingEntity == null)
                 {
-                    throw new InvalidOperationException($"Patient ARV Medication with ID {pamId} does not exist.");
+                    throw new InvalidOperationException($"Thuốc ARV của bệnh nhân với ID {pamId} không tồn tại.");
                 }
 
                 return await _patientArvMedicationRepo.DeletePatientArvMedicationAsync(pamId);
@@ -205,7 +205,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error deleting ARV medication: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi xóa thuốc ARV: {ex.InnerException}");
             }
         }
 
@@ -218,7 +218,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving all ARV medications: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy tất cả thuốc ARV: {ex.InnerException}");
             }
         }
 
@@ -237,7 +237,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error retrieving ARV medication: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi khi lấy thuốc ARV: {ex.InnerException}");
             }
         }
 
@@ -252,7 +252,7 @@ namespace HIV_System_API_Services.Implements
                 var existingEntity = await _patientArvMedicationRepo.GetPatientArvMedicationByIdAsync(pamId);
                 if (existingEntity == null)
                 {
-                    throw new InvalidOperationException($"Patient ARV Medication with ID {pamId} does not exist.");
+                    throw new InvalidOperationException($"Thuốc ARV của bệnh nhân với ID {pamId} không tồn tại.");
                 }
 
                 // Validate foreign keys exist
@@ -277,11 +277,11 @@ namespace HIV_System_API_Services.Implements
             }
             catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException($"Database error while updating ARV medication: {ex.InnerException?.Message ?? ex.Message}");
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi cập nhật thuốc ARV: {ex.InnerException?.Message ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error updating ARV medication: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi cập nhật thuốc ARV: {ex.InnerException}");
             }
         }
 
@@ -304,11 +304,11 @@ namespace HIV_System_API_Services.Implements
             }
             catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException($"Database error while updating ARV medication: {ex.InnerException?.Message ?? ex.Message}");
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi lấy thuốc ARV: {ex.InnerException?.Message ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error updating ARV medication: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi lấy thuốc ARV: {ex.InnerException}");
             }
         }
 
@@ -331,11 +331,11 @@ namespace HIV_System_API_Services.Implements
             }
             catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException($"Database error while updating ARV medication: {ex.InnerException?.Message ?? ex.Message}");
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi lấy thuốc ARV: {ex.InnerException?.Message ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Unexpected error updating ARV medication: {ex.InnerException}");
+                throw new InvalidOperationException($"Lỗi không mong muốn khi lấy thuốc ARV: {ex.InnerException}");
             }
         }
     }
