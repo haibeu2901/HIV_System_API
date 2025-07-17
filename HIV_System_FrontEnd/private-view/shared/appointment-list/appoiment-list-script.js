@@ -1,14 +1,24 @@
 // Get token from localStorage
 const token = localStorage.getItem('token');
 
-// Appointment status mapping
+// Appointment status mapping (add virtual status for frontend display)
 const appointmentStatusMap = {
-  1: "Pending",
-  2: "Scheduled",
-  3: "Rescheduled",
-  4: "Cancelled",
-  5: "Completed"
+  1: "Chờ xác nhận", // Pending
+  2: "Đã xác nhận",   // Scheduled
+  3: "Đã xác nhận lại", // Rescheduled
+  4: "Đã hủy",        // Cancelled
+  5: "Đã hoàn thành", // Completed
+  6: "Đã từ chối"     // Rejected (virtual, frontend only)
 };
+
+// Helper to determine display status (virtual rejected for pending->cancelled)
+function getDisplayStatus(apmt) {
+  // If appointment was pending and then rejected (cancelled), mark as rejected in UI
+  if (apmt.apmStatus === 4 && apmt._wasPending) {
+    return { label: appointmentStatusMap[6], class: 'status-rejected' };
+  }
+  return { label: appointmentStatusMap[apmt.apmStatus] || 'Không rõ', class: `status-${apmt.apmStatus}` };
+}
 
 async function fetchAppointments() {
     try {
@@ -49,25 +59,30 @@ function renderAppointments(appointments) {
                 // Staff: Only Accept and Reject
                 if (userRoleName === 'staff') {
                     if (apmt.apmStatus === 1) {
-                        actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Accept</button>`;
+                        actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Chấp nhận</button>`;
                     }
                     if (apmt.apmStatus !== 4 && apmt.apmStatus !== 5) {
-                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}">Reject</button>`;
+                        // Button label based on status
+                        let rejectLabel = (apmt.apmStatus === 1) ? 'Từ chối' : 'Hủy lịch';
+                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}" data-apmt-status="${apmt.apmStatus}">${rejectLabel}</button>`;
                     }
                 }
                 // Doctor: Accept, Modify, Reject, Complete
                 else if (userRoleName === 'doctor') {
                     if (apmt.apmStatus === 1) {
-                        actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Accept</button>`;
-                        actionButtons += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Modify</button>`;
+                        actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Chấp nhận</button>`;
+                        actionButtons += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Chỉnh sửa</button>`;
                     }
                     if (apmt.apmStatus !== 4 && apmt.apmStatus !== 5) {
-                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}">Reject</button>`;
+                        let rejectLabel = (apmt.apmStatus === 1) ? 'Từ chối' : 'Hủy lịch';
+                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}" data-apmt-status="${apmt.apmStatus}">${rejectLabel}</button>`;
                     }
                     if (apmt.apmStatus === 2 || apmt.apmStatus === 3) {
-                        actionButtons += `<button class="button-complete" data-complete-id="${apmt.appointmentId}">Complete</button>`;
+                        actionButtons += `<button class="button-complete" data-complete-id="${apmt.appointmentId}">Hoàn thành</button>`;
                     }
                 }
+                // Determine display status (virtual rejected)
+                let displayStatus = getDisplayStatus(apmt);
                 return `
                 <tr data-apmt-id="${apmt.appointmentId}" data-apmt-date="${apmt.apmtDate}" data-apmt-time="${apmt.apmTime}" data-apmt-notes="${apmt.notes || ''}">
                     <td>${idx + 1}</td>
@@ -75,7 +90,7 @@ function renderAppointments(appointments) {
                     <td>${apmt.apmtDate}</td>
                     <td>${apmt.apmTime.slice(0,5)}</td>
                     <td>${apmt.notes || ''}</td>
-                    <td class="status status-${apmt.apmStatus}">${appointmentStatusMap[apmt.apmStatus] || 'Không rõ'}</td>
+                    <td class="status ${displayStatus.class}">${displayStatus.label}</td>
                     <td>${actionButtons}</td>
                 </tr>
                 `;
@@ -94,12 +109,11 @@ function renderAppointments(appointments) {
                     method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (!res.ok) throw new Error('Failed to accept appointment');
-                // Update UI
+                if (!res.ok) throw new Error('Không thể chấp nhận lịch hẹn');
                 let appointments = await fetchAppointments();
                 renderAppointments(appointments);
             } catch (err) {
-                alert('Error accepting appointment.');
+                alert('Lỗi khi chấp nhận lịch hẹn.');
             }
         };
     });
@@ -108,20 +122,27 @@ function renderAppointments(appointments) {
     document.querySelectorAll('.button-reject').forEach(btn => {
         btn.onclick = async function() {
             const apmtId = this.getAttribute('data-reject-id');
-            if (!confirm('Are you sure you want to reject (cancel) this appointment?')) return;
+            const apmtStatus = parseInt(this.getAttribute('data-apmt-status'));
+            let confirmMsg = (apmtStatus === 1) ? 'Bạn có chắc muốn từ chối lịch hẹn này không?' : 'Bạn có chắc muốn hủy lịch hẹn này không?';
+            if (!confirm(confirmMsg)) return;
             this.disabled = true;
-            setMessage('Processing...', false);
+            setMessage('Đang xử lý...', false);
             try {
+                // Always send status=4 (cancelled) to backend
                 const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?id=${apmtId}&status=4`, {
                     method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (!res.ok) throw new Error('Failed to reject appointment');
-                setMessage('Appointment rejected successfully!', true);
+                if (!res.ok) throw new Error('Không thể từ chối/hủy lịch hẹn');
+                setMessage((apmtStatus === 1) ? 'Đã từ chối lịch hẹn!' : 'Đã hủy lịch hẹn!', true);
+                // Mark _wasPending for frontend display if needed
                 let appointments = await fetchAppointments();
+                if (apmtStatus === 1) {
+                  appointments = appointments.map(apmt => apmt.appointmentId == apmtId ? { ...apmt, _wasPending: true, apmStatus: 4 } : apmt);
+                }
                 renderAppointments(appointments);
             } catch (err) {
-                setMessage('Error rejecting appointment.', false);
+                setMessage('Lỗi khi từ chối/hủy lịch hẹn.', false);
                 this.disabled = false;
             }
         };
@@ -171,7 +192,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             const notes = document.getElementById('completeNotes') ? document.getElementById('completeNotes').value : '';
             const submitBtn = document.getElementById('submitCompleteBtn');
             if (submitBtn) submitBtn.disabled = true;
-            setMessage('Processing...', false);
+            setMessage('Đang xử lý...', false);
             try {
                 const res = await fetch(`https://localhost:7009/api/Appointment/CompleteAppointment?appointmentId=${apmtId}`, {
                     method: 'POST',
@@ -181,13 +202,13 @@ window.addEventListener('DOMContentLoaded', async () => {
                     },
                     body: JSON.stringify({ notes })
                 });
-                if (!res.ok) throw new Error('Failed to complete appointment');
-                setMessage('Appointment marked as completed!', true);
+                if (!res.ok) throw new Error('Không thể hoàn thành lịch hẹn');
+                setMessage('Lịch hẹn đã được đánh dấu hoàn thành!', true);
                 closeCompleteModal();
                 let appointments = await fetchAppointments();
                 renderAppointments(appointments);
             } catch (err) {
-                setMessage('Error completing appointment.', false);
+                setMessage('Lỗi khi hoàn thành lịch hẹn.', false);
                 if (submitBtn) submitBtn.disabled = false;
             }
         };
@@ -244,7 +265,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                         });
                     }
                 } catch (err) {
-                    timeSelect.innerHTML = '<option value="">No available times</option>';
+                    timeSelect.innerHTML = '<option value="">Không có thời gian khả dụng</option>';
                 }
             };
         });
@@ -271,11 +292,11 @@ window.addEventListener('DOMContentLoaded', async () => {
             today.setHours(0,0,0,0);
             selDate.setHours(0,0,0,0);
             if (selDate < today) {
-                alert('Appointment date cannot be in the past.');
+                alert('Ngày lịch hẹn không thể trong quá khứ.');
                 return;
             }
             if (!time) {
-                alert('Please select a valid time.');
+                alert('Vui lòng chọn một thời gian hợp lệ.');
                 return;
             }
             // Ensure time is in HH:mm:ss format
@@ -293,13 +314,13 @@ window.addEventListener('DOMContentLoaded', async () => {
                         notes
                     })
                 });
-                if (!res.ok) throw new Error('Failed to update appointment');
-                setMessage('Appointment updated successfully!', true);
+                if (!res.ok) throw new Error('Không thể cập nhật lịch hẹn');
+                setMessage('Lịch hẹn đã được cập nhật thành công!', true);
                 closeModifyModal();
                 let appointments = await fetchAppointments();
                 renderAppointments(appointments);
             } catch (err) {
-                setMessage('Error updating appointment.', false);
+                setMessage('Lỗi khi cập nhật lịch hẹn.', false);
             }
         };
     }

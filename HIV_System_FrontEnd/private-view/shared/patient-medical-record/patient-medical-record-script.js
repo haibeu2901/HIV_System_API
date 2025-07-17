@@ -272,10 +272,6 @@ function renderARVRegimens(regimens, medications) {
                         <div class="regimen-detail-value">${levelText}</div>
                     </div>
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">Total Cost</div>
-                        <div class="regimen-detail-value">${regimen.totalCost ? `$${regimen.totalCost.toLocaleString()}` : 'N/A'}</div>
-                    </div>
-                    <div class="regimen-detail">
                         <div class="regimen-detail-label">Created At</div>
                         <div class="regimen-detail-value">${new Date(regimen.createdAt).toLocaleDateString()}</div>
                     </div>
@@ -456,7 +452,6 @@ const regimenLevel = document.getElementById('regimenLevel');
 const regimenTemplate = document.getElementById('regimenTemplate');
 const regimenNotes = document.getElementById('regimenNotes');
 const regimenStartDate = document.getElementById('regimenStartDate');
-const regimenTotalCost = document.getElementById('regimenTotalCost');
 const medicationsTableBody = document.querySelector('#medicationsTable tbody');
 const addMedicationBtn = document.getElementById('addMedicationBtn');
 const regimenForm = document.getElementById('regimenForm');
@@ -481,7 +476,6 @@ regimenTemplate.onchange = function() {
     const template = JSON.parse(selected);
     // Fill form fields
     regimenNotes.value = template.description;
-    regimenTotalCost.value = '';
     regimenStartDate.value = new Date().toISOString().slice(0, 10);
     // Fill medications
     selectedTemplateMedications = template.medications.map(med => ({
@@ -602,7 +596,6 @@ regimenForm.onsubmit = async function(e) {
         startDate: regimenStartDate.value,
         endDate: null,
         regimenStatus: 1, // active
-        totalCost: 0 // Let backend calculate
     };
     // Call new API
     try {
@@ -623,6 +616,221 @@ regimenForm.onsubmit = async function(e) {
         alert('Error creating regimen.');
     }
 };
+
+// --- Create Test Result Modal Logic ---
+document.addEventListener('DOMContentLoaded', async function() {
+  // Determine if staff
+  let isStaff = false;
+  if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+    const roleId = window.roleUtils.getUserRole();
+    const roleName = window.roleUtils.ROLE_NAMES[roleId];
+    isStaff = (roleName === 'staff');
+  }
+  // Show button for staff only
+  if (isStaff) {
+    document.getElementById('createTestResultContainer').style.display = '';
+  }
+
+  // Get pmrId (from loaded data or fetch)
+  let pmrId = null;
+  let patientId = null;
+  if (typeof getPatientIdFromUrl === 'function') {
+    patientId = getPatientIdFromUrl();
+    if (!patientId) {
+      alert('Không tìm thấy bệnh nhân. Vui lòng truy cập từ danh sách bệnh nhân.');
+      return;
+    }
+    // Try to fetch MR ID
+    try {
+      const mrIdResp = await fetchPatientMRId(patientId);
+      if (mrIdResp) {
+        pmrId = mrIdResp.patientMedicalRecordId || mrIdResp.pmrId;
+      }
+    } catch {}
+  }
+  // If pmrId is still not found, show error and do not allow modal open
+  if (!pmrId) {
+    document.getElementById('createTestResultContainer').style.display = 'none';
+    alert('Không tìm thấy hồ sơ bệnh án cho bệnh nhân này.');
+    return;
+  }
+
+  // Modal elements
+  const openBtn = document.getElementById('openTestResultModalBtn');
+  const modal = document.getElementById('testResultModal');
+  const closeBtn = document.getElementById('closeTestResultModalBtn');
+  const cancelBtn = document.getElementById('cancelTestResultBtn');
+  const form = document.getElementById('testResultForm');
+  const msgDiv = document.getElementById('testResultFormMsg');
+  const dateInput = document.getElementById('testResultDate');
+  const pmrIdInput = document.getElementById('testResultPatientMedicalRecordId');
+  const componentTestsContainer = document.getElementById('componentTestsContainer');
+  const addComponentBtn = document.getElementById('addComponentTestBtn');
+  const resultSelect = document.getElementById('testResultSelect');
+
+  // Helper: get today in yyyy-mm-dd
+  function getToday() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+
+  // --- Component Test Fieldset Logic ---
+  function createComponentTestFieldset(idx) {
+    const fieldset = document.createElement('div');
+    fieldset.className = 'component-test-fieldset';
+    fieldset.style = 'border:1px solid #eee; padding:12px; margin-bottom:12px; border-radius:8px; position:relative;';
+    fieldset.innerHTML = `
+      <div class="form-group">
+        <label>Tên thành phần <span style="color:red">*</span></label>
+        <input type="text" name="componentTestResultName" required />
+      </div>
+      <div class="form-group">
+        <label>Mô tả</label>
+        <input type="text" name="ctrDescription" />
+      </div>
+      <div class="form-group">
+        <label>Giá trị kết quả <span style="color:red">*</span></label>
+        <input type="text" name="resultValue" required />
+      </div>
+      <div class="form-group">
+        <label>Ghi chú <span style="color:red">*</span></label>
+        <textarea name="notes" rows="2" required></textarea>
+      </div>
+      <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
+    `;
+    return fieldset;
+  }
+
+  function addComponentTestFieldset() {
+    const idx = componentTestsContainer.querySelectorAll('.component-test-fieldset').length;
+    const fieldset = createComponentTestFieldset(idx);
+    componentTestsContainer.appendChild(fieldset);
+    // Remove button logic
+    fieldset.querySelector('.removeComponentBtn').onclick = function() {
+      if (componentTestsContainer.querySelectorAll('.component-test-fieldset').length > 1) {
+        fieldset.remove();
+      }
+    };
+  }
+
+  function resetComponentTests() {
+    componentTestsContainer.innerHTML = '<h3>Thành phần xét nghiệm</h3>';
+    addComponentTestFieldset();
+  }
+
+  // --- Modal Open/Close ---
+  function openModal() {
+    msgDiv.textContent = '';
+    form.reset();
+    resetComponentTests();
+    // Set today as default date
+    dateInput.value = getToday();
+    // Set pmrId
+    if (pmrId) pmrIdInput.value = pmrId;
+    modal.style.display = 'block';
+  }
+  function closeModal() {
+    modal.style.display = 'none';
+    form.reset();
+    resetComponentTests();
+    msgDiv.textContent = '';
+  }
+  if (openBtn) openBtn.onclick = openModal;
+  if (closeBtn) closeBtn.onclick = closeModal;
+  if (cancelBtn) cancelBtn.onclick = closeModal;
+  // Close modal on outside click
+  window.onclick = function(event) {
+    if (event.target === modal) closeModal();
+  };
+
+  // Add component test
+  if (addComponentBtn) addComponentBtn.onclick = addComponentTestFieldset;
+
+  // --- Form Submit ---
+  form.onsubmit = async function(e) {
+    e.preventDefault();
+    msgDiv.textContent = '';
+    // Validate required fields
+    if (!pmrIdInput.value) {
+      msgDiv.textContent = 'Không tìm thấy hồ sơ bệnh án.';
+      return;
+    }
+    if (!dateInput.value) {
+      msgDiv.textContent = 'Vui lòng chọn ngày xét nghiệm.';
+      return;
+    }
+    const resultVal = resultSelect.value;
+    if (!resultVal) {
+      msgDiv.textContent = 'Vui lòng chọn kết quả.';
+      return;
+    }
+    if (!form.testResultNotes.value.trim()) {
+      msgDiv.textContent = 'Vui lòng nhập ghi chú cho kết quả xét nghiệm.';
+      return;
+    }
+    // Component tests
+    const componentFieldsets = componentTestsContainer.querySelectorAll('.component-test-fieldset');
+    if (componentFieldsets.length === 0) {
+      msgDiv.textContent = 'Cần ít nhất một thành phần xét nghiệm.';
+      return;
+    }
+    const componentTests = [];
+    for (const fs of componentFieldsets) {
+      const name = fs.querySelector('input[name="componentTestResultName"]').value.trim();
+      const desc = fs.querySelector('input[name="ctrDescription"]').value.trim();
+      const value = fs.querySelector('input[name="resultValue"]').value.trim();
+      const notes = fs.querySelector('textarea[name="notes"]').value.trim();
+      if (!name) {
+        msgDiv.textContent = 'Vui lòng nhập tên thành phần cho tất cả thành phần.';
+        return;
+      }
+      if (!value) {
+        msgDiv.textContent = 'Vui lòng nhập giá trị kết quả cho tất cả thành phần.';
+        return;
+      }
+      if (!notes) {
+        msgDiv.textContent = 'Vui lòng nhập ghi chú cho tất cả thành phần.';
+        return;
+      }
+      componentTests.push({
+        testResultId: 0, // Will be set by backend
+        staffId: 0, // Optionally set if available
+        componentTestResultName: name,
+        ctrDescription: desc,
+        resultValue: value,
+        notes: notes
+      });
+    }
+    // Build payload
+    const payload = {
+      testResult: {
+        patientMedicalRecordId: Number(pmrIdInput.value),
+        testDate: dateInput.value,
+        result: resultVal === 'true',
+        notes: form.testResultNotes.value.trim()
+      },
+      componentTests
+    };
+    // Submit
+    try {
+      const res = await fetch('https://localhost:7009/api/TestResult/CreateTestResultWithComponentTests', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Tạo kết quả xét nghiệm thất bại.');
+      closeModal();
+      alert('Tạo kết quả xét nghiệm thành công!');
+      // Reload test results (if you have a function for this)
+      if (typeof loadPatientData === 'function') loadPatientData();
+    } catch (err) {
+      msgDiv.textContent = 'Lỗi khi tạo kết quả xét nghiệm.';
+    }
+  };
+});
 
 // Main function to load all patient data
 async function loadPatientData() {
