@@ -39,9 +39,13 @@
 
             <!-- Test Results Section -->
             <div class="section">
-                <h3>All Test Results</h3>
+                <h3>Tất cả kết quả xét nghiệm</h3>
                 <div id="testResultsSection" class="content-section">
-                    <p>Loading test results...</p>
+                    <p>Đang tải kết quả xét nghiệm...</p>
+                </div>
+                <!-- Button for staff only -->
+                <div id="createTestResultContainer" style="margin-top: 1.5rem; display: none;">
+                    <button id="openTestResultModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo kết quả xét nghiệm</button>
                 </div>
             </div>
 
@@ -141,6 +145,44 @@
             </form>
             <div id="updateRegimenStatusMsg" style="color:red;margin-top:10px;"></div>
         </div>
+    </div>
+
+    <!-- Create Test Result Modal -->
+    <div id="testResultModal" class="modal" style="display:none;">
+      <div class="modal-content" style="max-width:600px;">
+        <span class="close" id="closeTestResultModalBtn">&times;</span>
+        <h2>Tạo kết quả xét nghiệm mới</h2>
+        <form id="testResultForm">
+          <input type="hidden" id="testResultPatientMedicalRecordId" name="patientMedicalRecordId" />
+          <div class="form-group">
+            <label for="testResultDate">Ngày xét nghiệm <span style="color:red">*</span></label>
+            <input type="date" id="testResultDate" name="testDate" required />
+          </div>
+          <div class="form-group">
+            <label for="testResultSelect">Kết quả <span style="color:red">*</span></label>
+            <select id="testResultSelect" name="result" required style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 0.5rem;">
+              <option value="">Chọn kết quả</option>
+              <option value="true">Dương tính</option>
+              <option value="false">Âm tính</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="testResultNotes">Ghi chú <span style="color:red">*</span></label>
+            <textarea id="testResultNotes" name="notes" rows="2" required></textarea>
+          </div>
+          <hr>
+          <div id="componentTestsContainer">
+            <h3>Thành phần xét nghiệm</h3>
+            <!-- Component test fieldsets will be inserted here -->
+          </div>
+          <button type="button" id="addComponentTestBtn" class="secondary-btn" style="margin-bottom: 1rem;">+</button>
+          <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
+            <button type="submit" class="primary-btn">Lưu</button>
+            <button type="button" id="cancelTestResultBtn" class="secondary-btn">Hủy</button>
+          </div>
+          <div id="testResultFormMsg" style="color:red; margin-top:10px;"></div>
+        </form>
+      </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
