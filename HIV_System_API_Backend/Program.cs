@@ -158,6 +158,8 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IBlogImageDAO, BlogImageDAO>();
 builder.Services.AddScoped<IBlogImageRepo, BlogImageRepo>();
 builder.Services.AddScoped<IBlogImageService, BlogImageService>();
+builder.Services.AddScoped<ITestResultService, TestResultService>();
+
 // Add CORS policy
 // In Program.cs or Startup.cs
 builder.Services.AddCors(options =>
