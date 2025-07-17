@@ -22,9 +22,9 @@ namespace HIV_System_API_Services.Implements
 
         public BlogImageService(IBlogImageRepo blogImageRepository, IConfiguration configuration, ILogger<BlogImageService> logger)
         {
-            _blogImageRepository = blogImageRepository ?? throw new ArgumentNullException(nameof(blogImageRepository));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _blogImageRepository = blogImageRepository ?? throw new ArgumentNullException(nameof(blogImageRepository), "Kho lưu trữ hình ảnh blog không được để trống.");
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Cấu hình không được để trống.");
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger), "Logger không được để trống.");
 
             // Initialize storage path with validation
             var configuredPath = _configuration["ImageStorage:Path"];
@@ -38,7 +38,7 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(_storagePath))
             {
                 _logger.LogError("Storage path is invalid or null.");
-                throw new InvalidOperationException("Failed to initialize storage path. Ensure ImageStorage:Path is configured correctly.");
+                throw new InvalidOperationException("Không thể khởi tạo đường dẫn lưu trữ. Vui lòng đảm bảo ImageStorage:Path được cấu hình đúng.");
             }
 
             _baseUrl = _configuration["ImageStorage:BaseUrl"] ?? "/blog-images/";
@@ -55,7 +55,7 @@ namespace HIV_System_API_Services.Implements
             if (request == null || request.Image == null || request.Image.Length == 0)
             {
                 _logger.LogError("Upload request or image is null or empty.");
-                throw new ArgumentException("No image provided");
+                throw new ArgumentException("Không có hình ảnh nào được cung cấp.");
             }
 
             // Size limit check
@@ -63,7 +63,7 @@ namespace HIV_System_API_Services.Implements
             if (request.Image.Length > maxFileSize)
             {
                 _logger.LogError("Image size {ImageSize} bytes exceeds limit of {MaxFileSize} bytes.", request.Image.Length, maxFileSize);
-                throw new ArgumentException($"Image size exceeds {maxFileSize / (1024 * 1024)}MB limit.");
+                throw new ArgumentException($"Kích thước hình ảnh vượt quá giới hạn {maxFileSize / (1024 * 1024)}MB.");
             }
 
             // Ensure storage directory exists
@@ -78,7 +78,7 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create storage directory: {StoragePath}", _storagePath);
-                throw new InvalidOperationException("Failed to create storage directory.", ex);
+                throw new InvalidOperationException("Không thể tạo thư mục lưu trữ.", ex);
             }
 
             // Generate unique file name with extension validation
@@ -87,7 +87,7 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(fileExtension) || !validExtensions.Contains(fileExtension))
             {
                 _logger.LogError("Unsupported file extension: {FileExtension}", fileExtension);
-                throw new ArgumentException("Only JPG, JPEG, and PNG files are allowed.");
+                throw new ArgumentException("Chỉ cho phép các tệp JPG, JPEG và PNG.");
             }
 
             var fileName = $"{Guid.NewGuid()}{fileExtension}";
@@ -105,7 +105,7 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save image to {FilePath}", filePath);
-                throw new InvalidOperationException("Failed to save image to disk.", ex);
+                throw new InvalidOperationException("Không thể lưu hình ảnh vào ổ đĩa.", ex);
             }
 
             // Create BlogImage entity
@@ -132,7 +132,7 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save image metadata to database.");
-                throw new InvalidOperationException("Failed to save image metadata.", ex);
+                throw new InvalidOperationException("Không thể lưu siêu dữ liệu hình ảnh.", ex);
             }
         }
 
@@ -142,7 +142,7 @@ namespace HIV_System_API_Services.Implements
             if (blogImage == null)
             {
                 _logger.LogWarning("Image with ID {ImgId} not found.", imgId);
-                throw new ArgumentException("Image not found");
+                throw new ArgumentException("Không tìm thấy hình ảnh.");
             }
 
             return new BlogImageResponseDTO
@@ -176,7 +176,7 @@ namespace HIV_System_API_Services.Implements
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to delete image file at {FilePath}", filePath);
-                    throw new InvalidOperationException("Failed to delete image file from disk.", ex);
+                    throw new InvalidOperationException("Không thể xóa tệp hình ảnh khỏi ổ đĩa.", ex);
                 }
             }
             else
@@ -193,7 +193,7 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to delete image metadata with ImgId: {ImgId} from database", imgId);
-                throw new InvalidOperationException("Failed to delete image metadata from database.", ex);
+                throw new InvalidOperationException("Không thể xóa siêu dữ liệu hình ảnh khỏi cơ sở dữ liệu.", ex);
             }
         }
 
@@ -205,7 +205,7 @@ namespace HIV_System_API_Services.Implements
                 if (blogImages == null || !blogImages.Any())
                 {
                     _logger.LogWarning("No images found for SblId: {BlogId}", blogId);
-                    throw new ArgumentException("No images found for the specified blog ID");
+                    throw new ArgumentException("Không tìm thấy hình ảnh cho ID blog được chỉ định.");
                 }
 
                 var responseDtos = new List<BlogImageResponseDTO>();
@@ -225,15 +225,16 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to retrieve images for SblId: {BlogId}", blogId);
-                throw new InvalidOperationException("Failed to retrieve images.", ex);
+                throw new InvalidOperationException("Không thể truy xuất hình ảnh.", ex);
             }
         }
+
         public async Task<List<BlogImageResponseDTO>> UploadImageListAsync(BlogImageListRequestDTO request)
         {
             if (request == null || request.Images == null || !request.Images.Any())
             {
                 _logger.LogError("Upload request or images are null or empty.");
-                throw new ArgumentException("No images provided");
+                throw new ArgumentException("Không có hình ảnh nào được cung cấp.");
             }
 
             const long maxFileSize = 5 * 1024 * 1024; // 5MB
@@ -252,7 +253,7 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create storage directory: {StoragePath}", _storagePath);
-                throw new InvalidOperationException("Failed to create storage directory.", ex);
+                throw new InvalidOperationException("Không thể tạo thư mục lưu trữ.", ex);
             }
 
             foreach (var image in request.Images)
@@ -261,7 +262,7 @@ namespace HIV_System_API_Services.Implements
                 if (image.Length > maxFileSize)
                 {
                     _logger.LogError("Image size {ImageSize} bytes exceeds limit of {MaxFileSize} bytes.", image.Length, maxFileSize);
-                    throw new ArgumentException($"Image '{image.FileName}' size exceeds {maxFileSize / (1024 * 1024)}MB limit.");
+                    throw new ArgumentException($"Kích thước hình ảnh '{image.FileName}' vượt quá giới hạn {maxFileSize / (1024 * 1024)}MB.");
                 }
 
                 // Validate file extension
@@ -269,7 +270,7 @@ namespace HIV_System_API_Services.Implements
                 if (string.IsNullOrWhiteSpace(fileExtension) || !validExtensions.Contains(fileExtension))
                 {
                     _logger.LogError("Unsupported file extension for image '{FileName}': {FileExtension}", image.FileName, fileExtension);
-                    throw new ArgumentException($"Image '{image.FileName}' has unsupported file extension. Only JPG, JPEG, and PNG files are allowed.");
+                    throw new ArgumentException($"Hình ảnh '{image.FileName}' có định dạng không được hỗ trợ. Chỉ cho phép các tệp JPG, JPEG và PNG.");
                 }
 
                 // Generate unique file name
@@ -288,7 +289,7 @@ namespace HIV_System_API_Services.Implements
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to save image '{FileName}' to {FilePath}", image.FileName, filePath);
-                    throw new InvalidOperationException($"Failed to save image '{image.FileName}' to disk.", ex);
+                    throw new InvalidOperationException($"Không thể lưu hình ảnh '{image.FileName}' vào ổ đĩa.", ex);
                 }
 
                 // Create BlogImage entity
@@ -315,7 +316,7 @@ namespace HIV_System_API_Services.Implements
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to save image metadata for '{FileName}' to database.", image.FileName);
-                    throw new InvalidOperationException($"Failed to save image metadata for '{image.FileName}'.", ex);
+                    throw new InvalidOperationException($"Không thể lưu siêu dữ liệu hình ảnh cho '{image.FileName}'.", ex);
                 }
             }
 

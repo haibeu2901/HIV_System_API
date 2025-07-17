@@ -81,6 +81,25 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
+        public async Task<List<Payment>> GetPersonalPaymentsAsync(int patientId)
+        {
+            try
+            {
+                return await _context.Payments
+                    .Include(p => p.Pmr)
+                        .ThenInclude(pmr => pmr.Ptn)
+                    .Include(p => p.Srv)
+                    .Where(p => p.Pmr.PtnId == patientId)
+                    .OrderByDescending(p => p.PaymentDate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error getting personal payments for patient ID {patientId}: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<Payment> CreatePaymentAsync(Payment payment)
         {
             try

@@ -127,26 +127,26 @@ namespace HIV_System_API_Services.Implements
         public async Task ValidateUsernameAsync(string username, string email = null, int? excludeAccountId = null)
         {
             if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentException("Username is required.", nameof(username));
+                throw new ArgumentException("Tên người dùng là bắt buộc.", nameof(username));
 
-            if (username.Length < 3 || username.Length > 16)
-                throw new ArgumentException("Username must be between 3 and 16 characters.", nameof(username));
+            if (username.Length < 3 || username.Length > 24)
+                throw new ArgumentException("Tên người dùng phải có từ 3 đến 24 ký tự.", nameof(username));
 
             try
             {
                 // This regex ensures the username only contains allowed characters.
                 // A timeout is specified to prevent ReDoS attacks.
                 if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$", RegexOptions.None, RegexTimeout))
-                    throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.", nameof(username));
+                    throw new ArgumentException("Tên người dùng chỉ được chứa chữ cái, số, dấu gạch dưới và dấu gạch ngang.", nameof(username));
             }
             catch (RegexMatchTimeoutException)
             {
                 // Handle the case where the regex match takes too long.
-                throw new ArgumentException("Username validation timed out due to excessive complexity.", nameof(username));
+                throw new ArgumentException("Việc xác thực tên người dùng đã hết thời gian do độ phức tạp quá cao.", nameof(username));
             }
 
             if (!string.IsNullOrEmpty(email) && username.Equals(email, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Username cannot be the same as the email.", nameof(username));
+                throw new ArgumentException("Tên người dùng không được trùng với email.", nameof(username));
 
             // Check for duplicate username using repository
             var existingAccount = await _accountRepo.GetAccountByUsernameAsync(username);
@@ -159,7 +159,7 @@ namespace HIV_System_API_Services.Implements
                     return;
                 }
 
-                throw new InvalidOperationException($"Username '{username}' is already in use.");
+                throw new InvalidOperationException($"Tên người dùng '{username}' đã được sử dụng.");
             }
         }
 
@@ -173,26 +173,26 @@ namespace HIV_System_API_Services.Implements
         public static void ValidateUsername(string username, string email = null)
         {
             if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentException("Username is required.", nameof(username));
+                throw new ArgumentException("Tên người dùng là bắt buộc.", nameof(username));
 
-            if (username.Length < 3 || username.Length > 16)
-                throw new ArgumentException("Username must be between 3 and 16 characters.", nameof(username));
+            if (username.Length < 3 || username.Length > 24)
+                throw new ArgumentException("Tên người dùng phải có từ 3 đến 24 ký tự.", nameof(username));
 
             try
             {
                 // This regex ensures the username only contains allowed characters.
                 // A timeout is specified to prevent ReDoS attacks.
                 if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$", RegexOptions.None, RegexTimeout))
-                    throw new ArgumentException("Username can only contain letters, numbers, underscores, and hyphens.", nameof(username));
+                    throw new ArgumentException("Tên người dùng chỉ được chứa chữ cái, số, dấu gạch dưới và dấu gạch ngang.", nameof(username));
             }
             catch (RegexMatchTimeoutException)
             {
                 // Handle the case where the regex match takes too long.
-                throw new ArgumentException("Username validation timed out due to excessive complexity.", nameof(username));
+                throw new ArgumentException("Việc xác thực tên người dùng đã hết thời gian do độ phức tạp quá cao.", nameof(username));
             }
 
             if (!string.IsNullOrEmpty(email) && username.Equals(email, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Username cannot be the same as the email.", nameof(username));
+                throw new ArgumentException("Tên người dùng không được trùng với email.", nameof(username));
         }
 
         /// <summary>
@@ -204,13 +204,16 @@ namespace HIV_System_API_Services.Implements
         public static void ValidatePassword(string password, string username = null)
         {
             if (string.IsNullOrWhiteSpace(password))
-                throw new ArgumentException("Password is required.", nameof(password));
+                throw new ArgumentException("Mật khẩu là bắt buộc.", nameof(password));
 
             if (password.Length < 8)
-                throw new ArgumentException("Password must be at least 8 characters long.", nameof(password));
+                throw new ArgumentException("Mật khẩu phải có ít nhất 8 ký tự.", nameof(password));
+
+            if (password.Length >50)
+                throw new ArgumentException("Mật khẩu không được quá 50 ký tự.", nameof(password));
 
             if (password.Contains(' '))
-                throw new ArgumentException("Password cannot contain spaces.", nameof(password));
+                throw new ArgumentException("Mật khẩu không được chứa dấu cách.", nameof(password));
 
             // Use LINQ for better readability than a complex regex with lookaheads.
             bool hasUppercase = password.Any(char.IsUpper);
@@ -220,10 +223,10 @@ namespace HIV_System_API_Services.Implements
             bool hasSpecialChar = password.Any(specialCharacters.Contains);
 
             if (!hasUppercase || !hasLowercase || !hasDigit || !hasSpecialChar)
-                throw new ArgumentException($"Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character ({specialCharacters}).", nameof(password));
+                throw new ArgumentException($"Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt ({specialCharacters}).", nameof(password));
 
             if (!string.IsNullOrEmpty(username) && password.Equals(username, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Password cannot be the same as the username.", nameof(password));
+                throw new ArgumentException("Mật khẩu không được trùng với tên người dùng.", nameof(password));
         }
 
         /// <summary>
@@ -237,40 +240,40 @@ namespace HIV_System_API_Services.Implements
         public async Task ValidateEmailAsync(string email, string username = null, int? excludeAccountId = null)
         {
             if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email is required.", nameof(email));
+                throw new ArgumentException("Email là bắt buộc.", nameof(email));
 
-            if (email.Length > 254)
-                throw new ArgumentException("Email must not exceed 254 characters.", nameof(email));
+            if (email.Length > 100)
+                throw new ArgumentException("Email không được vượt quá 100 ký tự.", nameof(email));
 
             var parts = email.Split('@');
             if (parts.Length != 2)
-                throw new ArgumentException("Email format is invalid (must contain exactly one '@').", nameof(email));
+                throw new ArgumentException("Định dạng email không hợp lệ (phải chứa chính xác một ký tự '@').", nameof(email));
 
             var localPart = parts[0];
             var domainPart = parts[1];
 
             if (localPart.Length == 0 || localPart.Length > 64)
-                throw new ArgumentException("Email local-part must be between 1 and 64 characters.", nameof(email));
+                throw new ArgumentException("Phần cục bộ của email phải có từ 1 đến 64 ký tự.", nameof(email));
 
             if (domainPart.Length == 0 || domainPart.Length > 255)
-                throw new ArgumentException("Email domain must be between 1 and 255 characters.", nameof(email));
+                throw new ArgumentException("Tên miền của email phải có từ 1 đến 255 ký tự.", nameof(email));
 
             if (localPart.Contains("..") || domainPart.Contains(".."))
-                throw new ArgumentException("Email cannot contain consecutive dots.", nameof(email));
+                throw new ArgumentException("Email không được chứa các dấu chấm liên tiếp.", nameof(email));
 
             try
             {
                 // Use a practical regex for overall format validation with a timeout to prevent ReDoS.
                 if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", RegexOptions.None, RegexTimeout))
-                    throw new ArgumentException("Email format is invalid.", nameof(email));
+                    throw new ArgumentException("Định dạng email không hợp lệ.", nameof(email));
             }
             catch (RegexMatchTimeoutException)
             {
-                throw new ArgumentException("Email validation timed out due to excessive complexity.", nameof(email));
+                throw new ArgumentException("Việc xác thực email đã hết thời gian do độ phức tạp quá cao.", nameof(email));
             }
 
             if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Email cannot be the same as the username.", nameof(username));
+                throw new ArgumentException("Email không được trùng với tên người dùng.", nameof(username));
 
             // Check for duplicate email using repository
             var existingAccount = await _accountRepo.GetAccountByEmailAsync(email);
@@ -283,30 +286,30 @@ namespace HIV_System_API_Services.Implements
                     return;
                 }
 
-                throw new InvalidOperationException($"Email '{email}' is already in use.");
+                throw new InvalidOperationException($"Email '{email}' đã được sử dụng.");
             }
         }
 
         private static void ValidateDateOfBirth(DateTime? dob, string paramName = "dob")
         {
             if (!dob.HasValue)
-                throw new ArgumentException("Date of birth is required.", paramName);
+                throw new ArgumentException("Ngày sinh là bắt buộc.", paramName);
 
             var dobValue = dob.Value;
             var today = DateTime.Today;
 
             // Check if DOB is not in the future
             if (dobValue.Date > today)
-                throw new ArgumentException("Date of birth cannot be in the future.", paramName);
+                throw new ArgumentException("Ngày sinh không được ở trong tương lai.", paramName);
 
             // Check if DOB is not before 1900
             if (dobValue < new DateTime(1900, 1, 1))
-                throw new ArgumentException("Date of birth cannot be before 1900.", paramName);
+                throw new ArgumentException("Ngày sinh không được trước năm 1900.", paramName);
 
             // Check if person is at least 18 years old - FIXED LOGIC
             var age = CalculateAge(dobValue.Date, today);
             if (age < 18)
-                throw new ArgumentException("Person must be at least 18 years old.", paramName);
+                throw new ArgumentException("Người dùng phải ít nhất 18 tuổi.", paramName);
         }
 
         /// <summary>
@@ -342,40 +345,40 @@ namespace HIV_System_API_Services.Implements
         public static void ValidateEmail(string email, string username = null)
         {
             if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email is required.", nameof(email));
+                throw new ArgumentException("Email là bắt buộc.", nameof(email));
 
             if (email.Length > 254)
-                throw new ArgumentException("Email must not exceed 254 characters.", nameof(email));
+                throw new ArgumentException("Email không được vượt quá 254 ký tự.", nameof(email));
 
             var parts = email.Split('@');
             if (parts.Length != 2)
-                throw new ArgumentException("Email format is invalid (must contain exactly one '@').", nameof(email));
+                throw new ArgumentException("Định dạng email không hợp lệ (phải chứa chính xác một ký tự '@').", nameof(email));
 
             var localPart = parts[0];
             var domainPart = parts[1];
 
             if (localPart.Length == 0 || localPart.Length > 64)
-                throw new ArgumentException("Email local-part must be between 1 and 64 characters.", nameof(email));
+                throw new ArgumentException("Phần cục bộ của email phải có từ 1 đến 64 ký tự.", nameof(email));
 
             if (domainPart.Length == 0 || domainPart.Length > 255)
-                throw new ArgumentException("Email domain must be between 1 and 255 characters.", nameof(email));
+                throw new ArgumentException("Tên miền của email phải có từ 1 đến 255 ký tự.", nameof(email));
 
             if (localPart.Contains("..") || domainPart.Contains(".."))
-                throw new ArgumentException("Email cannot contain consecutive dots.", nameof(email));
+                throw new ArgumentException("Email không được chứa các dấu chấm liên tiếp.", nameof(email));
 
             try
             {
                 // Use a practical regex for overall format validation with a timeout to prevent ReDoS.
                 if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", RegexOptions.None, RegexTimeout))
-                    throw new ArgumentException("Email format is invalid.", nameof(email));
+                    throw new ArgumentException("Định dạng email không hợp lệ.", nameof(email));
             }
             catch (RegexMatchTimeoutException)
             {
-                throw new ArgumentException("Email validation timed out due to excessive complexity.", nameof(email));
+                throw new ArgumentException("Việc xác thực email đã hết thời gian do độ phức tạp quá cao.", nameof(email));
             }
 
             if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Email cannot be the same as the username.", nameof(username));
+                throw new ArgumentException("Email không được trùng với tên người dùng.", nameof(username));
         }
 
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
@@ -464,14 +467,14 @@ namespace HIV_System_API_Services.Implements
                 {
                     var currentAccount = await _accountRepo.GetAccountByIdAsync(id);
                     if (currentAccount?.Roles == 1)
-                        throw new UnauthorizedAccessException("You do not have permission to update this account.");
+                        throw new UnauthorizedAccessException("Bạn không có quyền cập nhật tài khoản này.");
                 }
             }
 
             // Fetch the existing account
             var existingAccount = await _accountRepo.GetAccountByIdAsync(id);
             if (existingAccount == null)
-                throw new KeyNotFoundException($"Account with id {id} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy tài khoản với id {id}.");
 
             // Update fields
             existingAccount.AccPassword = !string.IsNullOrWhiteSpace(updatedAccount.AccPassword) ? HashPassword(updatedAccount.AccPassword) : existingAccount.AccPassword;
@@ -493,11 +496,11 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(patient));
 
             if (string.IsNullOrWhiteSpace(patient.AccUsername))
-                throw new ArgumentException("Username is required.", nameof(patient.AccUsername));
+                throw new ArgumentException("Tên người dùng là bắt buộc.", nameof(patient.AccUsername));
             if (string.IsNullOrWhiteSpace(patient.AccPassword))
-                throw new ArgumentException("Password is required.", nameof(patient.AccPassword));
+                throw new ArgumentException("Mật khẩu là bắt buộc.", nameof(patient.AccPassword));
             if (string.IsNullOrWhiteSpace(patient.Email))
-                throw new ArgumentException("Email is required.", nameof(patient.Email));
+                throw new ArgumentException("Email là bắt buộc.", nameof(patient.Email));
 
             // Use new async validation methods with duplicate checking
             await ValidateUsernameAsync(patient.AccUsername, patient.Email);
@@ -511,7 +514,7 @@ namespace HIV_System_API_Services.Implements
             }
             else
             {
-                throw new ArgumentException("Date of birth is required for patient registration.", nameof(patient.Dob));
+                throw new ArgumentException("Ngày sinh là bắt buộc để đăng ký bệnh nhân.", nameof(patient.Dob));
             }
 
             // Map PatientAccountRequestDTO to AccountRequestDTO
@@ -562,11 +565,11 @@ namespace HIV_System_API_Services.Implements
 
             var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
             if (existingAccount == null)
-                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy tài khoản với id {accountId}.");
 
             // Validate that this is a basic profile role (1, 3, or 5)
             if (existingAccount.Roles != 1 && existingAccount.Roles != 3 && existingAccount.Roles != 5)
-                throw new UnauthorizedAccessException("This account role does not support basic profile updates.");
+                throw new UnauthorizedAccessException("Vai trò tài khoản này không hỗ trợ cập nhật hồ sơ cơ bản.");
 
             // Validate Date of Birth if provided - FIXED
             if (profileDTO.Dob.HasValue)
@@ -640,10 +643,10 @@ namespace HIV_System_API_Services.Implements
 
             var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
             if (existingAccount == null)
-                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy tài khoản với id {accountId}.");
 
             if (existingAccount.Roles != 2)
-                throw new UnauthorizedAccessException("This account is not a doctor account.");
+                throw new UnauthorizedAccessException("Tài khoản này không phải là tài khoản bác sĩ.");
 
             // Validate Date of Birth if provided - FIXED
             if (profileDTO.Dob.HasValue)
@@ -713,10 +716,10 @@ namespace HIV_System_API_Services.Implements
 
             var existingAccount = await _accountRepo.GetAccountByIdAsync(accountId);
             if (existingAccount == null)
-                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy tài khoản với id {accountId}.");
 
             if (existingAccount.Roles != 4)
-                throw new UnauthorizedAccessException("This account is not a staff account.");
+                throw new UnauthorizedAccessException("Tài khoản này không phải là tài khoản nhân viên.");
 
             // Validate Date of Birth if provided - FIXED
             if (profileDTO.Dob.HasValue)
@@ -786,7 +789,7 @@ namespace HIV_System_API_Services.Implements
             // Get account to determine role
             var account = await _accountRepo.GetAccountByIdAsync(accountId);
             if (account == null)
-                throw new KeyNotFoundException($"Account with id {accountId} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy tài khoản với id {accountId}.");
 
             // Route to appropriate profile update based on role
             switch (account.Roles)
@@ -794,7 +797,7 @@ namespace HIV_System_API_Services.Implements
                 case 1: // Admin
                 case 3: // Patient
                 case 5: // Manager
-                        // Convert to BasicProfileUpdateDTO
+                    // Convert to BasicProfileUpdateDTO
                     if (profileDTO is BasicProfileUpdateDTO basicDto)
                     {
                         return await UpdateBasicProfileAsync(accountId, basicDto);
@@ -822,7 +825,7 @@ namespace HIV_System_API_Services.Implements
                     }
                     else
                     {
-                        throw new ArgumentException("Invalid profile DTO type for this account role.");
+                        throw new ArgumentException("Loại DTO hồ sơ không hợp lệ cho vai trò tài khoản này.");
                     }
 
                 case 2: // Doctor
@@ -832,7 +835,7 @@ namespace HIV_System_API_Services.Implements
                     }
                     else
                     {
-                        throw new ArgumentException("Doctor profile update requires DoctorProfileUpdateDTO.");
+                        throw new ArgumentException("Cập nhật hồ sơ bác sĩ yêu cầu DoctorProfileUpdateDTO.");
                     }
 
                 case 4: // Staff
@@ -842,11 +845,11 @@ namespace HIV_System_API_Services.Implements
                     }
                     else
                     {
-                        throw new ArgumentException("Staff profile update requires StaffProfileUpdateDTO.");
+                        throw new ArgumentException("Cập nhật hồ sơ nhân viên yêu cầu StaffProfileUpdateDTO.");
                     }
 
                 default:
-                    throw new UnauthorizedAccessException($"Profile updates are not supported for role {account.Roles}.");
+                    throw new UnauthorizedAccessException($"Cập nhật hồ sơ không được hỗ trợ cho vai trò {account.Roles}.");
             }
         }
 
@@ -870,7 +873,7 @@ namespace HIV_System_API_Services.Implements
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.Email))
-                throw new ArgumentException("Email is required.");
+                throw new ArgumentException("Email là bắt buộc.");
 
             // Use static validation for password reset (no need to check duplicates)
             ValidateEmail(request.Email);
@@ -878,7 +881,7 @@ namespace HIV_System_API_Services.Implements
             // Check if account exists for the email
             var account = await _accountRepo.GetAccountByEmailAsync(request.Email);
             if (account == null)
-                throw new InvalidOperationException("No account found with the provided email.");
+                throw new InvalidOperationException("Không tìm thấy tài khoản với email được cung cấp.");
 
             // Generate verification code
             var verificationCode = _verificationService.GenerateCode(request.Email);
@@ -896,11 +899,11 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(request));
 
             if (string.IsNullOrWhiteSpace(request.AccUsername))
-                throw new ArgumentException("Username is required");
+                throw new ArgumentException("Tên người dùng là bắt buộc.");
             if (string.IsNullOrWhiteSpace(request.AccPassword))
-                throw new ArgumentException("Password is required");
+                throw new ArgumentException("Mật khẩu là bắt buộc.");
             if (string.IsNullOrWhiteSpace(request.Email))
-                throw new ArgumentException("Email is required");
+                throw new ArgumentException("Email là bắt buộc.");
 
             // Use new async validation methods with duplicate checking
             await ValidateUsernameAsync(request.AccUsername, request.Email);
@@ -914,7 +917,7 @@ namespace HIV_System_API_Services.Implements
             }
             else
             {
-                throw new ArgumentException("Date of birth is required for patient registration.", nameof(request.Dob));
+                throw new ArgumentException("Ngày sinh là bắt buộc để đăng ký bệnh nhân.", nameof(request.Dob));
             }
 
             // Store the registration request in cache
@@ -940,7 +943,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<AccountResponseDTO> VerifyEmailAndCreateAccountAsync(string email, string code)
         {
             if (!_verificationService.VerifyCode(email, code))
-                throw new InvalidOperationException("Invalid or expired verification code");
+                throw new InvalidOperationException("Mã xác minh không hợp lệ hoặc đã hết hạn.");
 
             // Validate email
             ValidateEmail(email);
@@ -948,7 +951,7 @@ namespace HIV_System_API_Services.Implements
             // Retrieve pending registration
             var cacheKey = $"pending_registration_{email}";
             if (!_memoryCache.TryGetValue(cacheKey, out PendingPatientRegistrationDTO? pendingRegistration))
-                throw new InvalidOperationException("No pending registration found or registration expired");
+                throw new InvalidOperationException("Không tìm thấy đăng ký đang chờ hoặc đăng ký đã hết hạn.");
 
             _memoryCache.Remove(cacheKey);
 
@@ -973,7 +976,7 @@ namespace HIV_System_API_Services.Implements
                 await _accountRepo.UpdateAccountStatusAsync(account.AccId, true);
             }
 
-            return patientResponse.Account ?? throw new InvalidOperationException("Failed to create account");
+            return patientResponse.Account ?? throw new InvalidOperationException("Không thể tạo tài khoản.");
         }
 
         public async Task<(bool isValid, string message)> HasPendingRegistrationAsync(string email)
@@ -984,14 +987,14 @@ namespace HIV_System_API_Services.Implements
             var pendingRegistration = _memoryCache.Get<PendingPatientRegistrationDTO>($"pending_registration_{email}");
 
             if (pendingRegistration == null)
-                return (false, "No pending registration found for this email");
+                return (false, "Không tìm thấy đăng ký đang chờ cho email này.");
 
             // Check if there's already an account with this email
             var existingAccount = await GetAccountByEmailAsync(email);
             if (existingAccount != null)
             {
                 if (existingAccount.IsActive == true)
-                    return (false, "Account is already verified");
+                    return (false, "Tài khoản đã được xác minh.");
                 return (true, ""); // Account exists but not verified
             }
 
@@ -1004,29 +1007,29 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentNullException(nameof(request));
 
             if (string.IsNullOrWhiteSpace(request.currentPassword))
-                throw new ArgumentException("Current password is required.", nameof(request.currentPassword));
+                throw new ArgumentException("Mật khẩu hiện tại là bắt buộc.", nameof(request.currentPassword));
             if (string.IsNullOrWhiteSpace(request.newPassword))
-                throw new ArgumentException("New password is required.", nameof(request.newPassword));
+                throw new ArgumentException("Mật khẩu mới là bắt buộc.", nameof(request.newPassword));
             if (string.IsNullOrWhiteSpace(request.confirmNewPassword))
-                throw new ArgumentException("Confirm new password is required.", nameof(request.confirmNewPassword));
+                throw new ArgumentException("Xác nhận mật khẩu mới là bắt buộc.", nameof(request.confirmNewPassword));
 
             if (request.newPassword != request.confirmNewPassword)
-                throw new InvalidOperationException("New password and confirmation do not match.");
+                throw new InvalidOperationException("Mật khẩu mới và xác nhận không khớp.");
 
             var account = await _accountRepo.GetAccountByIdAsync(accId);
             if (account == null)
-                throw new KeyNotFoundException($"Account with id {accId} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy tài khoản với id {accId}.");
 
             // Verify the current password using the hashed password in database
             if (!VerifyPassword(request.currentPassword, account.AccPassword))
-                throw new InvalidOperationException("Current password is incorrect.");
+                throw new InvalidOperationException("Mật khẩu hiện tại không đúng.");
 
             // Validate new password
             ValidatePassword(request.newPassword, account.AccUsername);
 
             // Check if new password is different from current password
             if (VerifyPassword(request.newPassword, account.AccPassword))
-                throw new InvalidOperationException("New password must be different from the current password.");
+                throw new InvalidOperationException("Mật khẩu mới phải khác với mật khẩu hiện tại.");
 
             // Update password
             var changeRequest = new ChangePasswordRequestDTO
@@ -1043,7 +1046,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<(bool Success, string Message)> SendPasswordResetCodeAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
-                return (false, "Email is required.");
+                return (false, "Email là bắt buộc.");
 
             try
             {
@@ -1058,11 +1061,11 @@ namespace HIV_System_API_Services.Implements
             // Check if account exists for the email
             var account = await _accountRepo.GetAccountByEmailAsync(email);
             if (account == null)
-                return (false, "No account found with the provided email.");
+                return (false, "Không tìm thấy tài khoản với email được cung cấp.");
 
             // Check if account is active
             if (account.IsActive == false)
-                return (false, "Account is not active.");
+                return (false, "Tài khoản không hoạt động.");
 
             // Generate verification code
             var code = _verificationService.GenerateCode(email);
@@ -1073,15 +1076,15 @@ namespace HIV_System_API_Services.Implements
             _memoryCache.Set($"password_reset_{email}", code, cacheOptions);
 
             // TODO: Send code to user's email (email sending not implemented here)
-            return (true, "Password reset code has been sent to your email.");
+            return (true, "Mã đặt lại mật khẩu đã được gửi đến email của bạn.");
         }
 
         public async Task<(bool Success, string Message)> VerifyPasswordResetCodeAsync(string email, string code)
         {
             if (string.IsNullOrWhiteSpace(email))
-                return (false, "Email is required.");
+                return (false, "Email là bắt buộc.");
             if (string.IsNullOrWhiteSpace(code))
-                return (false, "Verification code is required.");
+                return (false, "Mã xác minh là bắt buộc.");
 
             try
             {
@@ -1096,24 +1099,24 @@ namespace HIV_System_API_Services.Implements
             // Check if the code exists in cache - using consistent cache key
             var cacheKey = $"password_reset_{email}";
             if (!_memoryCache.TryGetValue<string>(cacheKey, out var cachedCode))
-                return (false, "No password reset request found or code expired.");
+                return (false, "Không tìm thấy yêu cầu đặt lại mật khẩu hoặc mã đã hết hạn.");
 
             if (!string.Equals(cachedCode, code, StringComparison.Ordinal))
-                return (false, "Invalid verification code.");
+                return (false, "Mã xác minh không hợp lệ.");
 
             // Don't remove the code here - let it be removed in ResetPasswordAsync
             // This allows multiple verification attempts before actual reset
-            return (true, "Verification code is valid.");
+            return (true, "Mã xác minh hợp lệ.");
         }
 
         public async Task<(bool Success, string Message)> ResetPasswordAsync(string email, string code, string newPassword)
         {
             if (string.IsNullOrWhiteSpace(email))
-                return (false, "Email is required.");
+                return (false, "Email là bắt buộc.");
             if (string.IsNullOrWhiteSpace(code))
-                return (false, "Verification code is required.");
+                return (false, "Mã xác minh là bắt buộc.");
             if (string.IsNullOrWhiteSpace(newPassword))
-                return (false, "New password is required.");
+                return (false, "Mật khẩu mới là bắt buộc.");
 
             try
             {
@@ -1127,18 +1130,18 @@ namespace HIV_System_API_Services.Implements
 
             var account = await _accountRepo.GetAccountByEmailAsync(email);
             if (account == null)
-                return (false, "No account found with the provided email.");
+                return (false, "Không tìm thấy tài khoản với email được cung cấp.");
 
             if (account.IsActive == false)
-                return (false, "Account is not active.");
+                return (false, "Tài khoản không hoạt động.");
 
             // Verify the code first
             var cacheKey = $"password_reset_{email}";
             if (!_memoryCache.TryGetValue<string>(cacheKey, out var cachedCode))
-                return (false, "No password reset request found or code expired.");
+                return (false, "Không tìm thấy yêu cầu đặt lại mật khẩu hoặc mã đã hết hạn.");
 
             if (!string.Equals(cachedCode, code, StringComparison.Ordinal))
-                return (false, "Invalid verification code.");
+                return (false, "Mã xác minh không hợp lệ.");
 
             try
             {
@@ -1152,7 +1155,7 @@ namespace HIV_System_API_Services.Implements
 
             // Check if new password is different from current password
             if (VerifyPassword(newPassword, account.AccPassword))
-                return (false, "New password must be different from the current password.");
+                return (false, "Mật khẩu mới phải khác với mật khẩu hiện tại.");
 
             // Hash the new password
             var hashedNewPassword = HashPassword(newPassword);
@@ -1167,12 +1170,12 @@ namespace HIV_System_API_Services.Implements
 
             var result = await _accountRepo.ChangePasswordAsync(account.AccId, changeRequest);
             if (!result)
-                return (false, "Failed to reset password.");
+                return (false, "Không thể đặt lại mật khẩu.");
 
             // Remove the verification code from cache after successful reset
             _memoryCache.Remove(cacheKey);
 
-            return (true, "Password has been reset successfully.");
+            return (true, "Mật khẩu đã được đặt lại thành công.");
         }
     }
 }

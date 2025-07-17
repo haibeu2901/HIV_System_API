@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog API Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        
+        .test-btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .blog-preview {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        
+        .blog-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .blog-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .blog-content {
+            color: #555;
+            line-height: 1.4;
+        }
+        
+        .blog-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-flask"></i> Blog API Test</h1>
+        
+        <div class="test-section">
+            <h3>API Connection Test</h3>
+            <div id="apiStatus">Ready to test...</div>
+            <button class="test-btn" onclick="testAPI()">Test API Connection</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Raw API Response</h3>
+            <div id="rawData" class="data-display">No data yet...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Blog Preview</h3>
+            <div id="blogPreview">No blogs to preview...</div>
+        </div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const statusDiv = document.getElementById('apiStatus');
+            const rawDataDiv = document.getElementById('rawData');
+            const blogPreviewDiv = document.getElementById('blogPreview');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing API connection...</div>';
+            
+            try {
+                const response = await fetch('https://localhost:7009/api/SocialBlog/GetAllBlog', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `<div class="status success">✅ API Working! Found ${data.length} blogs</div>`;
+                    
+                    // Display raw data
+                    rawDataDiv.textContent = JSON.stringify(data, null, 2);
+                    
+                    // Display blog previews
+                    if (data.length > 0) {
+                        blogPreviewDiv.innerHTML = data.map(blog => `
+                            <div class="blog-preview">
+                                <div class="blog-title">${blog.title}</div>
+                                <div class="blog-meta">
+                                    Author: ${blog.isAnonymous ? 'Anonymous' : `User ${blog.authorId}`} | 
+                                    Status: ${getBlogStatusText(blog.blogStatus)} | 
+                                    Date: ${new Date(blog.publishedDate).toLocaleDateString()}
+                                </div>
+                                <div class="blog-content">${truncateText(blog.content, 200)}</div>
+                                <div class="blog-stats">
+                                    <div class="stat-item">
+                                        <i class="fas fa-heart"></i>
+                                        <span>${blog.likesCount || 0} likes</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <i class="fas fa-thumbs-down"></i>
+                                        <span>${blog.dislikesCount || 0} dislikes</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <i class="fas fa-comments"></i>
+                                        <span>${blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0} comments</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ API Error: ${response.status}</div>`;
+                    rawDataDiv.textContent = `HTTP Error: ${response.status} - ${response.statusText}`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ API Connection Failed: ${error.message}</div>`;
+                rawDataDiv.textContent = `Error: ${error.message}`;
+                console.error('API Error:', error);
+            }
+        }
+        
+        function getBlogStatusText(status) {
+            switch (status) {
+                case 1: return 'Draft';
+                case 2: return 'Pending';
+                case 3: return 'Rejected';
+                case 4: return 'Published';
+                case 5: return 'Archived';
+                default: return 'Unknown';
+            }
+        }
+        
+        function truncateText(text, maxLength) {
+            if (!text) return '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testAPI, 1000);
+        });
+    </script>
+</body>
+</html>

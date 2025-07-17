@@ -42,9 +42,11 @@ namespace HIV_System_API_Services.Implements
 
         private PatientMedicalRecordResponseDTO MapToResponseDTO(PatientMedicalRecord record)
         {
-            // Get all appointments for the patient
+            // Get all appointments for the patient - SORTED BY LATEST DATE FIRST
             var appointments = _context.Appointments
                 .Where(a => a.PtnId == record.PtnId)
+                .OrderByDescending(a => a.ApmtDate)
+                .ThenByDescending(a => a.ApmTime)
                 .Select(a => new AppointmentResponseDTO
                 {
                     AppointmentId = a.ApmId,
@@ -59,9 +61,10 @@ namespace HIV_System_API_Services.Implements
                 })
                 .ToList();
 
-            // Get all test results for the patient medical record
+            // Get all test results for the patient medical record - SORTED BY LATEST DATE FIRST
             var testResults = _context.TestResults
                 .Where(tr => tr.PmrId == record.PmrId)
+                .OrderByDescending(tr => tr.TestDate)
                 .Select(tr => new TestResultResponseDTO
                 {
                     TestResultId = tr.TrsId,
@@ -84,9 +87,10 @@ namespace HIV_System_API_Services.Implements
                 })
                 .ToList();
 
-            // Get all ARV regimens for the patient medical record with their medications
+            // Get all ARV regimens for the patient medical record - SORTED BY LATEST CREATED DATE FIRST
             var arvRegimens = _context.PatientArvRegimen
                 .Where(par => par.PmrId == record.PmrId)
+                .OrderByDescending(par => par.CreatedAt)
                 .Select(par => new PatientArvRegimenResponseDTO
                 {
                     PatientArvRegiId = par.ParId,
@@ -135,7 +139,7 @@ namespace HIV_System_API_Services.Implements
 
             // Validation: PtnId must be positive
             if (record.PtnId <= 0)
-                throw new ArgumentException("Patient ID (PtnId) must be a positive integer.", nameof(record.PtnId));
+                throw new ArgumentException("ID bệnh nhân (PtnId) phải là số dương.", nameof(record.PtnId));
 
             // Optionally, check if a record for this patient already exists (if business logic requires)
             // var existing = await _patientMedicalRecordRepo.GetPatientMedicalRecordByIdAsync(record.PtnId);
@@ -173,12 +177,12 @@ namespace HIV_System_API_Services.Implements
 
             // Validation: PtnId must be positive
             if (record.PtnId <= 0)
-                throw new ArgumentException("Patient ID (PtnId) must be a positive integer.", nameof(record.PtnId));
+                throw new ArgumentException("ID bệnh nhân (PtnId) phải là số dương.", nameof(record.PtnId));
 
             // Retrieve the existing entity
             var existingRecord = await _patientMedicalRecordRepo.GetPatientMedicalRecordByIdAsync(id);
             if (existingRecord == null)
-                throw new KeyNotFoundException($"PatientMedicalRecord with id {id} not found.");
+                throw new KeyNotFoundException($"Hồ sơ bệnh án với id {id} không thể tìm thấy.");
 
             // Optionally, prevent changing to a PtnId that already has a record (if business logic requires)
             // var otherRecord = await _patientMedicalRecordRepo.GetPatientMedicalRecordByIdAsync(record.PtnId);
@@ -197,7 +201,7 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation: patientId must be positive
             if (accId <= 0)
-                throw new ArgumentException("Account ID (accId) must be a positive integer.", nameof(accId));
+                throw new ArgumentException("ID tài khoản (accId) phải là số dương.", nameof(accId));
 
             // Retrieve the personal medical record from the repository
             var record = await _patientMedicalRecordRepo.GetPersonalMedicalRecordAsync(accId);
