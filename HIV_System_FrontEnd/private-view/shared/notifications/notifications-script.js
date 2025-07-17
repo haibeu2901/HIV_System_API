@@ -1,4 +1,4 @@
-// Doctor Notifications Script
+// Notifications Script
 // Adapted from patient notification.js
 
 document.addEventListener('DOMContentLoaded', () => {

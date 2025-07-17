@@ -41,7 +41,7 @@ namespace HIV_System_API_Services.Implements
         {
             var account = _context.Accounts
            .FirstOrDefault(a => a.AccId == patient.AccId)
-           ?? throw new InvalidOperationException("Associated account not found.");
+           ?? throw new InvalidOperationException("Không tìm thấy tài khoản liên kết.");
 
             var medicalRecord = _context.PatientMedicalRecords
                 .FirstOrDefault(r => r.PtnId == patient.PtnId);
