@@ -129,8 +129,8 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Tên người dùng là bắt buộc.", nameof(username));
 
-            if (username.Length < 3 || username.Length > 16)
-                throw new ArgumentException("Tên người dùng phải có từ 3 đến 16 ký tự.", nameof(username));
+            if (username.Length < 3 || username.Length > 24)
+                throw new ArgumentException("Tên người dùng phải có từ 3 đến 24 ký tự.", nameof(username));
 
             try
             {
@@ -175,8 +175,8 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Tên người dùng là bắt buộc.", nameof(username));
 
-            if (username.Length < 3 || username.Length > 16)
-                throw new ArgumentException("Tên người dùng phải có từ 3 đến 16 ký tự.", nameof(username));
+            if (username.Length < 3 || username.Length > 24)
+                throw new ArgumentException("Tên người dùng phải có từ 3 đến 24 ký tự.", nameof(username));
 
             try
             {
@@ -209,6 +209,9 @@ namespace HIV_System_API_Services.Implements
             if (password.Length < 8)
                 throw new ArgumentException("Mật khẩu phải có ít nhất 8 ký tự.", nameof(password));
 
+            if (password.Length >50)
+                throw new ArgumentException("Mật khẩu không được quá 50 ký tự.", nameof(password));
+
             if (password.Contains(' '))
                 throw new ArgumentException("Mật khẩu không được chứa dấu cách.", nameof(password));
 
@@ -239,8 +242,8 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email là bắt buộc.", nameof(email));
 
-            if (email.Length > 254)
-                throw new ArgumentException("Email không được vượt quá 254 ký tự.", nameof(email));
+            if (email.Length > 100)
+                throw new ArgumentException("Email không được vượt quá 100 ký tự.", nameof(email));
 
             var parts = email.Split('@');
             if (parts.Length != 2)

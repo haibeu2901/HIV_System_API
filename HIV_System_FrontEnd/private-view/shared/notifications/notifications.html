@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông báo</title>
+    <link rel="stylesheet" href="notifications-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <div class="notification-container">
+        <h2 id="notification-heading">Thông báo</h2>
+        <div id="notification-list"></div>
+    </div>
+    <script src="/private-view/shared/role-config.js"></script>
+    <script src="/private-view/shared/header/header-script.js"></script>
+    <script>
+      // Set heading and title based on role
+      document.addEventListener('DOMContentLoaded', function() {
+        let heading = 'Thông báo';
+        let title = 'Thông báo';
+        if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+          const roleId = window.roleUtils.getUserRole();
+          const role = window.roleUtils.ROLE_NAMES[roleId];
+          if (role === 'doctor') {
+            heading = 'Thông báo của bác sĩ';
+            title = 'Thông báo của bác sĩ';
+          } else if (role === 'staff') {
+            heading = 'Thông báo của nhân viên';
+            title = 'Thông báo của nhân viên';
+          }
+        }
+        document.getElementById('notification-heading').textContent = heading;
+        document.title = title;
+      });
+    </script>
+    <script src="notifications-script.js"></script>
+</body>
+</html>

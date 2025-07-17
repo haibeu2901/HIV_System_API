@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!-- Shared Header -->
+<header class="shared-header">
+  <div class="header-logo">
+  </div>
+  <nav class="shared-header-nav">
+    <div class="shared-header-logo">
+        <a href="/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html" class="logo-link">
+            <i class="fas fa-stethoscope"></i>
+            <span>CareFirst HIV Clinic</span>
+        </a>
+    </div>
+    <button class="shared-header-hamburger" id="shared-header-hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <ul class="shared-header-links" id="shared-header-links">
+        <li class="dropdown" id="sharedDropdown">
+            <button class="btn-shared-dropdown" id="sharedDropdownBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-user-md"></i> User <i class="fas fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a href="/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="/private-view/doctor-view/doctor-work-schedule/doctor-work-schedule.html" id="nav-work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a>
+                <a href="/private-view/shared/appointment-list/appoiment-list.html" id="nav-appointments"><i class="fas fa-calendar-check"></i> Appointments</a>
+                <a href="/private-view/shared/patient-list/patient-list.html" id="nav-patient-list"><i class="fas fa-users"></i> Patient List</a>
+                <a href="/private-view/shared/medical-resources/medical-resources.html" id="nav-medical-resources"><i class="fas fa-book-medical"></i> Medical Resources</a>
+                <a href="/private-view/shared/user-profile/user-profile.html" id="nav-profile"><i class="fas fa-id-card"></i> Profile</a>
+                <a href="/private-view/shared/notifications/notifications.html" id="nav-notifications"><i class="fas fa-bell"></i> Notifications</a>
+                <!-- TODO: Add/remove menu items based on role in header.js -->
+            </div>
+        </li>
+        <li>
+            <button class="btn-logout" id="nav-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </li>
+    </ul>
+    <button class="shared-header-bell" id="notificationBell" aria-label="Show notifications">
+        <i class="fas fa-bell"></i>
+        <span id="shared-unread-badge-header" class="unread-badge" style="display:none;">0</span>
+    </button>
+    <div id="notification-popup" class="notification-popup hidden">
+        <div class="notification-popup-header">
+            <span>Notifications</span>
+            <button id="closeNotificationPopup" aria-label="Close notifications"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="popup-notification-list"></div>
+    </div>
+</nav>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> 
