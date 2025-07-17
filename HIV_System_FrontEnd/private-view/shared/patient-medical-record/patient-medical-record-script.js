@@ -208,6 +208,23 @@ function renderTestResults(testResults) {
         html += `</div>`;
     });
     section.innerHTML = html;
+    // Add staff button if role is staff
+    if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+        const roleId = window.roleUtils.getUserRole();
+        const roleName = window.roleUtils.ROLE_NAMES[roleId];
+        if (roleName === 'staff') {
+            const btn = document.createElement('button');
+            btn.id = 'createTestResultBtn';
+            btn.className = 'primary-btn';
+            btn.style = 'margin-top: 1.5rem;';
+            btn.innerHTML = '<i class="fas fa-plus"></i> Tạo kết quả xét nghiệm';
+            btn.onclick = function() {
+                // TODO: Implement test result creation modal or redirect
+                alert('Chức năng tạo kết quả xét nghiệm cho nhân viên!');
+            };
+            section.appendChild(btn);
+        }
+    }
 }
 
 // Render ARV regimens (array) with medications
@@ -270,10 +287,6 @@ function renderARVRegimens(regimens, medications) {
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Regimen Level</div>
                         <div class="regimen-detail-value">${levelText}</div>
-                    </div>
-                    <div class="regimen-detail">
-                        <div class="regimen-detail-label">Total Cost</div>
-                        <div class="regimen-detail-value">${regimen.totalCost ? `$${regimen.totalCost.toLocaleString()}` : 'N/A'}</div>
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Created At</div>
@@ -456,7 +469,6 @@ const regimenLevel = document.getElementById('regimenLevel');
 const regimenTemplate = document.getElementById('regimenTemplate');
 const regimenNotes = document.getElementById('regimenNotes');
 const regimenStartDate = document.getElementById('regimenStartDate');
-const regimenTotalCost = document.getElementById('regimenTotalCost');
 const medicationsTableBody = document.querySelector('#medicationsTable tbody');
 const addMedicationBtn = document.getElementById('addMedicationBtn');
 const regimenForm = document.getElementById('regimenForm');
@@ -481,7 +493,6 @@ regimenTemplate.onchange = function() {
     const template = JSON.parse(selected);
     // Fill form fields
     regimenNotes.value = template.description;
-    regimenTotalCost.value = '';
     regimenStartDate.value = new Date().toISOString().slice(0, 10);
     // Fill medications
     selectedTemplateMedications = template.medications.map(med => ({
@@ -602,7 +613,6 @@ regimenForm.onsubmit = async function(e) {
         startDate: regimenStartDate.value,
         endDate: null,
         regimenStatus: 1, // active
-        totalCost: 0 // Let backend calculate
     };
     // Call new API
     try {

@@ -9,7 +9,7 @@
 <body>
     <div id="header-placeholder"></div>
 
-    <div class="dashboard-container" style="padding-top: 100px;">
+    <div class="dashboard-container" style="padding-top: 5px;">
         <main class="main-content">
             <div class="dashboard-header">Patient Medical Record</div>
             
@@ -55,14 +55,14 @@
         </main>
     </div>
 
-    <!-- Create New Regimen Button and Modal -->
-    <div style="text-align: right; margin-bottom: 2rem;">
-        <button id="openRegimenModalBtn" class="primary-btn">Create New Regimen</button>
+    <!-- Create New Regimen Button and Modal (only for doctor) -->
+    <div id="regimenCreateContainer" style="text-align: right; margin-bottom: 2rem; display:none;">
+        <button id="openRegimenModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo phác đồ ARV</button>
     </div>
     <div id="regimenModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" id="closeRegimenModalBtn">&times;</span>
-            <h2>Create New ARV Regimen</h2>
+            <h2>Tạo phác đồ ARV mới</h2>
             <form id="regimenForm">
                 <div class="form-group">
                     <label for="regimenLevel">Regimen Level</label>
@@ -87,10 +87,6 @@
                 <div class="form-group">
                     <label for="regimenStartDate">Start Date</label>
                     <input type="date" id="regimenStartDate" name="regimenStartDate" required />
-                </div>
-                <div class="form-group">
-                    <label for="regimenTotalCost">Total Cost</label>
-                    <input type="number" id="regimenTotalCost" name="regimenTotalCost" min="0" step="1" />
                 </div>
                 <div class="form-group">
                     <label>Medications</label>
@@ -191,5 +187,20 @@
             </div>
         </div>
     </footer>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+          const roleId = window.roleUtils.getUserRole();
+          const roleName = window.roleUtils.ROLE_NAMES[roleId];
+          if (roleName === 'doctor') {
+            document.getElementById('regimenCreateContainer').style.display = '';
+            document.getElementById('regimenModal').style.display = 'none';
+          } else {
+            document.getElementById('regimenCreateContainer').style.display = 'none';
+            document.getElementById('regimenModal').remove();
+          }
+        }
+      });
+    </script>
 </body>
 </html>
