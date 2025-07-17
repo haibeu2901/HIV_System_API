@@ -173,11 +173,11 @@ function renderStatusText(status) {
     case 2:
       return "Confirmed";
     case 3:
-      return "Cancelled";
+      return "Rescheduled";
     case 4:
-      return "Cancelled";
-    default:
-      return "Pending";
+      return "Rejected";
+    case 5:
+      return "Completed";
   }
 }
 
@@ -190,9 +190,9 @@ function getStatusColor(status) {
     case 3:
       return "#e53935"; // Cancelled - red
     case 4:
-      return "#e53935"; // Cancelled - red
-    default:
-      return "#fbc02d"; // Default to pending color
+      return "#e53935"; // Rejected - red
+    case 5:
+      return "#3498db"; // Completed - blue
   }
 }
 

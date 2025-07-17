@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="record-options">
                     <button class="record-option-btn" onclick="window.location.href='../appointment-view/view-appointment.html?id=${apm.appointmentId}'">View appointment</button>
                     <button class="record-option-btn" onclick="window.location.href='../test-result/test-result.html'">View test result</button>
-                    <button class="record-option-btn" onclick="window.location.href='../ARV/arv-medications.html'">View ARV regimen</button>
+                    <button class="record-option-btn" onclick="window.location.href='../ARV/ARV.html'">View ARV regimen</button>
                 </div>
             </div>
         `).join("");
