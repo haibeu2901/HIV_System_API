@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem("token");
     if (!token) {
         console.error('No authentication token found');
-        alert('You need to be logged in to view notifications. Redirecting to login...');
+        alert('Bạn cần đăng nhập để xem thông báo. Đang chuyển hướng đến trang đăng nhập...');
         window.location.href = '/public-view/landingpage.html';
         return;
     }
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load main page notifications
     async function loadMainNotifications() {
-        list.innerHTML = "<p>Loading...</p>";
+        list.innerHTML = "<p>Đang tải...</p>";
         
         try {
             // Try fetching notifications one by one to identify which endpoint is failing
@@ -53,8 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="no-notifications-icon">
                             <i class="fa-solid fa-bell-slash"></i>
                         </div>
-                        <h3>No Notifications</h3>
-                        <p>You don't have any notifications yet.</p>
+                        <h3>Không Có Thông Báo</h3>
+                        <p>Bạn chưa có thông báo nào.</p>
                     </div>
                 `;
                 return;
@@ -70,11 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const controlsHTML = `
                 <div class="notification-controls">
                     <div class="filter-tabs">
-                        <button class="filter-tab active" data-filter="all">All (${allNotifications.length})</button>
-                        <button class="filter-tab" data-filter="unread">Unread (${unreadNotifications.length})</button>
+                        <button class="filter-tab active" data-filter="all">Tất cả (${allNotifications.length})</button>
+                        <button class="filter-tab" data-filter="unread">Chưa đọc (${unreadNotifications.length})</button>
                     </div>
                     <button class="mark-all-read-btn">
-                        <i class="fa-solid fa-check-double"></i> Mark All as Read
+                        <i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc
                     </button>
                 </div>
             `;
@@ -101,10 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="error-icon">
                         <i class="fa-solid fa-exclamation-triangle"></i>
                     </div>
-                    <h3>Error Loading Notifications</h3>
+                    <h3>Lỗi Khi Tải Thông Báo</h3>
                     <p>${error.message}</p>
                     <button onclick="location.reload()" class="retry-btn">
-                        <i class="fa-solid fa-refresh"></i> Try Again
+                        <i class="fa-solid fa-refresh"></i> Thử Lại
                     </button>
                 </div>
             `;
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
             location.reload();
         } catch (error) {
             console.error('Error marking notification as read:', error);
-            alert('Failed to mark notification as read. Please try again.');
+            alert('Không thể đánh dấu thông báo đã đọc. Vui lòng thử lại.');
         }
     }
 
@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             location.reload();
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
-            alert('Failed to mark all notifications as read. Please try again.');
+            alert('Không thể đánh dấu tất cả thông báo đã đọc. Vui lòng thử lại.');
         }
     }
 
@@ -546,10 +546,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
             
-            if (minutes < 1) return 'Just now';
-            if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-            if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-            if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+            if (minutes < 1) return 'Vừa xong';
+            if (minutes < 60) return `${minutes} phút trước`;
+            if (hours < 24) return `${hours} giờ trước`;
+            if (days < 7) return `${days} ngày trước`;
             
             return d.toLocaleDateString('en-GB', {
                 year: 'numeric', 
@@ -578,13 +578,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getNotificationTypeClass(notiType) {
         const classes = {
-            'Appt Confirm': 'type-appointment-confirm',
-            'Appointment Update': 'type-appointment-update',
-            'Appointment Reminder': 'type-appointment-reminder',
-            'Test Result': 'type-test-result',
-            'Medical Record': 'type-medical-record',
-            'System': 'type-system',
-            'General': 'type-general'
+            'Xác nhận lịch hẹn': 'type-appointment-confirm',
+            'Cập nhật lịch hẹn': 'type-appointment-update',
+            'Nhắc nhở lịch hẹn': 'type-appointment-reminder',
+            'Kết quả xét nghiệm': 'type-test-result',
+            'Hồ sơ bệnh án': 'type-medical-record',
+            'Hệ thống': 'type-system',
+            'Chung': 'type-general'
         };
         return classes[notiType] || 'type-general';
     }
@@ -629,10 +629,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="fb-notification-actions">
                 <button class="fb-notification-action mark-read" data-notification-id="${notification.notiId}">
-                    <i class="fa-solid fa-check"></i> Mark as Read
+                    <i class="fa-solid fa-check"></i> Đánh dấu đã đọc
                 </button>
                 <button class="fb-notification-action view-all">
-                    <i class="fa-solid fa-bell"></i> View All
+                    <i class="fa-solid fa-bell"></i> Xem tất cả
                 </button>
             </div>
         `;

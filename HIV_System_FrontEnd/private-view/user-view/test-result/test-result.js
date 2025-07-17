@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = `
         <div class="loading-container">
             <div class="loader"></div>
-            <p>Loading test results...</p>
+            <p>Đang tải kết quả xét nghiệm...</p>
         </div>
     `;
 
@@ -31,8 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="no-results-icon">
                         <i class="fa-solid fa-flask-vial"></i>
                     </div>
-                    <h3>No Test Results Found</h3>
-                    <p>You don't have any test results yet. Please contact your healthcare provider for more information.</p>
+                    <h3>Không Tìm Thấy Kết Quả Xét Nghiệm</h3>
+                    <p>Bạn chưa có kết quả xét nghiệm nào. Vui lòng liên hệ với bác sĩ để biết thêm thông tin.</p>
                 </div>
             `;
             return;
@@ -44,22 +44,22 @@ document.addEventListener('DOMContentLoaded', () => {
         data.forEach((testResult, index) => {
             resultsHTML += `
                 <div class="test-result-item">
-                    <h3>Test Result ${index + 1}</h3>
+                    <h3>Kết Quả Xét Nghiệm ${index + 1}</h3>
                     <div class="raw-data">
                         <div class="data-field">
-                            <span class="field-label">Patient Medical Record ID:</span>
+                            <span class="field-label">Mã Hồ Sơ Bệnh Án:</span>
                             <span class="field-value">${testResult.patientMedicalRecordId}</span>
                         </div>
                         <div class="data-field">
-                            <span class="field-label">Result:</span>
+                            <span class="field-label">Kết quả:</span>
                             <span class="field-value">${testResult.result}</span>
                         </div>
                         <div class="data-field">
-                            <span class="field-label">Test Date:</span>
+                            <span class="field-label">Ngày xét nghiệm:</span>
                             <span class="field-value">${testResult.testDate}</span>
                         </div>
                         <div class="data-field">
-                            <span class="field-label">Notes:</span>
+                            <span class="field-label">Ghi chú:</span>
                             <span class="field-value">${testResult.notes}</span>
                         </div>
                     </div>
@@ -78,10 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="error-icon">
                     <i class="fa-solid fa-exclamation-triangle"></i>
                 </div>
-                <h3>Error Loading Test Results</h3>
-                <p>We couldn't load your test results at this time. Please try again later or contact support if the problem persists.</p>
+                <h3>Lỗi Khi Tải Kết Quả Xét Nghiệm</h3>
+                <p>Không thể tải kết quả xét nghiệm của bạn lúc này. Vui lòng thử lại sau hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp tục.</p>
                 <button onclick="location.reload()" class="retry-btn">
-                    <i class="fa-solid fa-refresh"></i> Try Again
+                    <i class="fa-solid fa-refresh"></i> Thử Lại
                 </button>
             </div>
         `;

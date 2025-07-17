@@ -42,15 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(error => {
         console.error('Error fetching ARV medications:', error);
-        loadingContainer.innerHTML = `
-            <div class="error-container">
+        loadingContainer.innerHTML = `                <div class="error-container">
                 <div class="error-icon">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h3>Error Loading Medications</h3>
-                <p>We encountered an issue while loading the ARV medications catalog. Please try again later.</p>
+                <h3>Lỗi tải danh sách thuốc</h3>
+                <p>Đã xảy ra lỗi khi tải danh mục thuốc ARV. Vui lòng thử lại sau.</p>
                 <button class="btn-retry" onclick="window.location.reload()">
-                    <i class="fas fa-refresh"></i> Try Again
+                    <i class="fas fa-refresh"></i> Thử lại
                 </button>
             </div>
         `;
@@ -64,8 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="no-medications-icon">
                         <i class="fas fa-pills"></i>
                     </div>
-                    <h3>No Medications Found</h3>
-                    <p>No medications match your current search criteria.</p>
+                    <h3>Không tìm thấy thuốc</h3>
+                    <p>Không có thuốc nào phù hợp với tiêu chí tìm kiếm của bạn.</p>
                 </div>
             `;
             return;
@@ -86,24 +85,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="medication-details">
                         <div class="detail-item">
                             <i class="fas fa-prescription-bottle"></i>
-                            <span><strong>Dosage:</strong> ${medication.arvMedicationDosage}</span>
+                            <span><strong>Liều lượng:</strong> ${medication.arvMedicationDosage}</span>
                         </div>
                         
                         <div class="detail-item">
                             <i class="fas fa-building"></i>
-                            <span><strong>Manufacturer:</strong> ${medication.arvMedicationManufacturer}</span>
+                            <span><strong>Nhà sản xuất:</strong> ${medication.arvMedicationManufacturer}</span>
                         </div>
                         
                         <div class="detail-item price-item">
                             <i class="fas fa-money-bill-wave"></i>
-                            <span><strong>Price:</strong> ${medication.arvMedicationPrice.toLocaleString()} VND</span>
+                            <span><strong>Giá:</strong> ${medication.arvMedicationPrice.toLocaleString()} VND</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="medication-footer">
                     <button class="btn-view-details" onclick="viewMedicationDetails('${medication.arvMedicationName}')">
-                        <i class="fas fa-info-circle"></i> View Details
+                        <i class="fas fa-info-circle"></i> Xem chi tiết
                     </button>
                 </div>
             </div>
@@ -168,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const medication = allMedications.find(m => m.arvMedicationName === medicationName);
         if (medication) {
             // Create a modal or detailed view
-            alert(`Medication Details:\n\nName: ${medication.arvMedicationName}\nDescription: ${medication.arvMedicationDescription}\nDosage: ${medication.arvMedicationDosage}\nManufacturer: ${medication.arvMedicationManufacturer}\nPrice: ${medication.arvMedicationPrice.toLocaleString()} VND`);
+            alert(`Chi tiết thuốc:\n\nTên thuốc: ${medication.arvMedicationName}\nMô tả: ${medication.arvMedicationDescription}\nLiều lượng: ${medication.arvMedicationDosage}\nNhà sản xuất: ${medication.arvMedicationManufacturer}\nGiá: ${medication.arvMedicationPrice.toLocaleString()} VND`);
         }
     };
 });

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Appointment - CareFirst HIV Clinic</title>
+    <title>Đặt lịch hẹn - Phòng khám HIV CareFirst</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="../userStyle.css">
     <link rel="stylesheet" href="../header/header.css">
@@ -16,30 +16,30 @@
     <div class="booking-container">
         <div class="section-title">
             <i class="fas fa-calendar-plus"></i>
-            Book an Appointment
+            Đặt lịch hẹn
         </div>
         
         <div class="tab-buttons">
             <button id="by-time-btn" class="tab-btn active">
-                <i class="fas fa-clock"></i> Order by Time
+                <i class="fas fa-clock"></i> Đặt theo thời gian
             </button>
             <button id="by-doctor-btn" class="tab-btn">
-                <i class="fas fa-user-md"></i> Order by Doctor
+                <i class="fas fa-user-md"></i> Đặt theo bác sĩ
             </button>
         </div>
 
-        <!-- Order by Time -->
+        <!-- Đặt theo thời gian -->
         <div id="by-time-section" class="booking-section">
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fas fa-calendar"></i> Select Date
+                    <i class="fas fa-calendar"></i> Chọn ngày
                 </label>
                 <input type="date" id="calendar-date" class="form-input">
             </div>
             
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fas fa-clock"></i> Select Time
+                    <i class="fas fa-clock"></i> Chọn thời gian
                 </label>
                 <div id="time-slot-grid"></div>
             </div>
@@ -47,45 +47,45 @@
             <div id="available-doctors-section" style="display:none;">
                 <div class="form-group">
                     <label class="form-label">
-                        <i class="fas fa-user-md"></i> Select Doctor
+                        <i class="fas fa-user-md"></i> Chọn bác sĩ
                     </label>
                     <div id="doctor-list"></div>
                 </div>
             </div>
             
             <button id="confirm-time-booking-btn" class="btn-primary" style="display:none;">
-                <i class="fas fa-check"></i> Book Appointment
+                <i class="fas fa-check"></i> Xác nhận đặt lịch
             </button>
         </div>
 
-        <!-- Order by Doctor -->
+        <!-- Đặt theo bác sĩ -->
         <div id="by-doctor-section" class="booking-section" style="display:none;">
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fas fa-user-md"></i> Select Doctor
+                    <i class="fas fa-user-md"></i> Chọn bác sĩ
                 </label>
                 <select id="doctor-select" class="form-select">
-                    <option value="">-- Select Doctor --</option>
+                    <option value="">-- Chọn bác sĩ --</option>
                 </select>
             </div>
             
             <div id="doctor-schedule-section" style="display:none;">
                 <div class="form-group">
                     <label class="form-label">
-                        <i class="fas fa-calendar"></i> Select Date
+                        <i class="fas fa-calendar"></i> Chọn ngày
                     </label>
                     <input type="date" id="doctor-schedule-date" class="form-input">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">
-                        <i class="fas fa-clock"></i> Select Time
+                        <i class="fas fa-clock"></i> Chọn thời gian
                     </label>
                     <div id="doctor-time-slot-grid"></div>
                 </div>
                 
                 <button id="confirm-doctor-booking-btn" class="btn-primary" style="display:none;">
-                    <i class="fas fa-check"></i> Book Appointment
+                    <i class="fas fa-check"></i> Xác nhận đặt lịch
                 </button>
             </div>
         </div>

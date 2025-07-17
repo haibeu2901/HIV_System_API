@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recordList.innerHTML = `
         <div class="loading-container">
             <div class="loading-spinner"></div>
-            <p>Loading your medical records...</p>
+            <p>Đang tải hồ sơ bệnh án của bạn...</p>
         </div>
     `;
 
@@ -22,18 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="no-records-icon">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <h3>No Medical Records Found</h3>
-                    <p>You don't have any medical records yet. Medical records will appear here after your appointments with doctors.</p>
+                    <h3>Không Tìm Thấy Hồ Sơ Bệnh Án</h3>
+                    <p>Bạn chưa có hồ sơ bệnh án nào. Hồ sơ bệnh án sẽ xuất hiện ở đây sau khi bạn thăm khám với bác sĩ.</p>
                     <div class="suggestions">
-                        <p><strong>What you can do:</strong></p>
+                        <p><strong>Bạn có thể:</strong></p>
                         <ul>
-                            <li>Book an appointment with a doctor</li>
-                            <li>Complete your scheduled appointments</li>
-                            <li>Your medical records will be created after consultations</li>
+                            <li>Đặt lịch hẹn với bác sĩ</li>
+                            <li>Hoàn thành các cuộc hẹn đã lên lịch</li>
+                            <li>Hồ sơ bệnh án sẽ được tạo sau khi thăm khám</li>
                         </ul>
                     </div>
                     <button class="btn-book-appointment" onclick="window.location.href='../booking/appointment-booking.html'">
-                        <i class="fas fa-calendar-plus"></i> Book an Appointment
+                        <i class="fas fa-calendar-plus"></i> Đặt Lịch Hẹn
                     </button>
                 </div>
             `;
@@ -53,10 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="no-records-icon">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <h3>No Medical Records Found</h3>
-                    <p>You don't have any medical records yet. Medical records will appear here after your appointments with doctors.</p>
+                    <h3>Không Tìm Thấy Hồ Sơ Bệnh Án</h3>
+                    <p>Bạn chưa có hồ sơ bệnh án nào. Hồ sơ bệnh án sẽ xuất hiện ở đây sau khi bạn thăm khám với bác sĩ.</p>
                     <button class="btn-book-appointment" onclick="window.location.href='../booking/appointment-booking.html'">
-                        <i class="fas fa-calendar-plus"></i> Book an Appointment
+                        <i class="fas fa-calendar-plus"></i> Đặt Lịch Hẹn
                     </button>
                 </div>
             `;
@@ -66,15 +66,15 @@ document.addEventListener('DOMContentLoaded', () => {
         recordList.innerHTML = data.appointments.map(apm => `
             <div class="record-card">
                 <div class="record-info">
-                    <div><b>Doctor:</b> ${apm.doctorName}</div>
-                    <div><b>Date:</b> ${apm.apmtDate}</div>
-                    <div><b>Time:</b> ${apm.apmTime}</div>
-                    <div><b>Notes:</b> ${apm.notes || "No notes available"}</div>
+                    <div><b>Bác sĩ:</b> ${apm.doctorName}</div>
+                    <div><b>Ngày:</b> ${apm.apmtDate}</div>
+                    <div><b>Giờ:</b> ${apm.apmTime}</div>
+                    <div><b>Ghi chú:</b> ${apm.notes || "Không có ghi chú"}</div>
                 </div>
                 <div class="record-options">
-                    <button class="record-option-btn" onclick="window.location.href='../appointment-view/view-appointment.html?id=${apm.appointmentId}'">View appointment</button>
-                    <button class="record-option-btn" onclick="window.location.href='../test-result/test-result.html'">View test result</button>
-                    <button class="record-option-btn" onclick="window.location.href='../ARV/ARV.html'">View ARV regimen</button>
+                    <button class="record-option-btn" onclick="window.location.href='../appointment-view/view-appointment.html?id=${apm.appointmentId}'">Xem lịch hẹn</button>
+                    <button class="record-option-btn" onclick="window.location.href='../test-result/test-result.html'">Xem kết quả xét nghiệm</button>
+                    <button class="record-option-btn" onclick="window.location.href='../ARV/ARV.html'">Xem phác đồ ARV</button>
                 </div>
             </div>
         `).join("");
@@ -86,10 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="error-icon">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h3>Error Loading Medical Records</h3>
-                <p>We encountered an issue while loading your medical records. Please try again later.</p>
+                <h3>Lỗi Khi Tải Hồ Sơ Bệnh Án</h3>
+                <p>Đã xảy ra lỗi khi tải hồ sơ bệnh án của bạn. Vui lòng thử lại sau.</p>
                 <button class="btn-retry" onclick="window.location.reload()">
-                    <i class="fas fa-refresh"></i> Try Again
+                    <i class="fas fa-refresh"></i> Thử Lại
                 </button>
             </div>
         `;

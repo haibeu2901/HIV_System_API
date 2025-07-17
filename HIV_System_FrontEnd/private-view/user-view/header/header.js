@@ -88,21 +88,21 @@ function initializeNotificationSystem() {
       popup.className = 'facebook-notification-popup-container';
       popup.innerHTML = `
         <div class="fb-popup-header">
-          <h3><i class="fa-solid fa-bell"></i> Notifications</h3>
+          <h3><i class="fa-solid fa-bell"></i> Thông báo</h3>
           <button class="fb-popup-close" aria-label="Close notifications">
             <i class="fa-solid fa-times"></i>
           </button>
         </div>
         <div class="fb-popup-tabs">
-          <button class="fb-popup-tab active" data-filter="all">All</button>
-          <button class="fb-popup-tab" data-filter="unread">Unread</button>
+          <button class="fb-popup-tab active" data-filter="all">Tất cả</button>
+          <button class="fb-popup-tab" data-filter="unread">Chưa đọc</button>
         </div>
         <div class="fb-popup-content">
-          <div class="fb-popup-loading">Loading notifications...</div>
+          <div class="fb-popup-loading">Đang tải thông báo...</div>
         </div>
         <div class="fb-popup-footer">
-          <button class="fb-popup-mark-all-read">Mark All as Read</button>
-          <button class="fb-popup-view-all">View All Notifications</button>
+          <button class="fb-popup-mark-all-read">Đánh dấu tất cả đã đọc</button>
+          <button class="fb-popup-view-all">Xem tất cả thông báo</button>
         </div>
       `;
       document.body.appendChild(popup);
@@ -196,7 +196,7 @@ function initializeNotificationSystem() {
         content.innerHTML = `
           <div class="fb-popup-empty">
             <i class="fa-solid fa-bell-slash"></i>
-            <p>No ${filter === 'unread' ? 'unread' : ''} notifications</p>
+            <p>Không có thông báo ${filter === 'unread' ? 'chưa đọc' : 'nào'}</p>
           </div>
         `;
         return;
@@ -238,10 +238,9 @@ function initializeNotificationSystem() {
       
     } catch (error) {
       console.error('Error loading popup notifications:', error);
-      content.innerHTML = `
-        <div class="fb-popup-error">
+      content.innerHTML = `          <div class="fb-popup-error">
           <i class="fa-solid fa-exclamation-triangle"></i>
-          <p>Error loading notifications</p>
+          <p>Lỗi tải thông báo</p>
         </div>
       `;
     }
@@ -314,10 +313,10 @@ function initializeNotificationSystem() {
       const hours = Math.floor(minutes / 60);
       const days = Math.floor(hours / 24);
       
-      if (minutes < 1) return 'Just now';
-      if (minutes < 60) return `${minutes}m ago`;
-      if (hours < 24) return `${hours}h ago`;
-      if (days < 7) return `${days}d ago`;
+      if (minutes < 1) return 'Vừa xong';
+      if (minutes < 60) return `${minutes} phút trước`;
+      if (hours < 24) return `${hours} giờ trước`;
+      if (days < 7) return `${days} ngày trước`;
       
       return d.toLocaleDateString();
     } catch (error) {
@@ -327,30 +326,30 @@ function initializeNotificationSystem() {
 
   function getNotificationIcon(notiType) {
     const icons = {
-      'Appt Confirm': 'fa-solid fa-calendar-check',
-      'Appt Cancel': 'fa-solid fa-calendar-times',
-      'Appointment Update': 'fa-solid fa-calendar-pen',
-      'Appointment Reminder': 'fa-solid fa-bell',
-      'Test Result': 'fa-solid fa-flask',
-      'Medical Record': 'fa-solid fa-file-medical',
-      'Blog Approval': 'fa-solid fa-check-circle',
-      'System': 'fa-solid fa-gear',
-      'General': 'fa-solid fa-info-circle'
+      'Xác nhận lịch hẹn': 'fa-solid fa-calendar-check',
+      'Hủy lịch hẹn': 'fa-solid fa-calendar-times',
+      'Cập nhật lịch hẹn': 'fa-solid fa-calendar-pen',
+      'Nhắc nhở lịch hẹn': 'fa-solid fa-bell',
+      'Kết quả xét nghiệm': 'fa-solid fa-flask',
+      'Hồ sơ y tế': 'fa-solid fa-file-medical',
+      'Phê duyệt bài viết': 'fa-solid fa-check-circle',
+      'Hệ thống': 'fa-solid fa-gear',
+      'Chung': 'fa-solid fa-info-circle'
     };
     return icons[notiType] || 'fa-solid fa-bell';
   }
 
   function getNotificationTypeClass(notiType) {
     const classes = {
-      'Appt Confirm': 'type-appointment-confirm',
-      'Appt Cancel': 'type-appointment-cancel',
-      'Appointment Update': 'type-appointment-update',
-      'Appointment Reminder': 'type-appointment-reminder',
-      'Test Result': 'type-test-result',
-      'Medical Record': 'type-medical-record',
-      'Blog Approval': 'type-blog-approval',
-      'System': 'type-system',
-      'General': 'type-general'
+      'Xác nhận lịch hẹn': 'type-appointment-confirm',
+      'Hủy lịch hẹn': 'type-appointment-cancel',
+      'Cập nhật lịch hẹn': 'type-appointment-update',
+      'Nhắc nhở lịch hẹn': 'type-appointment-reminder',
+      'Kết quả xét nghiệm': 'type-test-result',
+      'Hồ sơ y tế': 'type-medical-record',
+      'Phê duyệt bài viết': 'type-blog-approval',
+      'Hệ thống': 'type-system',
+      'Chung': 'type-general'
     };
     return classes[notiType] || 'type-general';
   }

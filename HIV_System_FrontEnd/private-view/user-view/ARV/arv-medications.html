@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARV Medications Catalog</title>
+    <title>Danh mục thuốc ARV</title>
     <link rel="stylesheet" href="arv-medications.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="../userStyle.css">
@@ -36,22 +36,22 @@
     <div id="header-placeholder"></div>
 
     <a href="../booking/appointment-booking.html" class="back-btn">
-        <i class="fa fa-arrow-left"></i> Back to Home
+        <i class="fa fa-arrow-left"></i> Quay lại trang chủ
     </a>
 
     <div class="medications-container">
         <div class="medications-header">
-            <h1><i class="fas fa-pills"></i> ARV Medications Catalog</h1>
-            <p>Complete list of available Antiretroviral (ARV) medications</p>
+            <h1><i class="fas fa-pills"></i> Danh mục thuốc ARV</h1>
+            <p>Danh sách đầy đủ các thuốc kháng vi-rút (ARV) hiện có</p>
         </div>
 
         <div class="search-filters">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search medications by name, manufacturer, or description...">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm thuốc theo tên, nhà sản xuất hoặc mô tả...">
             </div>
             <div class="filter-buttons">
-                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn active" data-filter="all">Tất cả</button>
                 <button class="filter-btn" data-filter="nrti">NRTI</button>
                 <button class="filter-btn" data-filter="nnrti">NNRTI</button>
                 <button class="filter-btn" data-filter="pi">PI</button>
@@ -64,32 +64,32 @@
                 <i class="fas fa-pills"></i>
                 <div class="stat-info">
                     <h3 id="totalMedications">0</h3>
-                    <p>Total Medications</p>
+                    <p>Tổng số thuốc</p>
                 </div>
             </div>
             <div class="stat-card">
                 <i class="fas fa-building"></i>
                 <div class="stat-info">
                     <h3 id="totalManufacturers">0</h3>
-                    <p>Manufacturers</p>
+                    <p>Nhà sản xuất</p>
                 </div>
             </div>
             <div class="stat-card">
                 <i class="fas fa-dollar-sign"></i>
                 <div class="stat-info">
                     <h3 id="averagePrice">0</h3>
-                    <p>Average Price (VND)</p>
+                    <p>Giá trung bình (VND)</p>
                 </div>
             </div>
         </div>
 
         <div class="medications-grid" id="medicationsGrid">
-            <!-- Medications will be loaded here -->
+            <!-- Danh sách thuốc sẽ được tải ở đây -->
         </div>
 
         <div class="loading-container" id="loadingContainer">
             <div class="loading-spinner"></div>
-            <p>Loading ARV medications...</p>
+            <p>Đang tải danh sách thuốc ARV...</p>
         </div>
     </div>
 

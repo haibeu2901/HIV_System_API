@@ -48,10 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="no-arv-icon">
                         <i class="fas fa-pills"></i>
                     </div>
-                    <h3>No ARV Regimens Found</h3>
-                    <p>You don't have any ARV regimens yet. ARV regimens will be prescribed by your doctor based on your medical condition and test results.</p>
+                    <h3>Không Tìm Thấy Phác Đồ ARV</h3>
+                    <p>Bạn chưa có phác đồ ARV nào. Phác đồ ARV sẽ được bác sĩ kê đơn dựa trên tình trạng sức khỏe và kết quả xét nghiệm của bạn.</p>
                     <button class="btn-book-appointment" onclick="window.location.href='../booking/appointment-booking.html'">
-                        <i class="fas fa-calendar-plus"></i> Book an Appointment
+                        <i class="fas fa-calendar-plus"></i> Đặt Lịch Hẹn
                     </button>
                 </div>
             `;
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="arv-header">
                     <div class="arv-id">
                         <i class="fas fa-id-card"></i>
-                        <span>Regimen ID: ${reg.patientArvRegiId}</span>
+                        <span>ID phác đồ: ${reg.patientArvRegiId}</span>
                     </div>
                     <div class="arv-status-badge">
                         <span class="arv-status ${renderStatusClass(reg.regimenStatus)}">${renderStatusText(reg.regimenStatus)}</span>
@@ -72,35 +72,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 <div class="arv-notes">
                     <i class="fas fa-notes-medical"></i>
-                    <strong>Notes:</strong> ${reg.notes || 'No notes available'}
+                    <strong>Ghi chú:</strong> ${reg.notes || 'Không có ghi chú'}
                 </div>
                 
                 <div class="arv-meta">
                     <div class="arv-meta-item">
                         <i class="fas fa-calendar-start"></i>
-                        <strong>Start Date:</strong> ${formatDate(reg.startDate)}
+                        <strong>Ngày bắt đầu:</strong> ${formatDate(reg.startDate)}
                     </div>
                     <div class="arv-meta-item">
                         <i class="fas fa-calendar-end"></i>
-                        <strong>End Date:</strong> ${reg.endDate ? formatDate(reg.endDate) : '<span class="ongoing">Ongoing</span>'}
+                        <strong>Ngày kết thúc:</strong> ${reg.endDate ? formatDate(reg.endDate) : '<span class="ongoing">Đang tiếp tục</span>'}
                     </div>
                     <div class="arv-meta-item">
                         <i class="fas fa-layer-group"></i>
-                        <strong>Level:</strong> ${reg.regimenLevel}
+                        <strong>Bậc:</strong> ${reg.regimenLevel}
                     </div>
                     <div class="arv-meta-item">
                         <i class="fas fa-calendar-plus"></i>
-                        <strong>Created:</strong> ${formatDate(reg.createdAt)}
+                        <strong>Ngày tạo:</strong> ${formatDate(reg.createdAt)}
                     </div>
                 </div>
                 
                 <div class="arv-cost">
                     <i class="fas fa-coins"></i>
-                    <strong>Total Cost:</strong> ${reg.totalCost ? reg.totalCost.toLocaleString() + " VND" : "Not specified"}
+                    <strong>Tổng chi phí:</strong> ${reg.totalCost ? reg.totalCost.toLocaleString() + " VND" : "Chưa xác định"}
                 </div>
                 
                 <div class="arv-medications">
-                    <h4><i class="fas fa-pills"></i> Medications (${reg.arvMedications?.length || 0})</h4>
+                    <h4><i class="fas fa-pills"></i> Thuốc (${reg.arvMedications?.length || 0})</h4>
                     <div class="medications-grid">
                         ${reg.arvMedications?.map(med => `
                             <div class="medication-card">
@@ -113,24 +113,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div class="medication-details">
                                         <div class="detail-item">
                                             <i class="fas fa-building"></i>
-                                            <span><strong>Manufacturer:</strong> ${med.medicationDetail.arvMedicationManufacturer}</span>
+                                            <span><strong>Nhà sản xuất:</strong> ${med.medicationDetail.arvMedicationManufacturer}</span>
                                         </div>
                                         <div class="detail-item">
                                             <i class="fas fa-hashtag"></i>
-                                            <span><strong>Quantity:</strong> ${med.quantity}</span>
+                                            <span><strong>Số lượng:</strong> ${med.quantity}</span>
                                         </div>
                                         <div class="detail-item">
                                             <i class="fas fa-money-bill"></i>
-                                            <span><strong>Price:</strong> ${med.medicationDetail.arvMedicationPrice?.toLocaleString()} VND</span>
+                                            <span><strong>Đơn giá:</strong> ${med.medicationDetail.arvMedicationPrice?.toLocaleString()} VND</span>
                                         </div>
                                         <div class="detail-item">
                                             <i class="fas fa-calculator"></i>
-                                            <span><strong>Subtotal:</strong> ${(med.medicationDetail.arvMedicationPrice * med.quantity).toLocaleString()} VND</span>
+                                            <span><strong>Thành tiền:</strong> ${(med.medicationDetail.arvMedicationPrice * med.quantity).toLocaleString()} VND</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        `).join('') || '<p class="no-medications">No medications listed</p>'}
+                        `).join('') || '<p class="no-medications">Không có thuốc nào được liệt kê</p>'}
                     </div>
                 </div>
             </div>
@@ -143,17 +143,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="error-icon">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h3>Error Loading ARV Regimens</h3>
-                <p>We encountered an issue while loading your ARV regimens. Please try again later.</p>
+                <h3>Lỗi Khi Tải Phác Đồ ARV</h3>
+                <p>Đã xảy ra lỗi khi tải phác đồ ARV của bạn. Vui lòng thử lại sau.</p>
                 <button class="btn-retry" onclick="window.location.reload()">
-                    <i class="fas fa-refresh"></i> Try Again
+                    <i class="fas fa-refresh"></i> Thử Lại
                 </button>
             </div>
         `;
     });
 
     function formatDate(dateString) {
-        if (!dateString) return 'Not specified';
+        if (!dateString) return 'Chưa xác định';
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', {
             year: 'numeric',
@@ -164,10 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStatusText(status) {
         switch(status) {
-            case 1: return "Active";
-            case 2: return "Completed";
-            case 3: return "Stopped";
-            default: return `Status ${status}`;
+            case 1: return "Đang sử dụng";
+            case 2: return "Đã hoàn thành";
+            case 3: return "Đã dừng";
+            default: return `Trạng thái ${status}`;
         }
     }
 
