@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Admin Dashboard - CareFirst HIV Clinic</title>
+    <title id="page-title">Bảng điều khiển quản trị - Phòng khám CareFirst HIV</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="admin-home.css">
     <link rel="stylesheet" href="js/components.css">
@@ -17,10 +17,10 @@
                 <span>CareFirst HIV Clinic</span>
             </div>
             <div class="admin-info">
-                <span class="admin-name">Admin Dashboard</span>
+                <span class="admin-name">Bảng điều khiển quản trị</span>
                 <button class="logout-btn" id="logout-btn">
                     <i class="fas fa-sign-out-alt"></i>
-                    Logout
+                    Đăng xuất
                 </button>
             </div>
         </div>
@@ -33,31 +33,31 @@
                 <li class="nav-item">
                     <a href="#dashboard" class="nav-link active" data-section="dashboard">
                         <i class="fas fa-tachometer-alt"></i>
-                        Dashboard
+                        Bảng điều khiển
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#notifications" class="nav-link" data-section="notifications">
                         <i class="fas fa-bell"></i>
-                        Notifications
+                        Thông báo
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#appointments" class="nav-link" data-section="appointments">
                         <i class="fas fa-calendar-alt"></i>
-                        Appointments
+                        Lịch hẹn
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#medical-records" class="nav-link" data-section="medical-records">
                         <i class="fas fa-file-medical"></i>
-                        Medical Records
+                        Hồ sơ bệnh án
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#accounts" class="nav-link" data-section="accounts">
                         <i class="fas fa-users"></i>
-                        Accounts
+                        Tài khoản
                     </a>
                 </li>
             </ul>
@@ -69,10 +69,10 @@
         <!-- Dashboard Section -->
         <section id="dashboard" class="admin-section active">
             <div class="section-header">
-                <h1><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h1>
-                <p>Welcome to the admin dashboard. Here's an overview of your clinic's performance.</p>
+                <h1><i class="fas fa-tachometer-alt"></i>Tổng quan Dashboard</h1>
+                <p>Chào mừng bạn đến với bảng điều khiển quản trị. Dưới đây là tổng quan về hiệu suất phòng khám của bạn..</p>
                 <button id="refresh-dashboard" class="btn btn-secondary" style="float: right; margin-top: -50px;">
-                    <i class="fas fa-sync-alt"></i> Refresh Dashboard
+                    <i class="fas fa-sync-alt"></i> Làm mới bảng điều khiển
                 </button>
             </div>
             
@@ -83,7 +83,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="total-users">0</h3>
-                        <p>Total Users</p>
+                        <p>Tổng số người dùng</p>
                     </div>
                 </div>
                 
@@ -93,7 +93,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="total-patients">0</h3>
-                        <p>Total Patients</p>
+                        <p>Tổng số bệnh nhân</p>
                     </div>
                 </div>
                 
@@ -103,7 +103,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="total-doctors">0</h3>
-                        <p>Total Doctors</p>
+                        <p>Tổng số bác sĩ</p>
                     </div>
                 </div>
                 
@@ -113,7 +113,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="total-staff">0</h3>
-                        <p>Total Staff</p>
+                        <p>Tổng số nhân viên</p>
                     </div>
                 </div>
                 
@@ -123,7 +123,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="total-appointments">0</h3>
-                        <p>Total Appointments</p>
+                        <p>Tổng số cuộc hẹn</p>
                     </div>
                 </div>
                 
@@ -133,7 +133,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="pending-appointments">0</h3>
-                        <p>Pending Appointments</p>
+                        <p>Cuộc hẹn đang chờ xử lý</p>
                     </div>
                 </div>
                 
@@ -143,7 +143,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="total-services">0</h3>
-                        <p>Total Services</p>
+                        <p>Tổng số dịch vụ</p>
                     </div>
                 </div>
                 
@@ -153,7 +153,7 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="total-revenue">0</h3>
-                        <p>Total Revenue</p>
+                        <p>Tổng doanh thu</p>
                     </div>
                 </div>
                 
@@ -163,28 +163,28 @@
                     </div>
                     <div class="stat-content">
                         <h3 id="monthly-revenue">0</h3>
-                        <p>Monthly Revenue</p>
+                        <p>Doanh thu hàng tháng</p>
                     </div>
                 </div>
             </div>
 
             <div class="dashboard-charts">
                 <div class="chart-container">
-                    <h3 class="chart-title">User Distribution</h3>
+                    <h3 class="chart-title">Phân phối người dùng</h3>
                     <div class="chart-canvas">
                         <canvas id="userDistributionChart"></canvas>
                     </div>
                 </div>
                 
                 <div class="chart-container">
-                    <h3 class="chart-title">Monthly Revenue</h3>
+                    <h3 class="chart-title">Doanh thu hàng tháng</h3>
                     <div class="chart-canvas">
                         <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
                 
                 <div class="chart-container">
-                    <h3 class="chart-title">Appointment Status</h3>
+                    <h3 class="chart-title">Trạng thái cuộc hẹn</h3>
                     <div class="chart-canvas">
                         <canvas id="appointmentChart"></canvas>
                     </div>
@@ -194,17 +194,17 @@
             <div class="dashboard-content">
                 <div class="dashboard-left">
                     <div class="chart-container">
-                        <h3>System Performance</h3>
+                        <h3>Hiệu suất hệ thống</h3>
                         <div class="chart-placeholder">
                             <i class="fas fa-chart-area"></i>
-                            <p>Additional metrics and analytics will be displayed here</p>
+                            <p>Các số liệu và phân tích bổ sung sẽ được hiển thị ở đây</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="dashboard-right">
                     <div class="recent-activity">
-                        <h3>Recent Activity</h3>
+                        <h3>Hoạt động gần đây</h3>
                         <div id="recent-activity-list" class="activity-list">
                             <div class="loader"></div>
                         </div>
@@ -216,20 +216,20 @@
         <!-- Notifications Section -->
         <section id="notifications" class="admin-section">
             <div class="section-header">
-                <h1><i class="fas fa-bell"></i> Notifications Management</h1>
+                <h1><i class="fas fa-bell"></i> Quản lý thông báo</h1>
                 <button class="btn-primary" id="create-notification-btn">
                     <i class="fas fa-plus"></i>
-                    Create Notification
+                    Tạo thông báo
                 </button>
             </div>
             
             <div class="notifications-container">
                 <div class="filter-bar">
                     <select id="notification-filter">
-                        <option value="all">All Notifications</option>
-                        <option value="system">System</option>
-                        <option value="appointment">Appointment</option>
-                        <option value="reminder">Reminder</option>
+                        <option value="all">Tất cả thông báo</option>
+                        <option value="system">Hệ thống</option>
+                        <option value="appointment">Cuộc hẹn</option>
+                        <option value="reminder">Lời nhắc nhở</option>
                     </select>
                 </div>
                 
@@ -242,15 +242,15 @@
         <!-- Appointments Section -->
         <section id="appointments" class="admin-section">
             <div class="section-header">
-                <h1><i class="fas fa-calendar-alt"></i> Appointments Management</h1>
+                <h1><i class="fas fa-calendar-alt"></i> Quản lý cuộc hẹn</h1>
                 <div class="header-actions">
                     <input type="date" id="appointment-date-filter">
                     <select id="appointment-status-filter">
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="pending">Chưa giải quyết</option>
+                        <option value="confirmed">Đã xác nhận</option>
+                        <option value="completed">Hoàn thành</option>
+                        <option value="cancelled">Đã hủy</option>
                     </select>
                 </div>
             </div>
@@ -265,9 +265,9 @@
         <!-- Medical Records Section -->
         <section id="medical-records" class="admin-section">
             <div class="section-header">
-                <h1><i class="fas fa-file-medical"></i> Patient Medical Records</h1>
+                <h1><i class="fas fa-file-medical"></i> Hồ sơ bệnh án của bệnh nhân</h1>
                 <div class="search-bar">
-                    <input type="text" id="medical-search" placeholder="Search by patient name or ID...">
+                    <input type="text" id="medical-search" placeholder="Tìm kiếm theo tên bệnh nhân hoặc mã số...">
                     <button id="medical-search-btn">
                         <i class="fas fa-search"></i>
                     </button>
@@ -284,24 +284,24 @@
         <!-- Accounts Section -->
         <section id="accounts" class="admin-section">
             <div class="section-header">
-                <h1><i class="fas fa-users"></i> Account Management</h1>
+                <h1><i class="fas fa-users"></i> Quản lý tài khoản</h1>
                 <button class="btn-primary" id="create-account-btn">
                     <i class="fas fa-user-plus"></i>
-                    Create Account
+                    Tạo tài khoản
                 </button>
             </div>
             
             <div class="accounts-container">
                 <div class="filter-bar">
                     <select id="account-role-filter">
-                        <option value="all">All Roles</option>
-                        <option value="1">Administrator</option>
-                        <option value="2">Doctor</option>
-                        <option value="3">Patient</option>
-                        <option value="4">Staff</option>
-                        <option value="5">Supervisor</option>
+                        <option value="all">Tất cả vai trò</option>
+                        <option value="1">Quản trị viên</option>
+                        <option value="2">Bác sĩ</option>
+                        <option value="3">Bệnh nhân</option>
+                        <option value="4">Nhân viên</option>
+                        <option value="5">Giám sát</option>
                     </select>
-                    <input type="text" id="account-search" placeholder="Search accounts...">
+                    <input type="text" id="account-search" placeholder="Tìm kiếm tài khoản...">
                 </div>
                 
                 <div id="accounts-list" class="accounts-list">
@@ -315,49 +315,49 @@
     <div id="createNotificationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Create New Notification</h3>
+                <h3>Tạo thông báo mới</h3>
                 <button class="close-btn" data-modal="createNotificationModal">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="createNotificationForm">
                     <div class="form-group">
-                        <label>Notification Type</label>
+                        <label>Loại thông báo</label>
                         <select id="notification-type" required>
-                            <option value="">Select notification type</option>
-                            <option value="Appt Confirm">Appointment Confirmation</option>
-                            <option value="Appointment Update">Appointment Update</option>
-                            <option value="Appointment Request">Appointment Request</option>
-                            <option value="Appointment Reminder">Appointment Reminder</option>
-                            <option value="System Alert">System Alert</option>
-                            <option value="ARV Consultation">ARV Consultation</option>
-                            <option value="Test Result">Test Result</option>
-                            <option value="Blog Approval">Blog Approval</option>
+                            <option value="">Chọn loại thông báo</option>
+                            <option value="Appt Confirm">Xác nhận cuộc hẹn</option>
+                            <option value="Appointment Update">Cập nhật cuộc hẹn</option>
+                            <option value="Appointment Request">Yêu cầu cuộc hẹn</option>
+                            <option value="Appointment Reminder">Nhắc nhở cuộc hẹn</option>
+                            <option value="System Alert">Cảnh báo hệ thống</option>
+                            <option value="ARV Consultation">Tư vấn ARV</option>
+                            <option value="Test Result">Kết quả xét nghiệm</option>
+                            <option value="Blog Approval">Duyệt bài viết</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Message</label>
-                        <textarea id="notification-message" required rows="4" placeholder="Enter notification message..."></textarea>
+                        <label>Nội dung</label>
+                        <textarea id="notification-message" required rows="4" placeholder="Nhập nội dung thông báo..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Send To</label>
+                        <label>Gửi đến</label>
                         <select id="send-to" required>
-                            <option value="">Select recipient</option>
-                            <option value="all">All Users</option>
-                            <option value="account">Specific Account</option>
-                            <option value="1">Patients</option>
-                            <option value="2">Doctors</option>
-                            <option value="3">Managers</option>
-                            <option value="4">Admins</option>
+                            <option value="">Chọn người nhận</option>
+                            <option value="all">Tất cả người dùng</option>
+                            <option value="account">Tài khoản cụ thể</option>
+                            <option value="1">Bệnh nhân</option>
+                            <option value="2">Bác sĩ</option>
+                            <option value="3">Quản lý</option>
+                            <option value="4">Quản trị viên</option>
                         </select>
                     </div>
                     <div class="form-group" id="account-id-group" style="display: none;">
-                        <label>Account ID</label>
-                        <input type="number" id="account-id" placeholder="Enter account ID" min="1">
-                        <small class="form-help">Enter the specific account ID to send notification to</small>
+                        <label>Mã tài khoản</label>
+                        <input type="number" id="account-id" placeholder="Nhập mã tài khoản" min="1">
+                        <small class="form-help">Nhập mã tài khoản cụ thể để gửi thông báo</small>
                     </div>
                     <div class="form-actions">
-                        <button type="button" data-modal="createNotificationModal">Cancel</button>
-                        <button type="submit"><i class="fas fa-paper-plane"></i> Send Notification</button>
+                        <button type="button" data-modal="createNotificationModal">Hủy</button>
+                        <button type="submit"><i class="fas fa-paper-plane"></i> Gửi thông báo</button>
                     </div>
                 </form>
             </div>
@@ -368,68 +368,32 @@
     <div id="editNotificationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Edit Notification</h3>
+                <h3>Chỉnh sửa thông báo</h3>
                 <button class="close-btn" data-modal="editNotificationModal">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="editNotificationForm">
                     <input type="hidden" id="edit-notification-id">
                     <div class="form-group">
-                        <label>Type</label>
+                        <label>Loại</label>
                         <select id="edit-notification-type" required>
-                            <option value="Appt Confirm">Appt Confirm</option>
-                            <option value="Appointment Update">Appointment Update</option>
-                            <option value="Appointment Request">Appointment Request</option>
-                            <option value="Appointment Reminder">Appointment Reminder</option>
-                            <option value="System Alert">System Alert</option>
-                            <option value="ARV Consultation">ARV Consultation</option>
-                            <option value="Test Result">Test Result</option>
-                            <option value="Blog Approval">Blog Approval</option>
+                            <option value="Appt Confirm">Xác nhận cuộc hẹn</option>
+                            <option value="Appointment Update">Cập nhật cuộc hẹn</option>
+                            <option value="Appointment Request">Yêu cầu cuộc hẹn</option>
+                            <option value="Appointment Reminder">Nhắc nhở cuộc hẹn</option>
+                            <option value="System Alert">Cảnh báo hệ thống</option>
+                            <option value="ARV Consultation">Tư vấn ARV</option>
+                            <option value="Test Result">Kết quả xét nghiệm</option>
+                            <option value="Blog Approval">Duyệt bài viết</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Message</label>
+                        <label>Nội dung</label>
                         <textarea id="edit-notification-message" required rows="4"></textarea>
                     </div>
                     <div class="form-actions">
-                        <button type="button" data-modal="editNotificationModal">Cancel</button>
-                        <button type="submit"><i class="fas fa-save"></i> Update Notification</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Notification Modal -->
-    <div id="editNotificationModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Edit Notification</h3>
-                <button class="close-btn" data-modal="editNotificationModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="editNotificationForm">
-                    <input type="hidden" id="edit-notification-id">
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="edit-notification-type" required>
-                            <option value="Appt Confirm">Appt Confirm</option>
-                            <option value="Appointment Update">Appointment Update</option>
-                            <option value="Appointment Request">Appointment Request</option>
-                            <option value="Appointment Reminder">Appointment Reminder</option>
-                            <option value="System Alert">System Alert</option>
-                            <option value="ARV Consultation">ARV Consultation</option>
-                            <option value="Test Result">Test Result</option>
-                            <option value="Blog Approval">Blog Approval</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Message</label>
-                        <textarea id="edit-notification-message" required rows="4"></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" data-modal="editNotificationModal">Cancel</button>
-                        <button type="submit"><i class="fas fa-save"></i> Update Notification</button>
+                        <button type="button" data-modal="editNotificationModal">Hủy</button>
+                        <button type="submit"><i class="fas fa-save"></i> Cập nhật thông báo</button>
                     </div>
                 </form>
             </div>
@@ -439,13 +403,13 @@
     <div id="createAccountModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Create New Account</h3>
+                <h3>Tạo tài khoản mới</h3>
                 <button class="close-btn" data-modal="createAccountModal">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="createAccountForm">
                     <div class="form-group">
-                        <label>Username</label>
+                        <label>Tên đăng nhập</label>
                         <input type="text" id="account-username" required>
                     </div>
                     <div class="form-group">
@@ -453,23 +417,23 @@
                         <input type="email" id="account-email" required>
                     </div>
                     <div class="form-group">
-                        <label>Full Name</label>
+                        <label>Họ và tên</label>
                         <input type="text" id="account-fullname" required>
                     </div>
                     <div class="form-group">
-                        <label>Role</label>
+                        <label>Vai trò</label>
                         <select id="account-role" required>
-                            <option value="2">Doctor</option>
-                            <option value="3">Patient</option>
+                            <option value="2">Bác sĩ</option>
+                            <option value="3">Bệnh nhân</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Password</label>
+                        <label>Mật khẩu</label>
                         <input type="password" id="account-password" required>
                     </div>
                     <div class="form-actions">
-                        <button type="button" data-modal="createAccountModal">Cancel</button>
-                        <button type="submit">Create Account</button>
+                        <button type="button" data-modal="createAccountModal">Hủy</button>
+                        <button type="submit">Tạo tài khoản</button>
                     </div>
                 </form>
             </div>

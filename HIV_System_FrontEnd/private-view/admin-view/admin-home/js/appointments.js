@@ -24,7 +24,7 @@ class AppointmentManager {
                 console.log('Appointments data:', appointments);
                 
                 if (!appointments || appointments.length === 0) {
-                    appointmentsList.innerHTML = '<div class="no-data">No appointments found</div>';
+                    appointmentsList.innerHTML = '<div class="no-data">Không tìm thấy lịch hẹn nào</div>';
                     return;
                 }
                 
@@ -36,7 +36,7 @@ class AppointmentManager {
             }
         } catch (error) {
             console.error('Error loading appointments:', error);
-            appointmentsList.innerHTML = '<div class="error-message">Error loading appointments. Please try again.</div>';
+            appointmentsList.innerHTML = '<div class="error-message">Lỗi tải danh sách lịch hẹn. Vui lòng thử lại.</div>';
         }
     }
 
@@ -61,19 +61,19 @@ class AppointmentManager {
         
         const itemTitle = document.createElement('div');
         itemTitle.className = 'item-title';
-        itemTitle.textContent = `Appointment #${appointment.appointmentId}`;
+        itemTitle.textContent = `Lịch hẹn #${appointment.appointmentId}`;
         
         const itemSubtitle = document.createElement('div');
         itemSubtitle.className = 'item-subtitle';
-        itemSubtitle.textContent = `Patient: ${appointment.patientName} | Doctor: ${appointment.doctorName}`;
+        itemSubtitle.textContent = `Bệnh nhân: ${appointment.patientName} | Bác sĩ: ${appointment.doctorName}`;
         
         const appointmentDetails = document.createElement('div');
         appointmentDetails.className = 'appointment-details';
         appointmentDetails.innerHTML = `
-            <small><strong>Date:</strong> ${this.formatDate(appointment.apmtDate)}</small><br>
-            <small><strong>Time:</strong> ${appointment.apmTime}</small><br>
-            <small><strong>Notes:</strong> ${appointment.notes || 'No notes available'}</small><br>
-            <small><strong>Patient ID:</strong> ${appointment.patientId} | <strong>Doctor ID:</strong> ${appointment.doctorId}</small>
+            <small><strong>Ngày:</strong> ${this.formatDate(appointment.apmtDate)}</small><br>
+            <small><strong>Thời gian:</strong> ${appointment.apmTime}</small><br>
+            <small><strong>Ghi chú:</strong> ${appointment.notes || 'Không có ghi chú'}</small><br>
+            <small><strong>Mã BN:</strong> ${appointment.patientId} | <strong>Mã BS:</strong> ${appointment.doctorId}</small>
         `;
         
         itemContent.appendChild(itemTitle);
@@ -90,9 +90,9 @@ class AppointmentManager {
         itemActions.appendChild(statusBadge);
         
         // Action buttons
-        const viewBtn = this.createAppointmentButton(appointment.appointmentId, 'view', 'View', 'btn-info');
-        const editBtn = this.createAppointmentButton(appointment.appointmentId, 'edit', 'Edit', 'btn-edit');
-        const deleteBtn = this.createAppointmentButton(appointment.appointmentId, 'delete', 'Delete', 'btn-delete');
+        const viewBtn = this.createAppointmentButton(appointment.appointmentId, 'view', 'Xem', 'btn-info');
+        const editBtn = this.createAppointmentButton(appointment.appointmentId, 'edit', 'Sửa', 'btn-edit');
+        const deleteBtn = this.createAppointmentButton(appointment.appointmentId, 'delete', 'Xóa', 'btn-delete');
         
         itemActions.appendChild(viewBtn);
         itemActions.appendChild(editBtn);
@@ -106,6 +106,12 @@ class AppointmentManager {
 
     // Create appointment button
     createAppointmentButton(appointmentId, action, text, className) {
+        const buttonTexts = {
+            'view': 'Xem',
+            'edit': 'Sửa',
+            'delete': 'Xóa'
+        };
+        
         const button = document.createElement('button');
         button.className = `btn-small ${className}`;
         button.textContent = text;
@@ -132,7 +138,7 @@ class AppointmentManager {
             this.showAppointmentModal(appointment);
         } catch (error) {
             console.error('Error viewing appointment:', error);
-            alert('Error loading appointment details');
+            alert('Lỗi khi tải thông tin chi tiết cuộc hẹn');
         }
     }
 
@@ -143,20 +149,20 @@ class AppointmentManager {
             this.showEditAppointmentModal(appointment);
         } catch (error) {
             console.error('Error editing appointment:', error);
-            alert('Error loading appointment for editing');
+            alert('Lỗi khi tải cuộc hẹn để chỉnh sửa');
         }
     }
 
     // Delete appointment confirmation
     async deleteAppointmentConfirm(appointmentId) {
-        if (confirm('Are you sure you want to delete this appointment? This action cannot be undone.')) {
+        if (confirm('Bạn có chắc chắn muốn xóa lịch hẹn này? Hành động này không thể hoàn tác.')) {
             try {
                 await this.deleteAppointment(appointmentId);
-                alert('Appointment deleted successfully!');
+                alert('Đã xóa lịch hẹn thành công!');
                 this.loadAppointments();
             } catch (error) {
                 console.error('Error deleting appointment:', error);
-                alert('Error deleting appointment. Please try again.');
+                alert('Lỗi khi xóa lịch hẹn. Vui lòng thử lại.');
             }
         }
     }
@@ -269,7 +275,7 @@ class AppointmentManager {
             modal.innerHTML = `
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>Appointment Details</h3>
+                        <h3>Chi tiết lịch hẹn</h3>
                         <button class="close-btn" onclick="window.modalManager.closeModal('appointmentModal')">&times;</button>
                     </div>
                     <div class="modal-body" id="appointmentContent">
@@ -284,29 +290,29 @@ class AppointmentManager {
         document.getElementById('appointmentContent').innerHTML = `
             <div class="appointment-details">
                 <div class="detail-section">
-                    <h4><i class="fas fa-calendar-alt"></i> Appointment Information</h4>
-                    <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
-                    <p><strong>Date:</strong> ${this.formatDate(appointment.apmtDate)}</p>
-                    <p><strong>Time:</strong> ${appointment.apmTime}</p>
-                    <p><strong>Status:</strong> <span class="status-badge status-${this.getStatusClassFromNumber(appointment.apmStatus)}">${this.getStatusTextFromNumber(appointment.apmStatus)}</span></p>
+                    <h4><i class="fas fa-calendar-alt"></i> Thông tin lịch hẹn</h4>
+                    <p><strong>Mã lịch hẹn:</strong> ${appointment.appointmentId}</p>
+                    <p><strong>Ngày:</strong> ${this.formatDate(appointment.apmtDate)}</p>
+                    <p><strong>Thời gian:</strong> ${appointment.apmTime}</p>
+                    <p><strong>Trạng thái:</strong> <span class="status-badge status-${this.getStatusClassFromNumber(appointment.apmStatus)}">${this.getStatusTextFromNumber(appointment.apmStatus)}</span></p>
                 </div>
                 
                 <div class="detail-section">
-                    <h4><i class="fas fa-user"></i> Patient Information</h4>
-                    <p><strong>Name:</strong> ${appointment.patientName}</p>
-                    <p><strong>Patient ID:</strong> ${appointment.patientId}</p>
+                    <h4><i class="fas fa-user"></i> Thông tin bệnh nhân</h4>
+                    <p><strong>Họ tên:</strong> ${appointment.patientName}</p>
+                    <p><strong>Mã BN:</strong> ${appointment.patientId}</p>
                 </div>
                 
                 <div class="detail-section">
-                    <h4><i class="fas fa-user-md"></i> Doctor Information</h4>
-                    <p><strong>Name:</strong> ${appointment.doctorName}</p>
-                    <p><strong>Doctor ID:</strong> ${appointment.doctorId}</p>
+                    <h4><i class="fas fa-user-md"></i> Thông tin bác sĩ</h4>
+                    <p><strong>Họ tên:</strong> ${appointment.doctorName}</p>
+                    <p><strong>Mã BS:</strong> ${appointment.doctorId}</p>
                 </div>
                 
                 <div class="detail-section">
-                    <h4><i class="fas fa-file-medical-alt"></i> Notes</h4>
+                    <h4><i class="fas fa-file-medical-alt"></i> Ghi chú</h4>
                     <div class="notes-content">
-                        ${appointment.notes || 'No notes available for this appointment.'}
+                        ${appointment.notes || 'Không có ghi chú cho lịch hẹn này.'}
                     </div>
                 </div>
             </div>
@@ -326,7 +332,7 @@ class AppointmentManager {
             modal.innerHTML = `
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>Edit Appointment</h3>
+                        <h3>Chỉnh sửa cuộc hẹn</h3>
                         <button class="close-btn" onclick="window.modalManager.closeModal('editAppointmentModal')">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -334,43 +340,43 @@ class AppointmentManager {
                             <input type="hidden" id="edit-appointment-id" value="${appointment.appointmentId}">
                             
                             <div class="form-group">
-                                <label for="edit-patient-id">Patient ID</label>
+                                <label for="edit-patient-id">ID bệnh nhân</label>
                                 <input type="number" id="edit-patient-id" value="${appointment.patientId}" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-doctor-id">Doctor ID</label>
+                                <label for="edit-doctor-id">ID bác sĩ</label>
                                 <input type="number" id="edit-doctor-id" value="${appointment.doctorId}" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-appointment-date">Date</label>
+                                <label for="edit-appointment-date">Ngày</label>
                                 <input type="date" id="edit-appointment-date" value="${appointment.apmtDate}" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-appointment-time">Time</label>
+                                <label for="edit-appointment-time">Thời gian</label>
                                 <input type="time" id="edit-appointment-time" value="${appointment.apmTime}" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-appointment-status">Status</label>
+                                <label for="edit-appointment-status">Trạng thái</label>
                                 <select id="edit-appointment-status" required>
-                                    <option value="1"${appointment.apmStatus === 1 ? ' selected' : ''}>Pending</option>
-                                    <option value="2"${appointment.apmStatus === 2 ? ' selected' : ''}>Confirmed</option>
-                                    <option value="3"${appointment.apmStatus === 3 ? ' selected' : ''}>Completed</option>
-                                    <option value="4"${appointment.apmStatus === 4 ? ' selected' : ''}>Cancelled</option>
+                                    <option value="1"${appointment.apmStatus === 1 ? ' selected' : ''}>Chưa giải quyết</option>
+                                    <option value="2"${appointment.apmStatus === 2 ? ' selected' : ''}>Đã xác nhận</option>
+                                    <option value="3"${appointment.apmStatus === 3 ? ' selected' : ''}>Hoàn thành</option>
+                                    <option value="4"${appointment.apmStatus === 4 ? ' selected' : ''}>Đã hủy</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-appointment-notes">Notes</label>
+                                <label for="edit-appointment-notes">Ghi chú</label>
                                 <textarea id="edit-appointment-notes" rows="4">${appointment.notes || ''}</textarea>
                             </div>
                             
                             <div class="form-actions">
-                                <button type="button" onclick="window.modalManager.closeModal('editAppointmentModal')">Cancel</button>
-                                <button type="submit">Update Appointment</button>
+                                <button type="button" onclick="window.modalManager.closeModal('editAppointmentModal')">Hủy bỏ</button>
+                                <button type="submit">Cập nhật cuộc hẹn</button>
                             </div>
                         </form>
                     </div>
@@ -393,49 +399,49 @@ class AppointmentManager {
             modal.innerHTML = `
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>Create New Appointment</h3>
+                        <h3>Tạo lịch hẹn mới</h3>
                         <button class="close-btn" onclick="window.modalManager.closeModal('createAppointmentModal')">&times;</button>
                     </div>
                     <div class="modal-body">
                         <form id="createAppointmentForm">
                             <div class="form-group">
-                                <label for="patient-id">Patient ID</label>
+                                <label for="patient-id">ID bệnh nhân</label>
                                 <input type="number" id="patient-id" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="doctor-id">Doctor ID</label>
+                                <label for="doctor-id">ID bác sĩ</label>
                                 <input type="number" id="doctor-id" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="appointment-date">Date</label>
+                                <label for="appointment-date">Ngày</label>
                                 <input type="date" id="appointment-date" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="appointment-time">Time</label>
+                                <label for="appointment-time">Thời gian</label>
                                 <input type="time" id="appointment-time" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="appointment-status">Status</label>
+                                <label for="appointment-status">Trạng thái</label>
                                 <select id="appointment-status" required>
-                                    <option value="1">Pending</option>
-                                    <option value="2">Confirmed</option>
-                                    <option value="3">Completed</option>
-                                    <option value="4">Cancelled</option>
+                                    <option value="1">Chờ xác nhận</option>
+                                    <option value="2">Đã xác nhận</option>
+                                    <option value="3">Hoàn thành</option>
+                                    <option value="4">Đã hủy</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label for="appointment-notes">Notes</label>
+                                <label for="appointment-notes">Ghi chú</label>
                                 <textarea id="appointment-notes" rows="4"></textarea>
                             </div>
                             
                             <div class="form-actions">
-                                <button type="button" onclick="window.modalManager.closeModal('createAppointmentModal')">Cancel</button>
-                                <button type="submit">Create Appointment</button>
+                                <button type="button" onclick="window.modalManager.closeModal('createAppointmentModal')">Huỷ bỏ</button>
+                                <button type="submit">Tạo cuộc hẹn</button>
                             </div>
                         </form>
                     </div>
@@ -454,7 +460,7 @@ class AppointmentManager {
         if (sectionHeader && !sectionHeader.querySelector('.create-appointment-btn')) {
             const createButton = document.createElement('button');
             createButton.className = 'btn-primary create-appointment-btn';
-            createButton.innerHTML = '<i class="fas fa-plus"></i> Create Appointment';
+            createButton.innerHTML = '<i class="fas fa-plus"></i> Tạo lịch hẹn mới';
             createButton.onclick = () => this.showCreateAppointmentModal();
             sectionHeader.appendChild(createButton);
         }
@@ -500,7 +506,7 @@ class AppointmentManager {
             }
             
             if (filteredAppointments.length === 0) {
-                appointmentsList.innerHTML = '<div class="no-data">No appointments found matching your filters</div>';
+                appointmentsList.innerHTML = '<div class="no-data">Không tìm thấy lịch hẹn nào phù hợp với bộ lọc</div>';
                 return;
             }
             
@@ -508,7 +514,7 @@ class AppointmentManager {
         })
         .catch(error => {
             console.error('Error filtering appointments:', error);
-            appointmentsList.innerHTML = '<div class="error-message">Error filtering appointments. Please try again.</div>';
+            appointmentsList.innerHTML = '<div class="error-message">Có lỗi khi lọc cuộc hẹn. Vui lòng thử lại.</div>';
         });
     }
 
@@ -533,13 +539,13 @@ class AppointmentManager {
                 
                 this.createAppointment(formData)
                     .then(() => {
-                        alert('Appointment created successfully!');
+                        alert('Đã tạo cuộc hẹn thành công!');
                         window.modalManager.closeModal('createAppointmentModal');
                         this.loadAppointments();
                     })
                     .catch(error => {
                         console.error('Error creating appointment:', error);
-                        alert('Error creating appointment. Please try again.');
+                        alert('Có lỗi khi tạo cuộc hẹn. Vui lòng thử lại.');
                     })
                     .finally(() => {
                         window.utilsManager.hideButtonLoader(submitButton);
@@ -567,13 +573,13 @@ class AppointmentManager {
                 
                 this.updateAppointment(appointmentId, formData)
                     .then(() => {
-                        alert('Appointment updated successfully!');
+                        alert('Đã cập nhật cuộc hẹn thành công!');
                         window.modalManager.closeModal('editAppointmentModal');
                         this.loadAppointments();
                     })
                     .catch(error => {
                         console.error('Error updating appointment:', error);
-                        alert('Error updating appointment. Please try again.');
+                        alert('Có lỗi khi cập nhật lịch hẹn. Vui lòng thử lại.');
                     })
                     .finally(() => {
                         window.utilsManager.hideButtonLoader(submitButton);
@@ -610,11 +616,11 @@ class AppointmentManager {
 
     getStatusTextFromNumber(statusNumber) {
         switch (statusNumber) {
-            case 1: return 'Pending';
-            case 2: return 'Confirmed';
-            case 3: return 'Completed';
-            case 4: return 'Cancelled';
-            default: return 'Unknown';
+            case 1: return 'Chờ xác nhận';
+            case 2: return 'Đã xác nhận';
+            case 3: return 'Đã hoàn thành';
+            case 4: return 'Đã hủy';
+            default: return 'Không xác định';
         }
     }
 
