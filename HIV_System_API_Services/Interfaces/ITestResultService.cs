@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.ComponentTestResultDTO;
 using HIV_System_API_DTOs.TestResultDTO;
 using System;
 using System.Collections.Generic;
@@ -17,5 +18,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<bool> DeleteTestResult(int id);
         Task<List<TestResultResponseDTO>> GetSustainTestResultPatient();
         Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id);
+        Task<TestResultResponseDTO> CreateTestResultWithComponentTestsAsync(TestResultRequestDTO testResult, List<ComponentTestResultRequestDTO> componentTestResults, int accId);
     }
 }
