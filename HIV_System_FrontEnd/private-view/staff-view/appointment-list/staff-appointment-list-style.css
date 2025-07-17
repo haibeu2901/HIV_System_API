@@ -1,0 +1,61 @@
+@import url('/private-view/shared/header/header-style.css');
+
+.staff-appointment-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.staff-appointment-table th, .staff-appointment-table td {
+    border: 1px solid #e5e7eb;
+    padding: 10px 12px;
+    text-align: center;
+}
+.staff-appointment-table th {
+    background: #f3f4f6;
+    color: #333;
+    font-weight: 600;
+}
+.staff-appointment-table tr:nth-child(even) td {
+    background: #f9fafb;
+}
+.status {
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 4px 10px;
+    display: inline-block;
+}
+.status-1 { color: #e67e22; background: #fbeee0; } /* Chờ xác nhận */
+.status-2 { color: #2980b9; background: #eaf6fb; } /* Đã xác nhận */
+.status-3 { color: #27ae60; background: #eafaf1; } /* Đã xác nhận lại */
+.status-4 { color: #c0392b; background: #fdeaea; } /* Đã hủy */
+.status-5 { color: #fff !important; background: #27ae60 !important; border-radius: 6px; padding: 4px 12px; font-weight: 600; box-shadow: 0 1px 4px rgba(39,174,96,0.08); letter-spacing: 0.5px; }
+.status-6 { color: #c0392b; background: #fdeaea; } /* Đã từ chối */
+.button-accept {
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.button-accept:hover { background: #219150; }
+.button-reject {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.2s;
+}
+.button-reject:hover:not(:disabled) { background: #c0392b; }
+.button-reject:disabled { background: #f5b7b1; color: #fff; cursor: not-allowed; } 
