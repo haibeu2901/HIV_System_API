@@ -380,6 +380,17 @@ function renderPayments(payments) {
                             </div>
                         ` : ''}
                     </div>
+                    
+                    ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
+                        <div class="payment-actions">
+                            <button class="payment-action-btn confirm-btn" onclick="confirmPayment('${payment.paymentIntentId}')">
+                                <i class="fas fa-check"></i> Xác nhận thanh toán
+                            </button>
+                            <button class="payment-action-btn fail-btn" onclick="failPayment('${payment.paymentIntentId}')">
+                                <i class="fas fa-times"></i> Đánh dấu thất bại
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -400,6 +411,102 @@ function formatDateTime(dateString) {
         hour: '2-digit',
         minute: '2-digit'
     });
+}
+
+// Payment confirmation function
+async function confirmPayment(paymentIntentId) {
+    if (!paymentIntentId) {
+        alert('Không tìm thấy Payment Intent ID');
+        return;
+    }
+
+    // Show confirmation dialog
+    if (!confirm('Bạn có chắc chắn muốn xác nhận thanh toán này?')) {
+        return;
+    }
+
+    try {
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        button.disabled = true;
+
+        const response = await fetch(`https://localhost:7009/api/Payment/confirm-payment/${paymentIntentId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(`Thanh toán đã được xác nhận thành công!\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`);
+            
+            // Reload payments to reflect the new status
+            await loadPaymentData();
+        } else {
+            alert(`Lỗi xác nhận thanh toán: ${result.Error || 'Không xác định'}`);
+        }
+    } catch (error) {
+        console.error('Error confirming payment:', error);
+        alert('Có lỗi xảy ra khi xác nhận thanh toán. Vui lòng thử lại.');
+    }
+}
+
+// Payment failure function
+async function failPayment(paymentIntentId) {
+    if (!paymentIntentId) {
+        alert('Không tìm thấy Payment Intent ID');
+        return;
+    }
+
+    // Show confirmation dialog
+    if (!confirm('Bạn có chắc chắn muốn đánh dấu thanh toán này là thất bại?')) {
+        return;
+    }
+
+    try {
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        button.disabled = true;
+
+        const response = await fetch(`https://localhost:7009/api/Payment/fail-payment/${paymentIntentId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(`Thanh toán đã được đánh dấu thất bại!\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`);
+            
+            // Reload payments to reflect the new status
+            await loadPaymentData();
+        } else {
+            alert(`Lỗi khi đánh dấu thanh toán thất bại: ${result.Error || 'Không xác định'}`);
+        }
+    } catch (error) {
+        console.error('Error failing payment:', error);
+        alert('Có lỗi xảy ra khi đánh dấu thanh toán thất bại. Vui lòng thử lại.');
+    }
+}
+
+// Function to reload payment data
+async function loadPaymentData() {
+    try {
+        const payments = await fetchPatientPayments();
+        renderPayments(payments);
+    } catch (error) {
+        console.error('Error reloading payment data:', error);
+    }
 }
 
 // Render ARV regimens with embedded medications

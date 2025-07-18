@@ -1222,14 +1222,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('paymentAmount').value = '50000';
         document.getElementById('paymentCurrency').value = 'VND';
         
-        // Set pmrId from current patient data
-        const patientId = getPatientIdFromUrl();
-        if (patientId) {
-            fetchPatientMRId(patientId).then(mrData => {
-                if (mrData && mrData.pmrId) {
-                    pmrIdInput.value = mrData.pmrId;
-                }
-            });
+        // Set pmrId from global window.pmrId (set when page loads)
+        const pmrIdInput = document.getElementById('paymentPmrId');
+        if (window.pmrId != null) {
+            pmrIdInput.value = window.pmrId;
+        } else {
+            // If window.pmrId is not available, try to fetch it
+            const patientId = getPatientIdFromUrl();
+            if (patientId) {
+                fetchPatientMedicalDataByPatientId(patientId).then(medicalData => {
+                    if (medicalData && medicalData.pmrId) {
+                        pmrIdInput.value = medicalData.pmrId;
+                        window.pmrId = medicalData.pmrId; // Store globally for future use
+                    }
+                });
+            }
         }
         
         paymentModal.style.display = 'block';
