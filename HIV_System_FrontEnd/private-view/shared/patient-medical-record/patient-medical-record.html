@@ -11,7 +11,7 @@
 
     <div class="dashboard-container" style="padding-top: 5px;">
         <main class="main-content">
-            <div class="dashboard-header">Patient Medical Record</div>
+            <div class="dashboard-header">Sơ đồ bệnh án bệnh nhân</div>
             
             <!-- Patient Profile Section -->
             <div class="patient-profile-section">
@@ -21,10 +21,10 @@
                 <div class="patient-info">
                     <h2 id="patientName">Đang tải...</h2>
                     <div class="patient-details">
-                        <p><strong>Gender:</strong> <span id="patientGender">-</span></p>
-                        <p><strong>Date of Birth:</strong> <span id="patientDOB">-</span></p>
+                        <p><strong>Giới tính:</strong> <span id="patientGender">-</span></p>
+                        <p><strong>Ngày sinh:</strong> <span id="patientDOB">-</span></p>
                         <p><strong>Email:</strong> <span id="patientEmail">-</span></p>
-                        <p><strong>Patient ID:</strong> <span id="patientId">-</span></p>
+                        <p><strong>ID Bệnh nhân:</strong> <span id="patientId">-</span></p>
                     </div>
                 </div>
             </div>
@@ -78,54 +78,54 @@
             <h2>Tạo phác đồ ARV mới</h2>
             <form id="regimenForm">
                 <div class="form-group">
-                    <label for="regimenLevel">Regimen Level</label>
+                    <label for="regimenLevel">Cấp độ phác đồ</label>
                     <select id="regimenLevel" name="regimenLevel" required>
-                        <option value="">Select level</option>
+                        <option value="">Chọn cấp độ</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
-                        <option value="4">Special Case</option>
+                        <option value="4">Trường hợp đặc biệt</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="regimenTemplate">Regimen Template</label>
+                    <label for="regimenTemplate">Mẫu phác đồ</label>
                     <select id="regimenTemplate" name="regimenTemplate" required>
-                        <option value="">Select template</option>
+                        <option value="">Chọn mẫu</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="regimenNotes">Notes</label>
+                    <label for="regimenNotes">Ghi chú</label>
                     <textarea id="regimenNotes" name="regimenNotes" rows="2"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="regimenStartDate">Start Date</label>
+                    <label for="regimenStartDate">Ngày bắt đầu</label>
                     <input type="date" id="regimenStartDate" name="regimenStartDate" required />
                 </div>
                 <div class="form-group">
-                    <label for="regimenEndDate">End Date</label>
+                    <label for="regimenEndDate">Ngày kết thúc</label>
                     <input type="date" id="regimenEndDate" name="regimenEndDate" required />
                 </div>
                 <div class="form-group">
-                    <label>Medications</label>
+                    <label>Thuốc</label>
                     <table id="medicationsTable" class="medications-table">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Dosage</th>
-                                <th>Quantity</th>
-                                <th>Manufacturer</th>
-                                <th>Action</th>
+                                <th>Tên thuốc</th>
+                                <th>Liều lượng</th>
+                                <th>Số lượng</th>
+                                <th>Nhà sản xuất</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             <!-- Medication rows will be inserted here -->
                         </tbody>
                     </table>
-                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Add Medication</button>
+                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Thêm thuốc</button>
                 </div>
                 <div class="form-actions" style="margin-top: 2rem;">
                     <button type="submit" class="primary-btn">Create Regimen</button>
-                    <button type="button" id="cancelRegimenBtn" class="secondary-btn">Cancel</button>
+                    <button type="button" id="cancelRegimenBtn" class="secondary-btn">Hủy</button>
                 </div>
             </form>
         </div>
@@ -148,12 +148,12 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="updateRegimenStatusNotes">Notes</label>
+                    <label for="updateRegimenStatusNotes">Ghi chú</label>
                     <textarea id="updateRegimenStatusNotes" name="notes" rows="2" required></textarea>
                 </div>
                 <input type="hidden" id="updateRegimenStatusId" name="regimenId" />
                 <div class="form-group" style="text-align:right;">
-                    <button type="submit" class="primary-btn">Update Status</button>
+                    <button type="submit" class="primary-btn">Cập nhật trạng thái</button>
                 </div>
             </form>
             <div id="updateRegimenStatusMsg" style="color:red;margin-top:10px;"></div>
@@ -228,6 +228,44 @@
           <div id="updateComponentTestMsg" style="color:red; margin-top:10px;"></div>
         </form>
         </div>
+    </div>
+
+    <!-- Update Test Result Modal -->
+    <div id="updateTestResultModal" class="modal" style="display:none;">
+      <div class="modal-content" style="max-width:600px;">
+        <span class="close" id="closeUpdateTestResultModalBtn">&times;</span>
+        <h2>Cập nhật kết quả xét nghiệm</h2>
+        <form id="updateTestResultForm">
+          <input type="hidden" id="updateTestResultId" name="testResultId" />
+          <div class="form-group">
+            <label for="updateTestResultDate">Ngày xét nghiệm <span style="color:red">*</span></label>
+            <input type="date" id="updateTestResultDate" name="testDate" required />
+          </div>
+          <div class="form-group">
+            <label for="updateTestResultSelect">Kết quả <span style="color:red">*</span></label>
+            <select id="updateTestResultSelect" name="result" required style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 0.5rem;">
+              <option value="">Chọn kết quả</option>
+              <option value="true">Dương tính</option>
+              <option value="false">Âm tính</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="updateTestResultNotes">Ghi chú <span style="color:red">*</span></label>
+            <textarea id="updateTestResultNotes" name="notes" rows="2" required></textarea>
+          </div>
+          <hr>
+          <div id="updateComponentTestsContainer">
+            <h3>Thành phần xét nghiệm</h3>
+            <!-- Component test fieldsets will be inserted here -->
+          </div>
+          <button type="button" id="addUpdateComponentTestBtn" class="secondary-btn" style="margin-bottom: 1rem;">+ Thêm thành phần</button>
+          <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
+            <button type="submit" class="primary-btn">Cập nhật</button>
+            <button type="button" id="cancelUpdateTestResultBtn" class="secondary-btn">Hủy</button>
+          </div>
+          <div id="updateTestResultMsg" style="color:red; margin-top:10px;"></div>
+        </form>
+      </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
