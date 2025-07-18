@@ -1433,6 +1433,80 @@
     font-size: 11px;
 }
 
+/* Payment Action Buttons */
+.payment-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #e2e8f0;
+    justify-content: flex-end;
+}
+
+.payment-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.payment-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.payment-action-btn:active {
+    transform: translateY(0);
+}
+
+.payment-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.confirm-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: 1px solid #047857;
+}
+
+.confirm-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.fail-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: 1px solid #b91c1c;
+}
+
+.fail-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Loading State for Action Buttons */
+.payment-action-btn:disabled .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Responsive Design for Payment Cards */
 @media (max-width: 768px) {
     .payments-grid {
@@ -1464,6 +1538,17 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
+    }
+    
+    .payment-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .payment-action-btn {
+        width: 100%;
+        min-width: auto;
+        padding: 12px 16px;
     }
 }
 
