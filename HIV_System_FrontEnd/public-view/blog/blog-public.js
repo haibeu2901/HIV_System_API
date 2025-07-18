@@ -1,70 +1,253 @@
+// Role-Based HIV Support Blog System
 // Global variables
 let allBlogs = [];
 let filteredBlogs = [];
 let currentFilter = 'all';
 let isLoading = false;
 
-// Global authentication state
-let currentUser = null;
+// Global authentication state using the role system
+let currentUser = new window.BlogRoles.BlogUser();
 let isAuthenticated = false;
+
+// API Base URL - using same URL as your Swagger
+const API_BASE_URL = 'https://localhost:7009/api';
 
 // Initialize the blog system
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check for stored authentication
+    await checkStoredAuthentication();
+    
+    // Initialize UI
     await loadBlogs();
     setupEventListeners();
     updateStatistics();
+    updateUIForRole();
     
     // Set up character counters for blog creation
-    const titleInput = document.getElementById('blogTitle');
-    const contentInput = document.getElementById('blogContent');
-    
-    if (titleInput) {
-        titleInput.addEventListener('input', function() {
-            updateCharCounter(this, 'titleCounter', 200);
-        });
-    }
-    
-    if (contentInput) {
-        contentInput.addEventListener('input', function() {
-            updateCharCounter(this, 'contentCounter', 5000);
-        });
-    }
-
-    // Check for stored authentication
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-        currentUser = { token: storedToken };
-        isAuthenticated = true;
-    }
+    setupCharacterCounters();
 });
 
-// Load blogs from API
+// Authentication functions
+async function checkStoredAuthentication() {
+    const storedUserData = localStorage.getItem('userData');
+    if (storedUserData) {
+        try {
+            const userData = JSON.parse(storedUserData);
+            currentUser = new window.BlogRoles.BlogUser(userData);
+            isAuthenticated = true;
+            updateUIForRole();
+        } catch (error) {
+            console.error('Error parsing stored user data:', error);
+            localStorage.removeItem('userData');
+        }
+    }
+}
+
+async function authenticateUser() {
+    const userId = document.getElementById('userIdInput').value;
+    const role = document.getElementById('userRoleSelect').value;
+    
+    if (!userId || !role) {
+        alert('Please enter both User ID and select a role');
+        return;
+    }
+    
+    try {
+        // In a real application, this would be an API call to authenticate
+        // For now, we'll simulate authentication
+        const userData = {
+            userId: parseInt(userId),
+            role: role,
+            token: `mock_token_${userId}_${role}`,
+            username: `user${userId}`,
+            email: `user${userId}@example.com`
+        };
+        
+        // Store user data
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
+        // Update current user
+        currentUser = new window.BlogRoles.BlogUser(userData);
+        isAuthenticated = true;
+        
+        // Update UI
+        updateUIForRole();
+        
+        // Reload blogs with new permissions
+        await loadBlogs();
+        
+        alert(`Successfully authenticated as ${currentUser.getRoleDisplayName()}`);
+        
+    } catch (error) {
+        console.error('Authentication error:', error);
+        alert('Authentication failed. Please try again.');
+    }
+}
+
+function logoutUser() {
+    // Clear stored data
+    localStorage.removeItem('userData');
+    
+    // Reset user state
+    currentUser = new window.BlogRoles.BlogUser();
+    isAuthenticated = false;
+    
+    // Update UI
+    updateUIForRole();
+    
+    // Reload blogs
+    loadBlogs();
+    
+    alert('Successfully logged out');
+}
+
+function updateUIForRole() {
+    const guestSection = document.getElementById('guestSection');
+    const authenticatedSection = document.getElementById('authenticatedSection');
+    const userName = document.getElementById('userName');
+    const userRole = document.getElementById('userRole');
+    const roleActions = document.getElementById('roleActions');
+    
+    if (isAuthenticated) {
+        if (guestSection) guestSection.style.display = 'none';
+        if (authenticatedSection) authenticatedSection.style.display = 'block';
+        
+        if (userName) {
+            userName.textContent = currentUser.userData.username || `User ${currentUser.userId}`;
+        }
+        if (userRole) {
+            userRole.innerHTML = `<span class="user-role-badge ${currentUser.role}">${currentUser.getRoleDisplayName()}</span>`;
+        }
+        
+        // Update role-specific actions
+        updateRoleActions();
+        
+    } else {
+        if (guestSection) guestSection.style.display = 'block';
+        if (authenticatedSection) authenticatedSection.style.display = 'none';
+    }
+    
+    // Update create post button visibility
+    const createPostPrompt = document.querySelector('.create-post-prompt');
+    if (createPostPrompt) {
+        if (currentUser.hasPermission(window.BlogRoles.PERMISSIONS.CREATE_BLOG)) {
+            createPostPrompt.style.display = 'flex';
+        } else {
+            createPostPrompt.style.display = 'none';
+        }
+    }
+}
+
+function updateRoleActions() {
+    const roleActions = document.getElementById('roleActions');
+    if (!roleActions) return; // Exit if element doesn't exist
+    
+    let actionsHTML = '';
+    
+    if (currentUser.hasPermission(window.BlogRoles.PERMISSIONS.CREATE_BLOG)) {
+        actionsHTML += `
+            <a href="#" class="role-action-btn" onclick="showCreatePostModal()">
+                <i class="fas fa-pen"></i> Create Story
+            </a>
+        `;
+    }
+    
+    if (currentUser.hasPermission(window.BlogRoles.PERMISSIONS.VERIFY_BLOG)) {
+        actionsHTML += `
+            <a href="#" class="role-action-btn" onclick="showPendingBlogs()">
+                <i class="fas fa-clipboard-check"></i> Review Posts
+            </a>
+        `;
+    }
+    
+    if (currentUser.hasPermission(window.BlogRoles.PERMISSIONS.MANAGE_ALL_BLOGS)) {
+        actionsHTML += `
+            <a href="#" class="role-action-btn" onclick="showBlogManagement()">
+                <i class="fas fa-cogs"></i> Manage All
+            </a>
+        `;
+    }
+    
+    if (currentUser.hasPermission(window.BlogRoles.PERMISSIONS.VIEW_ANALYTICS)) {
+        actionsHTML += `
+            <a href="#" class="role-action-btn" onclick="showAnalytics()">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </a>
+        `;
+    }
+    
+    roleActions.innerHTML = actionsHTML;
+}
+
+// Load blogs from API with role-based filtering
 async function loadBlogs() {
     const blogGrid = document.getElementById('blogGrid');
     const loadingContainer = document.getElementById('loadingContainer');
+    
+    // Check if required elements exist
+    if (!blogGrid || !loadingContainer) {
+        console.warn('Required blog elements not found in DOM');
+        return;
+    }
     
     try {
         isLoading = true;
         loadingContainer.style.display = 'flex';
         blogGrid.style.display = 'none';
 
-        const response = await fetch('https://localhost:7009/api/SocialBlog/GetAllBlog', {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Add authorization header if authenticated
+        if (isAuthenticated && currentUser.token) {
+            headers['Authorization'] = `Bearer ${currentUser.token}`;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/SocialBlog/GetAllBlog`, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: headers
         });
+
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('Raw API response:', data); // Debug log
+        console.log('Raw API response:', data);
         
-        // Filter for published (status 4) and pending (status 2) blogs
-        allBlogs = data.filter(blog => blog.blogStatus === 4 || blog.blogStatus === 2);
+        // Process the blog data to match our expected structure
+        allBlogs = data.map(blog => ({
+            id: blog.id,
+            authorId: blog.authorId,
+            staffId: blog.staffId,
+            title: blog.title,
+            content: blog.content,
+            publishedDate: blog.publishedDate,
+            isAnonymous: blog.isAnonymous,
+            notes: blog.notes,
+            blogStatus: blog.blogStatus || 'published', // Default to published if no status
+            blogReaction: blog.blogReaction || [],
+            likesCount: blog.likesCount || 0,
+            dislikesCount: blog.dislikesCount || 0,
+            authorName: blog.authorName
+        }));
+        
+        console.log('Processed blogs:', allBlogs);
+        
+        // Filter blogs based on user role permissions
+        const visibleStatuses = currentUser.getVisibleBlogStatuses();
+        console.log('Visible statuses for user role:', visibleStatuses);
+        
+        // For now, let's show all blogs regardless of status to see if they appear
+        // allBlogs = allBlogs.filter(blog => visibleStatuses.includes(blog.blogStatus));
+        
         filteredBlogs = [...allBlogs];
+        
+        console.log('Filtered blogs to display:', filteredBlogs.length);
         
         renderBlogs();
         
@@ -73,31 +256,70 @@ async function loadBlogs() {
         
     } catch (error) {
         console.error('Error loading blogs:', error);
-        loadingContainer.innerHTML = `
-            <div class="error-container">
-                <div class="error-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        // Different error messages based on error type
+        let errorHTML = '';
+        if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+            errorHTML = `
+                <div class="error-container">
+                    <div class="error-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h3>Server Connection Issue</h3>
+                    <p>Unable to connect to the blog server. The server might be offline or there could be a network issue.</p>
+                    <div class="error-details">
+                        <p><strong>Possible solutions:</strong></p>
+                        <ul>
+                            <li>Check if the API server is running on port 7009</li>
+                            <li>Verify your internet connection</li>
+                            <li>Contact the system administrator if the problem persists</li>
+                        </ul>
+                    </div>
+                    <button class="btn-retry" onclick="window.location.reload()">
+                        <i class="fas fa-refresh"></i> Try Again
+                    </button>
                 </div>
-                <h3>Stories Temporarily Unavailable</h3>
-                <p>We're currently unable to load the community stories. Please try again later or contact our support team.</p>
-                <button class="btn-retry" onclick="window.location.reload()">
-                    <i class="fas fa-refresh"></i> Try Again
-                </button>
-                <a href="../landingpage.html#contact" class="btn-contact">
-                    <i class="fas fa-phone"></i> Contact Support
-                </a>
-            </div>
-        `;
+            `;
+        } else {
+            errorHTML = `
+                <div class="error-container">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3>Stories Temporarily Unavailable</h3>
+                    <p>We're currently unable to load the community stories. Please try again later or contact our support team.</p>
+                    <button class="btn-retry" onclick="window.location.reload()">
+                        <i class="fas fa-refresh"></i> Try Again
+                    </button>
+                    <a href="../landingpage.html#contact" class="btn-contact">
+                        <i class="fas fa-phone"></i> Contact Support
+                    </a>
+                </div>
+            `;
+        }
+        
+        loadingContainer.innerHTML = errorHTML;
+        
     } finally {
         isLoading = false;
     }
 }
 
-// Render blogs in the grid
+// Render blogs with role-based actions
 function renderBlogs() {
+    console.log('renderBlogs called with', filteredBlogs.length, 'blogs');
     const blogGrid = document.getElementById('blogGrid');
     
+    if (!blogGrid) {
+        console.error('blogGrid element not found!');
+        return;
+    }
+    
     if (filteredBlogs.length === 0) {
+        console.log('No blogs to display, showing empty state');
         blogGrid.innerHTML = `
             <div class="no-posts">
                 <div class="no-posts-icon">
@@ -105,62 +327,404 @@ function renderBlogs() {
                 </div>
                 <h3>No stories yet</h3>
                 <p>Be the first to share your story with the community!</p>
-                <a href="../landingpage.html#contact" class="cta-button">
-                    <i class="fas fa-pen"></i> Share Your Story
-                </a>
+                ${currentUser.hasPermission(window.BlogRoles.PERMISSIONS.CREATE_BLOG) ? 
+                    '<button class="cta-button" onclick="showCreatePostModal()"><i class="fas fa-pen"></i> Share Your Story</button>' :
+                    '<a href="../landingpage.html#contact" class="cta-button"><i class="fas fa-phone"></i> Contact Us</a>'
+                }
             </div>
         `;
         return;
     }
 
-    blogGrid.innerHTML = filteredBlogs.map(blog => `
-        <div class="reddit-post">
-            <div class="post-voting">
-                <button class="vote-btn upvote" onclick="handleVote(${blog.id}, true)">
-                    <i class="fas fa-arrow-up"></i>
-                </button>
-                <span class="vote-count">${blog.likesCount || 0}</span>
-                <button class="vote-btn downvote" onclick="handleVote(${blog.id}, false)">
-                    <i class="fas fa-arrow-down"></i>
-                </button>
+    console.log('Rendering', filteredBlogs.length, 'blogs');
+    blogGrid.innerHTML = filteredBlogs.map(blog => {
+        const availableActions = currentUser.getAvailableActions(blog);
+        const adminActionsHTML = generateAdminActions(blog, availableActions);
+        
+        return `
+            <div class="reddit-post">
+                <div class="post-voting">
+                    <button class="vote-btn upvote ${availableActions.includes('like') ? '' : 'disabled'}" 
+                            onclick="handleVote(${blog.id}, true)" 
+                            ${!availableActions.includes('like') ? 'disabled' : ''}>
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <span class="vote-count">${blog.likesCount || 0}</span>
+                    <button class="vote-btn downvote ${availableActions.includes('dislike') ? '' : 'disabled'}" 
+                            onclick="handleVote(${blog.id}, false)"
+                            ${!availableActions.includes('dislike') ? 'disabled' : ''}>
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+                <div class="post-content">
+                    <div class="post-header">
+                        <div class="post-meta">
+                            <span class="community">r/HIVSupport</span>
+                            <span class="separator">•</span>
+                            <span class="author">Posted by ${blog.isAnonymous ? 'Anonymous' : 'u/user' + blog.authorId}</span>
+                            <span class="separator">•</span>
+                            <span class="timestamp">${formatDate(blog.publishedDate)}</span>
+                            ${blog.isAnonymous ? '<span class="anonymous-badge"><i class="fas fa-user-secret"></i> Anonymous</span>' : ''}
+                            ${window.BlogRoles.getBlogStatusBadge(blog.blogStatus)}
+                        </div>
+                    </div>
+                    <div class="post-body">
+                        <h3 class="post-title" onclick="openBlogModal(${blog.id})">${blog.title}</h3>
+                        <div class="post-text">
+                            ${truncateText(blog.content, 300)}
+                        </div>
+                    </div>
+                    <div class="post-footer">
+                        <div class="post-actions">
+                            <button class="action-btn" onclick="openBlogModal(${blog.id})">
+                                <i class="fas fa-comment"></i>
+                                <span>${blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0} Comments</span>
+                            </button>
+                            <button class="action-btn" onclick="handleShare(${blog.id})">
+                                <i class="fas fa-share"></i>
+                                <span>Share</span>
+                            </button>
+                            <button class="action-btn" onclick="openBlogModal(${blog.id})">
+                                <i class="fas fa-expand"></i>
+                                <span>Read More</span>
+                            </button>
+                        </div>
+                        ${adminActionsHTML}
+                    </div>
+                </div>
             </div>
-            <div class="post-content">
-                <div class="post-header">
-                    <div class="post-meta">
-                        <span class="community">r/HIVSupport</span>
-                        <span class="separator">•</span>
-                        <span class="author">Posted by ${blog.isAnonymous ? 'Anonymous' : 'u/user' + blog.authorId}</span>
-                        <span class="separator">•</span>
-                        <span class="timestamp">${formatDate(blog.publishedDate)}</span>
-                        ${blog.isAnonymous ? '<span class="anonymous-badge"><i class="fas fa-user-secret"></i> Anonymous</span>' : ''}
-                        ${getBlogStatusBadge(blog.blogStatus)}
-                    </div>
-                </div>
-                <div class="post-body">
-                    <h3 class="post-title" onclick="openBlogModal(${blog.id})">${blog.title}</h3>
-                    <div class="post-text">
-                        ${truncateText(blog.content, 300)}
-                    </div>
-                </div>
-                <div class="post-footer">
-                    <div class="post-actions">
-                        <button class="action-btn" onclick="openBlogModal(${blog.id})">
-                            <i class="fas fa-comment"></i>
-                            <span>${blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0} Comments</span>
-                        </button>
-                        <button class="action-btn" onclick="handleShare(${blog.id})">
-                            <i class="fas fa-share"></i>
-                            <span>Share</span>
-                        </button>
-                        <button class="action-btn" onclick="openBlogModal(${blog.id})">
-                            <i class="fas fa-expand"></i>
-                            <span>Read More</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+    
+    console.log('Blogs rendered successfully');
+}
+
+function generateAdminActions(blog, availableActions) {
+    if (availableActions.length === 0) return '';
+    
+    let actionsHTML = '<div class="post-admin-actions">';
+    
+    if (availableActions.includes('edit')) {
+        actionsHTML += `<button class="admin-action-btn edit" onclick="editBlog(${blog.id})">
+            <i class="fas fa-edit"></i> Edit
+        </button>`;
+    }
+    
+    if (availableActions.includes('delete')) {
+        actionsHTML += `<button class="admin-action-btn delete" onclick="deleteBlog(${blog.id})">
+            <i class="fas fa-trash"></i> Delete
+        </button>`;
+    }
+    
+    if (availableActions.includes('approve')) {
+        actionsHTML += `<button class="admin-action-btn approve" onclick="approveBlog(${blog.id})">
+            <i class="fas fa-check"></i> Approve
+        </button>`;
+    }
+    
+    if (availableActions.includes('reject')) {
+        actionsHTML += `<button class="admin-action-btn reject" onclick="rejectBlog(${blog.id})">
+            <i class="fas fa-times"></i> Reject
+        </button>`;
+    }
+    
+    actionsHTML += '</div>';
+    return actionsHTML;
+}
+
+// Role-based blog actions
+async function editBlog(blogId) {
+    const blog = allBlogs.find(b => b.id === blogId);
+    if (!blog) return;
+
+    if (!currentUser.canEditBlog(blog)) {
+        alert('You do not have permission to edit this blog post.');
+        return;
+    }
+
+    // Pre-fill the create modal with existing data for editing
+    showCreatePostModal();
+    
+    // Set the form to edit mode
+    document.getElementById('blogTitle').value = blog.title;
+    document.getElementById('blogContent').value = blog.content;
+    document.getElementById('blogNotes').value = blog.notes || '';
+    document.getElementById('isAnonymous').checked = blog.isAnonymous;
+    
+    // Change button text and function
+    const submitBtn = document.querySelector('.submit-btn');
+    submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Story';
+    submitBtn.onclick = () => updateBlog(blogId);
+    
+    // Update modal title
+    document.querySelector('#createPostModal .modal-title-area h2').textContent = 'Edit Your Story';
+}
+
+async function updateBlog(blogId) {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.UPDATE_BLOG)) {
+        alert('You do not have permission to update blog posts.');
+        return;
+    }
+
+    const title = document.getElementById('blogTitle').value.trim();
+    const content = document.getElementById('blogContent').value.trim();
+    const notes = document.getElementById('blogNotes').value.trim();
+    const isAnonymous = document.getElementById('isAnonymous').checked;
+
+    if (!title || !content) {
+        showFormStatus('Please fill in all required fields.', 'error');
+        return;
+    }
+
+    const submitBtn = document.querySelector('.submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+
+    try {
+        const blogData = {
+            id: blogId,
+            title: title,
+            content: content,
+            notes: notes,
+            isAnonymous: isAnonymous,
+            authorId: currentUser.userId
+        };
+
+        const response = await fetch(`${API_BASE_URL}/SocialBlog/UpdateBlog/${blogId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`
+            },
+            body: JSON.stringify(blogData)
+        });
+
+        if (response.ok) {
+            showFormStatus('Blog post updated successfully!', 'success');
+            setTimeout(() => {
+                closeCreatePostModal();
+                loadBlogs();
+            }, 2000);
+        } else {
+            const error = await response.text();
+            showFormStatus('Failed to update blog post: ' + error, 'error');
+        }
+    } catch (error) {
+        console.error('Error updating blog:', error);
+        showFormStatus('Failed to update blog post. Please try again.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+    }
+}
+
+async function deleteBlog(blogId) {
+    const blog = allBlogs.find(b => b.id === blogId);
+    if (!blog) return;
+
+    if (!currentUser.canDeleteBlog(blog)) {
+        alert('You do not have permission to delete this blog post.');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/SocialBlog/DeleteBlog/${blogId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+
+        if (response.ok) {
+            alert('Blog post deleted successfully.');
+            await loadBlogs();
+        } else {
+            const error = await response.text();
+            alert('Failed to delete blog post: ' + error);
+        }
+    } catch (error) {
+        console.error('Error deleting blog:', error);
+        alert('Failed to delete blog post. Please try again.');
+    }
+}
+
+async function approveBlog(blogId) {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.APPROVE_BLOG)) {
+        alert('You do not have permission to approve blog posts.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/SocialBlog/ApproveBlog/${blogId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+
+        if (response.ok) {
+            alert('Blog post approved successfully.');
+            await loadBlogs();
+        } else {
+            const error = await response.text();
+            alert('Failed to approve blog post: ' + error);
+        }
+    } catch (error) {
+        console.error('Error approving blog:', error);
+        alert('Failed to approve blog post. Please try again.');
+    }
+}
+
+async function rejectBlog(blogId) {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.REJECT_BLOG)) {
+        alert('You do not have permission to reject blog posts.');
+        return;
+    }
+
+    const reason = prompt('Please provide a reason for rejection (optional):');
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/SocialBlog/RejectBlog/${blogId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`
+            },
+            body: JSON.stringify({ reason: reason || 'No reason provided' })
+        });
+
+        if (response.ok) {
+            alert('Blog post rejected successfully.');
+            await loadBlogs();
+        } else {
+            const error = await response.text();
+            alert('Failed to reject blog post: ' + error);
+        }
+    } catch (error) {
+        console.error('Error rejecting blog:', error);
+        alert('Failed to reject blog post. Please try again.');
+    }
+}
+
+// Role-specific view functions
+function showPendingBlogs() {
+    currentFilter = 'pending';
+    filteredBlogs = allBlogs.filter(blog => blog.blogStatus === window.BlogRoles.BLOG_STATUS.PENDING);
+    renderBlogs();
+    
+    // Update filter tab
+    document.querySelectorAll('.sort-tab').forEach(tab => tab.classList.remove('active'));
+    alert(`Showing ${filteredBlogs.length} pending blog posts for review.`);
+}
+
+function showBlogManagement() {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.MANAGE_ALL_BLOGS)) {
+        alert('You do not have permission to access blog management.');
+        return;
+    }
+    
+    // Show all blogs regardless of status
+    filteredBlogs = [...allBlogs];
+    renderBlogs();
+    alert('Showing all blog posts for management. You can edit, delete, approve, or reject any post.');
+}
+
+function showAnalytics() {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.VIEW_ANALYTICS)) {
+        alert('You do not have permission to view analytics.');
+        return;
+    }
+    
+    // Calculate analytics
+    const totalBlogs = allBlogs.length;
+    const publishedBlogs = allBlogs.filter(b => b.blogStatus === window.BlogRoles.BLOG_STATUS.PUBLISHED).length;
+    const pendingBlogs = allBlogs.filter(b => b.blogStatus === window.BlogRoles.BLOG_STATUS.PENDING).length;
+    const totalLikes = allBlogs.reduce((sum, blog) => sum + (blog.likesCount || 0), 0);
+    const anonymousBlogs = allBlogs.filter(b => b.isAnonymous).length;
+    
+    const analyticsMessage = `
+Blog Analytics:
+• Total Posts: ${totalBlogs}
+• Published: ${publishedBlogs}
+• Pending Review: ${pendingBlogs}
+• Total Likes: ${totalLikes}
+• Anonymous Posts: ${anonymousBlogs}
+• Anonymous Percentage: ${totalBlogs > 0 ? Math.round((anonymousBlogs / totalBlogs) * 100) : 0}%
+    `;
+    
+    alert(analyticsMessage);
+}
+function setupEventListeners() {
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearch);
+    }
+
+    // Filter tabs
+    const sortTabs = document.querySelectorAll('.sort-tab');
+    sortTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const filter = tab.getAttribute('data-sort');
+            handleFilter(filter);
+            
+            // Update active tab
+            sortTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        });
+    });
+
+    // Modal close functionality
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeBlogModal();
+            closeCreatePostModal();
+        }
+    });
+}
+
+// Handle search
+function handleSearch(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    
+    if (searchTerm.trim() === '') {
+        filteredBlogs = [...allBlogs];
+    } else {
+        filteredBlogs = allBlogs.filter(blog => 
+            blog.title.toLowerCase().includes(searchTerm) ||
+            blog.content.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    renderBlogs();
+}
+
+// Handle filter
+function handleFilter(filter) {
+    currentFilter = filter;
+    
+    switch (filter) {
+        case 'hot':
+            filteredBlogs = [...allBlogs].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+            break;
+        case 'new':
+            filteredBlogs = [...allBlogs].sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
+            break;
+        case 'top':
+            filteredBlogs = [...allBlogs].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+            break;
+        case 'anonymous':
+            filteredBlogs = allBlogs.filter(blog => blog.isAnonymous);
+            break;
+        default:
+            filteredBlogs = [...allBlogs];
+    }
+    
+    renderBlogs();
 }
 
 // Setup event listeners
@@ -233,9 +797,67 @@ function handleFilter(filter) {
     renderBlogs();
 }
 
-// Handle vote (like/dislike)
-function handleVote(blogId, isLike) {
-    alert('Please log in to vote on posts.');
+// Handle vote (like/dislike) with role-based access
+async function handleVote(blogId, isLike) {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.LIKE_BLOG)) {
+        alert('Please log in to vote on posts.');
+        return;
+    }
+
+    try {
+        // Show loading feedback
+        const likeBtn = document.querySelector(`[onclick="handleVote(${blogId}, true)"]`);
+        const dislikeBtn = document.querySelector(`[onclick="handleVote(${blogId}, false)"]`);
+        
+        if (isLike && likeBtn) {
+            likeBtn.disabled = true;
+            likeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        } else if (!isLike && dislikeBtn) {
+            dislikeBtn.disabled = true;
+            dislikeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        // Prepare request body as specified in your API
+        const requestBody = {
+            blogId: parseInt(blogId),
+            accountId: currentUser.id || currentUser.userId,
+            reactionType: isLike ? "like" : "dislike"
+        };
+
+        const response = await fetch(`${API_BASE_URL}/BlogReaction/UpdateBlogReaction`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+            // Reload blogs to update vote counts
+            await loadBlogs();
+            showToast(`Successfully ${isLike ? 'liked' : 'disliked'} the post!`, 'success');
+        } else {
+            const error = await response.text();
+            showToast('Failed to register vote: ' + error, 'error');
+        }
+    } catch (error) {
+        console.error('Error voting:', error);
+        showToast('Failed to register vote. Please try again.', 'error');
+    } finally {
+        // Restore button states
+        const likeBtn = document.querySelector(`[onclick="handleVote(${blogId}, true)"]`);
+        const dislikeBtn = document.querySelector(`[onclick="handleVote(${blogId}, false)"]`);
+        
+        if (likeBtn) {
+            likeBtn.disabled = false;
+            likeBtn.innerHTML = '<i class="fas fa-heart"></i>';
+        }
+        if (dislikeBtn) {
+            dislikeBtn.disabled = false;
+            dislikeBtn.innerHTML = '<i class="fas fa-heart-broken"></i>';
+        }
+    }
 }
 
 // Handle share
@@ -257,7 +879,7 @@ function handleShare(blogId) {
     }
 }
 
-// Open blog modal
+// Open blog modal with role-based commenting
 function openBlogModal(blogId) {
     const blog = allBlogs.find(b => b.id === blogId);
     if (!blog) return;
@@ -295,44 +917,41 @@ function openBlogModal(blogId) {
         `;
     }
 
-    // Update modal comments
+    // Update modal comments with role-based commenting
     const modalComments = document.getElementById('modalComments');
     if (modalComments) {
-        const comments = blog.blogReaction ? blog.blogReaction.filter(r => r.comment) : [];
+        let commentsHTML = '<div class="comments-section"><h4>Comments</h4>';
         
-        if (comments.length > 0) {
-            modalComments.innerHTML = `
-                <div class="comments-section">
-                    <h4><i class="fas fa-comments"></i> Comments (${comments.length})</h4>
-                    <div class="comments-list">
-                        ${comments.map(comment => `
-                            <div class="comment-item">
-                                <div class="comment-header">
-                                    <div class="comment-author">
-                                        <i class="fas fa-user-circle"></i>
-                                        <span>u/user${comment.accountId}</span>
-                                    </div>
-                                    <div class="comment-date">
-                                        <i class="fas fa-clock"></i>
-                                        <span>${formatDate(comment.reactedAt)}</span>
-                                    </div>
-                                </div>
-                                <div class="comment-content">
-                                    ${comment.comment}
-                                </div>
-                            </div>
-                        `).join('')}
+        if (blog.blogReaction && blog.blogReaction.length > 0) {
+            const comments = blog.blogReaction.filter(r => r.comment);
+            commentsHTML += comments.map(comment => `
+                <div class="comment">
+                    <div class="comment-author">
+                        <i class="fas fa-user"></i>
+                        <span>u/user${comment.userId}</span>
+                        <span class="comment-date">${formatDate(comment.createdDate)}</span>
                     </div>
+                    <div class="comment-text">${comment.comment}</div>
                 </div>
-            `;
+            `).join('');
         } else {
-            modalComments.innerHTML = `
-                <div class="no-comments">
-                    <i class="fas fa-comment-slash"></i>
-                    <p>No comments yet. Be the first to share your thoughts!</p>
+            commentsHTML += '<p class="no-comments">No comments yet. Be the first to share your thoughts!</p>';
+        }
+        
+        // Add comment form if user has permission
+        if (currentUser.hasPermission(window.BlogRoles.PERMISSIONS.COMMENT_BLOG)) {
+            commentsHTML += `
+                <div class="comment-form">
+                    <textarea id="newComment" placeholder="Share your thoughts..."></textarea>
+                    <button onclick="addComment(${blog.id})" class="comment-btn">
+                        <i class="fas fa-paper-plane"></i> Post Comment
+                    </button>
                 </div>
             `;
         }
+        
+        commentsHTML += '</div>';
+        modalComments.innerHTML = commentsHTML;
     }
 
     // Show modal
@@ -340,7 +959,47 @@ function openBlogModal(blogId) {
     document.body.style.overflow = 'hidden';
 }
 
-// Close blog modal
+async function addComment(blogId) {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.COMMENT_BLOG)) {
+        alert('You do not have permission to comment on posts.');
+        return;
+    }
+
+    const commentText = document.getElementById('newComment').value.trim();
+    if (!commentText) {
+        alert('Please enter a comment.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/SocialBlog/AddComment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`
+            },
+            body: JSON.stringify({
+                blogId: blogId,
+                userId: currentUser.userId,
+                comment: commentText
+            })
+        });
+
+        if (response.ok) {
+            // Reload blogs and reopen modal to show new comment
+            await loadBlogs();
+            openBlogModal(blogId);
+            alert('Comment added successfully!');
+        } else {
+            const error = await response.text();
+            alert('Failed to add comment: ' + error);
+        }
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        alert('Failed to add comment. Please try again.');
+    }
+}
+
 function closeBlogModal() {
     const modal = document.getElementById('blogModal');
     if (modal) {
@@ -349,61 +1008,53 @@ function closeBlogModal() {
     }
 }
 
-// Update statistics
-function updateStatistics() {
-    const totalBlogs = allBlogs.length;
-    const uniqueAuthors = new Set(allBlogs.map(b => b.authorId)).size;
-    const totalLikes = allBlogs.reduce((sum, blog) => sum + (blog.likesCount || 0), 0);
-    const totalComments = allBlogs.reduce((sum, blog) => {
-        return sum + (blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0);
-    }, 0);
-    const anonymousPosts = allBlogs.filter(blog => blog.isAnonymous).length;
-
-    const elements = {
-        totalBlogs: document.getElementById('totalBlogs'),
-        totalAuthors: document.getElementById('totalAuthors'),
-        totalLikes: document.getElementById('totalLikes'),
-        totalComments: document.getElementById('totalComments'),
-        anonymousPosts: document.getElementById('anonymousPosts')
-    };
-    
-    if (elements.totalBlogs) elements.totalBlogs.textContent = totalBlogs;
-    if (elements.totalAuthors) elements.totalAuthors.textContent = uniqueAuthors;
-    if (elements.totalLikes) elements.totalLikes.textContent = totalLikes;
-    if (elements.totalComments) elements.totalComments.textContent = totalComments;
-    if (elements.anonymousPosts) elements.anonymousPosts.textContent = anonymousPosts;
-}
-
-// Modal action handlers
+// Modal action handlers with role-based permissions
 function handleModalLike() {
-    alert('Please log in to like this story.');
+    alert('Like functionality will be implemented with the modal blog ID');
 }
 
 function handleModalComment() {
-    alert('Please log in to comment on this story.');
+    const commentForm = document.querySelector('.comment-form textarea');
+    if (commentForm) {
+        commentForm.focus();
+    }
 }
 
 function handleModalShare() {
-    if (navigator.share) {
-        navigator.share({
-            title: document.getElementById('modalTitle').textContent,
-            text: 'Check out this community story',
-            url: window.location.href
-        });
-    } else {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-            alert('Story link copied to clipboard!');
-        });
-    }
+    alert('Share functionality for modal');
 }
 
-// Modal management functions
+// Show create post modal with role-based access
 function showCreatePostModal() {
-    const modal = document.getElementById('createPostModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.CREATE_BLOG)) {
+        alert('Please log in to create a blog post.');
+        return;
     }
+
+    const modal = document.getElementById('createPostModal');
+    if (!modal) return;
+
+    // Reset form
+    document.getElementById('blogTitle').value = '';
+    document.getElementById('blogContent').value = '';
+    document.getElementById('blogNotes').value = '';
+    document.getElementById('isAnonymous').checked = false;
+    
+    // Reset submit button
+    const submitBtn = document.querySelector('.submit-btn');
+    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Share Story';
+    submitBtn.onclick = createBlog;
+    
+    // Reset modal title
+    document.querySelector('#createPostModal .modal-title-area h2').textContent = 'Share Your Story';
+    
+    // Hide auth section and show form
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('createForm').style.display = 'block';
+    
+    // Show modal
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 
 function closeCreatePostModal() {
@@ -412,192 +1063,51 @@ function closeCreatePostModal() {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
+    
+    // Clear form status
+    hideFormStatus();
 }
 
-// Get blog status badge
-function getBlogStatusBadge(status) {
-    switch (status) {
-        case 1: return '<span class="status-badge draft">Draft</span>';
-        case 2: return '<span class="status-badge pending">Pending</span>';
-        case 3: return '<span class="status-badge rejected">Rejected</span>';
-        case 4: return '<span class="status-badge published">Published</span>';
-        case 5: return '<span class="status-badge archived">Archived</span>';
-        default: return '';
-    }
-}
-
-// Authentication functions
-function authenticateUser() {
-    const token = document.getElementById('authToken').value.trim();
-    
-    if (!token) {
-        showFormStatus('Please enter your authentication token', 'error');
-        return;
-    }
-    
-    // Store token and set authenticated state
-    localStorage.setItem('authToken', token);
-    currentUser = { token: token };
-    isAuthenticated = true;
-    
-    // Update UI to show authenticated state
-    updateAuthSection();
-    showFormStatus('Authentication successful! You can now create blog posts.', 'success');
-}
-
-function logout() {
-    localStorage.removeItem('authToken');
-    currentUser = null;
-    isAuthenticated = false;
-    updateAuthSection();
-    showFormStatus('Logged out successfully.', 'info');
-}
-
-function updateAuthSection() {
-    const authSection = document.querySelector('.auth-section');
-    if (isAuthenticated) {
-        authSection.innerHTML = `
-            <div class="auth-info">
-                <span>✅ Authenticated</span>
-                <button type="button" class="auth-btn" onclick="logout()">Logout</button>
-            </div>
-        `;
-    } else {
-        authSection.innerHTML = `
-            <div class="auth-info">
-                <span>🔐 Authentication Required</span>
-            </div>
-            <div class="auth-input-group">
-                <input type="password" id="authToken" placeholder="Enter your authentication token" />
-                <button type="button" class="auth-btn" onclick="authenticateUser()">Authenticate</button>
-            </div>
-        `;
-    }
-}
-
-function showFormStatus(message, type) {
-    const statusDiv = document.getElementById('formStatus');
-    statusDiv.textContent = message;
-    statusDiv.className = `form-status ${type}`;
-    statusDiv.style.display = 'block';
-    
-    // Auto-hide after 5 seconds for success/info messages
-    if (type === 'success' || type === 'info') {
-        setTimeout(() => {
-            statusDiv.style.display = 'none';
-        }, 5000);
-    }
-}
-
-// Character counter functionality
-function updateCharCounter(textarea, counterId, maxLength) {
-    const counter = document.getElementById(counterId);
-    const currentLength = textarea.value.length;
-    counter.textContent = `${currentLength}/${maxLength} characters`;
-    
-    // Add warning/danger classes
-    counter.className = 'char-count';
-    if (currentLength > maxLength * 0.9) {
-        counter.classList.add('danger');
-    } else if (currentLength > maxLength * 0.7) {
-        counter.classList.add('warning');
-    }
-}
-
-// Blog creation functionality
-function openCreateModal() {
-    console.log('Opening create blog modal');
-    document.getElementById('createPostModal').style.display = 'flex';
-    
-    // Check if user has stored token
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-        currentUser = { token: storedToken };
-        isAuthenticated = true;
-    }
-    
-    updateAuthSection();
-}
-
-function closeCreateModal() {
-    console.log('Closing create blog modal');
-    document.getElementById('createPostModal').style.display = 'none';
-    
-    // Reset form
-    const form = document.getElementById('createBlogForm');
-    if (form) {
-        form.reset();
-    }
-    
-    // Reset character counters
-    const titleCounter = document.getElementById('titleCounter');
-    const contentCounter = document.getElementById('contentCounter');
-    if (titleCounter) titleCounter.textContent = '0/200 characters';
-    if (contentCounter) contentCounter.textContent = '0/5000 characters';
-    
-    // Hide status messages
-    const statusDiv = document.getElementById('formStatus');
-    if (statusDiv) {
-        statusDiv.style.display = 'none';
-    }
-}
-
-async function submitBlog() {
-    if (!isAuthenticated || !currentUser) {
-        showFormStatus('Please authenticate before creating a blog post.', 'error');
+// Create blog with role-based permissions
+async function createBlog() {
+    if (!currentUser.hasPermission(window.BlogRoles.PERMISSIONS.CREATE_BLOG)) {
+        alert('You do not have permission to create blog posts.');
         return;
     }
 
-    const titleInput = document.getElementById('blogTitle');
-    const contentInput = document.getElementById('blogContent');
-    const isPublicCheckbox = document.getElementById('isPublic');
-    const submitBtn = document.getElementById('submitBtn');
+    const title = document.getElementById('blogTitle').value.trim();
+    const content = document.getElementById('blogContent').value.trim();
+    const notes = document.getElementById('blogNotes').value.trim();
+    const isAnonymous = document.getElementById('isAnonymous').checked;
 
-    // Validate form data
-    const title = titleInput.value.trim();
-    const content = contentInput.value.trim();
-    const isPublic = isPublicCheckbox.checked;
-
-    if (!title) {
-        showFormStatus('Please enter a title for your blog post.', 'error');
-        titleInput.focus();
+    // Validation
+    if (!title || !content) {
+        showFormStatus('Please fill in all required fields.', 'error');
         return;
     }
 
     if (title.length > 200) {
         showFormStatus('Title must be 200 characters or less.', 'error');
-        titleInput.focus();
         return;
     }
 
-    if (!content) {
-        showFormStatus('Please enter content for your blog post.', 'error');
-        contentInput.focus();
-        return;
-    }
-
-    if (content.length > 5000) {
-        showFormStatus('Content must be 5000 characters or less.', 'error');
-        contentInput.focus();
-        return;
-    }
-
-    // Prepare request data
-    const blogData = {
-        title: title,
-        content: content,
-        isPublic: isPublic
-    };
-
-    console.log('Creating blog post:', blogData);
-
-    // Show loading state
+    const submitBtn = document.querySelector('.submit-btn');
     submitBtn.disabled = true;
     submitBtn.classList.add('loading');
-    showFormStatus('Creating your blog post...', 'info');
 
     try {
-        const response = await fetch('/api/SocialBlog/CreateBlog', {
+        const blogData = {
+            title: title,
+            content: content,
+            notes: notes,
+            isAnonymous: isAnonymous,
+            authorId: currentUser.userId,
+            blogStatus: currentUser.role === 'admin' || currentUser.role === 'manager' ? 
+                       window.BlogRoles.BLOG_STATUS.PUBLISHED : 
+                       window.BlogRoles.BLOG_STATUS.PENDING
+        };
+
+        const response = await fetch(`${API_BASE_URL}/SocialBlog/CreateBlog`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -606,38 +1116,146 @@ async function submitBlog() {
             body: JSON.stringify(blogData)
         });
 
-        const result = await response.json();
-
         if (response.ok) {
-            showFormStatus('Blog post created successfully!', 'success');
+            const statusMessage = blogData.blogStatus === window.BlogRoles.BLOG_STATUS.PUBLISHED ? 
+                                'Blog post created and published successfully!' : 
+                                'Blog post created successfully! It will be reviewed before publication.';
+            showFormStatus(statusMessage, 'success');
             
-            // Wait a moment then close modal and refresh
             setTimeout(() => {
-                closeCreateModal();
-                // Refresh the blog list
+                closeCreatePostModal();
                 loadBlogs();
             }, 2000);
         } else {
-            console.error('Blog creation failed:', result);
-            showFormStatus(result.message || 'Failed to create blog post. Please try again.', 'error');
+            const error = await response.text();
+            console.error('Blog creation failed:', error);
+            showFormStatus('Failed to create blog post: ' + error, 'error');
         }
     } catch (error) {
         console.error('Error creating blog:', error);
-        
-        // Handle different types of errors
         let errorMessage = 'Failed to create blog post. ';
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             errorMessage += 'Please check your internet connection or contact support.';
         } else {
             errorMessage += 'Please try again or contact support if the problem persists.';
         }
-        
         showFormStatus(errorMessage, 'error');
     } finally {
-        // Reset loading state
         submitBtn.disabled = false;
         submitBtn.classList.remove('loading');
     }
+}
+
+// Character counter setup
+function setupCharacterCounters() {
+    const titleInput = document.getElementById('blogTitle');
+    const contentInput = document.getElementById('blogContent');
+    const notesInput = document.getElementById('blogNotes');
+    
+    if (titleInput) {
+        titleInput.addEventListener('input', function() {
+            updateCharCounter('titleCount', this.value.length, 200);
+        });
+    }
+    
+    if (contentInput) {
+        contentInput.addEventListener('input', function() {
+            updateCharCounter('contentCount', this.value.length, null);
+        });
+    }
+    
+    if (notesInput) {
+        notesInput.addEventListener('input', function() {
+            updateCharCounter('notesCount', this.value.length, 100);
+        });
+    }
+}
+
+function updateCharCounter(counterId, currentLength, maxLength) {
+    const counter = document.getElementById(counterId);
+    if (!counter) return;
+    
+    if (maxLength) {
+        counter.textContent = `${currentLength}/${maxLength}`;
+        counter.className = 'char-count';
+        
+        if (currentLength > maxLength * 0.9) {
+            counter.classList.add('warning');
+        }
+        if (currentLength > maxLength) {
+            counter.classList.add('danger');
+        }
+    } else {
+        counter.textContent = `${currentLength} characters`;
+    }
+}
+
+// Form status management
+function showFormStatus(message, type) {
+    const statusElement = document.getElementById('formStatus');
+    if (statusElement) {
+        statusElement.textContent = message;
+        statusElement.className = `form-status ${type}`;
+        statusElement.style.display = 'block';
+    }
+}
+
+function hideFormStatus() {
+    const statusElement = document.getElementById('formStatus');
+    if (statusElement) {
+        statusElement.style.display = 'none';
+    }
+}
+
+// Update statistics
+function updateStatistics() {
+    const totalBlogs = document.getElementById('totalBlogs');
+    const totalAuthors = document.getElementById('totalAuthors');
+    const totalLikes = document.getElementById('totalLikes');
+    const totalComments = document.getElementById('totalComments');
+    const anonymousPosts = document.getElementById('anonymousPosts');
+    
+    if (totalBlogs) totalBlogs.textContent = allBlogs.length;
+    
+    if (totalAuthors) {
+        const uniqueAuthors = new Set(allBlogs.map(blog => blog.authorId));
+        totalAuthors.textContent = uniqueAuthors.size;
+    }
+    
+    if (totalLikes) {
+        const likes = allBlogs.reduce((sum, blog) => sum + (blog.likesCount || 0), 0);
+        totalLikes.textContent = likes;
+    }
+    
+    if (totalComments) {
+        const comments = allBlogs.reduce((sum, blog) => {
+            return sum + (blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0);
+        }, 0);
+        totalComments.textContent = comments;
+    }
+    
+    if (anonymousPosts) {
+        const anonymous = allBlogs.filter(blog => blog.isAnonymous).length;
+        anonymousPosts.textContent = anonymous;
+    }
+}
+
+// User menu function (placeholder)
+function showUserMenu() {
+    alert(`User Menu for ${currentUser.getRoleDisplayName()}\n\nFeatures coming soon:\n• Profile settings\n• Notification preferences\n• Privacy settings`);
+}
+
+// Legacy functions for compatibility
+function showCreatePostModal() {
+    showCreatePostModal();
+}
+
+function closeCreatePostModal() {
+    closeCreatePostModal();
+}
+
+function getBlogStatusBadge(status) {
+    return window.BlogRoles.getBlogStatusBadge(status);
 }
 
 // Utility functions
@@ -649,7 +1267,6 @@ function truncateText(text, maxLength) {
 
 function formatContent(content) {
     if (!content) return '';
-    // Convert line breaks to HTML
     return content.replace(/\n/g, '<br>');
 }
 
@@ -673,5 +1290,90 @@ function formatDate(dateString) {
     } catch (error) {
         console.error('Error formatting date:', error);
         return 'Unknown date';
+    }
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    // Remove existing toast if any
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas ${getToastIcon(type)}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    // Add styles if not exists
+    if (!document.getElementById('toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'toast-styles';
+        style.textContent = `
+            .toast-notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                padding: 16px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                z-index: 10000;
+                min-width: 300px;
+                max-width: 500px;
+                animation: slideIn 0.3s ease-out;
+            }
+            .toast-success { border-left: 4px solid #10B981; }
+            .toast-error { border-left: 4px solid #EF4444; }
+            .toast-info { border-left: 4px solid #3B82F6; }
+            .toast-content {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+            }
+            .toast-close {
+                background: none;
+                border: none;
+                color: #666;
+                cursor: pointer;
+                padding: 4px;
+            }
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+function getToastIcon(type) {
+    switch (type) {
+        case 'success': return 'fa-check-circle';
+        case 'error': return 'fa-exclamation-circle';
+        case 'info': 
+        default: return 'fa-info-circle';
     }
 }
