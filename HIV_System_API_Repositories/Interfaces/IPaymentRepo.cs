@@ -12,6 +12,7 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<List<Payment>> GetAllPaymentsAsync();
         Task<Payment?> GetPaymentByIdAsync(int payId);
         Task<List<Payment>> GetPaymentsByPatientMedicalRecordIdAsync(int pmrId);
+        Task<List<Payment>> GetPersonalPaymentsAsync(int patientId);
         Task<Payment> CreatePaymentAsync(Payment payment);
         Task<Payment> UpdatePaymentAsync(int payId, Payment payment);
         Task<bool> DeletePaymentAsync(int payId);

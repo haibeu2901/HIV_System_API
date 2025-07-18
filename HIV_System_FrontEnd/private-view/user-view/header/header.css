@@ -259,6 +259,82 @@
     display: block;
 }
 
+/* Facebook-style Notification Popup Error States */
+.fb-popup-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    color: #65676b;
+}
+
+.fb-popup-error i {
+    font-size: 2rem;
+    color: #ff6b6b;
+    margin-bottom: 1rem;
+}
+
+.fb-popup-error p {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.fb-popup-retry {
+    background: #1877f2;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+.fb-popup-retry:hover {
+    background: #166fe5;
+}
+
+.fb-popup-retry i {
+    font-size: 0.8rem;
+    color: white;
+    margin: 0;
+}
+
+.fb-popup-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #65676b;
+    font-size: 0.9rem;
+}
+
+.fb-popup-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    color: #65676b;
+}
+
+.fb-popup-empty i {
+    font-size: 2rem;
+    color: #bcc0c4;
+    margin-bottom: 1rem;
+}
+
+.fb-popup-empty p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-container {

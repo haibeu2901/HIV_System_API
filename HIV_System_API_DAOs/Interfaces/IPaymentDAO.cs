@@ -12,6 +12,7 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<List<Payment>> GetAllPaymentAsync();
         Task<Payment> GetPaymentByIdAsync(int id);
         Task<List<Payment>> GetPaymentsByPmrIdAsync(int pmrId);
+        Task<List<Payment>> GetPersonalPaymentsAsync(int patientId);
         Task<Payment> CreatePaymentAsync(Payment payment);
         Task<Payment> UpdatePaymentAsync(int payId, Payment payment);
         Task<bool> DeletePaymentAsync(int payId);
