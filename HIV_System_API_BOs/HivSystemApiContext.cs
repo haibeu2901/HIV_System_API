@@ -75,25 +75,25 @@ public partial class HivSystemApiContext : DbContext
     {
         IConfiguration config = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", true, true)
-            .Build();
+                    .AddJsonFile("appsettings.json", true, true)
+                    .Build();
         var strConn = config.GetConnectionString("HIVSystemDatabase");
-        return strConn ?? throw new InvalidOperationException("Connection string 'HIVSystemDatabase' not found.");
+        return strConn;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Add indexes for better query performance
         modelBuilder.Entity<Account>(entity =>
         {
             entity.HasKey(e => e.AccId).HasName("PK__Account__91CBC3787EFE5B9B");
+
             entity.ToTable("Account");
+
             entity.HasIndex(e => e.AccUsername, "UQ__Account__2F0F28DDDE438899").IsUnique();
+
             entity.HasIndex(e => e.Email, "UQ__Account__A9D10534782DBC79").IsUnique();
-            entity.HasIndex(e => e.Roles, "IX_Account_Roles"); // Add index for role-based queries
-            entity.HasIndex(e => e.IsActive, "IX_Account_IsActive"); // Add index for active status
-            
-            entity.Property(e => e.AccPassword).HasMaxLength(255); // Increase for hashed passwords
+
+            entity.Property(e => e.AccPassword).HasMaxLength(50);
             entity.Property(e => e.AccUsername).HasMaxLength(100);
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.Fullname).HasMaxLength(50);
@@ -103,13 +103,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<Appointment>(entity =>
         {
             entity.HasKey(e => e.ApmId).HasName("PK__Appointm__8368D654E5AA9721");
+
             entity.ToTable("Appointment");
-            
-            // Add composite indexes for common queries
-            entity.HasIndex(e => new { e.ApmtDate, e.ApmStatus }, "IX_Appointment_Date_Status");
-            entity.HasIndex(e => new { e.DctId, e.ApmtDate }, "IX_Appointment_Doctor_Date");
-            entity.HasIndex(e => new { e.PtnId, e.ApmtDate }, "IX_Appointment_Patient_Date");
-            
+
             entity.Property(e => e.Notes).HasMaxLength(500);
 
             entity.HasOne(d => d.Dct).WithMany(p => p.Appointments)
@@ -126,8 +122,11 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<ArvMedicationDetail>(entity =>
         {
             entity.HasKey(e => e.AmdId).HasName("PK__ARV_Medi__FD94DA10F9732FF9");
+
             entity.ToTable("ARV_Medication_Detail");
+
             entity.HasIndex(e => e.MedName, "UQ__ARV_Medi__C9435A9B4BBDDE60").IsUnique();
+
             entity.Property(e => e.Dosage).HasMaxLength(20);
             entity.Property(e => e.Manufactorer).HasMaxLength(50);
             entity.Property(e => e.MedDescription).HasMaxLength(200);
@@ -137,6 +136,7 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<ArvMedicationTemplate>(entity =>
         {
             entity.HasKey(e => e.AmtId).HasName("PK__ARV_Medi__6A58991F30090AC9");
+
             entity.ToTable("ARV_Medication_Template");
 
             entity.HasOne(d => d.Amd).WithMany(p => p.ArvMedicationTemplates)
@@ -153,15 +153,20 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<ArvRegimenTemplate>(entity =>
         {
             entity.HasKey(e => e.ArtId).HasName("PK__ARV_Regi__3FB70AE668147B2C");
+
             entity.ToTable("ARV_Regimen_Template");
+
             entity.Property(e => e.Description).HasMaxLength(500);
         });
 
         modelBuilder.Entity<BlogImage>(entity =>
         {
             entity.HasKey(e => e.ImgId).HasName("PK__Blog_Ima__352F54F358BF0066");
+
             entity.ToTable("Blog_Images");
+
             entity.HasIndex(e => e.SblId, "IX_BlogImages_SblId");
+
             entity.Property(e => e.ImageUrl).HasMaxLength(500);
             entity.Property(e => e.UploadedAt)
                 .HasDefaultValueSql("(NULL)")
@@ -176,8 +181,11 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<BlogReaction>(entity =>
         {
             entity.HasKey(e => e.BrtId).HasName("PK__Blog_Rea__AFCE435CC70FDE80");
+
             entity.ToTable("Blog_Reactions");
+
             entity.HasIndex(e => new { e.SblId, e.AccId }, "IX_BlogReactions_SblId_AccId");
+
             entity.Property(e => e.Comment).HasMaxLength(1000);
             entity.Property(e => e.ReactedAt)
                 .HasDefaultValueSql("(NULL)")
@@ -197,11 +205,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<ComponentTestResult>(entity =>
         {
             entity.HasKey(e => e.CtrId).HasName("PK__Componen__23E51DA1EB60FA1E");
+
             entity.ToTable("Component_Test_Result");
-            
-            // Add indexes for common queries
-            entity.HasIndex(e => new { e.StfId, e.TrsId }, "IX_ComponentTestResult_Staff_Test");
-            
+
             entity.Property(e => e.CtrDescription).HasMaxLength(200);
             entity.Property(e => e.CtrName).HasMaxLength(50);
             entity.Property(e => e.Notes).HasMaxLength(500);
@@ -221,8 +227,11 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<Doctor>(entity =>
         {
             entity.HasKey(e => e.DctId).HasName("PK__Doctor__EAC987724EA77AC7");
+
             entity.ToTable("Doctor");
+
             entity.HasIndex(e => e.AccId, "UQ__Doctor__91CBC37946032906").IsUnique();
+
             entity.Property(e => e.DctId).ValueGeneratedNever();
             entity.Property(e => e.Bio).HasMaxLength(500);
             entity.Property(e => e.Degree).HasMaxLength(100);
@@ -236,10 +245,13 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<DoctorWorkSchedule>(entity =>
         {
             entity.HasKey(e => e.DwsId).HasName("PK__Doctor_W__9CB300CFBF5B7260");
+
             entity.ToTable("Doctor_Work_Schedule");
+
             entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.IsAvailable }, "IX_DoctorWorkSchedule_Doctor_Date_Available");
+
             entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.StartTime, e.EndTime }, "UQ_Doctor_Date_Time").IsUnique();
-            
+
             entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week");
             entity.Property(e => e.DoctorId).HasColumnName("doctor_id");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
@@ -260,7 +272,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<MedicalService>(entity =>
         {
             entity.HasKey(e => e.SrvId).HasName("PK__Medical___0367D1B1DD5DACBE");
+
             entity.ToTable("Medical_Service");
+
             entity.Property(e => e.IsAvailable).HasDefaultValue(true);
             entity.Property(e => e.ServiceDescription).HasMaxLength(200);
             entity.Property(e => e.ServiceName).HasMaxLength(50);
@@ -274,10 +288,7 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(e => e.NtfId).HasName("PK__Notifica__E23E8D0644D5F2C5");
-            
-            // Add index for common queries
-            entity.HasIndex(e => e.SendAt, "IX_Notification_SendAt");
-            
+
             entity.Property(e => e.NotiMessage).HasMaxLength(300);
             entity.Property(e => e.NotiType).HasMaxLength(20);
             entity.Property(e => e.SendAt)
@@ -288,10 +299,8 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<NotificationAccount>(entity =>
         {
             entity.HasKey(e => e.NtaId).HasName("PK__Notifica__E1A7DA5324520B35");
+
             entity.ToTable("Notification_Account");
-            
-            // Add composite index for common queries
-            entity.HasIndex(e => new { e.AccId, e.IsRead }, "IX_NotificationAccount_Account_Read");
 
             entity.HasOne(d => d.Acc).WithMany(p => p.NotificationAccounts)
                 .HasForeignKey(d => d.AccId)
@@ -307,8 +316,11 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<Patient>(entity =>
         {
             entity.HasKey(e => e.PtnId).HasName("PK__Patient__72DC78D500687517");
+
             entity.ToTable("Patient");
+
             entity.HasIndex(e => e.AccId, "UQ__Patient__91CBC379B5D7299F").IsUnique();
+
             entity.Property(e => e.PtnId).ValueGeneratedNever();
 
             entity.HasOne(d => d.Acc).WithOne(p => p.Patient)
@@ -320,6 +332,7 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<PatientArvMedication>(entity =>
         {
             entity.HasKey(e => e.PamId).HasName("PK__Patient___F2159F185082BC2E");
+
             entity.ToTable("Patient_ARV_Medication");
 
             entity.HasOne(d => d.Amd).WithMany(p => p.PatientArvMedications)
@@ -336,7 +349,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<PatientArvRegimen>(entity =>
         {
             entity.HasKey(e => e.ParId).HasName("PK__Patient___F35E4C9778DC8BF2");
+
             entity.ToTable("Patient_ARV_Regimen");
+
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -351,7 +366,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<PatientMedicalRecord>(entity =>
         {
             entity.HasKey(e => e.PmrId).HasName("PK__Patient___169E747C27F4874B");
+
             entity.ToTable("Patient_Medical_Record");
+
             entity.HasIndex(e => e.PtnId, "UQ__Patient___72DC78D422F2C45C").IsUnique();
 
             entity.HasOne(d => d.Ptn).WithOne(p => p.PatientMedicalRecord)
@@ -363,8 +380,11 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<Payment>(entity =>
         {
             entity.HasKey(e => e.PayId).HasName("PK__Payment__EE8FCECF84F02A32");
+
             entity.ToTable("Payment", tb => tb.HasTrigger("TRG_Payment_Update"));
+
             entity.HasIndex(e => new { e.PmrId, e.PaymentDate }, "IX_Payment_Patient_Date");
+
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -397,12 +417,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<SocialBlog>(entity =>
         {
             entity.HasKey(e => e.SblId).HasName("PK__Social_B__93CA5D2E46E22F13");
+
             entity.ToTable("Social_Blog");
-            
-            // Add indexes for common queries
-            entity.HasIndex(e => e.PublishedAt, "IX_SocialBlog_PublishedAt");
-            entity.HasIndex(e => new { e.AccId, e.PublishedAt }, "IX_SocialBlog_Account_Published");
-            
+
             entity.Property(e => e.IsAnonymous).HasDefaultValue(false);
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PublishedAt)
@@ -423,7 +440,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<Staff>(entity =>
         {
             entity.HasKey(e => e.StfId).HasName("PK__Staff__5B506DEE6A5B8ED1");
+
             entity.HasIndex(e => e.AccId, "UQ__Staff__91CBC379988F6226").IsUnique();
+
             entity.Property(e => e.StfId).ValueGeneratedNever();
             entity.Property(e => e.Bio).HasMaxLength(500);
             entity.Property(e => e.Degree).HasMaxLength(100);
@@ -437,11 +456,9 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<TestResult>(entity =>
         {
             entity.HasKey(e => e.TrsId).HasName("PK__Test_Res__BE3DBA3A3CD09F38");
+
             entity.ToTable("Test_Result");
-            
-            // Add index for common queries
-            entity.HasIndex(e => new { e.PmrId, e.TestDate }, "IX_TestResult_Patient_Date");
-            
+
             entity.Property(e => e.Notes).HasMaxLength(500);
 
             entity.HasOne(d => d.Pmr).WithMany(p => p.TestResults)
