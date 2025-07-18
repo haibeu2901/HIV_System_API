@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url('../doctor-profile/doctor-profile-style.css');
+@import url('/private-view/shared/doctor-staff-style.css');
 
 /* Reset and Base Styles */
 
