@@ -25,6 +25,14 @@ const regimenStatusMap = {
     5: "Completed"
 };
 
+// Payment status mapping
+const paymentStatusMap = {
+    0: 'Chờ thanh toán',
+    1: 'Đã thanh toán',
+    2: 'Đã hủy',
+    3: 'Đã hoàn tiền'
+};
+
 // Fetch patient medical record data
 async function fetchPatientMedicalData() {
     try {
@@ -63,6 +71,27 @@ async function fetchPatientArvRegimens() {
         return await response.json();
     } catch (error) {
         console.error('Error fetching ARV regimens:', error);
+        return [];
+    }
+}
+
+// Fetch patient payment history
+async function fetchPatientPayments() {
+    try {
+        const response = await fetch('https://localhost:7009/api/Payment/GetAllPersonalPayments', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            if (response.status === 404) {
+                return []; // No payments found
+            }
+            throw new Error('Failed to fetch payment history');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching payment history:', error);
         return [];
     }
 }
@@ -231,6 +260,145 @@ function renderTestResults(testResults) {
     section.innerHTML = html;
 }
 
+// Render payment history
+function renderPayments(payments) {
+    const section = document.getElementById('paymentsContent');
+    
+    if (!payments || payments.length === 0) {
+        section.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-credit-card"></i>
+                <p>No payment history found.</p>
+                <p class="empty-state-subtitle">Payment records will appear here after transactions are completed.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div class="payments-stats">
+            <div class="stat-card">
+                <div class="stat-number">${payments.length}</div>
+                <div class="stat-label">Total Payments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${payments.filter(p => p.paymentStatus === 1).length}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${payments.filter(p => p.paymentStatus === 0).length}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${payments.reduce((total, p) => p.paymentStatus === 1 ? total + p.amount : total, 0).toLocaleString()}</div>
+                <div class="stat-label">Total Paid (VND)</div>
+            </div>
+        </div>
+        <div class="payments-grid">
+    `;
+
+    payments.forEach(payment => {
+        const statusClass = `payment-status-${payment.paymentStatus}`;
+        const statusText = paymentStatusMap[payment.paymentStatus] || 'Không xác định';
+        
+        html += `
+            <div class="payment-card">
+                <div class="payment-card-header">
+                    <div class="payment-main-info">
+                        <div class="payment-id">
+                            <span class="payment-label">Mã thanh toán</span>
+                            <span class="payment-value">#${payment.payId}</span>
+                        </div>
+                        <div class="payment-amount">
+                            <span class="amount-value">${payment.amount.toLocaleString()}</span>
+                            <span class="amount-currency">${payment.currency}</span>
+                        </div>
+                    </div>
+                    <div class="payment-status-container">
+                        <span class="payment-status ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                
+                <div class="payment-card-body">
+                    <div class="payment-info-grid">
+                        <div class="payment-info-item">
+                            <span class="info-label">Bệnh nhân</span>
+                            <span class="info-value">${payment.patientName}</span>
+                        </div>
+                        
+                        <div class="payment-info-item">
+                            <span class="info-label">Email</span>
+                            <span class="info-value">${payment.patientEmail}</span>
+                        </div>
+                        
+                        <div class="payment-info-item">
+                            <span class="info-label">Ngày thanh toán</span>
+                            <span class="info-value">${formatDateTime(payment.paymentDate)}</span>
+                        </div>
+                        
+                        <div class="payment-info-item">
+                            <span class="info-label">Phương thức</span>
+                            <span class="info-value">${payment.paymentMethod}</span>
+                        </div>
+                        
+                        <div class="payment-info-item full-width">
+                            <span class="info-label">Mô tả</span>
+                            <span class="info-value">${payment.description}</span>
+                        </div>
+                        
+                        ${payment.serviceName ? `
+                            <div class="payment-info-item">
+                                <span class="info-label">Dịch vụ</span>
+                                <span class="info-value service-name">${payment.serviceName}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${payment.servicePrice ? `
+                            <div class="payment-info-item">
+                                <span class="info-label">Giá dịch vụ</span>
+                                <span class="info-value service-price">${payment.servicePrice.toLocaleString()} VND</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="payment-metadata">
+                        <div class="metadata-row">
+                            <span class="metadata-label">Tạo lúc:</span>
+                            <span class="metadata-value">${formatDateTime(payment.createdAt)}</span>
+                        </div>
+                        <div class="metadata-row">
+                            <span class="metadata-label">Cập nhật:</span>
+                            <span class="metadata-value">${formatDateTime(payment.updatedAt)}</span>
+                        </div>
+                        ${payment.paymentIntentId ? `
+                            <div class="metadata-row">
+                                <span class="metadata-label">Intent ID:</span>
+                                <span class="metadata-value intent-id">${payment.paymentIntentId}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+    section.innerHTML = html;
+}
+
+// Utility function for formatting date time
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // Render ARV regimens with embedded medications
 function renderARVRegimens(regimens) {
     const section = document.getElementById('arvRegimensContent');
@@ -315,18 +483,6 @@ function renderARVRegimens(regimens) {
                     </div>
                 ` : ''}
                 
-                ${regimen.totalCost && regimen.totalCost > 0 ? `
-                    <div class="regimen-payment-section">
-                        <div class="payment-info">
-                            <span class="payment-label">Payment Required:</span>
-                            <span class="payment-amount">${regimen.totalCost.toLocaleString()} VND</span>
-                        </div>
-                        <button class="btn-pay-regimen" onclick="initiatePayment(${regimen.patientArvRegiId}, ${regimen.totalCost}, 'ARV Regimen Payment - ID: ${regimen.patientArvRegiId}')">
-                            <i class="fas fa-credit-card"></i> Pay Now
-                        </button>
-                    </div>
-                ` : ''}
-                
                 <div class="regimen-medications">
                     <h4>Medications (${regimenMeds.length})</h4>
                     ${regimenMeds.length > 0 ? `
@@ -382,6 +538,9 @@ async function loadPatientData() {
         
         // Fetch ARV regimens (new API)
         const arvRegimens = await fetchPatientArvRegimens();
+        
+        // Fetch payment history
+        const payments = await fetchPatientPayments();
 
         // Render the page structure
         document.body.innerHTML = `
@@ -403,6 +562,9 @@ async function loadPatientData() {
                     </button>
                     <button class="nav-btn" onclick="showSection('arvRegimens')" id="arvRegimensNav">
                         <i class="fas fa-pills"></i> ARV Regimens
+                    </button>
+                    <button class="nav-btn" onclick="showSection('payments')" id="paymentsNav">
+                        <i class="fas fa-credit-card"></i> Payments
                     </button>
                 </div>
                 
@@ -432,6 +594,15 @@ async function loadPatientData() {
                             <p class="section-description">View your current and past ARV treatment regimens</p>
                         </div>
                         <div id="arvRegimensContent"></div>
+                    </section>
+                    
+                    <!-- Payments Section -->
+                    <section class="medical-section" id="paymentsSection">
+                        <div class="section-header">
+                            <h2><i class="fas fa-credit-card"></i> Payment History</h2>
+                            <p class="section-description">View your payment transactions and billing history</p>
+                        </div>
+                        <div id="paymentsContent"></div>
                     </section>
                 </div>
             </div>
@@ -468,6 +639,9 @@ async function loadPatientData() {
 
         // Render ARV regimens (using new API)
         renderARVRegimens(arvRegimens);
+        
+        // Render payment history
+        renderPayments(payments);
 
         // Add section navigation functionality
         window.showSection = function(sectionName) {
@@ -490,7 +664,8 @@ async function loadPatientData() {
 
         // If no data at all, show a comprehensive message in appointments section
         if ((!medicalData || !medicalData.appointments || medicalData.appointments.length === 0) && 
-            (!arvRegimens || arvRegimens.length === 0)) {
+            (!arvRegimens || arvRegimens.length === 0) && 
+            (!payments || payments.length === 0)) {
             
             document.getElementById('appointmentsContent').innerHTML = `
                 <div class="no-records-container">
@@ -530,51 +705,6 @@ async function loadPatientData() {
 
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Load payment scripts
-    loadPaymentScripts();
-    
     // Load patient data
     loadPatientData();
 });
-
-// Load payment scripts dynamically
-function loadPaymentScripts() {
-    // Load payment CSS
-    const paymentCSS = document.createElement('link');
-    paymentCSS.rel = 'stylesheet';
-    paymentCSS.href = '../payment/payment.css';
-    document.head.appendChild(paymentCSS);
-    
-    // Load payment JS
-    const paymentJS = document.createElement('script');
-    paymentJS.src = '../payment/payment.js';
-    paymentJS.onload = function() {
-        console.log('Payment system loaded successfully');
-    };
-    document.head.appendChild(paymentJS);
-}
-
-// Initiate payment for ARV regimen
-function initiatePayment(regimenId, amount, description) {
-    // Ensure payment system is loaded
-    if (!window.PaymentModal || !window.paymentService) {
-        alert('Payment system is loading. Please try again in a moment.');
-        return;
-    }
-    
-    const paymentData = {
-        pmrId: regimenId, // Using regimen ID as PMR ID
-        srvId: 1, // Service ID for ARV regimen (you may need to adjust this)
-        amount: amount,
-        currency: 'VND',
-        paymentMethod: 'stripe',
-        description: description
-    };
-    
-    // Create and show payment modal
-    const paymentModal = new window.PaymentModal(window.paymentService);
-    paymentModal.show(paymentData);
-}
-
-// Make function global for onclick access
-window.initiatePayment = initiatePayment;
