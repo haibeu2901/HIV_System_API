@@ -127,6 +127,7 @@ namespace HIV_System_API_Services.Implements
 
             var Payments = _context.Payments
                 .Where(p => p.PmrId == record.PmrId)
+                .OrderByDescending(p => p.CreatedAt)
                 .Select(p => new PaymentResponseDTO
                 {
                     PayId = p.PayId,
