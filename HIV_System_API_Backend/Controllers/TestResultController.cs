@@ -349,5 +349,109 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
+        /// <summary>
+        /// Updates an existing test result with associated component tests.
+        /// </summary>
+        /// <param name="testResultId">ID of the test result to update.</param>
+        /// <param name="request">Object containing updated test result and component test data.</param>
+        /// <returns>Updated test result with component tests.</returns>
+        [HttpPut("UpdateTestResultWithComponentTests/{testResultId}")]
+        [Authorize(Roles = "1,4,5")]
+        public async Task<IActionResult> UpdateTestResultWithComponentTests(
+            int testResultId,
+            [FromBody] UpdatePatientTestResultWithComponentTestsRequestDTO request)
+        {
+            // Validate testResultId
+            if (testResultId <= 0)
+            {
+                return BadRequest("Test result ID must be greater than 0.");
+            }
+
+            // Validate request structure
+            if (request == null)
+            {
+                return BadRequest("Request body cannot be null.");
+            }
+            if (request.TestResult == null)
+            {
+                return BadRequest("Test result data is required.");
+            }
+            if (request.ComponentTests == null || !request.ComponentTests.Any())
+            {
+                return BadRequest("At least one component test is required.");
+            }
+
+            // Validate test result data
+            if (request.TestResult.PatientMedicalRecordId <= 0)
+            {
+                return BadRequest("Patient medical record ID must be greater than 0.");
+            }
+
+            // Validate component test data
+            foreach (var componentTest in request.ComponentTests)
+            {
+                if (string.IsNullOrWhiteSpace(componentTest.ComponentTestResultName))
+                {
+                    return BadRequest("All component tests must have a valid name.");
+                }
+            }
+
+            // Check for duplicate component test names
+            var componentTestNames = request.ComponentTests
+                .Select(ct => ct.ComponentTestResultName?.Trim().ToLower())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .ToList();
+            if (componentTestNames.Distinct().Count() != componentTestNames.Count)
+            {
+                return BadRequest("Component test names must be unique within the same test result.");
+            }
+
+            try
+            {
+                var accId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+                if (accId == null)
+                {
+                    return Unauthorized("Account ID not found in token.");
+                }
+
+                var updatedTestResult = await _testResultService.UpdateTestResultWithComponentTestsAsync(
+                    testResultId,
+                    request.TestResult,
+                    request.ComponentTests,
+                    accId.Value);
+
+                return Ok(updatedTestResult);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest($"Missing required data: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid input: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest($"Operation failed: {ex.Message}");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound($"Resource not found: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                // Log the full exception details for debugging (uncomment when logger is available)
+                // _logger.LogError(ex, "Database error while updating test result with component tests");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Database error occurred while updating test result. Please try again.");
+            }
+            catch (Exception ex)
+            {
+                // Log the full exception details for debugging (uncomment when logger is available)
+                // _logger.LogError(ex, "Unexpected error updating test result with component tests");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "An unexpected error occurred. Please try again.");
+            }
+        }
     }
 }

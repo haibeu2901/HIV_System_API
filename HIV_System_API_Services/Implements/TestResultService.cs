@@ -389,5 +389,160 @@ namespace HIV_System_API_Services.Implements
                 }
             });
         }
+
+        public async Task<TestResultResponseDTO> UpdateTestResultWithComponentTestsAsync(
+            int testResultId,
+            TestResultRequestDTO testResult,
+            List<ComponentTestResultRequestDTO> componentTestResults,
+            int accId)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = _context.Database.BeginTransaction();
+                try
+                {
+                    // Validate inputs
+                    if (testResult == null)
+                        throw new ArgumentNullException(nameof(testResult));
+                    if (componentTestResults == null)
+                        throw new ArgumentNullException(nameof(componentTestResults));
+                    if (testResultId <= 0)
+                        throw new ArgumentException("ID kết quả xét nghiệm không hợp lệ", nameof(testResultId));
+
+                    // Validate existence
+                    var existingTestResult = await _context.TestResults
+                        .Include(tr => tr.ComponentTestResults)
+                        .FirstOrDefaultAsync(tr => tr.TrsId == testResultId);
+
+                    if (existingTestResult == null)
+                        throw new KeyNotFoundException($"Không tìm thấy kết quả xét nghiệm với ID {testResultId}");
+
+                    await ValidatePatientMedicalRecordExists(testResult.PatientMedicalRecordId);
+
+                    // Update main test result
+                    existingTestResult.TestDate = testResult.TestDate;
+                    existingTestResult.ResultValue = testResult.Result;
+                    existingTestResult.Notes = testResult.Notes;
+
+                    // Handle component test results - OPTIMIZED APPROACH
+                    // Get IDs of components that should be updated (those with ID > 0)
+                    var updateComponentIds = componentTestResults
+                        .Where(c => c.TestResultId > 0)
+                        .Select(c => c.TestResultId)
+                        .ToHashSet();
+
+                    // Remove components that are no longer in the request
+                    var componentsToRemove = existingTestResult.ComponentTestResults
+                        .Where(c => !updateComponentIds.Contains(c.CtrId))
+                        .ToList();
+
+                    foreach (var component in componentsToRemove)
+                    {
+                        _context.ComponentTestResults.Remove(component);
+                    }
+
+                    // Process each component in the request
+                    foreach (var componentRequest in componentTestResults)
+                    {
+                        if (string.IsNullOrWhiteSpace(componentRequest.ComponentTestResultName))
+                            throw new ArgumentException("Tên kết quả kiểm tra thành phần là bắt buộc");
+
+                        if (componentRequest.TestResultId > 0)
+                        {
+                            // Update existing component
+                            var existingComponent = existingTestResult.ComponentTestResults
+                                .FirstOrDefault(c => c.CtrId == componentRequest.TestResultId);
+
+                            if (existingComponent != null)
+                            {
+                                existingComponent.CtrName = componentRequest.ComponentTestResultName.Trim();
+                                existingComponent.CtrDescription = componentRequest.CtrDescription?.Trim();
+                                existingComponent.ResultValue = componentRequest.ResultValue?.Trim();
+                                existingComponent.Notes = componentRequest.Notes?.Trim();
+                                existingComponent.StfId = accId;
+                            }
+                            else
+                            {
+                                // If for some reason the component with the specified ID doesn't exist, 
+                                // treat it as a new component
+                                var newComponent = new ComponentTestResult
+                                {
+                                    TrsId = testResultId,
+                                    StfId = accId,
+                                    CtrName = componentRequest.ComponentTestResultName.Trim(),
+                                    CtrDescription = componentRequest.CtrDescription?.Trim(),
+                                    ResultValue = componentRequest.ResultValue?.Trim(),
+                                    Notes = componentRequest.Notes?.Trim()
+                                };
+                                _context.ComponentTestResults.Add(newComponent);
+                            }
+                        }
+                        else
+                        {
+                            // Add new component (TestResultId is 0 or negative)
+                            var newComponent = new ComponentTestResult
+                            {
+                                TrsId = testResultId,
+                                StfId = accId,
+                                CtrName = componentRequest.ComponentTestResultName.Trim(),
+                                CtrDescription = componentRequest.CtrDescription?.Trim(),
+                                ResultValue = componentRequest.ResultValue?.Trim(),
+                                Notes = componentRequest.Notes?.Trim()
+                            };
+                            _context.ComponentTestResults.Add(newComponent);
+                        }
+                    }
+
+                    // Create notification
+                    var notification = new Notification
+                    {
+                        NotiType = "Cập nhật KQ XN",
+                        NotiMessage = $"Kết quả xét nghiệm ID {testResultId} đã được cập nhật.",
+                        SendAt = DateTime.UtcNow
+                    };
+                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+
+                    // Get medical record with patient information
+                    var medicalRecord = await _context.PatientMedicalRecords
+                        .Include(pmr => pmr.Ptn)
+                        .FirstOrDefaultAsync(pmr => pmr.PmrId == testResult.PatientMedicalRecordId);
+
+                    if (medicalRecord?.Ptn != null)
+                    {
+                        // Send notification to patient
+                        await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, medicalRecord.Ptn.AccId);
+
+                        // Send notification to the most recent doctor for this patient
+                        var recentAppointment = await _context.Appointments
+                            .Include(a => a.Dct)
+                            .Where(a => a.PtnId == medicalRecord.PtnId)
+                            .OrderByDescending(a => a.ApmtDate)
+                            .FirstOrDefaultAsync();
+
+                        if (recentAppointment?.Dct != null)
+                        {
+                            await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, recentAppointment.Dct.AccId);
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // Reload the test result with all related data
+                    var updatedResult = await _context.TestResults
+                        .Include(tr => tr.ComponentTestResults)
+                        .ThenInclude(ct => ct.Stf)
+                        .FirstAsync(tr => tr.TrsId == testResultId);
+
+                    return MapToResponse(updatedResult);
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"Cập nhật kết quả xét nghiệm thất bại: {ex.Message}", ex);
+                }
+            });
+        }
     }
 }
