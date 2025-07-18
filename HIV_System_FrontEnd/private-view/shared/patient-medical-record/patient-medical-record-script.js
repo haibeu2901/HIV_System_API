@@ -22,7 +22,14 @@ const regimenStatusMap = {
   2: "Đang hoạt động",
   3: "Tạm dừng",
   4: "Đã hủy",
-  5: "Đã hoàn thành"
+  5: "Hoàn thành"
+};
+
+// Payment status mapping
+const paymentStatusMap = {
+  0: "Chờ xử lý",
+  1: "Thành công",
+  2: "Thất bại"
 };
 
 // Set window.isStaff and window.isDoctor globally
@@ -57,31 +64,13 @@ async function fetchPatientDetails(patientId) {
     }
 }
 
-// Fetch patient medical record ID
-async function fetchPatientMRId(patientId) {
+// Add new fetchPatientMedicalDataByPatientId
+async function fetchPatientMedicalDataByPatientId(patientId) {
     try {
-        const response = await fetch(`https://localhost:7009/api/Patient/GetPatientMRById/${patientId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordByPatientId?patientId=${patientId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Lỗi thất bại lấy ID sơ đồ bệnh án bệnh nhân');
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching patient MR ID:', error);
-        return null;
-    }
-}
-
-// Fetch all patient medical data (appointments, test results, arv regimens)
-async function fetchPatientMedicalData(pmrId) {
-    try {
-        const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordById/${pmrId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        if (!response.ok) throw new Error('Lỗi thất bại lấy sơ đồ thông tin bệnh án bệnh nhân');
+        if (!response.ok) throw new Error('Lỗi thất bại lấy thông tin bệnh án bệnh nhân');
         return await response.json();
     } catch (error) {
         console.error('Error fetching patient medical data:', error);
@@ -923,6 +912,28 @@ if (updateComponentTestForm) {
   };
 }
 
+// Render payments
+function renderPayments(payments) {
+    const section = document.getElementById('paymentsSection');
+    if (!section) return;
+    if (!payments || payments.length === 0) {
+        section.innerHTML = `<div class="empty-state"><i class="fas fa-money-bill-wave"></i><p>Không có giao dịch thanh toán nào.</p></div>`;
+        return;
+    }
+    let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
+    payments.forEach(pay => {
+        html += `<tr>
+            <td>${pay.paymentDate ? new Date(pay.paymentDate).toLocaleString() : '-'}</td>
+            <td>${pay.amount ? pay.amount.toLocaleString() + ' ₫' : '-'}</td>
+            <td>${pay.paymentMethod || '-'}</td>
+            <td><span class="payment-status payment-status-${pay.paymentStatus}">${paymentStatusMap[pay.paymentStatus] || pay.paymentStatus}</span></td>
+            <td>${pay.description || '-'}</td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    section.innerHTML = html;
+}
+
 // Main function to load all patient data
 async function loadPatientData() {
     const patientId = getPatientIdFromUrl();
@@ -941,28 +952,23 @@ async function loadPatientData() {
         // Fetch patient details
         const patient = await fetchPatientDetails(patientId);
         renderPatientProfile(patient);
-
-        // Fetch patient MR ID
-        const mrData = await fetchPatientMRId(patientId);
-        
-        if (mrData && mrData.pmrId) {
-            // Fetch all medical data (appointments, test results, arv regimens)
-            const medicalData = await fetchPatientMedicalData(mrData.pmrId);
-            // Fetch all ARV medications for the patient
-            const medications = await fetchPatientArvMedications(patientId);
-            if (medicalData) {
-                renderAppointments(medicalData.appointments || []);
-                renderTestResults(medicalData.testResults || []);
-                renderARVRegimens(medicalData.arvRegimens || [], medications);
-            } else {
-                renderAppointments([]);
-                renderTestResults([]);
-                renderARVRegimens([], []);
-            }
+        // Fetch all medical data (appointments, test results, arv regimens, payments)
+        const medicalData = await fetchPatientMedicalDataByPatientId(patientId);
+        // Fetch all ARV medications for the patient (if needed for regimens)
+        let medications = [];
+        if (medicalData && medicalData.arvRegimens) {
+            medications = medicalData.arvRegimens.flatMap(r => r.arvMedications || []);
+        }
+        if (medicalData) {
+            renderAppointments(medicalData.appointments || []);
+            renderTestResults(medicalData.testResults || []);
+            renderARVRegimens(medicalData.arvRegimens || [], medications);
+            renderPayments(medicalData.payments || []);
         } else {
             renderAppointments([]);
             renderTestResults([]);
             renderARVRegimens([], []);
+            renderPayments([]);
         }
     } catch (error) {
         console.error('Error loading patient data:', error);
