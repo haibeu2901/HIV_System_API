@@ -27,9 +27,9 @@ const regimenStatusMap = {
 
 // Payment status mapping
 const paymentStatusMap = {
-  0: "Chờ xử lý",
-  1: "Thành công",
-  2: "Thất bại"
+  1: "Chờ xử lý",
+  2: "Thành công",
+  3: "Thất bại"
 };
 
 // Set window.isStaff and window.isDoctor globally
@@ -650,36 +650,7 @@ regimenForm.onsubmit = async function(e) {
 };
 
 // --- Create Test Result Modal Logic ---
-document.addEventListener('DOMContentLoaded', async function() {
-  // Show button for staff only
-  if (window.isStaff) {
-    document.getElementById('createTestResultContainer').style.display = '';
-  }
-
-  // Get pmrId (from loaded data or fetch)
-  let pmrId = null;
-  let patientId = null;
-  if (typeof getPatientIdFromUrl === 'function') {
-    patientId = getPatientIdFromUrl();
-    if (!patientId) {
-      alert('Không tìm thấy bệnh nhân. Vui lòng truy cập từ danh sách bệnh nhân.');
-      return;
-    }
-    // Try to fetch MR ID
-    try {
-      const mrIdResp = await fetchPatientMRId(patientId);
-      if (mrIdResp) {
-        pmrId = mrIdResp.patientMedicalRecordId || mrIdResp.pmrId;
-      }
-    } catch {}
-  }
-  // If pmrId is still not found, show error and do not allow modal open
-  if (!pmrId) {
-    document.getElementById('createTestResultContainer').style.display = 'none';
-    alert('Không tìm thấy hồ sơ bệnh án cho bệnh nhân này.');
-    return;
-  }
-
+document.addEventListener('DOMContentLoaded', function() {
   // Modal elements
   const openBtn = document.getElementById('openTestResultModalBtn');
   const modal = document.getElementById('testResultModal');
@@ -750,8 +721,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     resetComponentTests();
     // Set today as default date
     dateInput.value = getToday();
-    // Set pmrId
-    if (pmrId) pmrIdInput.value = pmrId;
+    // Set pmrId from global
+    if (window.pmrId != null) pmrIdInput.value = window.pmrId;
     modal.style.display = 'block';
   }
   function closeModal() {
@@ -954,6 +925,12 @@ async function loadPatientData() {
         renderPatientProfile(patient);
         // Fetch all medical data (appointments, test results, arv regimens, payments)
         const medicalData = await fetchPatientMedicalDataByPatientId(patientId);
+        // Store pmrId globally for modal logic
+        if (medicalData && medicalData.pmrId != null) {
+            window.pmrId = medicalData.pmrId;
+        } else {
+            window.pmrId = null;
+        }
         // Fetch all ARV medications for the patient (if needed for regimens)
         let medications = [];
         if (medicalData && medicalData.arvRegimens) {
@@ -969,6 +946,15 @@ async function loadPatientData() {
             renderTestResults([]);
             renderARVRegimens([], []);
             renderPayments([]);
+        }
+        // After data is loaded, show/hide staff button
+        const btnContainer = document.getElementById('createTestResultContainer');
+        if (btnContainer) {
+            if (window.isStaff && window.pmrId != null) {
+                btnContainer.style.display = '';
+            } else {
+                btnContainer.style.display = 'none';
+            }
         }
     } catch (error) {
         console.error('Error loading patient data:', error);
