@@ -136,7 +136,7 @@ namespace HIV_System_API_Services.Implements
                     Currency = p.Currency,
                     PaymentMethod = p.PaymentMethod ?? "card",
                     Description = p.Notes,
-                    PaymentStatus = 0, // Pending
+                    PaymentStatus = p.PaymentStatus, //1-pending, 2-success, 3-failed 
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     PaymentDate = DateTime.UtcNow,
