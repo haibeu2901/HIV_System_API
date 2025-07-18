@@ -210,5 +210,20 @@ namespace HIV_System_API_Services.Implements
 
             return MapToResponseDTO(record);
         }
+
+        public async Task<PatientMedicalRecordResponseDTO?> GetPatientMedicalRecordByPatientIdAsync(int patientId)
+        {
+            // Validation: patientId must be positive
+            if (patientId <= 0)
+                throw new ArgumentException("ID bệnh nhân (patientId) phải là số dương.", nameof(patientId));
+
+            var patientMedicalRecord = await _patientMedicalRecordRepo.GetPatientMedicalRecordByPatientIdAsync(patientId);
+            if (patientMedicalRecord == null)
+            {
+                return null;
+            }
+
+            return MapToResponseDTO(patientMedicalRecord);
+        }
     }
 }
