@@ -65,15 +65,9 @@ public partial class HivSystemApiContext : DbContext
         if (!optionsBuilder.IsConfigured)
         {
             // Only configure if not already configured (for DI scenarios)
-            optionsBuilder.UseSqlServer(GetConnectionString(), options =>
-            {
-                options.EnableRetryOnFailure(
-                    maxRetryCount: 3,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-            })
-            .EnableSensitiveDataLogging(false) // Disable in production
-            .EnableServiceProviderCaching(); // Enable service provider caching
+            optionsBuilder.UseSqlServer(GetConnectionString());
+            //.EnableSensitiveDataLogging(false) // Disable in production
+            //.EnableServiceProviderCaching(); // Enable service provider caching
         }
     }
 

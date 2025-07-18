@@ -128,7 +128,7 @@ builder.Services.AddDbContext<HivSystemApiContext>(options =>
 // Add memory caching
 builder.Services.AddMemoryCache(options =>
 {
-    options.SizeLimit = 1024; // Limit cache size
+    options.SizeLimit = 1024*1024; // Limit cache size
 });
 
 // Add response caching
