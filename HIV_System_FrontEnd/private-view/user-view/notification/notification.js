@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function markAsRead(notificationId) {
         try {
             const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.MARK_AS_READ}/${notificationId}`, {
-                method: "POST",
+                method: "PUT",
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function markAllAsRead() {
         try {
             const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.MARK_ALL_AS_READ}`, {
-                method: "POST",
+                method: "PUT",
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",
