@@ -868,6 +868,61 @@ document.addEventListener('DOMContentLoaded', async function() {
   };
 });
 
+// --- Update Component Test Result Modal Logic ---
+const updateComponentTestModal = document.getElementById('updateComponentTestModal');
+const closeUpdateComponentTestModalBtn = document.getElementById('closeUpdateComponentTestModalBtn');
+const cancelUpdateComponentTestBtn = document.getElementById('cancelUpdateComponentTestBtn');
+const updateComponentTestForm = document.getElementById('updateComponentTestForm');
+const updateComponentTestMsg = document.getElementById('updateComponentTestMsg');
+
+function closeUpdateComponentTestModal() {
+  updateComponentTestModal.style.display = 'none';
+  updateComponentTestForm.reset();
+  updateComponentTestMsg.textContent = '';
+}
+if (closeUpdateComponentTestModalBtn) closeUpdateComponentTestModalBtn.onclick = closeUpdateComponentTestModal;
+if (cancelUpdateComponentTestBtn) cancelUpdateComponentTestBtn.onclick = closeUpdateComponentTestModal;
+window.addEventListener('click', function(event) {
+  if (event.target === updateComponentTestModal) closeUpdateComponentTestModal();
+});
+
+if (updateComponentTestForm) {
+  updateComponentTestForm.onsubmit = async function(e) {
+    e.preventDefault();
+    updateComponentTestMsg.textContent = '';
+    const compId = document.getElementById('updateComponentTestId').value;
+    const name = document.getElementById('updateComponentTestName').value.trim();
+    const desc = document.getElementById('updateComponentTestDesc').value.trim();
+    const value = document.getElementById('updateComponentTestValue').value.trim();
+    const notes = document.getElementById('updateComponentTestNotes').value.trim();
+    if (!compId || !name || !value || !notes) {
+      updateComponentTestMsg.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc.';
+      return;
+    }
+    try {
+      const res = await fetch(`https://localhost:7009/api/ComponentTestResult/Update/${compId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          componentTestResultName: name,
+          ctrDescription: desc,
+          resultValue: value,
+          notes: notes
+        })
+      });
+      if (!res.ok) throw new Error('Lỗi khi cập nhật thành phần xét nghiệm.');
+      closeUpdateComponentTestModal();
+      // Refresh test results
+      if (typeof loadPatientData === 'function') loadPatientData();
+    } catch (err) {
+      updateComponentTestMsg.textContent = 'Lỗi khi cập nhật thành phần xét nghiệm.';
+    }
+  };
+}
+
 // Main function to load all patient data
 async function loadPatientData() {
     const patientId = getPatientIdFromUrl();
