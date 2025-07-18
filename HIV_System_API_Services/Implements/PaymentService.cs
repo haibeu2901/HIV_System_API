@@ -186,16 +186,5 @@ namespace HIV_System_API_Services.Implements
         {
             return await _paymentRepo.DeletePaymentAsync(payId);
         }
-
-        public async Task<List<PaymentResponseDTO>> GetAllPersonalPaymentsAsync(int accId)
-        {
-            // Find the patient by account ID
-            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.AccId == accId);
-            if (patient == null)
-                throw new InvalidOperationException($"No patient found for account ID {accId}.");
-
-            var entities = await _paymentRepo.GetPersonalPaymentsAsync(patient.PtnId);
-            return entities.Select(MapToResponseDTO).ToList();
-        }
     }
 }

@@ -8,7 +8,6 @@ using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -112,33 +111,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //Add DB Context
-var connectionString = builder.Configuration.GetConnectionString("HIVSystemDatabase");
 builder.Services.AddDbContext<HivSystemApiContext>(options =>
-{
-    options.UseSqlServer(connectionString, sqlOptions =>
-    {
-        sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 3,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorNumbersToAdd: null);
-        sqlOptions.CommandTimeout(30);
-    });
-}, ServiceLifetime.Scoped);
-
-// Add memory caching
-builder.Services.AddMemoryCache(options =>
-{
-    options.SizeLimit = 1024*1024; // Limit cache size
-});
-
-// Add response caching
-builder.Services.AddResponseCaching();
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-    options.Providers.Add<BrotliCompressionProvider>();
-    options.Providers.Add<GzipCompressionProvider>();
-});
+    options.UseSqlServer(builder.Configuration.GetConnectionString("HIVSystemDatabase"))
+                                                .EnableSensitiveDataLogging() // Enable sensitive data logging
+                                                .EnableDetailedErrors());     // Enable detailed errors for debugging);
 
 // Register DAOs
 builder.Services.AddScoped<BaseDashboardDAO>();

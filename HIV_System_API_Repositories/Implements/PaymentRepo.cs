@@ -26,11 +26,6 @@ namespace HIV_System_API_Repositories.Implements
             return await PaymentDAO.Instance.GetPaymentsByPmrIdAsync(pmrId);
         }
 
-        public async Task<List<Payment>> GetPersonalPaymentsAsync(int patientId)
-        {
-            return await PaymentDAO.Instance.GetPersonalPaymentsAsync(patientId);
-        }
-
         public async Task<Payment> CreatePaymentAsync(Payment payment)
         {
             return await PaymentDAO.Instance.CreatePaymentAsync(payment);
