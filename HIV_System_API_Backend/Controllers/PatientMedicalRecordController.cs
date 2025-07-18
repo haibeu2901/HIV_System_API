@@ -128,5 +128,18 @@ namespace HIV_System_API_Backend.Controllers
             }
             return Ok(record);
         }
+
+        [HttpGet("GetPatientMedicalRecordByPatientId")]
+        [Authorize(Roles = "1,2,4,5")]
+        public async Task<IActionResult> GetPatientMedicalRecordByPatientId(int patientId)
+        {
+            var record = await _patientMedicalRecordService.GetPatientMedicalRecordByPatientIdAsync(patientId);
+            if (record == null)
+            {
+                return NotFound("Personal medical record not found.");
+            }
+            
+            return Ok(record);
+        }
     }
 }

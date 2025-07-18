@@ -179,7 +179,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <param name="patientArvRegimen">Updated patient ARV regimen data</param>
         /// <returns>Updated patient ARV regimen</returns>
         [HttpPut("UpdatePatientArvRegimen/{parId}")]
-        [Authorize(Roles = "1,2,4")]
+        [Authorize(Roles = "1,2,5")]
         public async Task<IActionResult> UpdatePatientArvRegimen(int parId, [FromBody] PatientArvRegimenRequestDTO patientArvRegimen)
         {
             if (patientArvRegimen == null)

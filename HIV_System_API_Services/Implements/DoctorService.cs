@@ -245,8 +245,12 @@ namespace HIV_System_API_Services.Implements
             try
             {
                 var doctors = await _doctorRepo.GetDoctorsByDateAndTimeAsync(apmtDate, apmTime);
+
+                // Return empty list instead of throwing exception - this is a valid business scenario
                 if (doctors == null || !doctors.Any())
-                    throw new InvalidOperationException($"Không tìm thấy bác sĩ nào phù hợp với ngày {apmtDate} và thời gian {apmTime}.");
+                {
+                    return new List<DoctorResponseDTO>();
+                }
 
                 var result = new List<DoctorResponseDTO>();
 
@@ -254,15 +258,26 @@ namespace HIV_System_API_Services.Implements
                 {
                     // Defensive: skip if Acc is null (should not happen if DB is correct)
                     if (doctor.Acc == null)
+                    {
+                        // Log this as a warning instead of silently continuing
+                        // _logger.LogWarning($"Doctor with ID {doctor.DctId} has null Account. Skipping.");
                         continue;
+                    }
 
                     result.Add(MapToResponseDTO(doctor));
                 }
 
                 return result;
             }
+            catch (ArgumentException)
+            {
+                // Re-throw validation exceptions as they are client errors (400 Bad Request)
+                throw;
+            }
             catch (Exception ex)
             {
+                // Log unexpected errors and throw with more specific message
+                // _logger.LogError(ex, "Unexpected error occurred while retrieving doctors for date {Date} and time {Time}", apmtDate, apmTime);
                 throw new InvalidOperationException($"Không thể truy xuất danh sách bác sĩ cho ngày {apmtDate} và thời gian {apmTime}.", ex);
             }
         }
