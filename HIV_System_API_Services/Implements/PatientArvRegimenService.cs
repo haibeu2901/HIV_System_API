@@ -639,8 +639,8 @@ namespace HIV_System_API_Services.Implements
                 // Create notification
                 var notification = new Notification
                 {
-                    NotiType = "ARV Regimen Created",
-                    NotiMessage = $"A new ARV regimen with {medicationEntities.Count} medication(s) has been created.",
+                    NotiType = "Phác đồ ARV mới",
+                    NotiMessage = $"Một phác đồ ARV mới với {medicationEntities.Count} loại thuốc đã được tạo ra.",
                     SendAt = DateTime.UtcNow
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);

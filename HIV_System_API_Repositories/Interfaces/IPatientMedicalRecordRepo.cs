@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.PatientMedicalRecordDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +16,6 @@ namespace HIV_System_API_Repositories.Interfaces
         Task<PatientMedicalRecord> UpdatePatientMedicalRecordAsync(int id, PatientMedicalRecord record);
         Task<bool> DeletePatientMedicalRecordAsync(int id);
         Task<PatientMedicalRecord?> GetPersonalMedicalRecordAsync(int accId);
+        Task<PatientMedicalRecord?> GetPatientMedicalRecordByPatientIdAsync(int patientId);
     }
 }
