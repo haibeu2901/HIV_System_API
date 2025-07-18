@@ -108,7 +108,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         hasPermission,
         getUserRole,
- isAdmin,
+        isAdmin,
         isManager,
         canAccessAdminFeatures,
         getDashboardUrl,

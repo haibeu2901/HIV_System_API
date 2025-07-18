@@ -528,7 +528,7 @@ async function loadPatientData() {
     document.body.innerHTML = `
         <div class="loading-container">
             <div class="loading-spinner"></div>
-            <p>Loading your medical records...</p>
+            <p>Đang tải hồ sơ bệnh án của bạn...</p>
         </div>
     `;
 
@@ -622,7 +622,7 @@ async function loadPatientData() {
                     <i class="fas fa-calendar-times"></i>
                     <p>No appointments found.</p>
                     <button class="btn-book-appointment" onclick="window.location.href='../booking/appointment-booking.html'">
-                        <i class="fas fa-calendar-plus"></i> Book an Appointment
+                        <i class="fas fa-calendar-plus"></i> Đặt Lịch Hẹn
                     </button>
                 </div>
             `;
@@ -683,7 +683,7 @@ async function loadPatientData() {
                         </ul>
                     </div>
                     <button class="btn-book-appointment" onclick="window.location.href='../booking/appointment-booking.html'">
-                        <i class="fas fa-calendar-plus"></i> Book an Appointment
+                        <i class="fas fa-calendar-plus"></i> Đặt Lịch Hẹn
                     </button>
                 </div>
             `;
@@ -696,7 +696,7 @@ async function loadPatientData() {
                 <i class="fas fa-exclamation-triangle"></i>
                 <p>Error loading medical records. Please try again.</p>
                 <button class="btn-retry" onclick="window.location.reload()">
-                    <i class="fas fa-refresh"></i> Try Again
+                    <i class="fas fa-refresh"></i> Thử Lại
                 </button>
             </div>
         `;
