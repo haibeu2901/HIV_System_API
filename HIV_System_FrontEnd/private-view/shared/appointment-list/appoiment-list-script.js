@@ -1,3 +1,13 @@
+// Ensure role flags are set at the very top
+window.isStaff = false;
+window.isDoctor = false;
+if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+  const roleId = window.roleUtils.getUserRole();
+  const roleName = window.roleUtils.ROLE_NAMES[roleId];
+  window.isStaff = (roleName === 'staff');
+  window.isDoctor = (roleName === 'doctor');
+}
+
 // Get token from localStorage
 const token = localStorage.getItem('token');
 
@@ -22,15 +32,23 @@ function getDisplayStatus(apmt) {
 
 async function fetchAppointments() {
     try {
-        const response = await fetch('https://localhost:7009/api/Appointment/GetAllPersonalAppointments', {
+        let url = '';
+        if (window.isDoctor) {
+            url = 'https://localhost:7009/api/Appointment/GetAllPersonalAppointments';
+        } else if (window.isStaff) {
+            url = 'https://localhost:7009/api/Appointment/GetAllAppointments';
+        } else {
+            throw new Error('Không xác định vai trò người dùng.');
+        }
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
-        if (!response.ok) throw new Error('Failed to fetch appointments');
+        if (!response.ok) throw new Error('Lỗi không thể lấy lịch hẹn');
         return await response.json();
     } catch (error) {
-        console.error('Error fetching appointments:', error);
+        console.error('Lỗi không thể lấy lịch hẹn:', error);
         return [];
     }
 }

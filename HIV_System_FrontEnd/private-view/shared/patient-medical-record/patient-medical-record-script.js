@@ -307,6 +307,10 @@ function renderARVRegimens(regimens, medications) {
                         <div class="regimen-detail-label">Created At</div>
                         <div class="regimen-detail-value">${new Date(regimen.createdAt).toLocaleDateString()}</div>
                     </div>
+                    <div class="regimen-detail">
+                        <div class="regimen-detail-label">Tổng chi phí</div>
+                        <div class="regimen-detail-value">${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
+                    </div>
                 </div>
                 ${regimen.notes ? `
                     <div class="regimen-notes">
@@ -508,14 +512,22 @@ regimenTemplate.onchange = function() {
     const template = JSON.parse(selected);
     // Fill form fields
     regimenNotes.value = template.description;
-    regimenStartDate.value = new Date().toISOString().slice(0, 10);
+    // Set start date to today
+    const today = new Date();
+    regimenStartDate.value = today.toISOString().slice(0, 10);
+    // Set end date to start date + duration days
+    if (template.duration) {
+        const endDate = new Date(today.getTime() + template.duration * 24 * 60 * 60 * 1000);
+        if (document.getElementById('regimenEndDate')) {
+            document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
+        }
+    }
     // Fill medications
     selectedTemplateMedications = template.medications.map(med => ({
         arvMedicationName: med.medicationName,
-        arvMedDetailId: med.arvMedicationDetailId,
         dosage: med.dosage,
         quantity: med.quantity,
-        manufacturer: allMedicationDetails.find(m => m.arvMedicationName === med.medicationName)?.arvMedicationManufacturer || '',
+        manufacturer: ''
     }));
     renderMedicationRows();
 };
@@ -535,7 +547,7 @@ function renderMedicationRows() {
             <td>
                 <select class="medication-name-select" data-idx="${idx}">
                     <option value="">Select</option>
-                    ${allMedicationDetails.map(m => `<option value="${m.arvMedicationName}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
+                    ${allMedicationDetails.map(m => `<option value="${m.arvMedicationId}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
                 </select>
             </td>
             <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
@@ -549,13 +561,12 @@ function renderMedicationRows() {
 }
 
 addMedicationBtn.onclick = function() {
-    if (selectedTemplateMedications.length >= 3) return;
-    selectedTemplateMedications.push({ arvMedicationName: '', arvMedDetailId: null, dosage: '', quantity: 1, manufacturer: '' });
+    selectedTemplateMedications.push({ arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' });
     renderMedicationRows();
 };
 
 function updateAddMedicationBtnState() {
-    addMedicationBtn.disabled = selectedTemplateMedications.length >= 3;
+    addMedicationBtn.disabled = false;
 }
 
 // Handle medication name/quantity changes and remove
@@ -569,18 +580,17 @@ medicationsTableBody.onclick = function(e) {
 medicationsTableBody.onchange = function(e) {
     if (e.target.classList.contains('medication-name-select')) {
         const idx = +e.target.dataset.idx;
-        const medName = e.target.value;
-        const medDetail = allMedicationDetails.find(m => m.arvMedicationName === medName);
+        const medId = e.target.value;
+        const medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(medId));
         if (medDetail) {
             selectedTemplateMedications[idx] = {
                 arvMedicationName: medDetail.arvMedicationName,
-                arvMedDetailId: medDetail.arvMedicationDetailId || medDetail.arvMedDetailId || medDetail.id || medDetail.arvMedicationDetailId,
                 dosage: medDetail.arvMedicationDosage,
                 quantity: selectedTemplateMedications[idx].quantity || 1,
                 manufacturer: medDetail.arvMedicationManufacturer
             };
         } else {
-            selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: null, dosage: '', quantity: 1, manufacturer: '' };
+            selectedTemplateMedications[idx] = { arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' };
         }
         renderMedicationRows();
     } else if (e.target.classList.contains('medication-qty-input')) {
@@ -593,8 +603,8 @@ medicationsTableBody.onchange = function(e) {
 regimenForm.onsubmit = async function(e) {
     e.preventDefault();
     // Validation
-    if (selectedTemplateMedications.length === 0 || selectedTemplateMedications.length > 3) {
-        alert('Please select 1-3 medications.');
+    if (selectedTemplateMedications.length === 0) {
+        alert('Please add at least one medication.');
         return;
     }
     const medNames = selectedTemplateMedications.map(m => m.arvMedicationName);
@@ -606,38 +616,70 @@ regimenForm.onsubmit = async function(e) {
         alert('Please fill all medication fields.');
         return;
     }
+    // Check that every medication selection is valid
+    if (selectedTemplateMedications.some(m => {
+        const medDetail = allMedicationDetails.find(md => md.arvMedicationName === m.arvMedicationName);
+        return !medDetail;
+    })) {
+        alert('Please select a valid medication for every row.');
+        return;
+    }
     // Prepare regimen payload
-    const patientId = getPatientIdFromUrl();
-    const mrData = await fetchPatientMRId(patientId);
-    if (!mrData || !mrData.pmrId) {
+    if (!window.pmrId) {
         alert('Cannot find patient medical record.');
         return;
     }
     // Build medications array for API
-    const medications = selectedTemplateMedications.map(med => ({
+    const medications = selectedTemplateMedications.map(med => {
+        const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
+        return {
         patientArvRegId: 0,
-        arvMedDetailId: med.arvMedDetailId,
+            arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
         quantity: med.quantity
-    }));
+        };
+    });
     // Build regimen object
     const regimen = {
-        patientMedRecordId: mrData.pmrId,
+        patientMedRecordId: window.pmrId,
         notes: regimenNotes.value,
         regimenLevel: +regimenLevel.value,
         createdAt: new Date().toISOString(),
         startDate: regimenStartDate.value,
-        endDate: null,
+        endDate: document.getElementById('regimenEndDate') ? document.getElementById('regimenEndDate').value : null,
         regimenStatus: 1, // active
+        totalCost: 0
     };
+    const payload = { regimen, medications };
+    // Detailed logging of regimen properties
+    console.log('DEBUG: Regimen details:');
+    Object.entries(regimen).forEach(([key, value]) => {
+        console.log(`  ${key}:`, value);
+    });
+    console.log('DEBUG: Submitting ARV regimen payload:', payload);
     // Call new API
     try {
         const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ regimen, medications })
+            body: JSON.stringify(payload)
         });
         if (!res.ok) {
-            alert('Failed to create regimen.');
+            let errorMsg = 'Failed to create regimen.';
+            let errorText = '';
+            try {
+                // Try to read as JSON
+                const errorData = await res.json();
+                console.error('Backend error:', errorData);
+                if (errorData && errorData.message) errorMsg += '\n' + errorData.message;
+                else errorText = JSON.stringify(errorData);
+            } catch (e) {
+                // If not JSON, try as text (but only once)
+                try {
+                    errorText = await res.text();
+                } catch {}
+            }
+            if (errorText) errorMsg += '\n' + errorText;
+            alert(errorMsg);
             return;
         }
         alert('Regimen and medications created successfully!');
@@ -646,6 +688,7 @@ regimenForm.onsubmit = async function(e) {
         loadPatientData();
     } catch (err) {
         alert('Error creating regimen.');
+        console.error('Error creating regimen:', err);
     }
 };
 
@@ -936,10 +979,10 @@ async function loadPatientData() {
         if (medicalData && medicalData.arvRegimens) {
             medications = medicalData.arvRegimens.flatMap(r => r.arvMedications || []);
         }
-        if (medicalData) {
-            renderAppointments(medicalData.appointments || []);
-            renderTestResults(medicalData.testResults || []);
-            renderARVRegimens(medicalData.arvRegimens || [], medications);
+            if (medicalData) {
+                renderAppointments(medicalData.appointments || []);
+                renderTestResults(medicalData.testResults || []);
+                renderARVRegimens(medicalData.arvRegimens || [], medications);
             renderPayments(medicalData.payments || []);
         } else {
             renderAppointments([]);
