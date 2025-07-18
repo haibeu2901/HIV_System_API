@@ -740,12 +740,15 @@ async function loadPatientData() {
                     
                     <div class="demo-card-info">
                         <h4>Test Card Information</h4>
-                        <p>Use these test card numbers for demo payments:</p>
+                        <p>Use these test card numbers to simulate different payment outcomes:</p>
                         <div class="demo-cards-list">
-                            <strong>Visa (Success):</strong> 4242 4242 4242 4242<br>
-                            <strong>Mastercard (Success):</strong> 5555 5555 5555 4444<br>
-                            <strong>Amex (Success):</strong> 3782 8224 6310 005<br>
-                            <strong>Declined:</strong> 4000 0000 0000 0002
+                            <strong>✅ Success Cards (Will call confirm-payment API):</strong><br>
+                            • <strong>Visa:</strong> 4242 4242 4242 4242<br>
+                            • <strong>Mastercard:</strong> 5555 5555 5555 4444<br>
+                            • <strong>Amex:</strong> 3782 8224 6310 005<br><br>
+                            <strong>❌ Declined Card (Will call fail-payment API):</strong><br>
+                            • <strong>Declined:</strong> 4000 0000 0000 0002<br><br>
+                            <em>Use any future expiry date (e.g., 12/25) and any 3-4 digit CVC</em>
                         </div>
                     </div>
                     
@@ -1089,65 +1092,130 @@ async function submitDemoCardPayment() {
         const cvc = document.getElementById('demo-card-cvc').value;
         const name = document.getElementById('demo-card-name').value;
         
-        // For demo purposes, we'll simulate a payment
-        // In a real application, you would integrate with Stripe's client-side SDK
+        console.log('Processing demo payment with card:', cardNumber);
+        
+        // Get the first pending payment to use its paymentIntentId
+        const payments = await fetchPatientPayments();
+        const pendingPayment = payments.find(p => p.paymentStatus === 1 && p.paymentIntentId);
+        
+        if (!pendingPayment) {
+            alert('Không tìm thấy thanh toán đang chờ xử lý với Payment Intent ID');
+            return;
+        }
+        
+        const paymentIntentId = pendingPayment.paymentIntentId;
+        console.log('Using payment intent ID:', paymentIntentId);
         
         // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Check if it's a test card number
-        const testCards = [
-            '4242424242424242', // Visa
-            '5555555555554444', // Mastercard
-            '378282246310005',  // American Express
+        // Check if it's a valid test card number
+        const validTestCards = [
+            '4242424242424242', // Visa (Success)
+            '5555555555554444', // Mastercard (Success)
+            '378282246310005',  // American Express (Success)
+        ];
+        
+        const declinedTestCards = [
             '4000000000000002'  // Card declined
         ];
         
-        let paymentResult;
+        let apiResult;
         
-        if (cardNumber === '4000000000000002') {
-            // Simulate payment failure
-            paymentResult = {
-                success: false,
-                error: 'Your card was declined.'
-            };
-        } else if (testCards.includes(cardNumber)) {
-            // Simulate successful payment
-            paymentResult = {
-                success: true,
-                paymentIntentId: 'pi_demo_' + Date.now(),
-                amount: 1000, // Demo amount in VND
-                currency: 'VND'
-            };
+        if (validTestCards.includes(cardNumber)) {
+            // Call confirm payment API for valid cards
+            console.log('Calling confirm payment API...');
+            try {
+                const response = await fetch(`https://localhost:7009/api/Payment/confirm-payment/${paymentIntentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    apiResult = {
+                        success: true,
+                        message: `Thanh toán được xác nhận thành công!\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`,
+                        type: 'confirm'
+                    };
+                } else {
+                    apiResult = {
+                        success: false,
+                        message: `Lỗi xác nhận thanh toán: ${result.Error || 'Không xác định'}`,
+                        type: 'confirm'
+                    };
+                }
+            } catch (error) {
+                console.error('Error calling confirm payment API:', error);
+                apiResult = {
+                    success: false,
+                    message: 'Có lỗi xảy ra khi gọi API xác nhận thanh toán',
+                    type: 'confirm'
+                };
+            }
+        } else if (declinedTestCards.includes(cardNumber)) {
+            // Call fail payment API for declined cards
+            console.log('Calling fail payment API...');
+            try {
+                const response = await fetch(`https://localhost:7009/api/Payment/fail-payment/${paymentIntentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    apiResult = {
+                        success: true,
+                        message: `Thanh toán được đánh dấu thất bại!\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`,
+                        type: 'fail'
+                    };
+                } else {
+                    apiResult = {
+                        success: false,
+                        message: `Lỗi khi đánh dấu thanh toán thất bại: ${result.Error || 'Không xác định'}`,
+                        type: 'fail'
+                    };
+                }
+            } catch (error) {
+                console.error('Error calling fail payment API:', error);
+                apiResult = {
+                    success: false,
+                    message: 'Có lỗi xảy ra khi gọi API đánh dấu thất bại',
+                    type: 'fail'
+                };
+            }
         } else {
-            // For other card numbers, simulate success but with warning
-            paymentResult = {
-                success: true,
-                paymentIntentId: 'pi_demo_' + Date.now(),
-                amount: 1000,
-                currency: 'VND',
-                warning: 'This is a demo payment. In production, only test card numbers work.'
+            // Invalid card number
+            apiResult = {
+                success: false,
+                message: `Số thẻ không hợp lệ cho demo!\n\nVui lòng sử dụng:\n• 4242 4242 4242 4242 (Success)\n• 5555 5555 5555 4444 (Success)\n• 3782 8224 6310 005 (Success)\n• 4000 0000 0000 0002 (Declined)`,
+                type: 'invalid'
             };
         }
         
-        if (paymentResult.success) {
-            // Show success message
-            showPaymentSuccess(paymentResult);
-            
-            // Close modal after 3 seconds
+        // Show result
+        alert(apiResult.message);
+        
+        if (apiResult.success) {
+            // Close modal after success
             setTimeout(() => {
                 closeDemoCardModal();
-                // Optionally reload payment data
+                // Reload payment data to reflect changes
                 loadPaymentData();
-            }, 3000);
-        } else {
-            // Show error
-            alert(`Payment failed: ${paymentResult.error}`);
+            }, 2000);
         }
         
     } catch (error) {
         console.error('Error processing demo payment:', error);
-        alert('An error occurred while processing the payment. Please try again.');
+        alert('Có lỗi xảy ra khi xử lý thanh toán demo. Vui lòng thử lại.');
     } finally {
         // Reset loading state
         submitBtn.classList.remove('loading');

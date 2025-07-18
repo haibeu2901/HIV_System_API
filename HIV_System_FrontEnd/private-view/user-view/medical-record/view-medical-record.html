@@ -21,12 +21,15 @@
             
             <div class="demo-card-info">
                 <h4>Test Card Information</h4>
-                <p>Use these test card numbers for demo payments:</p>
+                <p>Use these test card numbers to simulate different payment outcomes:</p>
                 <div class="demo-cards-list">
-                    <strong>Visa (Success):</strong> 4242 4242 4242 4242<br>
-                    <strong>Mastercard (Success):</strong> 5555 5555 5555 4444<br>
-                    <strong>Amex (Success):</strong> 3782 8224 6310 005<br>
-                    <strong>Declined:</strong> 4000 0000 0000 0002
+                    <strong>✅ Success Cards (Will call confirm-payment API):</strong><br>
+                    • <strong>Visa:</strong> 4242 4242 4242 4242<br>
+                    • <strong>Mastercard:</strong> 5555 5555 5555 4444<br>
+                    • <strong>Amex:</strong> 3782 8224 6310 005<br><br>
+                    <strong>❌ Declined Card (Will call fail-payment API):</strong><br>
+                    • <strong>Declined:</strong> 4000 0000 0000 0002<br><br>
+                    <em>Use any future expiry date (e.g., 12/25) and any 3-4 digit CVC</em>
                 </div>
             </div>
             
