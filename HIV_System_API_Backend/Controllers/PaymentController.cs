@@ -107,31 +107,6 @@ namespace HIV_System_API_Backend.Controllers
             return Ok(result);
         }
 
-        [HttpGet("GetAllPersonalPayments")]
-        [Authorize(Roles = "3")]
-        public async Task<ActionResult<List<PaymentResponseDTO>>> GetAllPersonalPayments()
-        {
-            try
-            {
-                var accId = ClaimsHelper.ExtractAccountIdFromClaims(User);
-                if (accId == null)
-                {
-                    return Unauthorized("Account ID not found in token.");
-                }
-
-                var result = await _paymentService.GetAllPersonalPaymentsAsync(accId.Value);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Error = ex.Message });
-            }
-        }
-
         [HttpPut("UpdatePayment/{id}")]
         [Authorize]
         public async Task<ActionResult<PaymentResponseDTO>> UpdatePayment(int id, [FromBody] PaymentRequestDTO request)
@@ -194,6 +169,31 @@ namespace HIV_System_API_Backend.Controllers
             catch (StripeException ex)
             {
                 return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpGet("GetAllPersonalPayments")]
+        [Authorize(Roles = "3")]
+        public async Task<ActionResult<List<PaymentResponseDTO>>> GetAllPersonalPayments()
+        {
+            try
+            {
+                var accId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+                if (accId == null)
+                {
+                    return Unauthorized("Account ID not found in token.");
+                }
+
+                var result = await _paymentService.GetAllPersonalPaymentsAsync(accId.Value);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
             }
         }
     }

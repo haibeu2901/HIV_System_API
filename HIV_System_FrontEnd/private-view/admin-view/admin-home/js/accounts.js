@@ -24,7 +24,7 @@ class AccountManager {
                 console.log('Accounts data:', data);
                 
                 if (!data || data.length === 0) {
-                    accountsList.innerHTML = '<div class="no-data">No accounts found</div>';
+                    accountsList.innerHTML = '<div class="no-data">Không tìm thấy tài khoản nào</div>';
                     return;
                 }
                 
@@ -35,7 +35,7 @@ class AccountManager {
             }
         } catch (error) {
             console.error('Error loading accounts:', error);
-            accountsList.innerHTML = '<div class="error-message">Error loading accounts. Please try again.</div>';
+            accountsList.innerHTML = '<div class="error-message">Lỗi tải danh sách tài khoản. Vui lòng thử lại.</div>';
         }
     }
 
@@ -94,7 +94,7 @@ class AccountManager {
                 }
                 
                 if (data.length === 0) {
-                    accountsList.innerHTML = '<div class="no-data">No accounts found matching the criteria</div>';
+                    accountsList.innerHTML = '<div class="no-data">Không tìm thấy tài khoản nào phù hợp với tiêu chí</div>';
                     return;
                 }
                 
@@ -105,7 +105,7 @@ class AccountManager {
             }
         } catch (error) {
             console.error('Error filtering accounts:', error);
-            accountsList.innerHTML = '<div class="error-message">Error filtering accounts. Please try again.</div>';
+            accountsList.innerHTML = '<div class="error-message">Có lỗi khi lọc tài khoản. Vui lòng thử lại.</div>';
         }
     }
 
@@ -138,13 +138,13 @@ class AccountManager {
             }
         } catch (error) {
             console.error('Error loading account for edit:', error);
-            window.utils.showToast('Error loading account details. Please try again.', 'error');
+            window.utils.showToast('Có lỗi khi tải thông tin tài khoản. Vui lòng thử lại.', 'error');
         }
     }
 
     // Delete account
     async deleteAccount(id) {
-        if (confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
+        if (confirm('Bạn có chắc chắn muốn xóa tài khoản này? Hành động này không thể hoàn tác.')) {
             const token = this.authManager.getToken();
             
             try {
@@ -157,7 +157,7 @@ class AccountManager {
                 });
                 
                 if (response.ok) {
-                    window.utils.showToast('Account deleted successfully!', 'success');
+                    window.utils.showToast('Xóa tài khoản thành công!', 'success');
                     this.loadAccounts(); // Reload the accounts list
                 } else {
                     const errorData = await response.text();
@@ -165,7 +165,7 @@ class AccountManager {
                 }
             } catch (error) {
                 console.error('Error deleting account:', error);
-                window.utils.showToast('Error deleting account. Please try again.', 'error');
+                window.utils.showToast('Có lỗi khi xóa tài khoản. Vui lòng thử lại.', 'error');
             }
         }
     }
@@ -231,27 +231,27 @@ class AccountManager {
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-user-tag"></i>
-                            <span>Username: ${account.accUsername}</span>
+                            <span>Tên đăng nhập: ${account.accUsername}</span>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-shield-alt"></i>
-                            <span>Role: ${roleName}</span>
+                            <span>Vai trò: ${roleName}</span>
                         </div>
                     </div>
                     
                     <div class="account-actions">
                         <button class="btn-secondary" onclick="accountManager.viewAccount(${account.accId})">
-                            <i class="fas fa-eye"></i> View
+                            <i class="fas fa-eye"></i> Xem
                         </button>
                         <button class="btn-info" onclick="accountManager.showSendNotificationModal(${account.accId}, '${account.accUsername}', '${account.fullname || 'N/A'}')">
-                            <i class="fas fa-bell"></i> Send Notification
+                            <i class="fas fa-bell"></i> Gửi thông báo
                         </button>
                         ${userRole !== 'admin' ? `
                             <button class="btn-primary" onclick="accountManager.editAccount(${account.accId})">
-                                <i class="fas fa-edit"></i> Edit
+                                <i class="fas fa-edit"></i> Sửa
                             </button>
                             <button class="btn-danger" onclick="accountManager.deleteAccount(${account.accId})">
-                                <i class="fas fa-trash"></i> Delete
+                                <i class="fas fa-trash"></i> Xóa
                             </button>
                         ` : ''}
                     </div>
@@ -291,13 +291,13 @@ class AccountManager {
     // Get role display name
     getRoleDisplayName(role) {
         const roleNames = {
-            'admin': 'Administrator',
-            'supervisor': 'Supervisor',
-            'doctor': 'Doctor',
-            'staff': 'Staff',
-            'patient': 'Patient'
+            'admin': 'Quản trị viên',
+            'supervisor': 'Giám sát viên',
+            'doctor': 'Bác sĩ',
+            'staff': 'Nhân viên',
+            'patient': 'Bệnh nhân'
         };
-        return roleNames[role] || 'Unknown';
+        return roleNames[role] || 'Không xác định';
     }
 
     // Get role CSS class
@@ -361,7 +361,7 @@ class AccountManager {
             }
         } catch (error) {
             console.error('Error viewing account:', error);
-            window.utils.showToast('Error loading account details. Please try again.', 'error');
+            window.utils.showToast('Có lỗi khi tải thông tin tài khoản. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -385,7 +385,7 @@ class AccountManager {
             }
         } catch (error) {
             console.error('Error loading patient profile:', error);
-            window.utils.showToast('Error loading patient profile. Please try again.', 'error');
+            window.utils.showToast('Có lỗi khi tải hồ sơ bệnh nhân. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -409,7 +409,7 @@ class AccountManager {
             }
         } catch (error) {
             console.error('Error loading doctor profile:', error);
-            window.utils.showToast('Error loading doctor profile. Please try again.', 'error');
+            window.utils.showToast('Có lỗi khi tải hồ sơ bác sĩ. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -436,13 +436,13 @@ class AccountManager {
                                 <div class="profile-info">
                                     <h2>${patientData.fullname || 'N/A'}</h2>
                                     <p class="profile-username">@${patientData.accUsername}</p>
-                                    <span class="role-badge role-patient">Patient</span>
+                                    <span class="role-badge role-patient">Bệnh nhân</span>
                                 </div>
                             </div>
                             
                             <div class="profile-details">
                                 <div class="detail-section">
-                                    <h4><i class="fas fa-info-circle"></i> Account Information</h4>
+                                    <h4><i class="fas fa-info-circle"></i>Thông tin tài khoản</h4>
                                     <div class="detail-grid">
                                         <div class="detail-item">
                                             <label>Account ID:</label>
@@ -453,51 +453,51 @@ class AccountManager {
                                             <span>${patientData.email}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Username:</label>
+                                            <label>Tên người dùng:</label>
                                             <span>${patientData.accUsername}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="detail-section">
-                                    <h4><i class="fas fa-user-md"></i> Patient Details</h4>
+                                    <h4><i class="fas fa-user-md"></i>Chi tiết bệnh nhân</h4>
                                     <div class="detail-grid">
                                         <div class="detail-item">
-                                            <label>Patient ID:</label>
+                                            <label>ID bệnh nhân:</label>
                                             <span>${patientData.ptnId || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Phone:</label>
+                                            <label>Điện thoại:</label>
                                             <span>${patientData.ptnPhone || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Address:</label>
+                                            <label>Địa chỉ:</label>
                                             <span>${patientData.ptnAddress || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Date of Birth:</label>
+                                            <label>Ngày sinh:</label>
                                             <span>${patientData.ptnDateOfBirth ? new Date(patientData.ptnDateOfBirth).toLocaleDateString() : 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Gender:</label>
+                                            <label>Giới tính:</label>
                                             <span>${patientData.ptnGender || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Emergency Contact:</label>
+                                            <label>Liên hệ khẩn cấp:</label>
                                             <span>${patientData.ptnEmergencyContact || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="detail-section">
-                                    <h4><i class="fas fa-notes-medical"></i> Medical Information</h4>
+                                    <h4><i class="fas fa-notes-medical"></i>Thông tin y tế</h4>
                                     <div class="detail-grid">
                                         <div class="detail-item">
-                                            <label>Insurance Number:</label>
+                                            <label>Số bảo hiểm:</label>
                                             <span>${patientData.ptnInsuranceNumber || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Medical Notes:</label>
+                                            <label>Ghi chú y tế:</label>
                                             <span>${patientData.ptnMedicalNotes || 'N/A'}</span>
                                         </div>
                                     </div>
@@ -506,9 +506,9 @@ class AccountManager {
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn-secondary" onclick="accountManager.closeProfileModal()">Close</button>
+                        <button class="btn-secondary" onclick="accountManager.closeProfileModal()">Đóng</button>
                         <button class="btn-primary" onclick="accountManager.editPatientProfile(${patientData.accId})">
-                            <i class="fas fa-edit"></i> Edit Profile
+                            <i class="fas fa-edit"></i> Chỉnh sửa hồ sơ
                         </button>
                     </div>
                 </div>
@@ -524,7 +524,7 @@ class AccountManager {
             <div id="doctorProfileModal" class="modal" style="display: flex;">
                 <div class="modal-content" style="max-width: 800px;">
                     <div class="modal-header">
-                        <h3><i class="fas fa-user-md"></i> Doctor Profile</h3>
+                        <h3><i class="fas fa-user-md"></i> Hồ sơ bác sĩ</h3>
                         <button class="close-btn" onclick="accountManager.closeProfileModal()">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -536,16 +536,16 @@ class AccountManager {
                                 <div class="profile-info">
                                     <h2>${doctorData.fullname || 'N/A'}</h2>
                                     <p class="profile-username">@${doctorData.accUsername}</p>
-                                    <span class="role-badge role-doctor">Doctor</span>
+                                    <span class="role-badge role-doctor">Bác sĩ</span>
                                 </div>
                             </div>
                             
                             <div class="profile-details">
                                 <div class="detail-section">
-                                    <h4><i class="fas fa-info-circle"></i> Account Information</h4>
+                                    <h4><i class="fas fa-info-circle"></i> Thông tin tài khoản</h4>
                                     <div class="detail-grid">
                                         <div class="detail-item">
-                                            <label>Account ID:</label>
+                                            <label>ID tài khoản:</label>
                                             <span>${doctorData.accId}</span>
                                         </div>
                                         <div class="detail-item">
@@ -553,17 +553,17 @@ class AccountManager {
                                             <span>${doctorData.email}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Username:</label>
+                                            <label>Tên người dùng:</label>
                                             <span>${doctorData.accUsername}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="detail-section">
-                                    <h4><i class="fas fa-stethoscope"></i> Doctor Details</h4>
+                                    <h4><i class="fas fa-stethoscope"></i> Chi tiết bác sĩ</h4>
                                     <div class="detail-grid">
                                         <div class="detail-item">
-                                            <label>Doctor ID:</label>
+                                            <label>ID bác sĩ:</label>
                                             <span>${doctorData.docId || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
@@ -571,37 +571,37 @@ class AccountManager {
                                             <span>${doctorData.docPhone || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Address:</label>
+                                            <label>Địa chỉ:</label>
                                             <span>${doctorData.docAddress || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Date of Birth:</label>
+                                            <label>Ngày sinh:</label>
                                             <span>${doctorData.docDateOfBirth ? new Date(doctorData.docDateOfBirth).toLocaleDateString() : 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Gender:</label>
+                                            <label>Giới tính:</label>
                                             <span>${doctorData.docGender || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Specialization:</label>
+                                            <label>Chuyên môn:</label>
                                             <span>${doctorData.docSpecialization || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="detail-section">
-                                    <h4><i class="fas fa-certificate"></i> Professional Information</h4>
+                                    <h4><i class="fas fa-certificate"></i> Thông tin chuyên môn</h4>
                                     <div class="detail-grid">
                                         <div class="detail-item">
-                                            <label>License Number:</label>
+                                            <label>Số giấy phép:</label>
                                             <span>${doctorData.docLicenseNumber || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Years of Experience:</label>
+                                            <label>Số năm kinh nghiệm:</label>
                                             <span>${doctorData.docYearsOfExperience || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Qualification:</label>
+                                            <label>Trình độ chuyên môn:</label>
                                             <span>${doctorData.docQualification || 'N/A'}</span>
                                         </div>
                                     </div>
@@ -610,9 +610,9 @@ class AccountManager {
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn-secondary" onclick="accountManager.closeProfileModal()">Close</button>
+                        <button class="btn-secondary" onclick="accountManager.closeProfileModal()">Đóng</button>
                         <button class="btn-primary" onclick="accountManager.editDoctorProfile(${doctorData.accId})">
-                            <i class="fas fa-edit"></i> Edit Profile
+                            <i class="fas fa-edit"></i> Chỉnh sửa hồ sơ
                         </button>
                     </div>
                 </div>
@@ -632,7 +632,7 @@ class AccountManager {
             <div id="generalProfileModal" class="modal" style="display: flex;">
                 <div class="modal-content" style="max-width: 600px;">
                     <div class="modal-header">
-                        <h3><i class="fas ${this.getRoleIcon(userRole)}"></i> ${roleName} Profile</h3>
+                        <h3><i class="fas ${this.getRoleIcon(userRole)}"></i> ${roleName} Hồ sơ</h3>
                         <button class="close-btn" onclick="accountManager.closeProfileModal()">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -650,10 +650,10 @@ class AccountManager {
                             
                             <div class="profile-details">
                                 <div class="detail-section">
-                                    <h4><i class="fas fa-info-circle"></i> Account Information</h4>
+                                    <h4><i class="fas fa-info-circle"></i> Thông tin tài khoản</h4>
                                     <div class="detail-grid">
                                         <div class="detail-item">
-                                            <label>Account ID:</label>
+                                            <label>ID tài khoản:</label>
                                             <span>${account.accId}</span>
                                         </div>
                                         <div class="detail-item">
@@ -661,15 +661,15 @@ class AccountManager {
                                             <span>${account.email}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Username:</label>
+                                            <label>Tên người dùng:</label>
                                             <span>${account.accUsername}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Full Name:</label>
+                                            <label>Họ và tên đầy đủ:</label>
                                             <span>${account.fullname}</span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Role:</label>
+                                            <label>Vai trò:</label>
                                             <span>${roleName}</span>
                                         </div>
                                     </div>
@@ -678,9 +678,9 @@ class AccountManager {
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn-secondary" onclick="accountManager.closeProfileModal()">Close</button>
+                        <button class="btn-secondary" onclick="accountManager.closeProfileModal()">Đóng</button>
                         <button class="btn-primary" onclick="accountManager.editGeneralProfile(${account.accId})">
-                            <i class="fas fa-edit"></i> Edit Profile
+                            <i class="fas fa-edit"></i> Chỉnh sửa hồ sơ
                         </button>
                     </div>
                 </div>
@@ -705,21 +705,21 @@ class AccountManager {
     editPatientProfile(accId) {
         console.log('Edit patient profile:', accId);
         // Implementation for editing patient profile
-        window.utils.showToast('Edit patient profile functionality coming soon!', 'info');
+        window.utils.showToast('Chức năng chỉnh sửa hồ sơ bệnh nhân sẽ sớm ra mắt!', 'info');
     }
 
     // Edit doctor profile
     editDoctorProfile(accId) {
         console.log('Edit doctor profile:', accId);
         // Implementation for editing doctor profile
-        window.utils.showToast('Edit doctor profile functionality coming soon!', 'info');
+        window.utils.showToast('Chức năng chỉnh sửa hồ sơ bác sĩ sẽ sớm ra mắt!', 'info');
     }
 
     // Edit general profile
     editGeneralProfile(accId) {
         console.log('Edit general profile:', accId);
         // Implementation for editing general profile
-        window.utils.showToast('Edit profile functionality coming soon!', 'info');
+        window.utils.showToast('Chức năng chỉnh sửa hồ sơ sẽ sớm ra mắt!', 'info');
     }
 
     // Show edit account modal
@@ -731,7 +731,7 @@ class AccountManager {
             <div id="editAccountModal" class="modal" style="display: none;">
                 <div class="modal-content" style="max-width: 600px;">
                     <div class="modal-header">
-                        <h3><i class="fas fa-edit"></i> Edit Account</h3>
+                        <h3><i class="fas fa-edit"></i> Chỉnh sửa tài khoản</h3>
                         <button class="close-btn" onclick="accountManager.closeEditModal()">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -739,9 +739,9 @@ class AccountManager {
                             <input type="hidden" id="edit-account-id" value="${account.accId}">
                             
                             <div class="form-group">
-                                <label for="edit-account-password">New Password</label>
-                                <input type="password" id="edit-account-password" placeholder="Enter new password (optional)" value="">
-                                <small class="form-text">Leave blank to keep current password</small>
+                                <label for="edit-account-password">Mật khẩu mới</label>
+                                <input type="password" id="edit-account-password" placeholder="Nhập mật khẩu mới (không bắt buộc)" value="">
+                                <small class="form-text">Để trống nếu không muốn thay đổi mật khẩu</small>
                             </div>
                             
                             <div class="form-group">
@@ -750,40 +750,40 @@ class AccountManager {
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-account-fullname">Full Name</label>
+                                <label for="edit-account-fullname">Họ tên</label>
                                 <input type="text" id="edit-account-fullname" value="${account.fullname}" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-account-dob">Date of Birth</label>
+                                <label for="edit-account-dob">Ngày sinh</label>
                                 <input type="date" id="edit-account-dob" value="${account.dob ? account.dob.split('T')[0] : ''}">
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-account-gender">Gender</label>
+                                <label for="edit-account-gender">Giới tính</label>
                                 <select id="edit-account-gender">
                                     <option value="">Select Gender</option>
-                                    <option value="true" ${account.gender === true ? 'selected' : ''}>Male</option>
-                                    <option value="false" ${account.gender === false ? 'selected' : ''}>Female</option>
+                                    <option value="true" ${account.gender === true ? 'selected' : ''}>Nam</option>
+                                    <option value="false" ${account.gender === false ? 'selected' : ''}>Nữ</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-account-roles">Role</label>
+                                <label for="edit-account-roles">Vai trò</label>
                                 <select id="edit-account-roles">
-                                    <option value="0" ${userRole === 'admin' ? 'selected' : ''}>Administrator</option>
-                                    <option value="1" ${userRole === 'doctor' ? 'selected' : ''}>Doctor</option>
-                                    <option value="2" ${userRole === 'patient' ? 'selected' : ''}>Patient</option>
-                                    <option value="3" ${userRole === 'staff' ? 'selected' : ''}>Staff</option>
-                                    <option value="4" ${userRole === 'supervisor' ? 'selected' : ''}>Supervisor</option>
+                                    <option value="0" ${userRole === 'admin' ? 'selected' : ''}>Quản trị viên</option>
+                                    <option value="1" ${userRole === 'doctor' ? 'selected' : ''}>Bác sĩ</option>
+                                    <option value="2" ${userRole === 'patient' ? 'selected' : ''}>Bệnh nhân</option>
+                                    <option value="3" ${userRole === 'staff' ? 'selected' : ''}>Nhân viên</option>
+                                    <option value="4" ${userRole === 'supervisor' ? 'selected' : ''}>Giám sát viên</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label for="edit-account-active">Account Status</label>
+                                <label for="edit-account-active">Trạng thái tài khoản</label>
                                 <select id="edit-account-active">
-                                    <option value="true" ${account.isActive !== false ? 'selected' : ''}>Active</option>
-                                    <option value="false" ${account.isActive === false ? 'selected' : ''}>Inactive</option>
+                                    <option value="true" ${account.isActive !== false ? 'selected' : ''}>Đang hoạt động</option>
+                                    <option value="false" ${account.isActive === false ? 'selected' : ''}>Không hoạt động</option>
                                 </select>
                             </div>
                             
@@ -824,14 +824,14 @@ class AccountManager {
         
         // Validate required fields
         if (!email || !fullname) {
-            window.utils.showToast('Please fill in all required fields (Email and Full Name)', 'error');
+            window.utils.showToast('Vui lòng điền vào tất cả các trường bắt buộc (Email và Họ và tên)', 'error');
             return;
         }
         
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            window.utils.showToast('Please enter a valid email address', 'error');
+            window.utils.showToast('Vui lòng nhập địa chỉ email hợp lệ', 'error');
             return;
         }
         
@@ -872,7 +872,7 @@ class AccountManager {
             });
             
             if (response.ok) {
-                window.utils.showToast('Account updated successfully!', 'success');
+                window.utils.showToast('Tài khoản đã được cập nhật thành công!', 'success');
                 this.closeEditModal();
                 this.loadAccounts(); // Reload the accounts list
             } else {
@@ -882,12 +882,12 @@ class AccountManager {
             }
         } catch (error) {
             console.error('Error updating account:', error);
-            window.utils.showToast('Error updating account. Please try again.', 'error');
+            window.utils.showToast('Có lỗi khi cập nhật tài khoản. Vui lòng thử lại.', 'error');
         } finally {
             const submitButton = e.target.querySelector('button[type="submit"]');
             if (submitButton) {
                 submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="fas fa-save"></i> Update Account';
+                submitButton.innerHTML = '<i class="fas fa-save"></i> Cập nhật tài khoản';
             }
         }
     }
@@ -937,7 +937,7 @@ class AccountManager {
             <div id="sendNotificationModal" class="modal" style="display: flex;">
                 <div class="modal-content" style="max-width: 600px;">
                     <div class="modal-header">
-                        <h3><i class="fas fa-bell"></i> Send Notification</h3>
+                        <h3><i class="fas fa-bell"></i>Gửi thông báo</h3>
                         <button class="close-btn" onclick="accountManager.closeSendNotificationModal()">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -949,7 +949,7 @@ class AccountManager {
                                 <div class="recipient-details">
                                     <h4>${fullname}</h4>
                                     <p class="recipient-username">@${username}</p>
-                                    <p class="recipient-id">Account ID: ${accountId}</p>
+                                    <p class="recipient-id">ID Tài khoản: ${accountId}</p>
                                 </div>
                             </div>
                         </div>
@@ -958,30 +958,30 @@ class AccountManager {
                             <input type="hidden" id="notification-account-id" value="${accountId}">
                             
                             <div class="form-group">
-                                <label for="notification-type">Notification Type</label>
+                                <label for="notification-type">Loại thông báo</label>
                                 <select id="notification-type" required>
-                                    <option value="">Select notification type</option>
-                                    <option value="System Alert">System Alert</option>
-                                    <option value="Appt Confirm">Appointment Confirmation</option>
-                                    <option value="Appointment Update">Appointment Update</option>
-                                    <option value="Appointment Request">Appointment Request</option>
-                                    <option value="Appointment Reminder">Appointment Reminder</option>
-                                    <option value="ARV Consultation">ARV Consultation</option>
-                                    <option value="Test Result">Test Result</option>
-                                    <option value="Blog Approval">Blog Approval</option>
+                                    <option value="">Chọn loại thông báo</option>
+                                    <option value="Cảnh báo HT">Cảnh báo HT</option>
+                                    <option value="Xác nhận Hẹn">Xác nhận Hẹn</option>
+                                    <option value="Cập nhật Hẹn">Cập nhật Hẹn</option>
+                                    <option value="Yêu cầu Hẹn">Yêu cầu Hẹn</option>
+                                    <option value="Nhắc Hẹn">Nhắc Hẹn</option>
+                                    <option value="Tư vấn ARV">Tư vấn ARV</option>
+                                    <option value="Kết quả XN">Kết quả XN</option>
+                                    <option value="Duyệt Blog">Duyệt Blog</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label for="notification-message">Message</label>
-                                <textarea id="notification-message" rows="4" placeholder="Enter your notification message here..." required></textarea>
-                                <small class="form-text">This message will be sent to ${fullname} (@${username})</small>
+                                <label for="notification-message">Tin nhắn</label>
+                                <textarea id="notification-message" rows="4" placeholder="Nhập tin nhắn thông báo của bạn vào đây..." required></textarea>
+                                <small class="form-text">Tin nhắn này sẽ được gửi đến ${fullname} (@${username})</small>
                             </div>
                             
                             <div class="form-actions">
-                                <button type="button" class="btn-secondary" onclick="accountManager.closeSendNotificationModal()">Cancel</button>
+                                <button type="button" class="btn-secondary" onclick="accountManager.closeSendNotificationModal()">Hủy bỏ</button>
                                 <button type="submit" class="btn-primary">
-                                    <i class="fas fa-paper-plane"></i> Send Notification
+                                    <i class="fas fa-paper-plane"></i> Gửi thông báo
                                 </button>
                             </div>
                         </form>
@@ -1022,9 +1022,9 @@ class AccountManager {
         // Validate input data
         if (!notiType || !notiMessage) {
             if (window.utils && window.utils.showToast) {
-                window.utils.showToast('Please fill in all required fields', 'error');
+                window.utils.showToast('Vui lòng điền vào tất cả các trường bắt buộc', 'error');
             } else {
-                alert('Please fill in all required fields');
+                alert('Vui lòng điền vào tất cả các trường bắt buộc');
             }
             return;
         }
@@ -1032,7 +1032,7 @@ class AccountManager {
         const submitButton = e.target.querySelector('button[type="submit"]');
         if (submitButton) {
             submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
         }
         
         try {
@@ -1040,9 +1040,9 @@ class AccountManager {
             
             if (success) {
                 if (window.utils && window.utils.showToast) {
-                    window.utils.showToast('Notification sent successfully!', 'success');
+                    window.utils.showToast('Thông báo đã được gửi thành công!', 'success');
                 } else {
-                    alert('Notification sent successfully!');
+                    alert('Thông báo đã được gửi thành công!');
                 }
                 
                 // Close modal and reset form
@@ -1051,14 +1051,14 @@ class AccountManager {
         } catch (error) {
             console.error('Error sending notification:', error);
             if (window.utils && window.utils.showToast) {
-                window.utils.showToast('Error sending notification. Please try again.', 'error');
+                window.utils.showToast('Có lỗi khi gửi thông báo. Vui lòng thử lại.', 'error');
             } else {
-                alert('Error sending notification. Please try again.');
+                alert('Có lỗi khi gửi thông báo. Vui lòng thử lại.');
             }
         } finally {
             if (submitButton) {
                 submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send Notification';
+                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi thông báo';
             }
         }
     }

@@ -209,7 +209,7 @@ namespace HIV_System_API_Services.Implements
             if (password.Length < 8)
                 throw new ArgumentException("Mật khẩu phải có ít nhất 8 ký tự.", nameof(password));
 
-            if (password.Length >50)
+            if (password.Length > 50)
                 throw new ArgumentException("Mật khẩu không được quá 50 ký tự.", nameof(password));
 
             if (password.Contains(' '))
@@ -495,27 +495,23 @@ namespace HIV_System_API_Services.Implements
             if (patient == null)
                 throw new ArgumentNullException(nameof(patient));
 
+            // Validate required fields
             if (string.IsNullOrWhiteSpace(patient.AccUsername))
                 throw new ArgumentException("Tên người dùng là bắt buộc.", nameof(patient.AccUsername));
             if (string.IsNullOrWhiteSpace(patient.AccPassword))
                 throw new ArgumentException("Mật khẩu là bắt buộc.", nameof(patient.AccPassword));
             if (string.IsNullOrWhiteSpace(patient.Email))
                 throw new ArgumentException("Email là bắt buộc.", nameof(patient.Email));
+            if (!patient.Dob.HasValue)
+                throw new ArgumentException("Ngày sinh là bắt buộc để đăng ký bệnh nhân.", nameof(patient.Dob));
 
-            // Use new async validation methods with duplicate checking
+            // Use async validation methods with duplicate checking
             await ValidateUsernameAsync(patient.AccUsername, patient.Email);
             ValidatePassword(patient.AccPassword, patient.AccUsername);
             await ValidateEmailAsync(patient.Email, patient.AccUsername);
 
-            // Validate Date of Birth - FIXED
-            if (patient.Dob.HasValue)
-            {
-                ValidateDateOfBirth(patient.Dob.Value, nameof(patient.Dob));
-            }
-            else
-            {
-                throw new ArgumentException("Ngày sinh là bắt buộc để đăng ký bệnh nhân.", nameof(patient.Dob));
-            }
+            // Validate Date of Birth - Fixed to use consistent DateTime handling
+            ValidateDateOfBirth(patient.Dob.Value, nameof(patient.Dob));
 
             // Map PatientAccountRequestDTO to AccountRequestDTO
             var accountDto = new AccountRequestDTO
@@ -875,22 +871,19 @@ namespace HIV_System_API_Services.Implements
             if (string.IsNullOrWhiteSpace(request.Email))
                 throw new ArgumentException("Email là bắt buộc.");
 
-            // Use static validation for password reset (no need to check duplicates)
             ValidateEmail(request.Email);
 
-            // Check if account exists for the email
             var account = await _accountRepo.GetAccountByEmailAsync(request.Email);
             if (account == null)
                 throw new InvalidOperationException("Không tìm thấy tài khoản với email được cung cấp.");
 
-            // Generate verification code
             var verificationCode = _verificationService.GenerateCode(request.Email);
-            // Store the code in cache with expiry
             var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES))
+                .SetSize(32); // Size for a string (verification code, e.g., 6-8 chars)
             _memoryCache.Set($"password_reset_{request.Email}", verificationCode, cacheOptions);
-            // TODO: Send code to user's email (email sending not implemented here)
-            return verificationCode;
+
+            return verificationCode; // Consider not returning the code directly
         }
 
         public async Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request)
@@ -924,7 +917,7 @@ namespace HIV_System_API_Services.Implements
             var pendingRegistration = new PendingPatientRegistrationDTO
             {
                 AccUsername = request.AccUsername,
-                AccPassword = request.AccPassword, // Store as plain text for now, will be hashed on verification
+                AccPassword = request.AccPassword, // Consider hashing this for security
                 Email = request.Email,
                 Fullname = request.Fullname,
                 Dob = request.Dob,
@@ -932,7 +925,8 @@ namespace HIV_System_API_Services.Implements
             };
 
             var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES))
+                .SetSize(1024); // Specify size
 
             var verificationCode = _verificationService.GenerateCode(request.Email);
             _memoryCache.Set($"pending_registration_{request.Email}", pendingRegistration, cacheOptions);
@@ -1072,7 +1066,8 @@ namespace HIV_System_API_Services.Implements
 
             // Store the code in cache with expiry - using consistent cache key
             var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES));
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES))
+                .SetSize(32);
             _memoryCache.Set($"password_reset_{email}", code, cacheOptions);
 
             // TODO: Send code to user's email (email sending not implemented here)

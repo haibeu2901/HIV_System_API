@@ -11,6 +11,7 @@ function loadSharedHeader() {
                 setHamburgerHandler();
                 setDropdownHandler();
                 setNotificationBellHandler();
+                setBlogNavigationHandler();
                 updateSharedUnreadBadge();
                 // Role-based menu logic
                 const userRoleId = window.roleUtils && window.roleUtils.getUserRole ? window.roleUtils.getUserRole() : null;
@@ -44,6 +45,7 @@ function setActiveSharedNav() {
         { id: 'nav-appointments', path: '/private-view/shared/appointment-list/appoiment-list.html' },
         { id: 'nav-patient-list', path: '/private-view/doctor-view/patient-list/patient-list.html' },
         { id: 'nav-medical-resources', path: '/private-view/shared/medical-resources/medical-resources.html' },
+        { id: 'nav-blog', path: '/blog' }, // Dynamic based on role
         { id: 'nav-notifications', path: '/private-view/shared/notifications/notifications.html' },
         { id: 'nav-profile', path: '/private-view/shared/user-profile/user-profile.html' }
     ];
@@ -221,6 +223,43 @@ function formatDateTime(dateStr) {
         });
     } catch (error) {
         return dateStr;
+    }
+}
+
+// Blog Navigation Handler - Routes to appropriate blog page based on user role
+function setBlogNavigationHandler() {
+    const blogLink = document.getElementById('nav-blog');
+    if (blogLink) {
+        blogLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Get user role
+            const userRoleId = window.roleUtils && window.roleUtils.getUserRole ? window.roleUtils.getUserRole() : null;
+            const userRoleName = (window.roleUtils && window.roleUtils.ROLE_NAMES && userRoleId) ? window.roleUtils.ROLE_NAMES[userRoleId] : 'guest';
+            
+            // Route to appropriate blog page based on role
+            let blogUrl = '/public-view/blog/blog-public.html'; // default fallback
+            
+            switch (userRoleName) {
+                case 'doctor':
+                    blogUrl = '/private-view/doctor-view/doctor-dashboard/doctor-dashboard-with-blog.html';
+                    break;
+                case 'admin':
+                    blogUrl = '/private-view/admin-view/blog-management.html';
+                    break;
+                case 'staff':
+                    blogUrl = '/private-view/staff-view/staff-community.html';
+                    break;
+                case 'manager':
+                    blogUrl = '/private-view/manager-view/manager-blog-overview.html';
+                    break;
+                default:
+                    // For unknown roles, try public blog
+                    blogUrl = '/public-view/blog/blog-public.html';
+            }
+            
+            window.location.href = blogUrl;
+        });
     }
 }
 
