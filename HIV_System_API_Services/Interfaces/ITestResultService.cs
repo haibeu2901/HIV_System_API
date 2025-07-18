@@ -19,5 +19,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<TestResultResponseDTO>> GetSustainTestResultPatient();
         Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id);
         Task<TestResultResponseDTO> CreateTestResultWithComponentTestsAsync(TestResultRequestDTO testResult, List<ComponentTestResultRequestDTO> componentTestResults, int accId);
+        Task<TestResultResponseDTO> UpdateTestResultWithComponentTestsAsync(int testResultId, TestResultRequestDTO testResult, List<ComponentTestResultRequestDTO> componentTestResults, int accId);
     }
 }
