@@ -12,18 +12,28 @@ const appointmentStatusMap = {
 
 // ARV Regimen level and status mapping
 const regimenLevelMap = {
-  1: "Level 1",
-  2: "Level 2",
-  3: "Level 3",
-  4: "Special Case"
+  1: "Bậc 1",
+  2: "Bậc 2",
+  3: "Bậc 3",
+  4: "Trường hợp đặc biệt"
 };
 const regimenStatusMap = {
-  1: "Planned",
-  2: "Active",
-  3: "Paused",
-  4: "Failed",
-  5: "Completed"
+  1: "Đã lên kế hoạch",
+  2: "Đang hoạt động",
+  3: "Tạm dừng",
+  4: "Đã hủy",
+  5: "Đã hoàn thành"
 };
+
+// Set window.isStaff and window.isDoctor globally
+window.isStaff = false;
+window.isDoctor = false;
+if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+  const roleId = window.roleUtils.getUserRole();
+  const roleName = window.roleUtils.ROLE_NAMES[roleId];
+  window.isStaff = (roleName === 'staff');
+  window.isDoctor = (roleName === 'doctor');
+}
 
 // Get patient ID from URL parameters
 function getPatientIdFromUrl() {
@@ -39,7 +49,7 @@ async function fetchPatientDetails(patientId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        if (!response.ok) throw new Error('Failed to fetch patient details');
+        if (!response.ok) throw new Error('Lỗi thất bại lấy thông tin bệnh nhân');
         return await response.json();
     } catch (error) {
         console.error('Error fetching patient details:', error);
@@ -55,7 +65,7 @@ async function fetchPatientMRId(patientId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        if (!response.ok) throw new Error('Failed to fetch patient MR ID');
+        if (!response.ok) throw new Error('Lỗi thất bại lấy ID sơ đồ bệnh án bệnh nhân');
         return await response.json();
     } catch (error) {
         console.error('Error fetching patient MR ID:', error);
@@ -71,7 +81,7 @@ async function fetchPatientMedicalData(pmrId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        if (!response.ok) throw new Error('Failed to fetch patient medical data');
+        if (!response.ok) throw new Error('Lỗi thất bại lấy sơ đồ thông tin bệnh án bệnh nhân');
         return await response.json();
     } catch (error) {
         console.error('Error fetching patient medical data:', error);
@@ -87,7 +97,7 @@ async function fetchPatientArvMedications(patientId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        if (!response.ok) throw new Error('Failed to fetch ARV medications');
+        if (!response.ok) throw new Error('Lỗi thất bại lấy thông tin phác đồ ARV của bệnh nhân');
         return await response.json();
     } catch (error) {
         console.error('Error fetching ARV medications:', error);
@@ -98,12 +108,12 @@ async function fetchPatientArvMedications(patientId) {
 // Render patient profile
 function renderPatientProfile(patient) {
     if (!patient) {
-        document.getElementById('patientName').textContent = 'Patient not found';
+        document.getElementById('patientName').textContent = 'Không tìm thấy bệnh nhân';
         return;
     }
 
     document.getElementById('patientName').textContent = patient.account.fullname;
-    document.getElementById('patientGender').textContent = patient.account.gender ? 'Male' : 'Female';
+    document.getElementById('patientGender').textContent = patient.account.gender ? 'Nam' : 'Nữ';
     document.getElementById('patientDOB').textContent = patient.account.dob;
     document.getElementById('patientEmail').textContent = patient.account.email;
     document.getElementById('patientId').textContent = patient.patientId;
@@ -117,7 +127,7 @@ function renderAppointments(appointments) {
         section.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-calendar-times"></i>
-                <p>No appointments found for this patient.</p>
+                <p>Không tìm thấy cuộc hẹn cho bệnh nhân này.</p>
             </div>
         `;
         return;
@@ -127,11 +137,11 @@ function renderAppointments(appointments) {
         <table class="appointments-table">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Doctor</th>
-                    <th>Status</th>
-                    <th>Notes</th>
+                    <th>Ngày</th>
+                    <th>Thời gian</th>
+                    <th>Bác sĩ</th>
+                    <th>Trạng thái</th>
+                    <th>Ghi chú</th>
                 </tr>
             </thead>
             <tbody>
@@ -182,23 +192,26 @@ function renderTestResults(testResults) {
         html += `
             <div class="test-result-card">
                 <div class="test-result-header">
-                    <span class="test-result-date">Test Date: ${testResult.testDate}</span>
+                    <span class="test-result-date">Ngày xét nghiệm: ${testResult.testDate}</span>
                     <span class="test-result-overall ${resultClass}">${resultText}</span>
                 </div>
         `;
 
         if (testResult.notes) {
-            html += `<p><strong>Notes:</strong> ${testResult.notes}</p>`;
+            html += `<p><strong>Ghi chú:</strong> ${testResult.notes}</p>`;
         }
 
         if (testResult.componentTestResults && testResult.componentTestResults.length > 0) {
             html += `<div class="component-results">`;
             testResult.componentTestResults.forEach(comp => {
+                // Add clickable class and data-id for staff
+                const clickable = window.isStaff ? 'clickable-component-result' : '';
+                const dataId = window.isStaff ? `data-id="${comp.componentTestResultId}"` : '';
                 html += `
-                    <div class="component-result">
+                    <div class="component-result ${clickable}" ${dataId} style="${window.isStaff ? 'cursor:pointer;' : ''}">
                         <div class="component-name">${comp.componentTestResultName}</div>
                         <div class="component-value">${comp.resultValue}</div>
-                        ${comp.notes ? `<div class="component-notes">${comp.notes}</div>` : ''}
+                        <div class="component-notes">${comp.notes}</div>
                     </div>
                 `;
             });
@@ -207,7 +220,37 @@ function renderTestResults(testResults) {
 
         html += `</div>`;
     });
+
     section.innerHTML = html;
+
+    // Add click event listeners for staff to open update modal
+    if (window.isStaff) {
+      section.querySelectorAll('.clickable-component-result').forEach(el => {
+        el.addEventListener('click', async function() {
+          const compId = this.getAttribute('data-id');
+          if (!compId) return;
+          // Fetch component test result data
+          try {
+            const res = await fetch(`https://localhost:7009/api/ComponentTestResult/GetById/${compId}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Lỗi khi lấy dữ liệu thành phần xét nghiệm.');
+            const data = await res.json();
+            // Populate modal fields
+            document.getElementById('updateComponentTestId').value = data.componentTestResultId;
+            document.getElementById('updateComponentTestName').value = data.componentTestResultName || '';
+            document.getElementById('updateComponentTestDesc').value = data.ctrDescription || '';
+            document.getElementById('updateComponentTestValue').value = data.resultValue || '';
+            document.getElementById('updateComponentTestNotes').value = data.notes || '';
+            document.getElementById('updateComponentTestMsg').textContent = '';
+            // Show modal
+            document.getElementById('updateComponentTestModal').style.display = 'block';
+          } catch (err) {
+            alert('Không thể tải dữ liệu thành phần xét nghiệm.');
+          }
+        });
+      });
+    }
 }
 
 // Render ARV regimens (array) with medications
@@ -311,7 +354,7 @@ function renderARVRegimens(regimens, medications) {
                     ` : `<div class='empty-state'><i class='fas fa-capsules'></i> No medications for this regimen.</div>`}
                 </div>
                 <div style="margin-top:1rem;text-align:right;">
-                    ${(regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Update Status</button>` : ''}
+                    ${(!window.isStaff && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Update Status</button>` : ''}
                 </div>
             </div>
         `;
@@ -619,15 +662,8 @@ regimenForm.onsubmit = async function(e) {
 
 // --- Create Test Result Modal Logic ---
 document.addEventListener('DOMContentLoaded', async function() {
-  // Determine if staff
-  let isStaff = false;
-  if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
-    const roleId = window.roleUtils.getUserRole();
-    const roleName = window.roleUtils.ROLE_NAMES[roleId];
-    isStaff = (roleName === 'staff');
-  }
   // Show button for staff only
-  if (isStaff) {
+  if (window.isStaff) {
     document.getElementById('createTestResultContainer').style.display = '';
   }
 
@@ -831,6 +867,61 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   };
 });
+
+// --- Update Component Test Result Modal Logic ---
+const updateComponentTestModal = document.getElementById('updateComponentTestModal');
+const closeUpdateComponentTestModalBtn = document.getElementById('closeUpdateComponentTestModalBtn');
+const cancelUpdateComponentTestBtn = document.getElementById('cancelUpdateComponentTestBtn');
+const updateComponentTestForm = document.getElementById('updateComponentTestForm');
+const updateComponentTestMsg = document.getElementById('updateComponentTestMsg');
+
+function closeUpdateComponentTestModal() {
+  updateComponentTestModal.style.display = 'none';
+  updateComponentTestForm.reset();
+  updateComponentTestMsg.textContent = '';
+}
+if (closeUpdateComponentTestModalBtn) closeUpdateComponentTestModalBtn.onclick = closeUpdateComponentTestModal;
+if (cancelUpdateComponentTestBtn) cancelUpdateComponentTestBtn.onclick = closeUpdateComponentTestModal;
+window.addEventListener('click', function(event) {
+  if (event.target === updateComponentTestModal) closeUpdateComponentTestModal();
+});
+
+if (updateComponentTestForm) {
+  updateComponentTestForm.onsubmit = async function(e) {
+    e.preventDefault();
+    updateComponentTestMsg.textContent = '';
+    const compId = document.getElementById('updateComponentTestId').value;
+    const name = document.getElementById('updateComponentTestName').value.trim();
+    const desc = document.getElementById('updateComponentTestDesc').value.trim();
+    const value = document.getElementById('updateComponentTestValue').value.trim();
+    const notes = document.getElementById('updateComponentTestNotes').value.trim();
+    if (!compId || !name || !value || !notes) {
+      updateComponentTestMsg.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc.';
+      return;
+    }
+    try {
+      const res = await fetch(`https://localhost:7009/api/ComponentTestResult/Update/${compId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          componentTestResultName: name,
+          ctrDescription: desc,
+          resultValue: value,
+          notes: notes
+        })
+      });
+      if (!res.ok) throw new Error('Lỗi khi cập nhật thành phần xét nghiệm.');
+      closeUpdateComponentTestModal();
+      // Refresh test results
+      if (typeof loadPatientData === 'function') loadPatientData();
+    } catch (err) {
+      updateComponentTestMsg.textContent = 'Lỗi khi cập nhật thành phần xét nghiệm.';
+    }
+  };
+}
 
 // Main function to load all patient data
 async function loadPatientData() {
