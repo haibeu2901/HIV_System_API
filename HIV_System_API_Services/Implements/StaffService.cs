@@ -65,15 +65,15 @@ namespace HIV_System_API_Services.Implements
 
             // Validation: AccId must be positive
             if (staffDto.AccId <= 0)
-                throw new ArgumentException("Account ID must be a positive integer.", nameof(staffDto.AccId));
+                throw new ArgumentException("ID tài khoản phải là số nguyên dương.", nameof(staffDto.AccId));
 
             // Validation: Degree is required and should not be empty
             if (string.IsNullOrWhiteSpace(staffDto.Degree))
-                throw new ArgumentException("Degree is required.", nameof(staffDto.Degree));
+                throw new ArgumentException("Bằng cấp là bắt buộc.", nameof(staffDto.Degree));
 
             // Validation: Bio is required and should not be empty
             if (string.IsNullOrWhiteSpace(staffDto.Bio))
-                throw new ArgumentException("Bio is required.", nameof(staffDto.Bio));
+                throw new ArgumentException("Tiểu sử là bắt buộc.", nameof(staffDto.Bio));
 
             // Map DTO to entity
             var staffEntity = MapToEntity(staffDto);
@@ -84,7 +84,7 @@ namespace HIV_System_API_Services.Implements
             // Fetch the full staff entity with navigation properties (e.g., Acc)
             var fullStaff = await _staffRepo.GetStaffByIdAsync(createdStaff.StfId);
             if (fullStaff == null)
-                throw new InvalidOperationException("Failed to retrieve the created staff.");
+                throw new InvalidOperationException("Không thể lấy thông tin nhân viên đã tạo.");
 
             // Map to response DTO
             return MapToResponseDTO(fullStaff);
@@ -94,7 +94,7 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation: Id must be positive
             if (id <= 0)
-                throw new ArgumentException("Staff ID must be a positive integer.", nameof(id));
+                throw new ArgumentException("ID nhân viên phải là số nguyên dương.", nameof(id));
 
             // Call the repository to delete the staff by id
             return await _staffRepo.DeleteStaffAsync(id);
@@ -121,7 +121,7 @@ namespace HIV_System_API_Services.Implements
         {
             // Validation: Id must be positive
             if (id <= 0)
-                throw new ArgumentException("Staff ID must be a positive integer.", nameof(id));
+                throw new ArgumentException("ID nhân viên phải là số nguyên dương.", nameof(id));
 
             // Fetch the staff entity by id from the repository
             var staff = await _staffRepo.GetStaffByIdAsync(id);
@@ -162,19 +162,19 @@ namespace HIV_System_API_Services.Implements
 
             // Validation: Id must be positive
             if (id <= 0)
-                throw new ArgumentException("Staff ID must be a positive integer.", nameof(id));
+                throw new ArgumentException("ID nhân viên phải là số nguyên dương.", nameof(id));
 
             // Validation: AccId must be positive
             if (staffDto.AccId <= 0)
-                throw new ArgumentException("Account ID must be a positive integer.", nameof(staffDto.AccId));
+                throw new ArgumentException("ID tài khoản phải là số nguyên dương.", nameof(staffDto.AccId));
 
             // Validation: Degree is required and should not be empty
             if (string.IsNullOrWhiteSpace(staffDto.Degree))
-                throw new ArgumentException("Degree is required.", nameof(staffDto.Degree));
+                throw new ArgumentException("Bằng cấp là bắt buộc.", nameof(staffDto.Degree));
 
             // Validation: Bio is required and should not be empty
             if (string.IsNullOrWhiteSpace(staffDto.Bio))
-                throw new ArgumentException("Bio is required.", nameof(staffDto.Bio));
+                throw new ArgumentException("Tiểu sử là bắt buộc.", nameof(staffDto.Bio));
 
             // Fetch the existing staff entity
             var existingStaff = await _staffRepo.GetStaffByIdAsync(id);

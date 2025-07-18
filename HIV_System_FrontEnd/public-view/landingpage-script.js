@@ -270,6 +270,8 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
             window.location.href = "../private-view/user-view/booking/appointment-booking.html";
           } else if (role == 2) {
             window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
+          } else if (role== 4){
+            window.location.href = "../private-view/staff-view/staff-dashboard/staff-dashboard.html";
           }
         }, 1000);
         

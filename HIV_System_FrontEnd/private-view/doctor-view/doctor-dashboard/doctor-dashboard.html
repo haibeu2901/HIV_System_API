@@ -1,67 +1,69 @@
 <!-- Doctor Dashboard -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Doctor Dashboard</title>
-    <link rel="stylesheet" href="../doctor-header/doctor-header-style.css">
+    <title>Bảng điều khiển bác sĩ</title>
     <link rel="stylesheet" href="doctor-dashboard-style.css">
+    <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
 </head>
 <body>
     <div id="header-placeholder"></div>
-    <div class="dashboard-container" style="padding-top: 100px;">
+    <div class="dashboard-container" style="padding-top: 5px;">
         <main class="main-content">
             <div id="dashboardDebug" style="color: red; margin-bottom: 16px;"></div>
-            <div class="dashboard-header">Welcome, Doctor!</div>
+            <div class="dashboard-header" id="dashboardHeader">
+                Chào mừng, Bác sĩ <span id="fullname"></span>!
+            </div>
             <div class="dashboard-metrics">
                 <div class="metric-card">
-                    <div class="metric-title">Today's Appointments</div>
+                    <div class="metric-title">Lịch hẹn hôm nay</div>
                     <div class="metric-value" id="todayAppointments">0</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-title">Weekly Appointments</div>
+                    <div class="metric-title">Lịch hẹn trong tuần</div>
                     <div class="metric-value" id="weeklyAppointments">0</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-title">Monthly Appointments</div>
+                    <div class="metric-title">Lịch hẹn trong tháng</div>
                     <div class="metric-value" id="monthlyAppointments">0</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-title">Total Patients</div>
+                    <div class="metric-title">Tổng số bệnh nhân</div>
                     <div class="metric-value" id="totalPatients">0</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-title">Upcoming Appointments</div>
+                    <div class="metric-title">Lịch hẹn sắp tới</div>
                     <div class="metric-value" id="upcomingAppointments">0</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-title">Completed Appointments</div>
+                    <div class="metric-title">Lịch hẹn đã hoàn thành</div>
                     <div class="metric-value" id="completedAppointments">0</div>
                 </div>
             </div>
             <!-- Chart Section -->
             <div class="dashboard-section">
-                <h3>Appointments Overview</h3>
+                <h3>Tổng quan lịch hẹn</h3>
                 <canvas id="appointmentsChart" style="max-width: 100%; height: 320px;"></canvas>
             </div>
             <div class="dashboard-section">
-                <h3>Today's Schedule</h3>
+                <h3>Lịch trình hôm nay</h3>
                 <div id="todaySchedule">
-                    <p>No schedule for today.</p>
+                    <p>Không có lịch trình cho hôm nay.</p>
                 </div>
             </div>
             <div class="dashboard-section">
-                <h3>Recent Patients</h3>
+                <h3>Bệnh nhân gần đây</h3>
                 <table class="recent-patients-table">
                     <thead>
                         <tr>
-                            <th>Patient Name</th>
-                            <th>Last Visit</th>
-                            <th>Last Visit Time</th>
+                            <th>Tên bệnh nhân</th>
+                            <th>Lần khám gần nhất</th>
+                            <th>Thời gian khám gần nhất</th>
                         </tr>
                     </thead>
                     <tbody id="recentPatientsBody">
-                        <!-- Recent patients will be injected here -->
+                        <!-- Bệnh nhân gần đây sẽ được hiển thị ở đây -->
                     </tbody>
                 </table>
             </div>
@@ -69,7 +71,8 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../doctor-header/doctor-header-script.js"></script>
+    <script src="/private-view/shared/role-config.js"></script>
+    <script src="/private-view/shared/header/header-script.js"></script>
     <script src="doctor-dashboard-script.js"></script>
 </body>
 </html>

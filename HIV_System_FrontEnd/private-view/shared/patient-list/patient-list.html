@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách bệnh nhân</title>
+    <link rel="stylesheet" href="patient-list-style.css">
+    <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <div class="dashboard-container" style="padding-top: 5px;">
+        <main class="main-content">
+            <div class="dashboard-header">Danh sách bệnh nhân</div>
+            <div class="search-bar">
+                <input type="text" id="patientSearchInput" placeholder="Tìm kiếm bệnh nhân theo tên hoặc email..." />
+            </div>
+            <div class="dashboard-section" id="patientMedicalRecordSection">
+                <!-- Patient medical records content goes here -->
+            </div>
+        </main>
+    </div>
+    <div id="patientDetailModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" id="closePatientModal">&times;</span>
+        <div id="patientDetailContent">
+          <!-- Thông tin chi tiết bệnh nhân sẽ được hiển thị ở đây -->
+        </div>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="/private-view/shared/role-config.js"></script>
+    <script src="/private-view/shared/header/header-script.js"></script>
+    <script src="patient-list-script.js"></script>
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <div class="footer-logo">
+              <i class="fas fa-heartbeat"></i>
+              <span>Phòng khám HIV CareFirst</span>
+            </div>
+            <p>
+              Mang đến sự chăm sóc và hỗ trợ tận tâm cho mọi người trong cộng đồng HIV.
+            </p>
+          </div>
+          <div class="footer-section">
+            <h3>Liên kết nhanh</h3>
+            <ul>
+              <li><a href="#home">Trang chủ</a></li>
+              <li><a href="#services">Dịch vụ</a></li>
+              <li><a href="#about">Giới thiệu</a></li>
+              <li><a href="#contact">Liên hệ</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Dịch vụ</h3>
+            <ul>
+              <li><a href="#">Xét nghiệm HIV</a></li>
+              <li><a href="#">Điều trị</a></li>
+              <li><a href="#">Nhóm hỗ trợ</a></li>
+              <li><a href="#">Phòng ngừa</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Khẩn cấp</h3>
+            <p>Đường dây nóng 24/7: <strong>(555) 911-HIV1</strong></p>
+            <p>Luôn sẵn sàng hỗ trợ bạn</p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>
+            &copy; 2025 Phòng khám HIV CareFirst. Đã đăng ký bản quyền. | Chính sách bảo mật | Điều khoản sử dụng
+          </p>
+        </div>
+      </div>
+    </footer>
+</body>
+</html>

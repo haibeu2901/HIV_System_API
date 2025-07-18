@@ -93,7 +93,7 @@ namespace HIV_System_API_Services.Implements
 
             var email = pmr?.Ptn?.Acc?.Email;
             if (string.IsNullOrEmpty(email))
-                throw new InvalidOperationException("Patient email not found.");
+                throw new InvalidOperationException("Không tìm thấy email bệnh nhân.");
 
             var customerService = new CustomerService();
             var customerList = await customerService.ListAsync(new CustomerListOptions { Email = email });
@@ -162,7 +162,7 @@ namespace HIV_System_API_Services.Implements
         {
             var entity = await _paymentRepo.GetPaymentByIdAsync(id);
             if (entity == null)
-                throw new KeyNotFoundException($"Payment with ID {id} not found.");
+                throw new KeyNotFoundException($"Thanh toán với ID {id} không tìm thấy.");
             return MapToResponseDTO(entity);
         }
 
@@ -185,6 +185,17 @@ namespace HIV_System_API_Services.Implements
         public async Task<bool> DeletePaymentAsync(int payId)
         {
             return await _paymentRepo.DeletePaymentAsync(payId);
+        }
+
+        public async Task<List<PaymentResponseDTO>> GetAllPersonalPaymentsAsync(int accId)
+        {
+            // Find the patient by account ID
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.AccId == accId);
+            if (patient == null)
+                throw new InvalidOperationException($"No patient found for account ID {accId}.");
+
+            var entities = await _paymentRepo.GetPersonalPaymentsAsync(patient.PtnId);
+            return entities.Select(MapToResponseDTO).ToList();
         }
     }
 }
