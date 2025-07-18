@@ -22,10 +22,12 @@ const regimenStatusMap = {
   2: "Đang hoạt động",
   3: "Tạm dừng",
   4: "Đã hủy",
-  5: "Đã hoàn thành"
+  5: "Hoàn thành"
 };
 
 // Payment status mapping
+
+// Set window.isStaff and window.i// Payment status mapping
 const paymentStatusMap = {
     1: 'Đang chờ',
     2: 'Đã thanh toán',
@@ -64,31 +66,13 @@ async function fetchPatientDetails(patientId) {
     }
 }
 
-// Fetch patient medical record ID
-async function fetchPatientMRId(patientId) {
+// Add new fetchPatientMedicalDataByPatientId
+async function fetchPatientMedicalDataByPatientId(patientId) {
     try {
-        const response = await fetch(`https://localhost:7009/api/Patient/GetPatientMRById/${patientId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordByPatientId?patientId=${patientId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Lỗi thất bại lấy ID sơ đồ bệnh án bệnh nhân');
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching patient MR ID:', error);
-        return null;
-    }
-}
-
-// Fetch all patient medical data (appointments, test results, arv regimens)
-async function fetchPatientMedicalData(pmrId) {
-    try {
-        const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordById/${pmrId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        if (!response.ok) throw new Error('Lỗi thất bại lấy sơ đồ thông tin bệnh án bệnh nhân');
+        if (!response.ok) throw new Error('Lỗi thất bại lấy thông tin bệnh án bệnh nhân');
         return await response.json();
     } catch (error) {
         console.error('Error fetching patient medical data:', error);
@@ -448,6 +432,10 @@ function renderARVRegimens(regimens, medications) {
                         <div class="regimen-detail-label">Created At</div>
                         <div class="regimen-detail-value">${new Date(regimen.createdAt).toLocaleDateString()}</div>
                     </div>
+                    <div class="regimen-detail">
+                        <div class="regimen-detail-label">Tổng chi phí</div>
+                        <div class="regimen-detail-value">${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
+                    </div>
                 </div>
                 ${regimen.notes ? `
                     <div class="regimen-notes">
@@ -649,14 +637,22 @@ regimenTemplate.onchange = function() {
     const template = JSON.parse(selected);
     // Fill form fields
     regimenNotes.value = template.description;
-    regimenStartDate.value = new Date().toISOString().slice(0, 10);
+    // Set start date to today
+    const today = new Date();
+    regimenStartDate.value = today.toISOString().slice(0, 10);
+    // Set end date to start date + duration days
+    if (template.duration) {
+        const endDate = new Date(today.getTime() + template.duration * 24 * 60 * 60 * 1000);
+        if (document.getElementById('regimenEndDate')) {
+            document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
+        }
+    }
     // Fill medications
     selectedTemplateMedications = template.medications.map(med => ({
         arvMedicationName: med.medicationName,
-        arvMedDetailId: med.arvMedicationDetailId,
         dosage: med.dosage,
         quantity: med.quantity,
-        manufacturer: allMedicationDetails.find(m => m.arvMedicationName === med.medicationName)?.arvMedicationManufacturer || '',
+        manufacturer: ''
     }));
     renderMedicationRows();
 };
@@ -676,7 +672,7 @@ function renderMedicationRows() {
             <td>
                 <select class="medication-name-select" data-idx="${idx}">
                     <option value="">Select</option>
-                    ${allMedicationDetails.map(m => `<option value="${m.arvMedicationName}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
+                    ${allMedicationDetails.map(m => `<option value="${m.arvMedicationId}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
                 </select>
             </td>
             <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
@@ -690,13 +686,12 @@ function renderMedicationRows() {
 }
 
 addMedicationBtn.onclick = function() {
-    if (selectedTemplateMedications.length >= 3) return;
-    selectedTemplateMedications.push({ arvMedicationName: '', arvMedDetailId: null, dosage: '', quantity: 1, manufacturer: '' });
+    selectedTemplateMedications.push({ arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' });
     renderMedicationRows();
 };
 
 function updateAddMedicationBtnState() {
-    addMedicationBtn.disabled = selectedTemplateMedications.length >= 3;
+    addMedicationBtn.disabled = false;
 }
 
 // Handle medication name/quantity changes and remove
@@ -710,18 +705,17 @@ medicationsTableBody.onclick = function(e) {
 medicationsTableBody.onchange = function(e) {
     if (e.target.classList.contains('medication-name-select')) {
         const idx = +e.target.dataset.idx;
-        const medName = e.target.value;
-        const medDetail = allMedicationDetails.find(m => m.arvMedicationName === medName);
+        const medId = e.target.value;
+        const medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(medId));
         if (medDetail) {
             selectedTemplateMedications[idx] = {
                 arvMedicationName: medDetail.arvMedicationName,
-                arvMedDetailId: medDetail.arvMedicationDetailId || medDetail.arvMedDetailId || medDetail.id || medDetail.arvMedicationDetailId,
                 dosage: medDetail.arvMedicationDosage,
                 quantity: selectedTemplateMedications[idx].quantity || 1,
                 manufacturer: medDetail.arvMedicationManufacturer
             };
         } else {
-            selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: null, dosage: '', quantity: 1, manufacturer: '' };
+            selectedTemplateMedications[idx] = { arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' };
         }
         renderMedicationRows();
     } else if (e.target.classList.contains('medication-qty-input')) {
@@ -734,8 +728,8 @@ medicationsTableBody.onchange = function(e) {
 regimenForm.onsubmit = async function(e) {
     e.preventDefault();
     // Validation
-    if (selectedTemplateMedications.length === 0 || selectedTemplateMedications.length > 3) {
-        alert('Please select 1-3 medications.');
+    if (selectedTemplateMedications.length === 0) {
+        alert('Please add at least one medication.');
         return;
     }
     const medNames = selectedTemplateMedications.map(m => m.arvMedicationName);
@@ -747,38 +741,70 @@ regimenForm.onsubmit = async function(e) {
         alert('Please fill all medication fields.');
         return;
     }
+    // Check that every medication selection is valid
+    if (selectedTemplateMedications.some(m => {
+        const medDetail = allMedicationDetails.find(md => md.arvMedicationName === m.arvMedicationName);
+        return !medDetail;
+    })) {
+        alert('Please select a valid medication for every row.');
+        return;
+    }
     // Prepare regimen payload
-    const patientId = getPatientIdFromUrl();
-    const mrData = await fetchPatientMRId(patientId);
-    if (!mrData || !mrData.pmrId) {
+    if (!window.pmrId) {
         alert('Cannot find patient medical record.');
         return;
     }
     // Build medications array for API
-    const medications = selectedTemplateMedications.map(med => ({
+    const medications = selectedTemplateMedications.map(med => {
+        const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
+        return {
         patientArvRegId: 0,
-        arvMedDetailId: med.arvMedDetailId,
+            arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
         quantity: med.quantity
-    }));
+        };
+    });
     // Build regimen object
     const regimen = {
-        patientMedRecordId: mrData.pmrId,
+        patientMedRecordId: window.pmrId,
         notes: regimenNotes.value,
         regimenLevel: +regimenLevel.value,
         createdAt: new Date().toISOString(),
         startDate: regimenStartDate.value,
-        endDate: null,
+        endDate: document.getElementById('regimenEndDate') ? document.getElementById('regimenEndDate').value : null,
         regimenStatus: 1, // active
+        totalCost: 0
     };
+    const payload = { regimen, medications };
+    // Detailed logging of regimen properties
+    console.log('DEBUG: Regimen details:');
+    Object.entries(regimen).forEach(([key, value]) => {
+        console.log(`  ${key}:`, value);
+    });
+    console.log('DEBUG: Submitting ARV regimen payload:', payload);
     // Call new API
     try {
         const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ regimen, medications })
+            body: JSON.stringify(payload)
         });
         if (!res.ok) {
-            alert('Failed to create regimen.');
+            let errorMsg = 'Failed to create regimen.';
+            let errorText = '';
+            try {
+                // Try to read as JSON
+                const errorData = await res.json();
+                console.error('Backend error:', errorData);
+                if (errorData && errorData.message) errorMsg += '\n' + errorData.message;
+                else errorText = JSON.stringify(errorData);
+            } catch (e) {
+                // If not JSON, try as text (but only once)
+                try {
+                    errorText = await res.text();
+                } catch {}
+            }
+            if (errorText) errorMsg += '\n' + errorText;
+            alert(errorMsg);
             return;
         }
         alert('Regimen and medications created successfully!');
@@ -787,40 +813,12 @@ regimenForm.onsubmit = async function(e) {
         loadPatientData();
     } catch (err) {
         alert('Error creating regimen.');
+        console.error('Error creating regimen:', err);
     }
 };
 
 // --- Create Test Result Modal Logic ---
-document.addEventListener('DOMContentLoaded', async function() {
-  // Show button for staff only
-  if (window.isStaff) {
-    document.getElementById('createTestResultContainer').style.display = '';
-  }
-
-  // Get pmrId (from loaded data or fetch)
-  let pmrId = null;
-  let patientId = null;
-  if (typeof getPatientIdFromUrl === 'function') {
-    patientId = getPatientIdFromUrl();
-    if (!patientId) {
-      alert('Không tìm thấy bệnh nhân. Vui lòng truy cập từ danh sách bệnh nhân.');
-      return;
-    }
-    // Try to fetch MR ID
-    try {
-      const mrIdResp = await fetchPatientMRId(patientId);
-      if (mrIdResp) {
-        pmrId = mrIdResp.patientMedicalRecordId || mrIdResp.pmrId;
-      }
-    } catch {}
-  }
-  // If pmrId is still not found, show error and do not allow modal open
-  if (!pmrId) {
-    document.getElementById('createTestResultContainer').style.display = 'none';
-    alert('Không tìm thấy hồ sơ bệnh án cho bệnh nhân này.');
-    return;
-  }
-
+document.addEventListener('DOMContentLoaded', function() {
   // Modal elements
   const openBtn = document.getElementById('openTestResultModalBtn');
   const modal = document.getElementById('testResultModal');
@@ -891,8 +889,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     resetComponentTests();
     // Set today as default date
     dateInput.value = getToday();
-    // Set pmrId
-    if (pmrId) pmrIdInput.value = pmrId;
+    // Set pmrId from global
+    if (window.pmrId != null) pmrIdInput.value = window.pmrId;
     modal.style.display = 'block';
   }
   function closeModal() {
@@ -1053,6 +1051,28 @@ if (updateComponentTestForm) {
   };
 }
 
+// Render payments
+function renderPayments(payments) {
+    const section = document.getElementById('paymentsSection');
+    if (!section) return;
+    if (!payments || payments.length === 0) {
+        section.innerHTML = `<div class="empty-state"><i class="fas fa-money-bill-wave"></i><p>Không có giao dịch thanh toán nào.</p></div>`;
+        return;
+    }
+    let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
+    payments.forEach(pay => {
+        html += `<tr>
+            <td>${pay.paymentDate ? new Date(pay.paymentDate).toLocaleString() : '-'}</td>
+            <td>${pay.amount ? pay.amount.toLocaleString() + ' ₫' : '-'}</td>
+            <td>${pay.paymentMethod || '-'}</td>
+            <td><span class="payment-status payment-status-${pay.paymentStatus}">${paymentStatusMap[pay.paymentStatus] || pay.paymentStatus}</span></td>
+            <td>${pay.description || '-'}</td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    section.innerHTML = html;
+}
+
 // Main function to load all patient data
 async function loadPatientData() {
     const patientId = getPatientIdFromUrl();
@@ -1071,35 +1091,41 @@ async function loadPatientData() {
         // Fetch patient details
         const patient = await fetchPatientDetails(patientId);
         renderPatientProfile(patient);
+        // Fetch all medical data (appointments, test results, arv regimens, payments)
+        const medicalData = await fetchPatientMedicalDataByPatientId(patientId);
+        // Store pmrId globally for modal logic
+        if (medicalData && medicalData.pmrId != null) {
+            window.pmrId = medicalData.pmrId;
+        } else {
+            window.pmrId = null;
+        }
+        // Fetch all ARV medications for the patient (if needed for regimens)
+        let medications = [];
+        if (medicalData && medicalData.arvRegimens) {
+            medications = medicalData.arvRegimens.flatMap(r => r.arvMedications || []);
+        }
 
-        // Fetch patient MR ID
-        const mrData = await fetchPatientMRId(patientId);
-        
-        if (mrData && mrData.pmrId) {
-            // Fetch all medical data (appointments, test results, arv regimens)
-            const medicalData = await fetchPatientMedicalData(mrData.pmrId);
-            // Fetch all ARV medications for the patient
-            const medications = await fetchPatientArvMedications(patientId);
-            // Fetch payment history for the patient
-            const payments = await fetchPatientPayments(mrData.pmrId);
-            
             if (medicalData) {
                 renderAppointments(medicalData.appointments || []);
                 renderTestResults(medicalData.testResults || []);
                 renderARVRegimens(medicalData.arvRegimens || [], medications);
-            } else {
-                renderAppointments([]);
-                renderTestResults([]);
-                renderARVRegimens([], []);
-            }
-            
-            // Render payment history
-            renderPaymentHistory(payments || []);
+            renderPayments(medicalData.payments || []);
+
         } else {
             renderAppointments([]);
             renderTestResults([]);
             renderARVRegimens([], []);
-            renderPaymentHistory([]);
+            renderPayments([]);
+        }
+        // After data is loaded, show/hide staff button
+        const btnContainer = document.getElementById('createTestResultContainer');
+        if (btnContainer) {
+            if (window.isStaff && window.pmrId != null) {
+                btnContainer.style.display = '';
+            } else {
+                btnContainer.style.display = 'none';
+            }
+
         }
     } catch (error) {
         console.error('Error loading patient data:', error);
