@@ -60,18 +60,12 @@
                     <p>Đang tải phác đồ ARV...</p>
                 </div>
             </div>
-
             <!-- Payment History Section -->
             <div class="section">
-                <h3>Lịch sử giao dịch thanh toán</h3>
-                <div id="paymentHistorySection" class="content-section">
-                    <p>Đang tải lịch sử giao dịch...</p>
-                </div>
-                <!-- Button for doctors only -->
-                <div id="createPaymentContainer" style="margin-top: 1.5rem; display: none;">
-                    <button id="openPaymentModalBtn" class="primary-btn">
-                        <i class="fas fa-plus"></i> Tạo thanh toán
-                    </button>
+                <h3>Lịch sử thanh toán</h3>
+                <div id="paymentsSection" class="content-section">
+                    <p>Đang tải lịch sử thanh toán...</p>
+
                 </div>
             </div>
         </main>
@@ -108,6 +102,10 @@
                     <input type="date" id="regimenStartDate" name="regimenStartDate" required />
                 </div>
                 <div class="form-group">
+                    <label for="regimenEndDate">End Date</label>
+                    <input type="date" id="regimenEndDate" name="regimenEndDate" required />
+                </div>
+                <div class="form-group">
                     <label>Medications</label>
                     <table id="medicationsTable" class="medications-table">
                         <thead>
@@ -140,13 +138,13 @@
             <h2>Update ARV Regimen Status</h2>
             <form id="updateRegimenStatusForm">
                 <div class="form-group">
-                    <label for="updateRegimenStatusSelect">New Status</label>
+                    <label for="updateRegimenStatusSelect">Cập nhật trạng thái</label>
                     <select id="updateRegimenStatusSelect" name="regimenStatus" required>
-                        <option value="">Select status</option>
-                        <option value="2">Active</option>
-                        <option value="3">Paused</option>
-                        <option value="4">Failed</option>
-                        <option value="5">Completed</option>
+                        <option value="">Chọn trạng thái</option>
+                        <option value="2">Đang hoạt động</option>
+                        <option value="3">Tạm dừng</option>
+                        <option value="4">Đã hủy</option>
+                        <option value="5">Hoàng thành</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -229,7 +227,7 @@
           </div>
           <div id="updateComponentTestMsg" style="color:red; margin-top:10px;"></div>
         </form>
-      </div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
