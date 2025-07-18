@@ -65,15 +65,9 @@ public partial class HivSystemApiContext : DbContext
         if (!optionsBuilder.IsConfigured)
         {
             // Only configure if not already configured (for DI scenarios)
-            optionsBuilder.UseSqlServer(GetConnectionString(), options =>
-            {
-                options.EnableRetryOnFailure(
-                    maxRetryCount: 3,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-            })
-            .EnableSensitiveDataLogging(false) // Disable in production
-            .EnableServiceProviderCaching(); // Enable service provider caching
+            optionsBuilder.UseSqlServer(GetConnectionString());
+            //.EnableSensitiveDataLogging(false) // Disable in production
+            //.EnableServiceProviderCaching(); // Enable service provider caching
         }
     }
 
@@ -98,7 +92,7 @@ public partial class HivSystemApiContext : DbContext
             entity.HasIndex(e => e.Email, "UQ__Account__A9D10534782DBC79").IsUnique();
             entity.HasIndex(e => e.Roles, "IX_Account_Roles"); // Add index for role-based queries
             entity.HasIndex(e => e.IsActive, "IX_Account_IsActive"); // Add index for active status
-            
+
             entity.Property(e => e.AccPassword).HasMaxLength(255); // Increase for hashed passwords
             entity.Property(e => e.AccUsername).HasMaxLength(100);
             entity.Property(e => e.Email).HasMaxLength(100);
@@ -110,12 +104,12 @@ public partial class HivSystemApiContext : DbContext
         {
             entity.HasKey(e => e.ApmId).HasName("PK__Appointm__8368D654E5AA9721");
             entity.ToTable("Appointment");
-            
+
             // Add composite indexes for common queries
             entity.HasIndex(e => new { e.ApmtDate, e.ApmStatus }, "IX_Appointment_Date_Status");
             entity.HasIndex(e => new { e.DctId, e.ApmtDate }, "IX_Appointment_Doctor_Date");
             entity.HasIndex(e => new { e.PtnId, e.ApmtDate }, "IX_Appointment_Patient_Date");
-            
+
             entity.Property(e => e.Notes).HasMaxLength(500);
 
             entity.HasOne(d => d.Dct).WithMany(p => p.Appointments)
@@ -204,10 +198,10 @@ public partial class HivSystemApiContext : DbContext
         {
             entity.HasKey(e => e.CtrId).HasName("PK__Componen__23E51DA1EB60FA1E");
             entity.ToTable("Component_Test_Result");
-            
+
             // Add indexes for common queries
             entity.HasIndex(e => new { e.StfId, e.TrsId }, "IX_ComponentTestResult_Staff_Test");
-            
+
             entity.Property(e => e.CtrDescription).HasMaxLength(200);
             entity.Property(e => e.CtrName).HasMaxLength(50);
             entity.Property(e => e.Notes).HasMaxLength(500);
@@ -245,7 +239,7 @@ public partial class HivSystemApiContext : DbContext
             entity.ToTable("Doctor_Work_Schedule");
             entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.IsAvailable }, "IX_DoctorWorkSchedule_Doctor_Date_Available");
             entity.HasIndex(e => new { e.DoctorId, e.WorkDate, e.StartTime, e.EndTime }, "UQ_Doctor_Date_Time").IsUnique();
-            
+
             entity.Property(e => e.DayOfWeek).HasColumnName("day_of_week");
             entity.Property(e => e.DoctorId).HasColumnName("doctor_id");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
@@ -280,10 +274,10 @@ public partial class HivSystemApiContext : DbContext
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(e => e.NtfId).HasName("PK__Notifica__E23E8D0644D5F2C5");
-            
+
             // Add index for common queries
             entity.HasIndex(e => e.SendAt, "IX_Notification_SendAt");
-            
+
             entity.Property(e => e.NotiMessage).HasMaxLength(300);
             entity.Property(e => e.NotiType).HasMaxLength(20);
             entity.Property(e => e.SendAt)
@@ -295,7 +289,7 @@ public partial class HivSystemApiContext : DbContext
         {
             entity.HasKey(e => e.NtaId).HasName("PK__Notifica__E1A7DA5324520B35");
             entity.ToTable("Notification_Account");
-            
+
             // Add composite index for common queries
             entity.HasIndex(e => new { e.AccId, e.IsRead }, "IX_NotificationAccount_Account_Read");
 
@@ -404,11 +398,11 @@ public partial class HivSystemApiContext : DbContext
         {
             entity.HasKey(e => e.SblId).HasName("PK__Social_B__93CA5D2E46E22F13");
             entity.ToTable("Social_Blog");
-            
+
             // Add indexes for common queries
             entity.HasIndex(e => e.PublishedAt, "IX_SocialBlog_PublishedAt");
             entity.HasIndex(e => new { e.AccId, e.PublishedAt }, "IX_SocialBlog_Account_Published");
-            
+
             entity.Property(e => e.IsAnonymous).HasDefaultValue(false);
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PublishedAt)
@@ -444,10 +438,10 @@ public partial class HivSystemApiContext : DbContext
         {
             entity.HasKey(e => e.TrsId).HasName("PK__Test_Res__BE3DBA3A3CD09F38");
             entity.ToTable("Test_Result");
-            
+
             // Add index for common queries
             entity.HasIndex(e => new { e.PmrId, e.TestDate }, "IX_TestResult_Patient_Date");
-            
+
             entity.Property(e => e.Notes).HasMaxLength(500);
 
             entity.HasOne(d => d.Pmr).WithMany(p => p.TestResults)

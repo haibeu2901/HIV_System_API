@@ -4,11 +4,38 @@ let filteredBlogs = [];
 let currentFilter = 'all';
 let isLoading = false;
 
+// Global authentication state
+let currentUser = null;
+let isAuthenticated = false;
+
 // Initialize the blog system
 document.addEventListener('DOMContentLoaded', async () => {
     await loadBlogs();
     setupEventListeners();
     updateStatistics();
+    
+    // Set up character counters for blog creation
+    const titleInput = document.getElementById('blogTitle');
+    const contentInput = document.getElementById('blogContent');
+    
+    if (titleInput) {
+        titleInput.addEventListener('input', function() {
+            updateCharCounter(this, 'titleCounter', 200);
+        });
+    }
+    
+    if (contentInput) {
+        contentInput.addEventListener('input', function() {
+            updateCharCounter(this, 'contentCounter', 5000);
+        });
+    }
+
+    // Check for stored authentication
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+        currentUser = { token: storedToken };
+        isAuthenticated = true;
+    }
 });
 
 // Load blogs from API
@@ -399,7 +426,233 @@ function getBlogStatusBadge(status) {
     }
 }
 
+// Authentication functions
+function authenticateUser() {
+    const token = document.getElementById('authToken').value.trim();
+    
+    if (!token) {
+        showFormStatus('Please enter your authentication token', 'error');
+        return;
+    }
+    
+    // Store token and set authenticated state
+    localStorage.setItem('authToken', token);
+    currentUser = { token: token };
+    isAuthenticated = true;
+    
+    // Update UI to show authenticated state
+    updateAuthSection();
+    showFormStatus('Authentication successful! You can now create blog posts.', 'success');
+}
+
+function logout() {
+    localStorage.removeItem('authToken');
+    currentUser = null;
+    isAuthenticated = false;
+    updateAuthSection();
+    showFormStatus('Logged out successfully.', 'info');
+}
+
+function updateAuthSection() {
+    const authSection = document.querySelector('.auth-section');
+    if (isAuthenticated) {
+        authSection.innerHTML = `
+            <div class="auth-info">
+                <span>✅ Authenticated</span>
+                <button type="button" class="auth-btn" onclick="logout()">Logout</button>
+            </div>
+        `;
+    } else {
+        authSection.innerHTML = `
+            <div class="auth-info">
+                <span>🔐 Authentication Required</span>
+            </div>
+            <div class="auth-input-group">
+                <input type="password" id="authToken" placeholder="Enter your authentication token" />
+                <button type="button" class="auth-btn" onclick="authenticateUser()">Authenticate</button>
+            </div>
+        `;
+    }
+}
+
+function showFormStatus(message, type) {
+    const statusDiv = document.getElementById('formStatus');
+    statusDiv.textContent = message;
+    statusDiv.className = `form-status ${type}`;
+    statusDiv.style.display = 'block';
+    
+    // Auto-hide after 5 seconds for success/info messages
+    if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Character counter functionality
+function updateCharCounter(textarea, counterId, maxLength) {
+    const counter = document.getElementById(counterId);
+    const currentLength = textarea.value.length;
+    counter.textContent = `${currentLength}/${maxLength} characters`;
+    
+    // Add warning/danger classes
+    counter.className = 'char-count';
+    if (currentLength > maxLength * 0.9) {
+        counter.classList.add('danger');
+    } else if (currentLength > maxLength * 0.7) {
+        counter.classList.add('warning');
+    }
+}
+
+// Blog creation functionality
+function openCreateModal() {
+    console.log('Opening create blog modal');
+    document.getElementById('createPostModal').style.display = 'flex';
+    
+    // Check if user has stored token
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+        currentUser = { token: storedToken };
+        isAuthenticated = true;
+    }
+    
+    updateAuthSection();
+}
+
+function closeCreateModal() {
+    console.log('Closing create blog modal');
+    document.getElementById('createPostModal').style.display = 'none';
+    
+    // Reset form
+    const form = document.getElementById('createBlogForm');
+    if (form) {
+        form.reset();
+    }
+    
+    // Reset character counters
+    const titleCounter = document.getElementById('titleCounter');
+    const contentCounter = document.getElementById('contentCounter');
+    if (titleCounter) titleCounter.textContent = '0/200 characters';
+    if (contentCounter) contentCounter.textContent = '0/5000 characters';
+    
+    // Hide status messages
+    const statusDiv = document.getElementById('formStatus');
+    if (statusDiv) {
+        statusDiv.style.display = 'none';
+    }
+}
+
+async function submitBlog() {
+    if (!isAuthenticated || !currentUser) {
+        showFormStatus('Please authenticate before creating a blog post.', 'error');
+        return;
+    }
+
+    const titleInput = document.getElementById('blogTitle');
+    const contentInput = document.getElementById('blogContent');
+    const isPublicCheckbox = document.getElementById('isPublic');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Validate form data
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+    const isPublic = isPublicCheckbox.checked;
+
+    if (!title) {
+        showFormStatus('Please enter a title for your blog post.', 'error');
+        titleInput.focus();
+        return;
+    }
+
+    if (title.length > 200) {
+        showFormStatus('Title must be 200 characters or less.', 'error');
+        titleInput.focus();
+        return;
+    }
+
+    if (!content) {
+        showFormStatus('Please enter content for your blog post.', 'error');
+        contentInput.focus();
+        return;
+    }
+
+    if (content.length > 5000) {
+        showFormStatus('Content must be 5000 characters or less.', 'error');
+        contentInput.focus();
+        return;
+    }
+
+    // Prepare request data
+    const blogData = {
+        title: title,
+        content: content,
+        isPublic: isPublic
+    };
+
+    console.log('Creating blog post:', blogData);
+
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    showFormStatus('Creating your blog post...', 'info');
+
+    try {
+        const response = await fetch('/api/SocialBlog/CreateBlog', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`
+            },
+            body: JSON.stringify(blogData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showFormStatus('Blog post created successfully!', 'success');
+            
+            // Wait a moment then close modal and refresh
+            setTimeout(() => {
+                closeCreateModal();
+                // Refresh the blog list
+                loadBlogs();
+            }, 2000);
+        } else {
+            console.error('Blog creation failed:', result);
+            showFormStatus(result.message || 'Failed to create blog post. Please try again.', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating blog:', error);
+        
+        // Handle different types of errors
+        let errorMessage = 'Failed to create blog post. ';
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage += 'Please check your internet connection or contact support.';
+        } else {
+            errorMessage += 'Please try again or contact support if the problem persists.';
+        }
+        
+        showFormStatus(errorMessage, 'error');
+    } finally {
+        // Reset loading state
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+    }
+}
+
 // Utility functions
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+function formatContent(content) {
+    if (!content) return '';
+    // Convert line breaks to HTML
+    return content.replace(/\n/g, '<br>');
+}
+
 function formatDate(dateString) {
     if (!dateString) return 'Unknown date';
     
@@ -409,26 +662,16 @@ function formatDate(dateString) {
         const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
         
         if (diffInHours < 1) return 'Just now';
-        if (diffInHours < 24) return `${diffInHours}h ago`;
-        if (diffInHours < 24 * 7) return `${Math.floor(diffInHours / 24)}d ago`;
+        if (diffInHours < 24) return `${diffInHours} hours ago`;
+        if (diffInHours < 48) return 'Yesterday';
         
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7) return `${diffInDays} days ago`;
+        if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+        
+        return date.toLocaleDateString();
     } catch (error) {
+        console.error('Error formatting date:', error);
         return 'Unknown date';
     }
-}
-
-function truncateText(text, maxLength) {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-}
-
-function formatContent(content) {
-    if (!content) return '';
-    return content.replace(/\n/g, '<br>');
 }
