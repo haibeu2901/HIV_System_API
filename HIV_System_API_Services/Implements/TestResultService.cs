@@ -48,6 +48,7 @@ namespace HIV_System_API_Services.Implements
                 Notes = testResult.Notes,
                 TestResultId = testResult.TrsId,
                 ComponentTestResults = testResult.ComponentTestResults?
+                    .OrderBy(ct => ct.CtrName) // Optional: Order component test results by name
                     .Select(component => new ComponentTestResultResponseDTO
                     {
                         ComponentTestResultId = component.CtrId,
@@ -114,7 +115,7 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<List<TestResultResponseDTO>> GetAllTestResult()
         {
-            // Ensure component test results are included
+            // Ensure component test results are included and ordered by test date descending
             var results = await _testResultRepo.GetAllTestResult();
 
             // If your repo does not include navigation properties, load them here:
@@ -124,7 +125,14 @@ namespace HIV_System_API_Services.Implements
                 results = await context.TestResults
                     .Include(tr => tr.ComponentTestResults)
                     .ThenInclude(ct => ct.Stf)
+                    .OrderByDescending(tr => tr.TestDate) // Order by TestDate descending
+                    .ThenByDescending(tr => tr.TrsId)
                     .ToListAsync();
+            }
+            else
+            {
+                // Order the results from repository as well
+                results = results.OrderByDescending(r => r.TestDate).ToList();
             }
 
             return results.Select(MapToResponse).ToList();
@@ -140,7 +148,10 @@ namespace HIV_System_API_Services.Implements
             if (results == null || !results.Any())
                 throw new KeyNotFoundException($"Không tìm thấy kết quả xét nghiệm cho bệnh nhân với ID {id}.");
 
-            var response = results.Select(r => new PersonalTestResultResponseDTO
+            // Order by TestDate descending to show most recent first
+            var orderedResults = results.OrderByDescending(r => r.TestDate).ThenByDescending(r => r.TrsId);
+
+            var response = orderedResults.Select(r => new PersonalTestResultResponseDTO
             {
                 PatientMedicalRecordId = r.PmrId,
                 TestDate = r.TestDate,
@@ -158,6 +169,7 @@ namespace HIV_System_API_Services.Implements
                         Notes = ct.Notes
                     }).ToList() ?? new List<ComponentTestResultResponseDTO>()
             }).ToList();
+
             return response;
         }
 
@@ -168,6 +180,8 @@ namespace HIV_System_API_Services.Implements
                 .Include(tr => tr.ComponentTestResults)
                 .ThenInclude(ct => ct.Stf)
                 .Where(r => r.ResultValue == true)
+                .OrderByDescending(r => r.TestDate) // Order by TestDate descending
+                .ThenByDescending(r => r.TrsId)
                 .ToListAsync();
 
             return positiveResults.Select(MapToResponse).ToList();
