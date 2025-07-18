@@ -39,7 +39,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
 
             // Wait for all tasks to complete
             await Task.WhenAll(
-                totalDoctorsTask, totalStaffTask, totalPatientsTask, 
+                totalDoctorsTask, totalStaffTask, totalPatientsTask,
                 todayAppointmentsTask, monthlyAppointmentsTask, pendingTestsTask, monthlyRevenueTask,
                 doctorPerformanceTask, staffPerformanceTask, serviceUtilizationTask);
 
