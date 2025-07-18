@@ -18,8 +18,8 @@ namespace HIV_System_API_DTOs
         public int TotalServices { get; set; }
         public decimal TotalRevenue { get; set; }
         public decimal MonthlyRevenue { get; set; }
-        public Dictionary<string, int> UserDistribution { get; set; } = new();
-        public List<dynamic> RecentActivities { get; set; } = new();
+        public Dictionary<string, int> UserDistribution { get; set; }
+        public List<dynamic> RecentActivities { get; set; }
     }
 
     public class DoctorDashboardStats
@@ -30,8 +30,8 @@ namespace HIV_System_API_DTOs
         public int TotalPatients { get; set; }
         public int UpcomingAppointments { get; set; }
         public int CompletedAppointments { get; set; }
-        public List<dynamic> TodaySchedule { get; set; } = new();
-        public List<dynamic> RecentPatients { get; set; } = new();
+        public List<dynamic> TodaySchedule { get; set; }
+        public List<dynamic> RecentPatients { get; set; }
     }
 
     public class PatientDashboardStats
@@ -41,9 +41,9 @@ namespace HIV_System_API_DTOs
         public int RecentTestResults { get; set; }
         public int ActiveRegimens { get; set; }
         public decimal TotalPayments { get; set; }
-        public dynamic? NextAppointment { get; set; }
-        public List<dynamic> RecentTestResultsList { get; set; } = new();
-        public List<dynamic> CurrentMedications { get; set; } = new();
+        public dynamic NextAppointment { get; set; }
+        public List<dynamic> RecentTestResultsList { get; set; }
+        public List<dynamic> CurrentMedications { get; set; }
     }
 
     public class StaffDashboardStats
@@ -53,8 +53,8 @@ namespace HIV_System_API_DTOs
         public int TotalTestResults { get; set; }
         public int PendingTests { get; set; }
         public int BlogPosts { get; set; }
-        public List<dynamic> RecentTestResults { get; set; } = new();
-        public List<dynamic> WorkloadSummary { get; set; } = new();
+        public List<dynamic> RecentTestResults { get; set; }
+        public List<dynamic> WorkloadSummary { get; set; }
     }
 
     public class ManagerDashboardStats
@@ -66,46 +66,46 @@ namespace HIV_System_API_DTOs
         public int MonthlyAppointments { get; set; }
         public int PendingTests { get; set; }
         public decimal MonthlyRevenue { get; set; }
-        public List<dynamic> DoctorPerformance { get; set; } = new();
-        public List<dynamic> StaffPerformance { get; set; } = new();
-        public List<dynamic> ServiceUtilization { get; set; } = new();
+        public List<dynamic> DoctorPerformance { get; set; }
+        public List<dynamic> StaffPerformance { get; set; }
+        public List<dynamic> ServiceUtilization { get; set; }
     }
 
     public class DashboardAlert
     {
-        public string Type { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
-        public string Priority { get; set; } = string.Empty;
+        public string Type { get; set; }
+        public string Message { get; set; }
+        public string Priority { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string ActionRequired { get; set; } = string.Empty;
-        public string ActionUrl { get; set; } = string.Empty;
+        public string ActionRequired { get; set; }
+        public string ActionUrl { get; set; }
     }
 
     public class DashboardMetric
     {
-        public string Name { get; set; } = string.Empty;
-        public object? Value { get; set; }
-        public string Unit { get; set; } = string.Empty;
+        public string Name { get; set; }
+        public object Value { get; set; }
+        public string Unit { get; set; }
         public double? PercentageChange { get; set; }
-        public string Trend { get; set; } = string.Empty;
+        public string Trend { get; set; }
         public DateTime LastUpdated { get; set; }
     }
 
     public class DashboardChart
     {
-        public string ChartType { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public List<string> Labels { get; set; } = new();
-        public List<DashboardDataset> Datasets { get; set; } = new();
-        public Dictionary<string, object> Options { get; set; } = new();
+        public string ChartType { get; set; }
+        public string Title { get; set; }
+        public List<string> Labels { get; set; }
+        public List<DashboardDataset> Datasets { get; set; }
+        public Dictionary<string, object> Options { get; set; }
     }
 
     public class DashboardDataset
     {
-        public string Label { get; set; } = string.Empty;
-        public List<object> Data { get; set; } = new();
-        public string BackgroundColor { get; set; } = string.Empty;
-        public string BorderColor { get; set; } = string.Empty;
+        public string Label { get; set; }
+        public List<object> Data { get; set; }
+        public string BackgroundColor { get; set; }
+        public string BorderColor { get; set; }
         public int BorderWidth { get; set; }
         public bool Fill { get; set; }
     }

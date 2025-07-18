@@ -41,20 +41,20 @@ async function handleEmailSubmit(e) {
     const submitBtn = document.getElementById('send-code-btn');
     
     if (!email) {
-        showMessage('Please enter your email address.', 'error', 1);
+        showMessage('Vui lòng nhập địa chỉ email của bạn.', 'error', 1);
         return;
     }
     
     // Validate email format
     if (!isValidEmail(email)) {
-        showMessage('Please enter a valid email address.', 'error', 1);
+        showMessage('Vui lòng nhập địa chỉ email hợp lệ.', 'error', 1);
         return;
     }
     
     try {
         // Show loading state
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
         
         const response = await fetch('https://localhost:7009/api/Account/Forgot-Password', {
             method: 'POST',
@@ -73,7 +73,7 @@ async function handleEmailSubmit(e) {
         
         // Success - move to step 2
         userEmail = email;
-        showMessage('Verification code sent successfully! Check your email.', 'success', 1);
+        showMessage('Mã xác minh đã được gửi thành công! Hãy kiểm tra email của bạn.', 'success', 1);
         
         setTimeout(() => {
             showStep(2);
@@ -82,11 +82,11 @@ async function handleEmailSubmit(e) {
         
     } catch (error) {
         console.error('Error sending reset code:', error);
-        showMessage(error.message || 'Failed to send reset code. Please try again.', 'error', 1);
+        showMessage(error.message || 'Không gửi được mã đặt lại. Vui lòng thử lại.', 'error', 1);
     } finally {
         // Reset button state
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Code';
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi mã đặt lại';
     }
 }
 
@@ -98,19 +98,19 @@ async function handleCodeSubmit(e) {
     const submitBtn = document.getElementById('verify-code-btn');
     
     if (!code) {
-        showMessage('Please enter the verification code.', 'error', 2);
+        showMessage('Vui lòng nhập mã xác minh.', 'error', 2);
         return;
     }
     
     if (code.length !== 6) {
-        showMessage('Verification code must be 6 digits.', 'error', 2);
+        showMessage('Mã xác minh phải có 6 chữ số.', 'error', 2);
         return;
     }
     
     try {
         // Show loading state
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xác minh...';
         
         // Store the code for the password reset step
         verificationCode = code;
@@ -137,7 +137,7 @@ async function handleCodeSubmit(e) {
                 (responseData.message.includes('password') || responseData.message.includes('Password'))) {
                 // Code is valid, move to step 3
                 clearInterval(countdownInterval);
-                showMessage('Code verified successfully!', 'success', 2);
+                showMessage('Mã đã được xác minh thành công!', 'success', 2);
                 
                 setTimeout(() => {
                     showStep(3);
@@ -146,20 +146,20 @@ async function handleCodeSubmit(e) {
                 // Shouldn't happen with test password, but just in case
                 showStep(3);
             } else {
-                throw new Error(responseData.message || 'Invalid verification code.');
+                throw new Error(responseData.message || 'Mã xác minh không hợp lệ.');
             }
         } else {
             const errorData = await testResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Invalid verification code.');
+            throw new Error(errorData.message || 'Mã xác minh không hợp lệ.');
         }
         
     } catch (error) {
         console.error('Error verifying code:', error);
-        showMessage(error.message || 'Invalid verification code. Please try again.', 'error', 2);
+        showMessage(error.message || 'Mã xác minh không hợp lệ. Vui lòng thử lại.', 'error', 2);
     } finally {
         // Reset button state
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-check"></i> Verify Code';
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Xác minh mã';
     }
 }
 
@@ -173,24 +173,24 @@ async function handlePasswordSubmit(e) {
     
     // Client-side validation
     if (!password || !confirmPassword) {
-        showMessage('Please fill in all fields.', 'error', 3);
+        showMessage('Vui lòng điền vào tất cả các trường.', 'error', 3);
         return;
     }
     
     if (password !== confirmPassword) {
-        showMessage('Passwords do not match.', 'error', 3);
+        showMessage('Mật khẩu không khớp.', 'error', 3);
         return;
     }
     
     if (!isValidPassword(password)) {
-        showMessage('Password does not meet requirements.', 'error', 3);
+        showMessage('Mật khẩu không đáp ứng yêu cầu.', 'error', 3);
         return;
     }
     
     try {
         // Show loading state
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đặt lại...';
         
         const response = await fetch(`https://localhost:7009/api/Account/Reset-Password?email=${encodeURIComponent(userEmail)}&code=${verificationCode}`, {
             method: 'POST',
@@ -209,7 +209,7 @@ async function handlePasswordSubmit(e) {
         }
         
         // Success
-        showMessage('Password reset successfully! You can now login with your new password.', 'success', 3);
+        showMessage('Đã đặt lại mật khẩu thành công! Bây giờ bạn có thể đăng nhập bằng mật khẩu mới.', 'success', 3);
         
         // Redirect to login page after 3 seconds
         setTimeout(() => {
@@ -218,11 +218,11 @@ async function handlePasswordSubmit(e) {
         
     } catch (error) {
         console.error('Error resetting password:', error);
-        showMessage(error.message || 'Failed to reset password. Please try again.', 'error', 3);
+        showMessage(error.message || 'Không đặt lại được mật khẩu. Vui lòng thử lại.', 'error', 3);
     } finally {
         // Reset button state
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-save"></i> Reset Password';
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Đặt lại mật khẩu';
     }
 }
 
@@ -233,7 +233,7 @@ async function handleResendCode() {
     try {
         // Show loading state
         resendBtn.disabled = true;
-        resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resending...';
+        resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi lại...';
         
         const response = await fetch('https://localhost:7009/api/Account/Forgot-Password', {
             method: 'POST',
@@ -251,17 +251,17 @@ async function handleResendCode() {
         }
         
         // Success - restart countdown
-        showMessage('New verification code sent successfully!', 'success', 2);
+        showMessage('Mã xác minh mới đã được gửi thành công!', 'success', 2);
         timeLeft = 240; // Reset to 4 minutes
         startCountdown();
         
     } catch (error) {
         console.error('Error resending code:', error);
-        showMessage(error.message || 'Failed to resend code. Please try again.', 'error', 2);
+        showMessage(error.message || 'Không gửi lại được mã. Vui lòng thử lại.', 'error', 2);
     } finally {
         // Reset button state
         resendBtn.disabled = true;
-        resendBtn.innerHTML = '<i class="fas fa-redo"></i> Resend Code';
+        resendBtn.innerHTML = '<i class="fas fa-redo"></i> Gửi lại mã';
     }
 }
 
@@ -306,7 +306,7 @@ function startCountdown() {
             timerElement.textContent = 'Code expired';
             timerElement.style.color = '#e74c3c';
             resendBtn.disabled = false;
-            showMessage('Verification code has expired. Please request a new one.', 'error', 2);
+            showMessage('Mã xác minh đã hết hạn. Vui lòng yêu cầu mã mới.', 'error', 2);
         }
     }, 1000);
 }

@@ -25,7 +25,8 @@ namespace HIV_System_API_Services.Implements
             
             // Store in cache with 4-minute expiration
             var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(CODE_EXPIRY);
+                .SetAbsoluteExpiration(CODE_EXPIRY)
+                .SetSize(256);
             
             _cache.Set($"verification_code_{email}", code, cacheOptions);
             

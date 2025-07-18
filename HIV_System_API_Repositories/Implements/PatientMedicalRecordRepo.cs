@@ -31,6 +31,11 @@ namespace HIV_System_API_Repositories.Implements
             return await PatientMedicalRecordDAO.Instance.GetPatientMedicalRecordByIdAsync(id);
         }
 
+        public async Task<PatientMedicalRecord?> GetPatientMedicalRecordByPatientIdAsync(int patientId)
+        {
+            return await PatientMedicalRecordDAO.Instance.GetPatientMedicalRecordByPatientIdAsync(patientId);
+        }
+
         public async Task<PatientMedicalRecord?> GetPersonalMedicalRecordAsync(int accId)
         {
             return await PatientMedicalRecordDAO.Instance.GetPersonalMedicalRecordAsync(accId);

@@ -22,16 +22,26 @@
 .appointment-table tr:nth-child(even) td {
     background: #f9fafb;
 }
-.status {
+.status,
+.status-1,
+.status-2,
+.status-3,
+.status-4,
+.status-5,
+.status-6 {
+    color: inherit !important;
+    background: inherit !important;
     font-weight: bold;
     border-radius: 8px;
     padding: 4px 10px;
     display: inline-block;
+    position: relative;
+    z-index: 10;
 }
-.status-1 { color: #e67e22; background: #fbeee0; } /* Chờ xác nhận */
-.status-2 { color: #2980b9; background: #eaf6fb; } /* Đã xác nhận */
-.status-3 { color: #27ae60; background: #eafaf1; } /* Đã hoàn thành */
-.status-4 { color: #c0392b; background: #fdeaea; } /* Đã hủy */
+.status-1 { color: #e67e22 !important; background: #fbeee0 !important; } /* Chờ xác nhận */
+.status-2 { color: #2980b9 !important; background: #eaf6fb !important; } /* Đã xác nhận */
+.status-3 { color: #27ae60 !important; background: #eafaf1 !important; } /* Đã hoàn thành */
+.status-4 { color: #c0392b !important; background: #fdeaea !important; } /* Đã hủy */
 .status-5 {
     color: #fff !important;
     background: #27ae60 !important;
@@ -41,6 +51,7 @@
     box-shadow: 0 1px 4px rgba(39,174,96,0.08);
     letter-spacing: 0.5px;
 }
+.status-6 { color: #c0392b !important; background: #fdeaea !important; }
 .button-accept {
     background: #27ae60;
     color: #fff;

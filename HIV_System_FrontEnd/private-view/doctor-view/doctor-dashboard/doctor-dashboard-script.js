@@ -11,6 +11,28 @@ document.addEventListener('DOMContentLoaded', function () {
     const token = localStorage.getItem('token');
     debug('accId: ' + doctorId + ', token: ' + (token ? '[present]' : '[missing]'));
 
+    // Fetch and display doctor name in greeting
+    if (doctorId && token) {
+        fetch(`https://localhost:7009/api/Doctor/ViewDoctorProfile?id=${doctorId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(profile => {
+            if (profile && profile.fullName) {
+                document.getElementById('fullname').textContent = profile.fullName;
+            } else {
+                document.getElementById('fullname').textContent = '';
+            }
+        })
+        .catch(() => {
+            document.getElementById('fullname').textContent = '';
+        });
+    }
+
     if (!doctorId || !token) {
         debug('Doctor ID or token not found. Please log in again.');
         return;
@@ -116,8 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (Array.isArray(data.recentPatients) && data.recentPatients.length > 0) {
                 data.recentPatients.forEach(patient => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${patient.patientName || 'Unknown'}</td>
+                    tr.innerHTML = `                        <td>${patient.patientName || 'Unknown'}</td>
                         <td>${patient.lastVisit || ''}</td>
                         <td>${patient.lastVisitTime || ''}</td>
                     `;
@@ -146,3 +167,4 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('recentPatientsBody').innerHTML = '<tr><td colspan="3" style="color:red;">Failed to load recent patients.</td></tr>';
         });
 });
+

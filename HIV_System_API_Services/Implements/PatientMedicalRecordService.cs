@@ -7,10 +7,13 @@ using HIV_System_API_DTOs.ComponentTestResultDTO;
 using HIV_System_API_DTOs.PatientArvMedicationDTO;
 using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using HIV_System_API_DTOs.PatientMedicalRecordDTO;
+using HIV_System_API_DTOs.PaymentDTO;
 using HIV_System_API_DTOs.TestResultDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Stripe;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -122,13 +125,38 @@ namespace HIV_System_API_Services.Implements
                 })
                 .ToList();
 
+            var Payments = _context.Payments
+                .Where(p => p.PmrId == record.PmrId)
+                .Select(p => new PaymentResponseDTO
+                {
+                    PayId = p.PayId,
+                    PmrId = p.PmrId,
+                    SrvId = p.SrvId ?? null,
+                    Amount = p.Amount,
+                    Currency = p.Currency,
+                    PaymentMethod = p.PaymentMethod ?? "card",
+                    Description = p.Notes,
+                    PaymentStatus = p.PaymentStatus, //1-pending, 2-success, 3-failed 
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    PaymentDate = DateTime.UtcNow,
+                    PaymentIntentId = p.PaymentIntentId,
+                    PatientId = p.Pmr.PtnId,
+                    PatientName = p.Pmr.Ptn.Acc.Fullname,
+                    PatientEmail = p.Pmr.Ptn.Acc.Email,
+                    ServiceName = p.Srv != null ? p.Srv.ServiceName : null,
+                    ServicePrice = p.Srv != null ? p.Srv.Price : null
+                })
+                .ToList();
+
             return new PatientMedicalRecordResponseDTO
             {
                 PmrId = record.PmrId,
                 PtnId = record.PtnId,
                 Appointments = appointments,
                 TestResults = testResults,
-                ARVRegimens = arvRegimens
+                ARVRegimens = arvRegimens,
+                Payments = Payments,
             };
         }
 
@@ -209,6 +237,21 @@ namespace HIV_System_API_Services.Implements
                 return null;
 
             return MapToResponseDTO(record);
+        }
+
+        public async Task<PatientMedicalRecordResponseDTO?> GetPatientMedicalRecordByPatientIdAsync(int patientId)
+        {
+            // Validation: patientId must be positive
+            if (patientId <= 0)
+                throw new ArgumentException("ID bệnh nhân (patientId) phải là số dương.", nameof(patientId));
+
+            var patientMedicalRecord = await _patientMedicalRecordRepo.GetPatientMedicalRecordByPatientIdAsync(patientId);
+            if (patientMedicalRecord == null)
+            {
+                return null;
+            }
+
+            return MapToResponseDTO(patientMedicalRecord);
         }
     }
 }

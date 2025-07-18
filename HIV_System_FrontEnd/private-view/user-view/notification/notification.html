@@ -10,10 +10,49 @@
 </head>
 <body>
     <div id="header-placeholder"></div>
-    <div class="notification-container">
-        <h2>Thông báo</h2>
-        <div id="notification-list"></div>
+    
+    <div class="notification-page">
+        <div class="notification-container">
+            <div class="notification-header">
+                <div class="header-content">
+                    <h1><i class="fa-solid fa-bell"></i> Notifications</h1>
+                    <div class="notification-stats">
+                        <span class="total-count">17 <small>TOTAL</small></span>
+                        <span class="unread-count">3 <small>UNREAD</small></span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="action-btn" onclick="loadNotifications()">
+                        <i class="fa-solid fa-refresh"></i> Refresh
+                    </button>
+                    <button class="action-btn primary" onclick="markAllAsRead()">
+                        <i class="fa-solid fa-check"></i> Mark All Read
+                    </button>
+                </div>
+            </div>
+            
+            <div class="notification-filters">
+                <button class="filter-btn active" data-filter="appointment">
+                    <i class="fa-solid fa-calendar-check"></i> Appointment Confirmations
+                </button>
+                <button class="filter-btn" data-filter="medical">
+                    <i class="fa-solid fa-user-doctor"></i> Medical Updates
+                </button>
+                <button class="filter-btn" data-filter="system">
+                    <i class="fa-solid fa-cog"></i> System Notifications
+                </button>
+                <button class="filter-btn" data-filter="unread">
+                    <i class="fa-solid fa-circle-dot"></i> Unread Only
+                </button>
+                <button class="filter-btn" data-filter="all">
+                    <i class="fa-solid fa-list"></i> All Notifications
+                </button>
+            </div>
+            
+            <div id="notification-list" class="notification-list"></div>
+        </div>
     </div>
+    
     <script src="../header/header.js"></script>
     <script src="notification.js"></script>
 </body>

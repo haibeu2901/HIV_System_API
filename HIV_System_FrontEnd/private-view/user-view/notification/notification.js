@@ -1,449 +1,463 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if token exists
+    // Configuration
+    const CONFIG = {
+        API_BASE_URL: 'https://localhost:7009',
+        LOGIN_PAGE: '/public-view/landingpage.html',
+        ENDPOINTS: {
+            GET_PERSONAL_NOTIFICATIONS: '/api/Notification/GetPersonalNotifications',
+            GET_UNREAD_NOTIFICATIONS: '/api/Notification/GetUnreadNotifications',
+            MARK_AS_READ: '/api/Notification/MarkAsRead',
+            MARK_ALL_AS_READ: '/api/Notification/MarkAllAsRead'
+        },
+        NAVIGATION: {
+            PROFILE: '../profile/profile.html',
+            APPOINTMENTS: '../appointment-view/view-appointment.html',
+            MEDICAL_RECORDS: '../medical-record/medical-record.html',
+            FIND_DOCTOR: '../view-doctor/view-doctor.html'
+        },
+        MESSAGES: {
+            LOGIN_REQUIRED: 'You need to be logged in to view notifications. Redirecting to login...',
+            SESSION_EXPIRED: 'Your session has expired. Please log in again.',
+            MARK_READ_FAILED: 'Failed to mark notification as read. Please try again.',
+            MARK_ALL_READ_FAILED: 'Failed to mark all notifications as read. Please try again.'
+        },
+        TIMEOUTS: {
+            REQUEST_TIMEOUT: 10000,
+            OPERATION_TIMEOUT: 15000
+        },
+        POLLING: {
+            INTERVAL: 30000 // 30 seconds
+        },
+        RETRY: {
+            MAX_ATTEMPTS: 3,
+            DELAY_MULTIPLIER: 1000
+        }
+    };
+
+    // Get authentication token from localStorage
     const token = localStorage.getItem("token");
+    const userRole = localStorage.getItem("userRole");
+    const accId = localStorage.getItem("accId");
+    
+    // Redirect to login if no token
     if (!token) {
-        console.error('No authentication token found');
-        alert('Bạn cần đăng nhập để xem thông báo. Đang chuyển hướng đến trang đăng nhập...');
-        window.location.href = '/public-view/landingpage.html';
+        alert(CONFIG.MESSAGES.LOGIN_REQUIRED);
+        window.location.href = CONFIG.LOGIN_PAGE;
         return;
     }
     
-    console.log('Token found:', token ? 'Present' : 'Missing');
+    // DOM elements
+    const notificationList = document.getElementById('notification-list');
     
-    // For main notification page
-    const list = document.getElementById('notification-list');
-    
-    if (list) {
-        loadMainNotifications();
-    }
-
-    // For popup notification bell
-    const bell = document.getElementById('notificationBell');
-    const popup = document.getElementById('notification-popup');
-    const closeBtn = document.getElementById('closeNotificationPopup');
-    const popupList = document.getElementById('popup-notification-list');
-    const tabAll = document.getElementById('tab-all');
-    const tabUnread = document.getElementById('tab-unread');
-    const markAllReadBtn = document.getElementById('mark-all-read-btn');
-    const unreadCountBadge = document.getElementById('unread-count');
+    // State management
     let notifications = [];
     let unreadNotifications = [];
-    let currentFilter = 'all';
-
-    // Load main page notifications
-    async function loadMainNotifications() {
-        list.innerHTML = "<p>Đang tải...</p>";
-        
-        try {
-            // Try fetching notifications one by one to identify which endpoint is failing
-            console.log('Fetching all notifications...');
-            const allNotifications = await fetchNotifications('/api/Notification/GetPersonalNotifications');
-            console.log('All notifications fetched successfully:', allNotifications);
-            
-            console.log('Fetching unread notifications...');
-            const unreadNotifications = await fetchNotifications('/api/Notification/GetUnreadNotifications');
-            console.log('Unread notifications fetched successfully:', unreadNotifications);
-            
-            console.log('All notifications:', allNotifications);
-            console.log('Unread notifications:', unreadNotifications);
-            
-            if (!allNotifications || allNotifications.length === 0) {
-                list.innerHTML = `
-                    <div class="no-notifications">
-                        <div class="no-notifications-icon">
-                            <i class="fa-solid fa-bell-slash"></i>
-                        </div>
-                        <h3>Không Có Thông Báo</h3>
-                        <p>Bạn chưa có thông báo nào.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Sort notifications by sendAt date (newest first)
-            allNotifications.sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt));
-            
-            // Create a set of unread notification IDs for quick lookup
-            const unreadIds = new Set(unreadNotifications.map(n => n.notiId));
-            
-            // Add controls
-            const controlsHTML = `
-                <div class="notification-controls">
-                    <div class="filter-tabs">
-                        <button class="filter-tab active" data-filter="all">Tất cả (${allNotifications.length})</button>
-                        <button class="filter-tab" data-filter="unread">Chưa đọc (${unreadNotifications.length})</button>
-                    </div>
-                    <button class="mark-all-read-btn">
-                        <i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc
-                    </button>
-                </div>
-            `;
-            
-            list.innerHTML = controlsHTML + '<div id="notifications-container"></div>';
-            
-            // Add event listeners for filter tabs
-            document.querySelectorAll('.filter-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    const filter = tab.dataset.filter;
-                    filterMainNotifications(allNotifications, unreadIds, filter);
-                });
-            });
-            
-            // Initial render
-            filterMainNotifications(allNotifications, unreadIds, 'all');
-            
-        } catch (error) {
-            console.error('Error loading notifications:', error);
-            list.innerHTML = `
-                <div class="error-container">
-                    <div class="error-icon">
-                        <i class="fa-solid fa-exclamation-triangle"></i>
-                    </div>
-                    <h3>Lỗi Khi Tải Thông Báo</h3>
-                    <p>${error.message}</p>
-                    <button onclick="location.reload()" class="retry-btn">
-                        <i class="fa-solid fa-refresh"></i> Thử Lại
-                    </button>
-                </div>
-            `;
-        }
+    let currentFilter = 'appointment'; // Default to appointment confirmations
+    let isLoading = false;
+    let connectionStatus = 'online';
+    let periodicCheckInterval;
+    
+    // Initialize notification system
+    init();
+    
+    async function init() {
+        await testTokenValidity();
+        await loadNotifications();
+        startPeriodicCheck();
+        updateStats();
     }
-
-    // Filter main notifications
-    function filterMainNotifications(allNotifications, unreadIds, filter) {
-        const container = document.getElementById('notifications-container');
-        let filteredNotifications = allNotifications;
-        
-        if (filter === 'unread') {
-            filteredNotifications = allNotifications.filter(n => unreadIds.has(n.notiId));
-        }
-        
-        if (filteredNotifications.length === 0) {
-            container.innerHTML = `
-                <div class="no-notifications">
-                    <div class="no-notifications-icon">
-                        <i class="fa-solid fa-bell-slash"></i>
-                    </div>
-                    <h3>No ${filter === 'unread' ? 'Unread' : ''} Notifications</h3>
-                    <p>You don't have any ${filter === 'unread' ? 'unread' : ''} notifications.</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = filteredNotifications.map(noti => {
-            const isUnread = unreadIds.has(noti.notiId);
-            return `
-                <div class="notification-card ${isUnread ? 'unread' : 'read'}" data-notification-id="${noti.notiId}">
-                    <div class="notification-header">
-                        <div class="notification-icon ${getNotificationTypeClass(noti.notiType)}">
-                            <i class="${getNotificationIcon(noti.notiType)}"></i>
-                        </div>
-                        <div class="notification-type">${noti.notiType}</div>
-                        <div class="notification-date">
-                            <i class="fa-regular fa-clock"></i>
-                            ${formatDateTime(noti.sendAt)}
-                        </div>
-                        ${isUnread ? '<div class="unread-indicator"></div>' : ''}
-                    </div>
-                    <div class="notification-content">
-                        <div class="notification-message">${noti.notiMessage}</div>
-                        <div class="notification-meta">
-                            <span class="notification-id">ID: ${noti.notiId}</span>
-                            <span class="notification-created">Created: ${formatDateTime(noti.createdAt)}</span>
-                            <div class="notification-actions">
-                                ${isUnread ? `<button class="mark-read-btn" data-notification-id="${noti.notiId}">
-                                    <i class="fa-solid fa-check"></i> Mark as Read
-                                </button>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // Fetch notifications from API
-    async function fetchNotifications(endpoint) {
-        console.log(`Fetching from: https://localhost:7009${endpoint}`);
-        console.log(`Token: ${token ? 'Present' : 'Missing'}`);
-        
+    
+    // Test token validity
+    async function testTokenValidity() {
         try {
-            const response = await fetch(`https://localhost:7009${endpoint}`, {
+            const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.GET_UNREAD_NOTIFICATIONS}`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
                     "accept": "*/*"
                 }
             });
             
-            console.log(`Response status for ${endpoint}:`, response.status);
-            console.log(`Response ok:`, response.ok);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`Error response body:`, errorText);
-                throw new Error(`Failed to fetch notifications: ${response.status} - ${errorText}`);
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('accId');
+                alert(CONFIG.MESSAGES.SESSION_EXPIRED);
+                window.location.href = CONFIG.LOGIN_PAGE;
+                return;
             }
-            
-            const data = await response.json();
-            console.log(`Data received from ${endpoint}:`, data);
-            return data;
         } catch (error) {
-            console.error(`Fetch error for ${endpoint}:`, error);
-            throw error;
+            // Token validation failed, continue silently
         }
     }
-
-    // Load notifications for popup
-    async function loadPopupNotifications() {
-        if (!popupList) return;
+    
+    // Load all notifications
+    async function loadNotifications() {
+        if (isLoading) return;
         
-        popupList.innerHTML = "<p style='padding:16px;'>Loading...</p>";
+        isLoading = true;
+        
         try {
-            const [allNotifications, unreadNotifications, unreadCount] = await Promise.all([
-                fetchNotifications('/api/Notification/GetPersonalNotifications'),
-                fetchNotifications('/api/Notification/GetUnreadNotifications'),
-                fetchUnreadCount()
+            showLoadingState();
+            
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), CONFIG.TIMEOUTS.OPERATION_TIMEOUT)
+            );
+            
+            // Fetch both personal and unread notifications
+            const [personalResult, unreadResult] = await Promise.allSettled([
+                Promise.race([
+                    fetchNotifications(CONFIG.ENDPOINTS.GET_PERSONAL_NOTIFICATIONS),
+                    timeoutPromise
+                ]),
+                Promise.race([
+                    fetchNotifications(CONFIG.ENDPOINTS.GET_UNREAD_NOTIFICATIONS),
+                    timeoutPromise
+                ])
             ]);
             
-            notifications = allNotifications;
-            unreadNotifications = unreadNotifications;
-            
-            // Update unread count badge
-            updateUnreadCountBadge(unreadCount);
-            
-            // Sort notifications by sendAt date (newest first)
-            notifications.sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt));
-            unreadNotifications.sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt));
-            
-            renderPopupNotifications(currentFilter);
-        } catch (err) {
-            console.error('Error loading popup notifications:', err);
-            popupList.innerHTML = `<p style="color:red;padding:16px;">${err.message}</p>`;
-        }
-    }
-
-    // Fetch unread count
-    async function fetchUnreadCount() {
-        const response = await fetch('https://localhost:7009/api/Notification/GetUnreadCount', {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "accept": "*/*"
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Failed to fetch unread count: ${response.status}`);
-        }
-        
-        return await response.json();
-    }
-
-    // Update unread count badge
-    function updateUnreadCountBadge(count) {
-        if (unreadCountBadge) {
-            if (count > 0) {
-                unreadCountBadge.textContent = count > 99 ? '99+' : count;
-                unreadCountBadge.style.display = 'block';
+            // Process results
+            if (personalResult.status === 'fulfilled' && Array.isArray(personalResult.value)) {
+                notifications = personalResult.value;
             } else {
-                unreadCountBadge.style.display = 'none';
-            }
-        }
-    }
-
-    // Render popup notifications
-    function renderPopupNotifications(type) {
-        if (!popupList) return;
-        
-        let filtered = type === 'unread' ? unreadNotifications : notifications;
-        const unreadIds = new Set(unreadNotifications.map(n => n.notiId));
-        
-        if (!filtered.length) {
-            popupList.innerHTML = `<p style="padding:16px;">No ${type === 'unread' ? 'unread' : ''} notifications found.</p>`;
-            return;
-        }
-        
-        popupList.innerHTML = filtered.slice(0, 10).map(noti => {
-            const isUnread = unreadIds.has(noti.notiId);
-            return `
-                <div class="popup-notification-card ${isUnread ? 'unread' : 'read'}" 
-                     data-notification-id="${noti.notiId}">
-                    <div class="popup-avatar ${getNotificationTypeClass(noti.notiType)}">
-                        <i class="${getNotificationIcon(noti.notiType)}"></i>
-                    </div>
-                    <div class="popup-content">
-                        <div class="popup-type">${noti.notiType}</div>
-                        <div class="popup-message">${noti.notiMessage}</div>
-                        <div class="popup-time">${formatDateTime(noti.sendAt)}</div>
-                    </div>
-                    ${isUnread ? '<div class="popup-unread-indicator"></div>' : ''}
-                </div>
-            `;
-        }).join('');
-    }
-
-    // Mark single notification as read
-    async function markAsRead(notificationId) {
-        console.log(`Marking notification ${notificationId} as read`);
-        console.log(`Token: ${token ? 'Present' : 'Missing'}`);
-        
-        try {
-            const response = await fetch(`https://localhost:7009/api/Notification/MarkAsRead/${notificationId}`, {
-                method: "PUT",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "accept": "*/*"
-                }
-            });
-            
-            console.log(`Mark as read response status:`, response.status);
-            console.log(`Mark as read response ok:`, response.ok);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`Mark as read error response:`, errorText);
-                throw new Error(`Failed to mark notification as read: ${response.status} - ${errorText}`);
+                notifications = [];
             }
             
-            console.log(`Successfully marked notification ${notificationId} as read`);
+            if (unreadResult.status === 'fulfilled' && Array.isArray(unreadResult.value)) {
+                unreadNotifications = unreadResult.value;
+            } else {
+                unreadNotifications = [];
+            }
             
-            // Refresh the page
-            location.reload();
+            renderNotifications();
+            updateStats();
+            updateHeaderNotificationCount();
+            
         } catch (error) {
-            console.error('Error marking notification as read:', error);
-            alert('Không thể đánh dấu thông báo đã đọc. Vui lòng thử lại.');
+            handleNotificationError(error);
+        } finally {
+            isLoading = false;
         }
     }
-
-    // Mark all notifications as read
-    async function markAllAsRead() {
-        console.log(`Marking all notifications as read`);
-        console.log(`Token: ${token ? 'Present' : 'Missing'}`);
-        
-        try {
-            const response = await fetch('https://localhost:7009/api/Notification/MarkAllAsRead', {
-                method: "PUT",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "accept": "*/*"
+    
+    // Fetch notifications from API with retry logic
+    async function fetchNotifications(endpoint, retryCount = CONFIG.RETRY.MAX_ATTEMPTS) {
+        for (let i = 0; i < retryCount; i++) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUTS.REQUEST_TIMEOUT);
+                
+                const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                        "accept": "*/*"
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('userRole');
+                        localStorage.removeItem('accId');
+                        alert(CONFIG.MESSAGES.SESSION_EXPIRED);
+                        window.location.href = CONFIG.LOGIN_PAGE;
+                        return [];
+                    }
+                    
+                    // Don't retry on 4xx errors (except 401)
+                    if (response.status >= 400 && response.status < 500 && response.status !== 401) {
+                        throw new Error(`API Error ${response.status}: ${errorText}`);
+                    }
+                    
+                    // Retry on 5xx errors or network issues
+                    if (i === retryCount - 1) {
+                        throw new Error(`API Error ${response.status}: ${errorText}`);
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, (i + 1) * CONFIG.RETRY.DELAY_MULTIPLIER));
+                    continue;
                 }
-            });
-            
-            console.log(`Mark all as read response status:`, response.status);
-            console.log(`Mark all as read response ok:`, response.ok);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`Mark all as read error response:`, errorText);
-                throw new Error(`Failed to mark all notifications as read: ${response.status} - ${errorText}`);
-            }
-            
-            console.log(`Successfully marked all notifications as read`);
-            
-            // Refresh the page
-            location.reload();
-        } catch (error) {
-            console.error('Error marking all notifications as read:', error);
-            alert('Không thể đánh dấu tất cả thông báo đã đọc. Vui lòng thử lại.');
-        }
-    }
-
-    // Mark as read and navigate (for popup clicks)
-    async function markAsReadAndNavigate(notificationId) {
-        await markAsRead(notificationId);
-        // You can add navigation logic here if needed
-        window.location.href = '/private-view/user-view/notification/notification.html';
-    }
-
-    // Chỉ thêm event listener một lần duy nhất
-    document.addEventListener('click', function(e) {
-        // Handle mark single notification as read
-        if (e.target.classList.contains('mark-read-btn') || e.target.closest('.mark-read-btn')) {
-            const button = e.target.classList.contains('mark-read-btn') ? e.target : e.target.closest('.mark-read-btn');
-            const notificationId = button.getAttribute('data-notification-id');
-            if (notificationId) {
-                markAsRead(parseInt(notificationId));
+                
+                const data = await response.json();
+                return Array.isArray(data) ? data : [];
+                
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    if (i === retryCount - 1) {
+                        throw new Error('Request timeout - please check your connection');
+                    }
+                } else {
+                    if (i === retryCount - 1) {
+                        throw error;
+                    }
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, (i + 1) * CONFIG.RETRY.DELAY_MULTIPLIER));
             }
         }
         
-        // Handle mark all as read
-        if (e.target.classList.contains('mark-all-read-btn') || e.target.closest('.mark-all-read-btn')) {
-            markAllAsRead();
+        return [];
+    }
+    
+    // Update notification statistics
+    function updateStats() {
+        const totalCount = document.querySelector('.total-count');
+        const unreadCount = document.querySelector('.unread-count');
+        
+        // Count notifications by category
+        const appointmentCount = notifications.filter(n => {
+            const categoryInfo = categorizeNotification(n);
+            return categoryInfo.category === 'appointment';
+        }).length;
+        
+        const unreadAppointmentCount = unreadNotifications.filter(n => {
+            const categoryInfo = categorizeNotification(n);
+            return categoryInfo.category === 'appointment';
+        }).length;
+        
+        if (totalCount) {
+            totalCount.innerHTML = `${appointmentCount} <small>APPOINTMENTS</small>`;
         }
         
-        // Handle popup notification click
-        const popupCard = e.target.closest('.popup-notification-card');
-        if (popupCard) {
-            const notificationId = popupCard.getAttribute('data-notification-id');
-            if (notificationId) {
-                markAsReadAndNavigate(parseInt(notificationId));
-            }
+        if (unreadCount) {
+            unreadCount.innerHTML = `${unreadAppointmentCount} <small>UNREAD</small>`;
         }
-    });
-
-    // Update the controlsHTML to remove onclick
-    const controlsHTML = `
-        <div class="notification-controls">
-            <div class="filter-tabs">
-                <button class="filter-tab active" data-filter="all">All (${allNotifications.length})</button>
-                <button class="filter-tab" data-filter="unread">Unread (${unreadNotifications.length})</button>
+    }
+    
+    // Show loading state
+    function showLoadingState() {
+        notificationList.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading notifications...</p>
             </div>
-            <button class="mark-all-read-btn">
-                <i class="fa-solid fa-check-double"></i> Mark All as Read
-            </button>
-        </div>
-    `;
-
-    // Remove event listener from filterMainNotifications function
-    function filterMainNotifications(allNotifications, unreadIds, filter) {
-        const container = document.getElementById('notifications-container');
-        let filteredNotifications = allNotifications;
+        `;
+    }
+    
+    // Show error state
+    function showErrorState(error) {
+        const errorMessage = error.message || 'Unknown error occurred';
+        const isNetworkError = errorMessage.includes('timeout') || 
+                              errorMessage.includes('Failed to fetch') ||
+                              errorMessage.includes('Network error');
         
-        if (filter === 'unread') {
-            filteredNotifications = allNotifications.filter(n => unreadIds.has(n.notiId));
+        const isServerError = errorMessage.includes('500') || 
+                             errorMessage.includes('Internal Server Error') ||
+                             errorMessage.includes('DbContext');
+        
+        notificationList.innerHTML = `
+            <div class="error-container">
+                <div class="error-icon">
+                    <i class="fa-solid fa-server"></i>
+                </div>
+                <h3>Service Temporarily Unavailable</h3>
+                <p>We're experiencing technical difficulties with our notification service.</p>
+                
+                ${isServerError ? `
+                    <div class="error-suggestions">
+                        <p><strong>This is a temporary server issue. Please:</strong></p>
+                        <ul>
+                            <li>Wait a few moments and try again</li>
+                            <li>Check back in a few minutes</li>
+                            <li>Contact support if the issue persists</li>
+                        </ul>
+                    </div>
+                ` : isNetworkError ? `
+                    <div class="error-suggestions">
+                        <p><strong>Connection issue detected:</strong></p>
+                        <ul>
+                            <li>Check your internet connection</li>
+                            <li>Refresh the page</li>
+                            <li>Try again in a few moments</li>
+                        </ul>
+                    </div>
+                ` : `
+                    <div class="error-suggestions">
+                        <p><strong>Something went wrong:</strong></p>
+                        <ul>
+                            <li>Please try refreshing the page</li>
+                            <li>Check your connection</li>
+                            <li>Contact support if the issue continues</li>
+                        </ul>
+                    </div>
+                `}
+                
+                <div class="error-actions">
+                    <button onclick="location.reload()" class="retry-btn">
+                        <i class="fa-solid fa-refresh"></i> Refresh Page
+                    </button>
+                    <button onclick="window.loadNotifications()" class="retry-btn secondary">
+                        <i class="fa-solid fa-redo"></i> Try Again
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show offline view
+    function showOfflineView() {
+        notificationList.innerHTML = `
+            <div class="offline-container">
+                <div class="offline-header">
+                    <i class="fa-solid fa-wifi-slash"></i>
+                    <h3>Notifications Unavailable</h3>
+                    <p>Unable to connect to notification service</p>
+                </div>
+                
+                <div class="offline-content">
+                    <div class="offline-message">
+                        <h4>What you can do:</h4>
+                        <ul>
+                            <li>Check your important notifications later</li>
+                            <li>Visit other sections of the app</li>
+                            <li>Try refreshing the page</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="offline-navigation">
+                        <h4>Go to:</h4>
+                        <div class="nav-buttons">
+                            <a href="${CONFIG.NAVIGATION.PROFILE}" class="nav-btn">
+                                <i class="fa-solid fa-user"></i> Profile
+                            </a>
+                            <a href="${CONFIG.NAVIGATION.APPOINTMENTS}" class="nav-btn">
+                                <i class="fa-solid fa-calendar"></i> Appointments
+                            </a>
+                            <a href="${CONFIG.NAVIGATION.MEDICAL_RECORDS}" class="nav-btn">
+                                <i class="fa-solid fa-file-medical"></i> Medical Records
+                            </a>
+                            <a href="${CONFIG.NAVIGATION.FIND_DOCTOR}" class="nav-btn">
+                                <i class="fa-solid fa-user-doctor"></i> Find Doctor
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="offline-actions">
+                    <button onclick="window.loadNotifications()" class="retry-btn">
+                        <i class="fa-solid fa-refresh"></i> Try Again
+                    </button>
+                    <button onclick="location.reload()" class="retry-btn secondary">
+                        <i class="fa-solid fa-redo"></i> Refresh Page
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Handle notification errors
+    function handleNotificationError(error) {
+        const errorMessage = error.message || '';
+        const isServerError = errorMessage.includes('500') || 
+                             errorMessage.includes('Internal Server Error') ||
+                             errorMessage.includes('DbContext') ||
+                             errorMessage.includes('Server error');
+        
+        if (isServerError) {
+            showOfflineView();
+        } else {
+            showErrorState(error);
         }
+    }
+    
+    // Categorize notification type
+    function categorizeNotification(notification) {
+        const message = notification.notiMessage ? notification.notiMessage.toLowerCase() : '';
+        const type = notification.notiType ? notification.notiType.toLowerCase() : '';
+        
+        // Check for appointment confirmations (default priority)
+        if (message.includes('appointment') || message.includes('cuộc hẹn') || 
+            type.includes('appointment') || type.includes('cuộc hẹn') ||
+            message.includes('confirmed') || message.includes('xác nhận') ||
+            message.includes('scheduled') || message.includes('lịch hẹn')) {
+            return {
+                category: 'appointment',
+                icon: 'fa-calendar-check',
+                displayType: 'APPOINTMENT'
+            };
+        }
+        
+        // Check for medical/health related
+        if (message.includes('medical') || message.includes('health') || 
+            message.includes('doctor') || message.includes('bác sĩ') ||
+            message.includes('treatment') || message.includes('điều trị') ||
+            message.includes('prescription') || message.includes('đơn thuốc')) {
+            return {
+                category: 'medical',
+                icon: 'fa-user-doctor',
+                displayType: 'MEDICAL'
+            };
+        }
+        
+        // Check for system notifications
+        if (message.includes('system') || message.includes('update') ||
+            message.includes('maintenance') || message.includes('security') ||
+            type.includes('system')) {
+            return {
+                category: 'system',
+                icon: 'fa-cog',
+                displayType: 'SYSTEM'
+            };
+        }
+        
+        // Default to appointment if unclear
+        return {
+            category: 'appointment',
+            icon: 'fa-bell',
+            displayType: 'NOTIFICATION'
+        };
+    }
+    
+    // Render notifications
+    function renderNotifications() {
+        const filteredNotifications = filterNotifications(notifications, currentFilter);
         
         if (filteredNotifications.length === 0) {
-            container.innerHTML = `
+            const filterText = currentFilter === 'appointment' ? 'appointment confirmations' : 
+                              currentFilter === 'medical' ? 'medical notifications' :
+                              currentFilter === 'system' ? 'system notifications' :
+                              currentFilter === 'unread' ? 'unread notifications' : 'notifications';
+            
+            notificationList.innerHTML = `
                 <div class="no-notifications">
-                    <div class="no-notifications-icon">
-                        <i class="fa-solid fa-bell-slash"></i>
-                    </div>
-                    <h3>No ${filter === 'unread' ? 'Unread' : ''} Notifications</h3>
-                    <p>You don't have any ${filter === 'unread' ? 'unread' : ''} notifications.</p>
+                    <i class="fa-solid fa-bell-slash"></i>
+                    <h3>No ${filterText}</h3>
+                    <p>You're all caught up!</p>
                 </div>
             `;
             return;
         }
         
-        container.innerHTML = filteredNotifications.map(noti => {
-            const isUnread = unreadIds.has(noti.notiId);
+        notificationList.innerHTML = filteredNotifications.map(notification => {
+            const categoryInfo = categorizeNotification(notification);
+            
             return `
-                <div class="notification-card ${isUnread ? 'unread' : 'read'}" data-notification-id="${noti.notiId}">
-                    <div class="notification-header">
-                        <div class="notification-icon ${getNotificationTypeClass(noti.notiType)}">
-                            <i class="${getNotificationIcon(noti.notiType)}"></i>
-                        </div>
-                        <div class="notification-type">${noti.notiType}</div>
-                        <div class="notification-date">
-                            <i class="fa-regular fa-clock"></i>
-                            ${formatDateTime(noti.sendAt)}
-                        </div>
-                        ${isUnread ? '<div class="unread-indicator"></div>' : ''}
-                    </div>
+                <div class="notification-item ${unreadNotifications.find(u => u.notiId === notification.notiId) ? 'unread' : 'read'}" data-id="${notification.notiId}">
                     <div class="notification-content">
-                        <div class="notification-message">${noti.notiMessage}</div>
-                        <div class="notification-meta">
-                            <span class="notification-id">ID: ${noti.notiId}</span>
-                            <span class="notification-created">Created: ${formatDateTime(noti.createdAt)}</span>
+                        <div class="notification-icon ${categoryInfo.category}">
+                            <i class="fa-solid ${categoryInfo.icon}"></i>
+                        </div>
+                        <div class="notification-body">
+                            <div class="notification-header-info">
+                                <span class="notification-type ${categoryInfo.category}">${categoryInfo.displayType}</span>
+                                <span class="notification-time">${formatDate(notification.createdAt)}</span>
+                            </div>
+                            <h3 class="notification-title">${notification.notiType || 'Notification'}</h3>
+                            <p class="notification-message">${notification.notiMessage || 'No message available'}</p>
                             <div class="notification-actions">
-                                ${isUnread ? `<button class="mark-read-btn" data-notification-id="${noti.notiId}">
-                                    <i class="fa-solid fa-check"></i> Mark as Read
-                                </button>` : ''}
+                                ${unreadNotifications.find(u => u.notiId === notification.notiId) ? `
+                                    <button onclick="markAsRead(${notification.notiId})" class="mark-read-btn">
+                                        <i class="fa-solid fa-check"></i> Mark as Read
+                                    </button>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -451,557 +465,164 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }).join('');
     }
-
-    // Update popup notifications to remove onclick
-    function renderPopupNotifications(type) {
-        if (!popupList) return;
-        
-        let filtered = type === 'unread' ? unreadNotifications : notifications;
-        const unreadIds = new Set(unreadNotifications.map(n => n.notiId));
-        
-        if (!filtered.length) {
-            popupList.innerHTML = `<p style="padding:16px;">No ${type === 'unread' ? 'unread' : ''} notifications found.</p>`;
-            return;
+    
+    // Filter notifications
+    function filterNotifications(notifications, filter) {
+        switch (filter) {
+            case 'appointment':
+                return notifications.filter(n => {
+                    const categoryInfo = categorizeNotification(n);
+                    return categoryInfo.category === 'appointment';
+                });
+            case 'medical':
+                return notifications.filter(n => {
+                    const categoryInfo = categorizeNotification(n);
+                    return categoryInfo.category === 'medical';
+                });
+            case 'system':
+                return notifications.filter(n => {
+                    const categoryInfo = categorizeNotification(n);
+                    return categoryInfo.category === 'system';
+                });
+            case 'unread':
+                return notifications.filter(n => unreadNotifications.find(u => u.notiId === n.notiId));
+            case 'important':
+                return notifications.filter(n => n.priority === 'high' || n.type === 'important');
+            default:
+                return notifications;
         }
-        
-        popupList.innerHTML = filtered.slice(0, 10).map(noti => {
-            const isUnread = unreadIds.has(noti.notiId);
-            return `
-                <div class="popup-notification-card ${isUnread ? 'unread' : 'read'}" 
-                     data-notification-id="${noti.notiId}">
-                    <div class="popup-avatar ${getNotificationTypeClass(noti.notiType)}">
-                        <i class="${getNotificationIcon(noti.notiType)}"></i>
-                    </div>
-                    <div class="popup-content">
-                        <div class="popup-type">${noti.notiType}</div>
-                        <div class="popup-message">${noti.notiMessage}</div>
-                        <div class="popup-time">${formatDateTime(noti.sendAt)}</div>
-                    </div>
-                    ${isUnread ? '<div class="popup-unread-indicator"></div>' : ''}
-                </div>
-            `;
-        }).join('');
     }
-
-    // Popup event handlers
-    if (bell && popup && closeBtn) {
-        bell.addEventListener('click', () => {
-            popup.classList.toggle('hidden');
-            if (!popup.classList.contains('hidden')) {
-                loadPopupNotifications();
-            }
-        });
-        
-        closeBtn.addEventListener('click', () => {
-            popup.classList.add('hidden');
-        });
-        
-        document.addEventListener('click', (e) => {
-            if (!popup.contains(e.target) && e.target !== bell) {
-                popup.classList.add('hidden');
-            }
-        });
-        
-        popup.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    }
-
-    // Tab switching for popup
-    if (tabAll && tabUnread) {
-        tabAll.addEventListener('click', () => {
-            tabAll.classList.add('active');
-            tabUnread.classList.remove('active');
-            currentFilter = 'all';
-            renderPopupNotifications('all');
-        });
-        
-        tabUnread.addEventListener('click', () => {
-            tabAll.classList.remove('active');
-            tabUnread.classList.add('active');
-            currentFilter = 'unread';
-            renderPopupNotifications('unread');
-        });
-    }
-
-    // Mark all as read button in popup
-    if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', markAllAsRead);
-    }
-
-    // Load unread count on page load
-    if (unreadCountBadge) {
-        fetchUnreadCount().then(updateUnreadCountBadge).catch(console.error);
-    }
-
-    // Helper functions
-    function formatDateTime(dateStr) {
-        if (!dateStr) return 'N/A';
-        
+    
+    // Mark notification as read
+    async function markAsRead(notificationId) {
         try {
-            const d = new Date(dateStr);
-            const now = new Date();
-            const diff = now.getTime() - d.getTime();
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-            
-            if (minutes < 1) return 'Vừa xong';
-            if (minutes < 60) return `${minutes} phút trước`;
-            if (hours < 24) return `${hours} giờ trước`;
-            if (days < 7) return `${days} ngày trước`;
-            
-            return d.toLocaleDateString('en-GB', {
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit',
-                hour: '2-digit', 
-                minute: '2-digit'
+            const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.MARK_AS_READ}/${notificationId}`, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    "accept": "*/*"
+                }
             });
-        } catch (error) {
-            return dateStr;
-        }
-    }
-
-    function getNotificationIcon(notiType) {
-        const icons = {
-            'Appt Confirm': 'fa-solid fa-calendar-check',
-            'Appointment Update': 'fa-solid fa-calendar-pen',
-            'Appointment Reminder': 'fa-solid fa-bell',
-            'Test Result': 'fa-solid fa-flask',
-            'Medical Record': 'fa-solid fa-file-medical',
-            'System': 'fa-solid fa-gear',
-            'General': 'fa-solid fa-info-circle'
-        };
-        return icons[notiType] || 'fa-solid fa-bell';
-    }
-
-    function getNotificationTypeClass(notiType) {
-        const classes = {
-            'Xác nhận lịch hẹn': 'type-appointment-confirm',
-            'Cập nhật lịch hẹn': 'type-appointment-update',
-            'Nhắc nhở lịch hẹn': 'type-appointment-reminder',
-            'Kết quả xét nghiệm': 'type-test-result',
-            'Hồ sơ bệnh án': 'type-medical-record',
-            'Hệ thống': 'type-system',
-            'Chung': 'type-general'
-        };
-        return classes[notiType] || 'type-general';
-    }
-
-    // Facebook-style notification popup system
-    let notificationQueue = [];
-    let isShowingNotification = false;
-    let lastNotificationCheck = Date.now();
-    let notificationSound = null;
-
-    // Initialize notification sound
-    function initializeNotificationSound() {
-        // You can add a notification sound file here
-        // notificationSound = new Audio('/path/to/notification-sound.mp3');
-        // notificationSound.volume = 0.3;
-    }
-
-    // Create Facebook-style notification popup
-    function createFacebookNotificationPopup(notification) {
-        const popup = document.createElement('div');
-        popup.className = 'facebook-notification-popup';
-        popup.setAttribute('data-notification-id', notification.notiId);
-        
-        const isUnread = true; // New notifications are always unread
-        const timeAgo = 'Just now';
-        
-        popup.innerHTML = `
-            <div class="fb-notification-header">
-                <div class="fb-notification-icon ${getNotificationTypeClass(notification.notiType)}">
-                    <i class="${getNotificationIcon(notification.notiType)}"></i>
-                </div>
-                <div class="fb-notification-title">
-                    <span class="fb-notification-type">${notification.notiType}</span>
-                    <span class="fb-notification-time">${timeAgo}</span>
-                </div>
-                <button class="fb-notification-close" aria-label="Close notification">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="fb-notification-content">
-                <div class="fb-notification-message">${notification.notiMessage}</div>
-            </div>
-            <div class="fb-notification-actions">
-                <button class="fb-notification-action mark-read" data-notification-id="${notification.notiId}">
-                    <i class="fa-solid fa-check"></i> Đánh dấu đã đọc
-                </button>
-                <button class="fb-notification-action view-all">
-                    <i class="fa-solid fa-bell"></i> Xem tất cả
-                </button>
-            </div>
-        `;
-        
-        return popup;
-    }
-
-    // Show Facebook-style notification
-    function showFacebookNotification(notification) {
-        if (isShowingNotification) {
-            notificationQueue.push(notification);
-            return;
-        }
-        
-        isShowingNotification = true;
-        
-        // Play notification sound if available
-        if (notificationSound) {
-            notificationSound.play().catch(console.error);
-        }
-        
-        const popup = createFacebookNotificationPopup(notification);
-        document.body.appendChild(popup);
-        
-        // Animate in
-        setTimeout(() => {
-            popup.classList.add('show');
-        }, 100);
-        
-        // Auto-dismiss after 5 seconds
-        const autoDismissTimer = setTimeout(() => {
-            dismissFacebookNotification(popup);
-        }, 5000);
-        
-        // Add event listeners
-        const closeBtn = popup.querySelector('.fb-notification-close');
-        const markReadBtn = popup.querySelector('.mark-read');
-        const viewAllBtn = popup.querySelector('.view-all');
-        
-        closeBtn.addEventListener('click', () => {
-            clearTimeout(autoDismissTimer);
-            dismissFacebookNotification(popup);
-        });
-        
-        markReadBtn.addEventListener('click', () => {
-            clearTimeout(autoDismissTimer);
-            markAsRead(notification.notiId);
-            dismissFacebookNotification(popup);
-        });
-        
-        viewAllBtn.addEventListener('click', () => {
-            clearTimeout(autoDismissTimer);
-            dismissFacebookNotification(popup);
-            window.location.href = '/private-view/user-view/notification/notification.html';
-        });
-        
-        // Click on notification to view all
-        popup.addEventListener('click', (e) => {
-            if (!e.target.closest('.fb-notification-actions') && !e.target.closest('.fb-notification-close')) {
-                clearTimeout(autoDismissTimer);
-                dismissFacebookNotification(popup);
-                window.location.href = '/private-view/user-view/notification/notification.html';
-            }
-        });
-        
-        // Store timer reference for cleanup
-        popup.autoDismissTimer = autoDismissTimer;
-    }
-
-    // Dismiss Facebook-style notification
-    function dismissFacebookNotification(popup) {
-        popup.classList.add('hide');
-        
-        setTimeout(() => {
-            if (popup.parentNode) {
-                popup.parentNode.removeChild(popup);
-            }
-            isShowingNotification = false;
             
-            // Show next notification in queue
-            if (notificationQueue.length > 0) {
-                const nextNotification = notificationQueue.shift();
-                setTimeout(() => showFacebookNotification(nextNotification), 300);
+            if (response.ok) {
+                // Remove from unread list
+                unreadNotifications = unreadNotifications.filter(n => n.notiId !== notificationId);
+                
+                // Re-render and update stats
+                renderNotifications();
+                updateStats();
+                updateHeaderNotificationCount();
+                
+                // Update notification count in header if function exists
+                if (typeof updateNotificationCount === 'function') {
+                    updateNotificationCount();
+                }
             }
-        }, 300);
+        } catch (error) {
+            alert(CONFIG.MESSAGES.MARK_READ_FAILED);
+        }
     }
-
-    // Check for new notifications periodically
-    async function checkForNewNotifications() {
+    
+    // Mark all notifications as read
+    async function markAllAsRead() {
         try {
-            const currentNotifications = await fetchNotifications('/api/Notification/GetPersonalNotifications');
+            const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.MARK_ALL_AS_READ}`, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    "accept": "*/*"
+                }
+            });
             
-            if (currentNotifications && currentNotifications.length > 0) {
-                // Find new notifications (those created after last check)
-                const newNotifications = currentNotifications.filter(notification => {
-                    const notificationTime = new Date(notification.sendAt).getTime();
-                    return notificationTime > lastNotificationCheck;
-                });
+            if (response.ok) {
+                // Clear unread list
+                unreadNotifications = [];
                 
-                // Show new notifications as Facebook-style popups
-                newNotifications.forEach(notification => {
-                    showFacebookNotification(notification);
-                });
+                // Re-render and update stats
+                renderNotifications();
+                updateStats();
+                updateHeaderNotificationCount();
                 
-                // Update last check time
-                lastNotificationCheck = Date.now();
+                // Update notification count in header if function exists
+                if (typeof updateNotificationCount === 'function') {
+                    updateNotificationCount();
+                }
             }
         } catch (error) {
-            console.error('Error checking for new notifications:', error);
+            alert(CONFIG.MESSAGES.MARK_ALL_READ_FAILED);
         }
     }
-
-    // Start periodic notification checking
-    function startNotificationPolling() {
-        // Check every 10 seconds for new notifications
-        setInterval(checkForNewNotifications, 10000);
-        
-        // Also check when page becomes visible again
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                checkForNewNotifications();
+    
+    // Update header notification count
+    function updateHeaderNotificationCount() {
+        const unreadCount = unreadNotifications.length;
+        const badge = document.getElementById('unread-count');
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
             }
-        });
-    }
-
-    // Initialize Facebook-style notifications
-    function initializeFacebookNotifications() {
-        initializeNotificationSound();
-        startNotificationPolling();
-        
-        // Add CSS styles for Facebook-style notifications
-        if (!document.getElementById('facebook-notification-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'facebook-notification-styles';
-            styles.textContent = `
-                .facebook-notification-popup {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    width: 320px;
-                    background: #fff;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-                    z-index: 10000;
-                    opacity: 0;
-                    transform: translateX(100%);
-                    transition: all 0.3s ease;
-                    cursor: pointer;
-                    border-left: 4px solid #1877f2;
-                }
-                
-                .facebook-notification-popup.show {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-                
-                .facebook-notification-popup.hide {
-                    opacity: 0;
-                    transform: translateX(100%);
-                }
-                
-                .facebook-notification-popup:hover {
-                    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
-                }
-                
-                .fb-notification-header {
-                    display: flex;
-                    align-items: center;
-                    padding: 12px 16px 8px;
-                    gap: 8px;
-                }
-                
-                .fb-notification-icon {
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 14px;
-                    color: white;
-                }
-                
-                .fb-notification-icon.type-appointment-confirm,
-                .fb-notification-icon.type-appointment-update,
-                .fb-notification-icon.type-appointment-reminder {
-                    background: #1877f2;
-                }
-                
-                .fb-notification-icon.type-test-result {
-                    background: #42b883;
-                }
-                
-                .fb-notification-icon.type-medical-record {
-                    background: #e74c3c;
-                }
-                
-                .fb-notification-icon.type-system {
-                    background: #95a5a6;
-                }
-                
-                .fb-notification-icon.type-general {
-                    background: #1877f2;
-                }
-                
-                .fb-notification-title {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 2px;
-                }
-                
-                .fb-notification-type {
-                    font-weight: 600;
-                    font-size: 14px;
-                    color: #1c1e21;
-                }
-                
-                .fb-notification-time {
-                    font-size: 12px;
-                    color: #65676b;
-                }
-                
-                .fb-notification-close {
-                    background: none;
-                    border: none;
-                    font-size: 16px;
-                    color: #65676b;
-                    cursor: pointer;
-                    padding: 4px;
-                    border-radius: 4px;
-                    transition: background-color 0.2s;
-                }
-                
-                .fb-notification-close:hover {
-                    background-color: #f0f2f5;
-                }
-                
-                .fb-notification-content {
-                    padding: 0 16px 8px;
-                }
-                
-                .fb-notification-message {
-                    font-size: 14px;
-                    color: #1c1e21;
-                    line-height: 1.4;
-                    word-wrap: break-word;
-                }
-                
-                .fb-notification-actions {
-                    display: flex;
-                    gap: 8px;
-                    padding: 8px 16px 12px;
-                }
-                
-                .fb-notification-action {
-                    flex: 1;
-                    background: #f0f2f5;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 8px 12px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    color: #1c1e21;
-                    cursor: pointer;
-                    transition: background-color 0.2s;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 4px;
-                }
-                
-                .fb-notification-action:hover {
-                    background: #e4e6ea;
-                }
-                
-                .fb-notification-action.mark-read {
-                    background: #e7f3ff;
-                    color: #1877f2;
-                }
-                
-                .fb-notification-action.mark-read:hover {
-                    background: #d0e7ff;
-                }
-                
-                /* Animation for stacking notifications */
-                .facebook-notification-popup:nth-child(n+2) {
-                    top: 40px;
-                    transform: translateX(5px) scale(0.95);
-                    opacity: 0.8;
-                }
-                
-                .facebook-notification-popup:nth-child(n+3) {
-                    top: 60px;
-                    transform: translateX(10px) scale(0.9);
-                    opacity: 0.6;
-                }
-                
-                /* Mobile responsive */
-                @media (max-width: 768px) {
-                    .facebook-notification-popup {
-                        width: 300px;
-                        right: 10px;
-                        top: 10px;
-                    }
-                }
-                
-                @media (max-width: 480px) {
-                    .facebook-notification-popup {
-                        width: calc(100vw - 20px);
-                        right: 10px;
-                        left: 10px;
-                    }
-                }
-            `;
-            document.head.appendChild(styles);
         }
     }
-
-    // Manual trigger for testing Facebook-style notifications
-    function triggerTestNotification() {
-        const testNotification = {
-            notiId: Date.now(),
-            notiType: 'Test Notification',
-            notiMessage: 'This is a test Facebook-style notification popup!',
-            sendAt: new Date().toISOString(),
-            createdAt: new Date().toISOString()
-        };
+    
+    // Format date for display
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
         
-        showFacebookNotification(testNotification);
+        if (days > 0) {
+            return `${days} day${days > 1 ? 's' : ''} ago`;
+        } else if (hours > 0) {
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        } else if (minutes > 0) {
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        } else {
+            return 'Just now';
+        }
     }
-
-    // Add test button for development (you can remove this in production)
-    function addTestButton() {
-        const testBtn = document.createElement('button');
-        testBtn.innerHTML = '<i class="fa-solid fa-bell"></i> Test FB Notification';
-        testBtn.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #1877f2;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 12px 20px;
-            font-size: 14px;
-            cursor: pointer;
-            z-index: 9999;
-            box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
-            transition: all 0.3s ease;
-        `;
+    
+    // Start periodic checking
+    function startPeriodicCheck() {
+        if (periodicCheckInterval) {
+            clearInterval(periodicCheckInterval);
+        }
         
-        testBtn.addEventListener('click', triggerTestNotification);
-        testBtn.addEventListener('mouseenter', () => {
-            testBtn.style.background = '#166fe5';
-            testBtn.style.transform = 'translateY(-2px)';
-        });
-        testBtn.addEventListener('mouseleave', () => {
-            testBtn.style.background = '#1877f2';
-            testBtn.style.transform = 'translateY(0)';
-        });
-        
-        document.body.appendChild(testBtn);
+        periodicCheckInterval = setInterval(() => {
+            loadNotifications();
+        }, CONFIG.POLLING.INTERVAL); // Check every 30 seconds
     }
-
-    // Add test button for development
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        addTestButton();
-    }
-
-    // ...existing code...
+    
+    // Filter button event handlers
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-btn')) {
+            // Update active filter
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            // Update current filter and re-render
+            currentFilter = e.target.dataset.filter;
+            renderNotifications();
+        }
+    });
+    
+    // Expose functions globally
+    window.loadNotifications = loadNotifications;
+    window.markAsRead = markAsRead;
+    window.markAllAsRead = markAllAsRead;
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (periodicCheckInterval) {
+            clearInterval(periodicCheckInterval);
+        }
+    });
 });

@@ -44,10 +44,15 @@ function initializeNotificationSystem() {
     return;
   }
 
+  // Add click handler to redirect to notifications page
+  bell.addEventListener('click', () => {
+    window.location.href = '../notification/notification.html';
+  });
+
   // Fetch unread count
   async function fetchUnreadCount() {
     try {
-      const response = await fetch('https://localhost:7009/api/Notification/GetUnreadCount', {
+      const response = await fetch('https://localhost:7009/api/Notification/GetUnreadNotifications', {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -59,7 +64,8 @@ function initializeNotificationSystem() {
         throw new Error(`Failed to fetch unread count: ${response.status}`);
       }
       
-      return await response.json();
+      const unreadNotifications = await response.json();
+      return Array.isArray(unreadNotifications) ? unreadNotifications.length : 0;
     } catch (error) {
       console.error('Error fetching unread count:', error);
       return 0;
@@ -184,10 +190,41 @@ function initializeNotificationSystem() {
     content.innerHTML = '<div class="fb-popup-loading">Loading notifications...</div>';
     
     try {
-      const [allNotifications, unreadNotifications] = await Promise.all([
+      // Use Promise.allSettled instead of Promise.all to handle failures gracefully
+      const [allNotificationsResult, unreadNotificationsResult] = await Promise.allSettled([
         fetchNotifications('/api/Notification/GetPersonalNotifications'),
         fetchNotifications('/api/Notification/GetUnreadNotifications')
       ]);
+      
+      // Handle results with fallbacks
+      let allNotifications = [];
+      let unreadNotifications = [];
+      
+      if (allNotificationsResult.status === 'fulfilled') {
+        allNotifications = allNotificationsResult.value || [];
+      } else {
+        console.error('Failed to fetch all notifications:', allNotificationsResult.reason);
+      }
+      
+      if (unreadNotificationsResult.status === 'fulfilled') {
+        unreadNotifications = unreadNotificationsResult.value || [];
+      } else {
+        console.error('Failed to fetch unread notifications:', unreadNotificationsResult.reason);
+      }
+      
+      // If both requests failed, show error
+      if (allNotificationsResult.status === 'rejected' && unreadNotificationsResult.status === 'rejected') {
+        content.innerHTML = `
+          <div class="fb-popup-error">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+            <p>Unable to load notifications</p>
+            <button onclick="loadPopupNotifications('${filter}')" class="fb-popup-retry">
+              <i class="fa-solid fa-refresh"></i> Try Again
+            </button>
+          </div>
+        `;
+        return;
+      }
       
       let notifications = filter === 'unread' ? unreadNotifications : allNotifications;
       const unreadIds = new Set(unreadNotifications.map(n => n.notiId));
@@ -240,27 +277,106 @@ function initializeNotificationSystem() {
       console.error('Error loading popup notifications:', error);
       content.innerHTML = `          <div class="fb-popup-error">
           <i class="fa-solid fa-exclamation-triangle"></i>
-          <p>Lỗi tải thông báo</p>
+          <p>Error loading notifications</p>
+          <button onclick="loadPopupNotifications('${filter}')" class="fb-popup-retry">
+            <i class="fa-solid fa-refresh"></i> Try Again
+          </button>
         </div>
       `;
     }
   }
 
-  // Helper functions
-  async function fetchNotifications(endpoint) {
-    const response = await fetch(`https://localhost:7009${endpoint}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "accept": "*/*"
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch notifications: ${response.status}`);
+  // Rate limiting for notification requests
+  let lastNotificationRequest = 0;
+  const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
+  
+  function canMakeRequest() {
+    const now = Date.now();
+    if (now - lastNotificationRequest < MIN_REQUEST_INTERVAL) {
+      return false;
+    }
+    lastNotificationRequest = now;
+    return true;
+  }
+  
+  // Wrap loadPopupNotifications with rate limiting
+  const originalLoadPopupNotifications = loadPopupNotifications;
+  
+  async function loadPopupNotifications(filter) {
+    if (!canMakeRequest()) {
+      console.log('Rate limited - skipping notification request');
+      return;
     }
     
-    return await response.json();
+    return originalLoadPopupNotifications(filter);
+  }
+
+  // Add global exposure for retry button
+  window.loadPopupNotifications = loadPopupNotifications;
+
+  // Helper functions
+  async function fetchNotifications(endpoint, retryCount = 2) {
+    for (let i = 0; i < retryCount; i++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        
+        const response = await fetch(`https://localhost:7009${endpoint}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "accept": "*/*"
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            // Token expired
+            localStorage.removeItem('token');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('accId');
+            throw new Error('Authentication expired');
+          }
+          
+          // Don't retry on 4xx errors (except 401)
+          if (response.status >= 400 && response.status < 500) {
+            throw new Error(`Client error: ${response.status}`);
+          }
+          
+          // Retry on 5xx errors
+          if (i === retryCount - 1) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, (i + 1) * 1000));
+          continue;
+        }
+        
+        return await response.json();
+        
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.error(`Request timeout for ${endpoint}`);
+          if (i === retryCount - 1) {
+            throw new Error('Request timeout');
+          }
+        } else {
+          console.error(`Error fetching ${endpoint} (attempt ${i + 1}):`, error);
+          if (i === retryCount - 1) {
+            throw error;
+          }
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, (i + 1) * 1000));
+      }
+    }
+    
+    return [];
   }
 
   async function markAsRead(notificationId) {

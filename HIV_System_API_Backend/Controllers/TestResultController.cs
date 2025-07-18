@@ -38,11 +38,11 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var result = await _testResultService.CreateTestResult(dto);
-                
+
                 // Clear related cache entries
                 _cache.Remove($"test_results_all");
                 _cache.Remove($"sustain_test_results");
-                
+
                 return CreatedAtAction(nameof(GetTestResultById), new { id = result.TestResultId }, result);
             }
             catch (ArgumentException ex)
@@ -73,10 +73,10 @@ namespace HIV_System_API_Backend.Controllers
                 }
 
                 var result = await _testResultService.GetTestResultById(id);
-                
+
                 // Cache for 5 minutes
                 _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
-                
+
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)
@@ -104,10 +104,10 @@ namespace HIV_System_API_Backend.Controllers
                 }
 
                 var results = await _testResultService.GetAllTestResult();
-                
+
                 // Cache for 2 minutes since this data changes frequently
                 _cache.Set(cacheKey, results, TimeSpan.FromMinutes(2));
-                
+
                 return Ok(results);
             }
             catch (Exception ex)
@@ -129,12 +129,12 @@ namespace HIV_System_API_Backend.Controllers
                 var deleted = await _testResultService.DeleteTestResult(id);
                 if (!deleted)
                     return NotFound($"Test result with ID {id} not found.");
-                
+
                 // Clear related cache entries
                 _cache.Remove($"test_result_{id}");
                 _cache.Remove($"test_results_all");
                 _cache.Remove($"sustain_test_results");
-                
+
                 return NoContent();
             }
             catch (Exception ex)
@@ -160,12 +160,12 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var result = await _testResultService.UpdateTestResult(dto, id);
-                
+
                 // Clear related cache entries
                 _cache.Remove($"test_result_{id}");
                 _cache.Remove($"test_results_all");
                 _cache.Remove($"sustain_test_results");
-                
+
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)
@@ -202,10 +202,10 @@ namespace HIV_System_API_Backend.Controllers
                 }
 
                 var result = await _testResultService.GetPersonalTestResult(accId);
-                
+
                 // Cache for 5 minutes
                 _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
-                
+
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)
@@ -233,10 +233,10 @@ namespace HIV_System_API_Backend.Controllers
                 }
 
                 var results = await _testResultService.GetSustainTestResultPatient();
-                
+
                 // Cache for 10 minutes since this data doesn't change as frequently
                 _cache.Set(cacheKey, results, TimeSpan.FromMinutes(10));
-                
+
                 return Ok(results);
             }
             catch (Exception ex)
