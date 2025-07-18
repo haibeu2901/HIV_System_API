@@ -27,10 +27,9 @@ const regimenStatusMap = {
 
 // Payment status mapping
 const paymentStatusMap = {
-    0: 'Chờ thanh toán',
-    1: 'Đã thanh toán',
-    2: 'Đã hủy',
-    3: 'Đã hoàn tiền'
+    1: 'Đang chờ',
+    2: 'Đã thanh toán',
+    3: 'Thất bại'
 };
 
 // Fetch patient medical record data
@@ -282,15 +281,19 @@ function renderPayments(payments) {
                 <div class="stat-label">Total Payments</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${payments.filter(p => p.paymentStatus === 1).length}</div>
+                <div class="stat-number">${payments.filter(p => p.paymentStatus === 2).length}</div>
                 <div class="stat-label">Completed</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${payments.filter(p => p.paymentStatus === 0).length}</div>
+                <div class="stat-number">${payments.filter(p => p.paymentStatus === 1).length}</div>
                 <div class="stat-label">Pending</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${payments.reduce((total, p) => p.paymentStatus === 1 ? total + p.amount : total, 0).toLocaleString()}</div>
+                <div class="stat-number">${payments.filter(p => p.paymentStatus === 3).length}</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${payments.reduce((total, p) => p.paymentStatus === 2 ? total + p.amount : total, 0).toLocaleString()}</div>
                 <div class="stat-label">Total Paid (VND)</div>
             </div>
         </div>

@@ -209,12 +209,12 @@ public partial class HivSystemApiContext : DbContext
 
             entity.HasOne(d => d.Stf).WithMany(p => p.ComponentTestResults)
                 .HasForeignKey(d => d.StfId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ComponentTestResult_Staff");
 
             entity.HasOne(d => d.Trs).WithMany(p => p.ComponentTestResults)
                 .HasForeignKey(d => d.TrsId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ComponentTestResult_TestResult");
         });
 

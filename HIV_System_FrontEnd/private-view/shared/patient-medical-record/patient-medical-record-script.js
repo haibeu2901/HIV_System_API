@@ -29,10 +29,9 @@ const regimenStatusMap = {
 
 // Set window.isStaff and window.i// Payment status mapping
 const paymentStatusMap = {
-    1: 'Chờ thanh toán',
+    1: 'Đang chờ',
     2: 'Đã thanh toán',
-    3: 'Đã hủy',
-    4: 'Đã hoàn tiền'
+    3: 'Thất bại'
 };
 
 // Set window.isStaff and window.isDoctor globally

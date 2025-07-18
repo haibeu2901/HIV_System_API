@@ -20,4 +20,10 @@ namespace HIV_System_API_DTOs.TestResultDTO
         public TestResultRequestDTO TestResult { get; set; } = null!;
         public List<ComponentTestResultRequestDTO> ComponentTests { get; set; } = null!;
     }
+
+    public class UpdatePatientTestResultWithComponentTestsRequestDTO
+    {
+        public TestResultRequestDTO TestResult { get; set; } = null!;
+        public List<ComponentTestResultRequestDTO> ComponentTests { get; set; } = null!;
+    }
 }
