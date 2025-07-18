@@ -39,7 +39,7 @@ namespace HIV_System_API_Services.Implements
                 Currency = dto.Currency,
                 PaymentMethod = dto.PaymentMethod ?? "card",
                 Notes = dto.Description,
-                PaymentStatus = 0, // Pending
+                PaymentStatus = 1, // Pending
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 PaymentDate = DateTime.UtcNow,
