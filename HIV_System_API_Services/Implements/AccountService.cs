@@ -209,7 +209,7 @@ namespace HIV_System_API_Services.Implements
             if (password.Length < 8)
                 throw new ArgumentException("Mật khẩu phải có ít nhất 8 ký tự.", nameof(password));
 
-            if (password.Length >50)
+            if (password.Length > 50)
                 throw new ArgumentException("Mật khẩu không được quá 50 ký tự.", nameof(password));
 
             if (password.Contains(' '))
@@ -887,52 +887,52 @@ namespace HIV_System_API_Services.Implements
         }
 
         public async Task<(string verificationCode, string email)> InitiatePatientRegistrationAsync(PatientAccountRequestDTO request)
-{
-    if (request == null)
-        throw new ArgumentNullException(nameof(request));
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
 
-    if (string.IsNullOrWhiteSpace(request.AccUsername))
-        throw new ArgumentException("Tên người dùng là bắt buộc.");
-    if (string.IsNullOrWhiteSpace(request.AccPassword))
-        throw new ArgumentException("Mật khẩu là bắt buộc.");
-    if (string.IsNullOrWhiteSpace(request.Email))
-        throw new ArgumentException("Email là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.AccUsername))
+                throw new ArgumentException("Tên người dùng là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.AccPassword))
+                throw new ArgumentException("Mật khẩu là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.Email))
+                throw new ArgumentException("Email là bắt buộc.");
 
-    // Use new async validation methods with duplicate checking
-    await ValidateUsernameAsync(request.AccUsername, request.Email);
-    ValidatePassword(request.AccPassword, request.AccUsername);
-    await ValidateEmailAsync(request.Email, request.AccUsername);
+            // Use new async validation methods with duplicate checking
+            await ValidateUsernameAsync(request.AccUsername, request.Email);
+            ValidatePassword(request.AccPassword, request.AccUsername);
+            await ValidateEmailAsync(request.Email, request.AccUsername);
 
-    // Validate Date of Birth - FIXED
-    if (request.Dob.HasValue)
-    {
-        ValidateDateOfBirth(request.Dob.Value, nameof(request.Dob));
-    }
-    else
-    {
-        throw new ArgumentException("Ngày sinh là bắt buộc để đăng ký bệnh nhân.", nameof(request.Dob));
-    }
+            // Validate Date of Birth - FIXED
+            if (request.Dob.HasValue)
+            {
+                ValidateDateOfBirth(request.Dob.Value, nameof(request.Dob));
+            }
+            else
+            {
+                throw new ArgumentException("Ngày sinh là bắt buộc để đăng ký bệnh nhân.", nameof(request.Dob));
+            }
 
-    // Store the registration request in cache
-    var pendingRegistration = new PendingPatientRegistrationDTO
-    {
-        AccUsername = request.AccUsername,
-        AccPassword = request.AccPassword, // Consider hashing this for security
-        Email = request.Email,
-        Fullname = request.Fullname,
-        Dob = request.Dob,
-        Gender = request.Gender
-    };
+            // Store the registration request in cache
+            var pendingRegistration = new PendingPatientRegistrationDTO
+            {
+                AccUsername = request.AccUsername,
+                AccPassword = request.AccPassword, // Consider hashing this for security
+                Email = request.Email,
+                Fullname = request.Fullname,
+                Dob = request.Dob,
+                Gender = request.Gender
+            };
 
-    var cacheOptions = new MemoryCacheEntryOptions()
-        .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES))
-        .SetSize(1024); // Specify size
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PENDING_REGISTRATION_EXPIRY_MINUTES))
+                .SetSize(1024); // Specify size
 
-    var verificationCode = _verificationService.GenerateCode(request.Email);
-    _memoryCache.Set($"pending_registration_{request.Email}", pendingRegistration, cacheOptions);
+            var verificationCode = _verificationService.GenerateCode(request.Email);
+            _memoryCache.Set($"pending_registration_{request.Email}", pendingRegistration, cacheOptions);
 
-    return (verificationCode, request.Email);
-}
+            return (verificationCode, request.Email);
+        }
 
         public async Task<AccountResponseDTO> VerifyEmailAndCreateAccountAsync(string email, string code)
         {
