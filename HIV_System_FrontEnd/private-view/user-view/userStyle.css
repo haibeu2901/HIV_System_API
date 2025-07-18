@@ -515,8 +515,29 @@
     align-items: center;
     gap: 0.5rem;
 }
+
+.btn-home,
+.btn-community {
+    background: transparent;
+    color: #fff;
+    border: 2px solid transparent;
+    padding: 0.45rem 1.2rem;
+    border-radius: 22px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .btn-view:hover,
-.dropdown:hover .btn-view {
+.dropdown:hover .btn-view,
+.btn-home:hover,
+.btn-community:hover {
     background: #fff;
     color: #e74c3c;
     border: 2px solid #fff;
@@ -624,7 +645,9 @@
     .btn-profile,
     .btn-regimen,
     .btn-booking,
-    .btn-logout {
+    .btn-logout,
+    .btn-home,
+    .btn-community {
         font-size: 0.95rem;
         padding: 0.4rem 0.9rem;
     }
