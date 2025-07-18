@@ -19,7 +19,7 @@
                     <i class="fas fa-user-circle"></i>
                 </div>
                 <div class="patient-info">
-                    <h2 id="patientName">Loading...</h2>
+                    <h2 id="patientName">Đang tải...</h2>
                     <div class="patient-details">
                         <p><strong>Gender:</strong> <span id="patientGender">-</span></p>
                         <p><strong>Date of Birth:</strong> <span id="patientDOB">-</span></p>
@@ -31,9 +31,9 @@
 
             <!-- Appointments Section -->
             <div class="section">
-                <h3>All Appointments</h3>
+                <h3>Lịch sử cuộc hẹn</h3>
                 <div id="appointmentsSection" class="content-section">
-                    <p>Loading appointments...</p>
+                    <p>Đang tải cuộc hẹn...</p>
                 </div>
             </div>
 
@@ -51,18 +51,19 @@
 
             <!-- ARV Regimens Section -->
             <div class="section">
-                <h3>All Patient ARV Regimens</h3>
+                <h3>Tất cả phác đồ ARV của bệnh nhân</h3>
+                <!-- Create New Regimen Button and Modal (only for doctor) -->
+    <div id="regimenCreateContainer" style="text-align: right; margin-bottom: 2rem; display:none;">
+        <button id="openRegimenModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo phác đồ ARV</button>
+    </div>
                 <div id="arvRegimensSection" class="content-section">
-                    <p>Loading ARV regimens...</p>
+                    <p>Đang tải phác đồ ARV...</p>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Create New Regimen Button and Modal (only for doctor) -->
-    <div id="regimenCreateContainer" style="text-align: right; margin-bottom: 2rem; display:none;">
-        <button id="openRegimenModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo phác đồ ARV</button>
-    </div>
+    
     <div id="regimenModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" id="closeRegimenModalBtn">&times;</span>
@@ -181,6 +182,38 @@
             <button type="button" id="cancelTestResultBtn" class="secondary-btn">Hủy</button>
           </div>
           <div id="testResultFormMsg" style="color:red; margin-top:10px;"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Update Component Test Result Modal -->
+    <div id="updateComponentTestModal" class="modal" style="display:none;">
+      <div class="modal-content" style="max-width:500px;">
+        <span class="close" id="closeUpdateComponentTestModalBtn">&times;</span>
+        <h2>Cập nhật thành phần xét nghiệm</h2>
+        <form id="updateComponentTestForm">
+          <input type="hidden" id="updateComponentTestId" name="componentTestResultId" />
+          <div class="form-group">
+            <label for="updateComponentTestName">Tên thành phần <span style="color:red">*</span></label>
+            <input type="text" id="updateComponentTestName" name="componentTestResultName" required />
+          </div>
+          <div class="form-group">
+            <label for="updateComponentTestDesc">Mô tả</label>
+            <input type="text" id="updateComponentTestDesc" name="ctrDescription" />
+          </div>
+          <div class="form-group">
+            <label for="updateComponentTestValue">Giá trị kết quả <span style="color:red">*</span></label>
+            <input type="text" id="updateComponentTestValue" name="resultValue" required />
+          </div>
+          <div class="form-group">
+            <label for="updateComponentTestNotes">Ghi chú <span style="color:red">*</span></label>
+            <textarea id="updateComponentTestNotes" name="notes" rows="2" required></textarea>
+          </div>
+          <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
+            <button type="submit" class="primary-btn">Lưu</button>
+            <button type="button" id="cancelUpdateComponentTestBtn" class="secondary-btn">Hủy</button>
+          </div>
+          <div id="updateComponentTestMsg" style="color:red; margin-top:10px;"></div>
         </form>
       </div>
     </div>
