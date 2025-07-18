@@ -1658,3 +1658,432 @@
         font-size: 11px;
     }
 }
+
+/* ============================
+   DEMO CARD INPUT MODAL STYLES
+   ============================ */
+
+/* Demo Card Modal Overlay */
+.demo-card-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+    animation: fadeInModal 0.3s ease-out;
+}
+
+.demo-card-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Demo Card Modal Content */
+.demo-card-modal-content {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 450px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInModal 0.3s ease-out;
+}
+
+@keyframes slideInModal {
+    from {
+        transform: translateY(-50px) scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Modal Header */
+.demo-card-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.demo-card-modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.demo-card-modal-title::before {
+    content: '💳';
+    font-size: 28px;
+}
+
+.demo-card-close {
+    background: #f1f5f9;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.demo-card-close:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    transform: rotate(90deg);
+}
+
+/* Demo Info Section */
+.demo-card-info {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #0ea5e9;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    position: relative;
+}
+
+.demo-card-info::before {
+    content: 'ℹ️';
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 20px;
+}
+
+.demo-card-info h4 {
+    color: #0c4a6e;
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.demo-card-info p {
+    color: #075985;
+    margin: 0 0 15px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.demo-cards-list {
+    background: #ffffff;
+    border: 1px solid #0ea5e9;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+.demo-cards-list strong {
+    color: #0c4a6e;
+    font-weight: 700;
+}
+
+/* Form Styles */
+.demo-card-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 15px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 16px;
+    color: #1f2937;
+    background: #ffffff;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-group input:hover {
+    border-color: #d1d5db;
+}
+
+.form-group input::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Two Column Layout for CVC and Expiry */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* Card Number Formatting */
+#demo-card-number {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+}
+
+/* Form Buttons */
+.demo-card-form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #e2e8f0;
+}
+
+.demo-card-btn {
+    flex: 1;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.demo-card-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.demo-card-btn:hover::before {
+    left: 100%;
+}
+
+.demo-card-btn:active {
+    transform: translateY(1px);
+}
+
+.demo-card-btn-cancel {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+    border: 1px solid #374151;
+}
+
+.demo-card-btn-cancel:hover {
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+}
+
+.demo-card-btn-submit {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: 1px solid #047857;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.demo-card-btn-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.demo-card-btn-submit:disabled {
+    background: #9ca3af;
+    color: #ffffff;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.demo-card-btn-submit:disabled::before {
+    display: none;
+}
+
+/* Loading State */
+.demo-card-btn-submit.loading {
+    pointer-events: none;
+}
+
+.demo-card-btn-submit .spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.demo-card-btn-submit.loading .spinner {
+    display: block;
+}
+
+.demo-card-btn-submit.loading .btn-text {
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Input Validation Styles */
+.form-group.error input {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-group.success input {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.error-message::before {
+    content: '⚠️';
+    font-size: 14px;
+}
+
+/* Success Message */
+.success-message {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border: 2px solid #10b981;
+    color: #065f46;
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.success-message::before {
+    content: '✅';
+    font-size: 18px;
+}
+
+/* Responsive Design for Demo Card Modal */
+@media (max-width: 768px) {
+    .demo-card-modal-content {
+        margin: 20px;
+        padding: 25px 20px;
+        width: calc(100% - 40px);
+    }
+    
+    .demo-card-modal-title {
+        font-size: 20px;
+    }
+    
+    .demo-card-info {
+        padding: 15px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .demo-card-form-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .demo-card-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .demo-card-modal-content {
+        margin: 10px;
+        padding: 20px 15px;
+        width: calc(100% - 20px);
+        border-radius: 16px;
+    }
+    
+    .demo-card-modal-title {
+        font-size: 18px;
+    }
+    
+    .demo-card-modal-title::before {
+        font-size: 20px;
+    }
+    
+    .form-group input {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+    
+    .demo-cards-list {
+        font-size: 12px;
+        padding: 12px;
+    }
+}

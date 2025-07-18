@@ -269,6 +269,11 @@ function renderPayments(payments) {
                 <i class="fas fa-credit-card"></i>
                 <p>No payment history found.</p>
                 <p class="empty-state-subtitle">Payment records will appear here after transactions are completed.</p>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                    <button class="btn-book-appointment" onclick="openDemoCardModal()">
+                        <i class="fas fa-credit-card"></i> Demo Payment
+                    </button>
+                </div>
             </div>
         `;
         return;
@@ -297,6 +302,14 @@ function renderPayments(payments) {
                 <div class="stat-label">Total Paid (VND)</div>
             </div>
         </div>
+        
+        <!-- Demo Payment Button -->
+        <div style="text-align: center; margin-bottom: 25px;">
+            <button class="btn-book-appointment" onclick="openDemoCardModal()">
+                <i class="fas fa-credit-card"></i> Test Demo Payment
+            </button>
+        </div>
+        
         <div class="payments-grid">
     `;
 
@@ -383,7 +396,7 @@ function renderPayments(payments) {
                     
                     ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
                         <div class="payment-actions">
-                            <button class="payment-action-btn confirm-btn" onclick="confirmPayment('${payment.paymentIntentId}')">
+                            <button class="payment-action-btn confirm-btn" onclick="openDemoCardModal()">
                                 <i class="fas fa-check"></i> Xác nhận thanh toán
                             </button>
                             <button class="payment-action-btn fail-btn" onclick="failPayment('${payment.paymentIntentId}')">
@@ -716,6 +729,60 @@ async function loadPatientData() {
                     </section>
                 </div>
             </div>
+            
+            <!-- Demo Card Payment Modal -->
+            <div id="demoCardModal" class="demo-card-modal">
+                <div class="demo-card-modal-content">
+                    <div class="demo-card-modal-header">
+                        <h2 class="demo-card-modal-title">Demo Card Payment</h2>
+                        <button class="demo-card-close" onclick="closeDemoCardModal()">&times;</button>
+                    </div>
+                    
+                    <div class="demo-card-info">
+                        <h4>Test Card Information</h4>
+                        <p>Use these test card numbers for demo payments:</p>
+                        <div class="demo-cards-list">
+                            <strong>Visa (Success):</strong> 4242 4242 4242 4242<br>
+                            <strong>Mastercard (Success):</strong> 5555 5555 5555 4444<br>
+                            <strong>Amex (Success):</strong> 3782 8224 6310 005<br>
+                            <strong>Declined:</strong> 4000 0000 0000 0002
+                        </div>
+                    </div>
+                    
+                    <form id="demoCardForm">
+                        <div class="form-group">
+                            <label for="demo-card-number">Card Number</label>
+                            <input type="text" id="demo-card-number" placeholder="4242 4242 4242 4242" maxlength="23" required />
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="demo-card-expiry">Expiry Date</label>
+                                <input type="text" id="demo-card-expiry" placeholder="MM/YY" maxlength="5" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="demo-card-cvc">CVC</label>
+                                <input type="text" id="demo-card-cvc" placeholder="123" maxlength="4" required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="demo-card-name">Cardholder Name</label>
+                            <input type="text" id="demo-card-name" placeholder="John Doe" required />
+                        </div>
+                        
+                        <div class="demo-card-form-actions">
+                            <button type="button" class="demo-card-btn demo-card-btn-cancel" onclick="closeDemoCardModal()">
+                                Cancel
+                            </button>
+                            <button type="button" id="demoCardSubmit" class="demo-card-btn demo-card-btn-submit" onclick="submitDemoCardPayment()">
+                                <div class="spinner"></div>
+                                <span class="btn-text">Pay Now</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         `;
 
         // Check if we have medical data
@@ -799,6 +866,11 @@ async function loadPatientData() {
             `;
         }
 
+        // Setup modal event listeners after DOM is ready
+        setTimeout(() => {
+            setupModalEventListeners();
+        }, 500);
+
     } catch (error) {
         console.error('Error loading patient data:', error);
         document.body.innerHTML = `
@@ -818,3 +890,357 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load patient data
     loadPatientData();
 });
+
+// ============================
+// DEMO CARD PAYMENT FUNCTIONS
+// ============================
+
+// Function to open demo card payment modal
+function openDemoCardModal() {
+    console.log('Opening demo card modal...');
+    const modal = document.getElementById('demoCardModal');
+    console.log('Modal element:', modal);
+    if (modal) {
+        modal.classList.add('show');
+        modal.style.display = 'flex'; // Ensure it's visible
+        console.log('Modal should be visible now');
+        // Reset form
+        resetDemoCardForm();
+        // Setup event listeners for modal inputs
+        setupModalEventListeners();
+    } else {
+        console.error('Modal with ID "demoCardModal" not found!');
+    }
+}
+
+// Function to close demo card payment modal
+function closeDemoCardModal() {
+    console.log('Closing demo card modal...');
+    const modal = document.getElementById('demoCardModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none'; // Ensure it's hidden
+        resetDemoCardForm();
+    }
+}
+
+// Function to reset demo card form
+function resetDemoCardForm() {
+    const form = document.getElementById('demoCardForm');
+    if (form) {
+        form.reset();
+        
+        // Clear validation classes
+        document.querySelectorAll('.form-group').forEach(group => {
+            group.classList.remove('error', 'success');
+        });
+        
+        // Clear error messages
+        document.querySelectorAll('.error-message').forEach(msg => {
+            msg.remove();
+        });
+        
+        // Reset submit button
+        const submitBtn = document.getElementById('demoCardSubmit');
+        if (submitBtn) {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            submitBtn.querySelector('.btn-text').textContent = 'Pay Now';
+        }
+    }
+}
+
+// Function to validate card form
+function validateCardForm() {
+    let isValid = true;
+    
+    // Get form elements
+    const cardNumber = document.getElementById('demo-card-number');
+    const expiry = document.getElementById('demo-card-expiry');
+    const cvc = document.getElementById('demo-card-cvc');
+    const name = document.getElementById('demo-card-name');
+    
+    // Validate card number
+    if (!cardNumber.value || cardNumber.value.replace(/\s/g, '').length < 13) {
+        showFieldError(cardNumber, 'Please enter a valid card number (13-19 digits)');
+        isValid = false;
+    } else {
+        showFieldSuccess(cardNumber);
+    }
+    
+    // Validate expiry date
+    if (!expiry.value || !expiry.value.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
+        showFieldError(expiry, 'Please enter a valid expiry date (MM/YY)');
+        isValid = false;
+    } else {
+        // Check if expiry date is in the future
+        const [month, year] = expiry.value.split('/');
+        const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+        const now = new Date();
+        now.setDate(1); // Set to first day of current month for comparison
+        
+        if (expiryDate < now) {
+            showFieldError(expiry, 'Card has expired');
+            isValid = false;
+        } else {
+            showFieldSuccess(expiry);
+        }
+    }
+    
+    // Validate CVC
+    if (!cvc.value || cvc.value.length < 3 || cvc.value.length > 4) {
+        showFieldError(cvc, 'Please enter a valid CVC (3-4 digits)');
+        isValid = false;
+    } else {
+        showFieldSuccess(cvc);
+    }
+    
+    // Validate cardholder name
+    if (!name.value || name.value.trim().length < 2) {
+        showFieldError(name, 'Please enter the cardholder name');
+        isValid = false;
+    } else {
+        showFieldSuccess(name);
+    }
+    
+    return isValid;
+}
+
+// Function to show field error
+function showFieldError(field, message) {
+    const formGroup = field.closest('.form-group');
+    formGroup.classList.remove('success');
+    formGroup.classList.add('error');
+    
+    // Remove existing error message
+    const existingError = formGroup.querySelector('.error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Add new error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = message;
+    formGroup.appendChild(errorDiv);
+}
+
+// Function to show field success
+function showFieldSuccess(field) {
+    const formGroup = field.closest('.form-group');
+    formGroup.classList.remove('error');
+    formGroup.classList.add('success');
+    
+    // Remove error message
+    const existingError = formGroup.querySelector('.error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+}
+
+// Function to format card number input
+function formatCardNumber(input) {
+    let value = input.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    
+    // Add spaces every 4 digits
+    const matches = value.match(/\d{4,16}/g);
+    const match = matches && matches[0] || '';
+    const parts = [];
+    
+    for (let i = 0, len = match.length; i < len; i += 4) {
+        parts.push(match.substring(i, i + 4));
+    }
+    
+    if (parts.length) {
+        input.value = parts.join(' ');
+    } else {
+        input.value = value;
+    }
+}
+
+// Function to format expiry date input
+function formatExpiryDate(input) {
+    let value = input.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    
+    input.value = value;
+}
+
+// Function to handle demo card payment submission
+async function submitDemoCardPayment() {
+    // Validate form
+    if (!validateCardForm()) {
+        return;
+    }
+    
+    const submitBtn = document.getElementById('demoCardSubmit');
+    
+    try {
+        // Show loading state
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+        
+        // Get form data
+        const cardNumber = document.getElementById('demo-card-number').value.replace(/\s/g, '');
+        const expiry = document.getElementById('demo-card-expiry').value;
+        const cvc = document.getElementById('demo-card-cvc').value;
+        const name = document.getElementById('demo-card-name').value;
+        
+        // For demo purposes, we'll simulate a payment
+        // In a real application, you would integrate with Stripe's client-side SDK
+        
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check if it's a test card number
+        const testCards = [
+            '4242424242424242', // Visa
+            '5555555555554444', // Mastercard
+            '378282246310005',  // American Express
+            '4000000000000002'  // Card declined
+        ];
+        
+        let paymentResult;
+        
+        if (cardNumber === '4000000000000002') {
+            // Simulate payment failure
+            paymentResult = {
+                success: false,
+                error: 'Your card was declined.'
+            };
+        } else if (testCards.includes(cardNumber)) {
+            // Simulate successful payment
+            paymentResult = {
+                success: true,
+                paymentIntentId: 'pi_demo_' + Date.now(),
+                amount: 1000, // Demo amount in VND
+                currency: 'VND'
+            };
+        } else {
+            // For other card numbers, simulate success but with warning
+            paymentResult = {
+                success: true,
+                paymentIntentId: 'pi_demo_' + Date.now(),
+                amount: 1000,
+                currency: 'VND',
+                warning: 'This is a demo payment. In production, only test card numbers work.'
+            };
+        }
+        
+        if (paymentResult.success) {
+            // Show success message
+            showPaymentSuccess(paymentResult);
+            
+            // Close modal after 3 seconds
+            setTimeout(() => {
+                closeDemoCardModal();
+                // Optionally reload payment data
+                loadPaymentData();
+            }, 3000);
+        } else {
+            // Show error
+            alert(`Payment failed: ${paymentResult.error}`);
+        }
+        
+    } catch (error) {
+        console.error('Error processing demo payment:', error);
+        alert('An error occurred while processing the payment. Please try again.');
+    } finally {
+        // Reset loading state
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+    }
+}
+
+// Function to show payment success message
+function showPaymentSuccess(result) {
+    // Create success message element
+    const successDiv = document.createElement('div');
+    successDiv.className = 'success-message';
+    successDiv.innerHTML = `
+        Payment Successful!
+        <br>Payment Intent: ${result.paymentIntentId}
+        <br>Amount: ${result.amount.toLocaleString()} ${result.currency}
+        ${result.warning ? '<br><small>' + result.warning + '</small>' : ''}
+    `;
+    
+    // Insert success message at the top of the form
+    const form = document.getElementById('demoCardForm');
+    form.insertBefore(successDiv, form.firstChild);
+}
+
+// Event listeners for form inputs - moved to separate function
+function setupModalEventListeners() {
+    console.log('Setting up modal event listeners...');
+    
+    // Card number formatting
+    const cardNumberInput = document.getElementById('demo-card-number');
+    if (cardNumberInput) {
+        console.log('Card number input found');
+        cardNumberInput.addEventListener('input', function() {
+            formatCardNumber(this);
+        });
+    } else {
+        console.log('Card number input NOT found');
+    }
+    
+    // Expiry date formatting
+    const expiryInput = document.getElementById('demo-card-expiry');
+    if (expiryInput) {
+        console.log('Expiry input found');
+        expiryInput.addEventListener('input', function() {
+            formatExpiryDate(this);
+        });
+    } else {
+        console.log('Expiry input NOT found');
+    }
+    
+    // CVC validation (numbers only)
+    const cvcInput = document.getElementById('demo-card-cvc');
+    if (cvcInput) {
+        console.log('CVC input found');
+        cvcInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '').substring(0, 4);
+        });
+    } else {
+        console.log('CVC input NOT found');
+    }
+    
+    // Modal close on outside click
+    const modal = document.getElementById('demoCardModal');
+    if (modal) {
+        console.log('Modal found for event listeners');
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeDemoCardModal();
+            }
+        });
+    } else {
+        console.log('Modal NOT found for event listeners');
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDemoCardModal();
+        }
+    });
+}
+
+// Initialize page when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded');
+    // Load patient data
+    loadPatientData();
+    
+    // Setup modal event listeners after a short delay to ensure DOM is fully ready
+    setTimeout(setupModalEventListeners, 1000);
+});
+
+// Make functions available globally
+window.openDemoCardModal = openDemoCardModal;
+window.closeDemoCardModal = closeDemoCardModal;
+window.submitDemoCardPayment = submitDemoCardPayment;

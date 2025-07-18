@@ -10,6 +10,68 @@
 </head>
 <body>
     <div id="header-placeholder"></div>
+    
+    <!-- Demo Card Payment Modal -->
+    <div id="demoCardModal" class="demo-card-modal">
+        <div class="demo-card-modal-content">
+            <div class="demo-card-modal-header">
+                <h2 class="demo-card-modal-title">Demo Card Payment</h2>
+                <button class="demo-card-close" onclick="closeDemoCardModal()">&times;</button>
+            </div>
+            
+            <div class="demo-card-info">
+                <h4>Test Card Information</h4>
+                <p>Use these test card numbers for demo payments:</p>
+                <div class="demo-cards-list">
+                    <strong>Visa (Success):</strong> 4242 4242 4242 4242<br>
+                    <strong>Mastercard (Success):</strong> 5555 5555 5555 4444<br>
+                    <strong>Amex (Success):</strong> 3782 8224 6310 005<br>
+                    <strong>Declined:</strong> 4000 0000 0000 0002
+                </div>
+            </div>
+            
+            <form id="demoCardForm">
+                <div class="form-group">
+                    <label for="demo-card-number">Card Number</label>
+                    <input type="text" id="demo-card-number" placeholder="4242 4242 4242 4242" maxlength="23" required />
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="demo-card-expiry">Expiry Date</label>
+                        <input type="text" id="demo-card-expiry" placeholder="MM/YY" maxlength="5" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="demo-card-cvc">CVC</label>
+                        <input type="text" id="demo-card-cvc" placeholder="123" maxlength="4" required />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="demo-card-name">Cardholder Name</label>
+                    <input type="text" id="demo-card-name" placeholder="John Doe" required />
+                </div>
+                
+                <div class="demo-card-form-actions">
+                    <button type="button" class="demo-card-btn demo-card-btn-cancel" onclick="closeDemoCardModal()">
+                        Cancel
+                    </button>
+                    <button type="button" id="demoCardSubmit" class="demo-card-btn demo-card-btn-submit" onclick="submitDemoCardPayment()">
+                        <div class="spinner"></div>
+                        <span class="btn-text">Pay Now</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Demo Payment Button (for testing) -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+        <button onclick="openDemoCardModal()" class="btn-book-appointment">
+            <i class="fas fa-credit-card"></i> Demo Payment
+        </button>
+    </div>
+
     <script src="../header/header.js"></script>
     <script src="medical-record.js"></script>
 </body>
