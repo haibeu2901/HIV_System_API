@@ -169,9 +169,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 function renderStatusText(status) {
   switch (status) {
     case 1:
-      return "Pending";
+      return "Đang chờ";
     case 2:
-      return "Confirmed";
+      return "Đã xác nhận";
     case 3:
       return "Rescheduled";
     case 4:
@@ -238,7 +238,7 @@ async function updateAppointment() {
     // Show loading state
     const saveButton = document.getElementById("save-update-btn");
     saveButton.disabled = true;
-    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
 
     const response = await fetch(
       `https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${appointmentId}`,
@@ -258,7 +258,7 @@ async function updateAppointment() {
 
     // Success - close modal and show success message
     document.getElementById("update-appointment-modal").classList.add("hidden");
-    showNotification("Appointment updated successfully! Please refresh the page to see changes.", "success");
+    showNotification("Cập nhật lịch hẹn thành công! Vui lòng làm mới trang để xem thay đổi.", "success");
     
     // Optionally refresh the page after a delay
     setTimeout(() => {
@@ -267,12 +267,12 @@ async function updateAppointment() {
 
   } catch (error) {
     console.error("Error updating appointment:", error);
-    showNotification("Failed to update appointment. Please try again.", "error");
+    showNotification("Không thể cập nhật lịch hẹn. Vui lòng thử lại.", "error");
     
     // Reset button state
     const saveButton = document.getElementById("save-update-btn");
     saveButton.disabled = false;
-    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
   }
 }
 
@@ -294,7 +294,7 @@ async function performCancelAppointment() {
     // Show loading state on the confirmation button
     const confirmButton = document.getElementById("cancel-confirmation-yes");
     confirmButton.disabled = true;
-    confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+    confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang hủy...';
 
     const response = await fetch(
       `https://localhost:7009/api/Appointment/ChangeAppointmentStatus?id=${appointmentId}&status=4`,
@@ -312,7 +312,7 @@ async function performCancelAppointment() {
     }
 
     // Success - show success message and reload page
-    showNotification("Appointment cancelled successfully!", "success");
+    showNotification("Đã hủy lịch hẹn thành công!", "success");
     
     // Reload the page to reflect changes
     setTimeout(() => {
@@ -321,12 +321,12 @@ async function performCancelAppointment() {
 
   } catch (error) {
     console.error("Error cancelling appointment:", error);
-    showNotification("Failed to cancel appointment. Please try again.", "error");
+    showNotification("Không thể hủy lịch hẹn. Vui lòng thử lại.", "error");
     
     // Reset button state
     const confirmButton = document.getElementById("cancel-confirmation-yes");
     confirmButton.disabled = false;
-    confirmButton.innerHTML = '<i class="fas fa-check"></i> Yes, Cancel It';
+    confirmButton.innerHTML = '<i class="fas fa-check"></i> Có, hủy lịch';
   }
 }
 
