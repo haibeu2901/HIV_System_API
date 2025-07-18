@@ -473,7 +473,7 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpPost("UpdatePatientArvRegimenWithMedications/{parId}")]
+        [HttpPut("UpdatePatientArvRegimenWithMedications/{parId}")]
         [Authorize(Roles = "1,2,5")]
         public async Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenWithMedications(
         int parId,
