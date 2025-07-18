@@ -45,13 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="error-icon">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h3>Information Temporarily Unavailable</h3>
-                <p>We're currently unable to load the medication information. Please try again later or contact our clinic directly.</p>
+                <h3>Thông tin tạm thời không có sẵn</h3>
+                <p>Hiện tại chúng tôi không thể tải thông tin thuốc. Vui lòng thử lại sau hoặc liên hệ trực tiếp với phòng khám của chúng tôi.</p>
                 <button class="btn-retry" onclick="window.location.reload()">
-                    <i class="fas fa-refresh"></i> Try Again
+                    <i class="fas fa-refresh"></i> Thử lại
                 </button>
                 <a href="/landingpage.html#contact" class="btn-contact">
-                    <i class="fas fa-phone"></i> Contact Clinic
+                    <i class="fas fa-phone"></i> Liên hệ Phòng khám
                 </a>
             </div>
         `;
@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="no-medications-icon">
                         <i class="fas fa-pills"></i>
                     </div>
-                    <h3>No Medications Found</h3>
-                    <p>No medications match your current search criteria. Try adjusting your search terms.</p>
+                    <h3>Không tìm thấy thuốc</h3>
+                    <p>Không có loại thuốc nào phù hợp với tiêu chí tìm kiếm hiện tại của bạn. Hãy thử điều chỉnh thuật ngữ tìm kiếm.</p>
                 </div>
             `;
             return;
@@ -87,28 +87,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="medication-details">
                         <div class="detail-item">
                             <i class="fas fa-prescription-bottle"></i>
-                            <span><strong>Standard Dosage:</strong> ${medication.arvMedicationDosage}</span>
+                            <span><strong>Liều dùng tiêu chuẩn:</strong> ${medication.arvMedicationDosage}</span>
                         </div>
                         
                         <div class="detail-item">
                             <i class="fas fa-building"></i>
-                            <span><strong>Manufacturer:</strong> ${medication.arvMedicationManufacturer}</span>
+                            <span><strong>Nhà sản xuất:</strong> ${medication.arvMedicationManufacturer}</span>
                         </div>
                         
                         <div class="detail-item info-item">
                             <i class="fas fa-info-circle"></i>
-                            <span><strong>Category:</strong> ${getMedicationFullCategory(medication.arvMedicationDescription)}</span>
+                            <span><strong>Loại:</strong> ${getMedicationFullCategory(medication.arvMedicationDescription)}</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="medication-footer">
                     <button class="btn-learn-more" onclick="showMedicationInfo('${medication.arvMedicationName}')">
-                        <i class="fas fa-book-open"></i> Learn More
+                        <i class="fas fa-book-open"></i> Tìm hiểu thêm
                     </button>
                     <div class="disclaimer">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <small>Consult healthcare provider before use</small>
+                        <small>Tham khảo ý kiến bác sĩ trước khi sử dụng</small>
                     </div>
                 </div>
             </div>
@@ -126,11 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Get full medication category name
     function getMedicationFullCategory(description) {
-        if (description.includes('NRTI')) return 'Nucleoside Reverse Transcriptase Inhibitor';
-        if (description.includes('NNRTI')) return 'Non-Nucleoside Reverse Transcriptase Inhibitor';
-        if (description.includes('PI')) return 'Protease Inhibitor';
-        if (description.includes('INSTI')) return 'Integrase Strand Transfer Inhibitor';
-        return 'Other HIV Medication';
+        if (description.includes('NRTI')) return 'Chất ức chế phiên mã ngược nucleoside';
+        if (description.includes('NNRTI')) return 'Chất ức chế phiên mã ngược không phải nucleoside';
+        if (description.includes('PI')) return 'Chất ức chế protease';
+        if (description.includes('INSTI')) return 'Chất ức chế chuyển sợi Integrase';
+        return 'Thuốc điều trị HIV khác';
     }
 
     // Update statistics
@@ -204,44 +204,44 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3>Medication Information</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <strong>Name:</strong> ${medication.arvMedicationName}
+                                <strong>Tên:</strong> ${medication.arvMedicationName}
                             </div>
                             <div class="info-item">
-                                <strong>Category:</strong> ${category}
+                                <strong>Loại:</strong> ${category}
                             </div>
                             <div class="info-item">
-                                <strong>Standard Dosage:</strong> ${medication.arvMedicationDosage}
+                                <strong>Liều dùng tiêu chuẩn:</strong> ${medication.arvMedicationDosage}
                             </div>
                             <div class="info-item">
-                                <strong>Manufacturer:</strong> ${medication.arvMedicationManufacturer}
+                                <strong>Nhà sản xuất:</strong> ${medication.arvMedicationManufacturer}
                             </div>
                         </div>
                     </div>
                     
                     <div class="medication-description">
-                        <h3>Description</h3>
+                        <h3>Mô tả</h3>
                         <p>${medication.arvMedicationDescription}</p>
                     </div>
                     
                     <div class="important-notice">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <h3>Important Medical Notice</h3>
+                        <h3>Thông báo y tế quan trọng</h3>
                         <ul>
-                            <li>This information is for educational purposes only</li>
-                            <li>Always consult with a healthcare provider before starting any medication</li>
-                            <li>HIV treatment requires professional medical supervision</li>
-                            <li>Medication dosage and suitability vary by individual</li>
-                            <li>Side effects and drug interactions must be considered</li>
+                            <li>Thông tin này chỉ dành cho mục đích giáo dục</li>
+                            <li>Luôn luôn tham khảo ý kiến của nhà cung cấp dịch vụ chăm sóc sức khỏe trước khi bắt đầu dùng bất kỳ loại thuốc nào</li>
+                            <li>Điều trị HIV cần có sự giám sát y tế chuyên nghiệp</li>
+                            <li>Liều lượng và tính phù hợp của thuốc thay đổi tùy theo từng cá nhân</li>
+                            <li>Tác dụng phụ và tương tác thuốc phải được xem xét</li>
                         </ul>
                     </div>
                 </div>
                 
                 <div class="modal-footer">
                     <button class="btn-close" onclick="closeModal(this.closest('.educational-modal'))">
-                        <i class="fas fa-times"></i> Close
+                        <i class="fas fa-times"></i> Đóng
                     </button>
                     <a href="../landingpage.html#contact" class="btn-contact">
-                        <i class="fas fa-phone"></i> Contact Our Clinic
+                        <i class="fas fa-phone"></i> Liên hệ với phòng khám của chúng tôi
                     </a>
                 </div>
             </div>

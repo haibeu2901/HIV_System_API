@@ -148,7 +148,6 @@ namespace HIV_System_API_DAOs.Implements
         {
             const int APPOINTMENT_DURATION_MINUTES = 30;
             const int CANCELLED_STATUS = 4;
-
             var appointmentEndTime = appointmentTime.Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES));
 
             // Step 1: Get all doctors with their work schedules for the specific date
@@ -169,7 +168,8 @@ namespace HIV_System_API_DAOs.Implements
                     doctorIds.Contains(a.DctId) &&
                     a.ApmtDate == appointmentDate &&
                     a.ApmStatus != CANCELLED_STATUS)
-                .Select(a => new {
+                .Select(a => new
+                {
                     a.DctId,
                     a.ApmTime,
                     EndTime = a.ApmTime.Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES))
@@ -193,10 +193,10 @@ namespace HIV_System_API_DAOs.Implements
                         var conflictingAppointments = existingAppointments
                             .Where(a => a.DctId == doctor.DctId)
                             .Where(a =>
-                                // Check for time overlap within this specific time slot
+                                // Check for time overlap: two appointments overlap if one starts before the other ends
                                 a.ApmTime < appointmentEndTime &&
                                 a.EndTime > appointmentTime &&
-                                // Ensure the conflicting appointment is also within this work schedule
+                                // Ensure the conflicting appointment falls within this work schedule
                                 a.ApmTime >= schedule.StartTime &&
                                 a.ApmTime < schedule.EndTime)
                             .ToList();

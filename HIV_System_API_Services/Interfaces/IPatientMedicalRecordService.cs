@@ -17,5 +17,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<PatientMedicalRecordResponseDTO> UpdatePatientMedicalRecordAsync(int id, PatientMedicalRecordRequestDTO record);
         Task<bool> DeletePatientMedicalRecordAsync(int id);
         Task<PatientMedicalRecordResponseDTO?> GetPersonalMedicalRecordAsync(int accId);
+        Task<PatientMedicalRecordResponseDTO?> GetPatientMedicalRecordByPatientIdAsync(int patientId);
     }
 }
