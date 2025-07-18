@@ -65,6 +65,7 @@
                 <h3>Lịch sử thanh toán</h3>
                 <div id="paymentsSection" class="content-section">
                     <p>Đang tải lịch sử thanh toán...</p>
+
                 </div>
             </div>
         </main>
@@ -288,5 +289,59 @@
         }
       });
     </script>
+
+    <!-- Payment Creation Modal -->
+    <div id="paymentModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tạo thanh toán mới</h2>
+                <span id="closePaymentModalBtn" class="close">&times;</span>
+            </div>
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="paymentServiceSelect">Dịch vụ <span style="color:red">*</span></label>
+                    <select id="paymentServiceSelect" name="serviceId" required>
+                        <option value="">Chọn dịch vụ...</option>
+                        <!-- Services will be loaded here -->
+                    </select>
+                    <div id="serviceDescription" class="service-description" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d; display: none;">
+                        <!-- Service description will be shown here -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="paymentAmount">Số tiền <span style="color:red">*</span></label>
+                    <input type="number" id="paymentAmount" name="amount" value="50000" min="1" required />
+                </div>
+                <div class="form-group">
+                    <label for="paymentCurrency">Đơn vị tiền tệ <span style="color:red">*</span></label>
+                    <select id="paymentCurrency" name="currency" required>
+                        <option value="VND" selected>VND</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Phương thức thanh toán <span style="color:red">*</span></label>
+                    <select id="paymentMethod" name="paymentMethod" required>
+                        <option value="">Chọn phương thức...</option>
+                        <option value="Tiền mặt">Tiền mặt</option>
+                        <option value="Chuyển khoản">Chuyển khoản</option>
+                        <option value="Thẻ tín dụng">Thẻ tín dụng</option>
+                        <option value="Ví điện tử">Ví điện tử</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentDescription">Mô tả <span style="color:red">*</span></label>
+                    <textarea id="paymentDescription" name="description" rows="3" placeholder="Nhập mô tả cho thanh toán..." required></textarea>
+                </div>
+                <input type="hidden" id="paymentPmrId" name="pmrId" />
+                <div id="paymentFormMsg" class="form-message"></div>
+                <div class="modal-footer">
+                    <button type="button" id="cancelPaymentBtn" class="secondary-btn">Hủy</button>
+                    <button type="submit" class="primary-btn">Tạo thanh toán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </body>
 </html>

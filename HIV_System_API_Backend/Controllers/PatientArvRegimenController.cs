@@ -472,6 +472,55 @@ namespace HIV_System_API_Backend.Controllers
                 throw new Exception($"Unexpected error updating regimen status: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
+
+        [HttpPost("UpdatePatientArvRegimenWithMedications/{parId}")]
+        [Authorize(Roles = "1,2,5")]
+        public async Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenWithMedications(
+        int parId,
+        [FromBody] UpdatePatientArvRegimenWithMedicationsRequestDTO request)
+        {
+            try
+            {
+                // Get the current user's account ID from claims
+                int accId = ClaimsHelper.ExtractAccountIdFromClaims(User).Value;
+                if (accId == null)
+                {
+                    throw new UnauthorizedAccessException("Invalid account ID in token");
+                }
+
+                var updatedRegimen = await _patientArvRegimenService.UpdatePatientArvRegimenWithMedicationsAsync(
+                    parId,
+                    request.RegimenRequest,
+                    request.MedicationRequests,
+                    accId);
+
+                return updatedRegimen;
+            }
+            catch (ArgumentNullException ex)
+            {
+                throw new ArgumentException($"Required parameter is missing: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ArgumentException($"Invalid input: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Operation failed: {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new UnauthorizedAccessException($"Authorization failed: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new DbUpdateException($"Database error while updating ARV regimen with medications: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error updating regimen with medications: {ex.InnerException?.Message ?? ex.Message}");
+            }
+        }
     }
 }
 

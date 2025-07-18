@@ -60,7 +60,7 @@ namespace HIV_System_API_Backend.Controllers
                     var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
                     if (paymentIntent != null)
                     {
-                        byte newStatus = stripeEvent.Type == "payment_intent.succeeded" ? (byte)1 : (byte)2; // 1: Success, 2: Failed
+                        byte newStatus = stripeEvent.Type == "payment_intent.succeeded" ? (byte)2 : (byte)3; // 2: Success, 3: Failed
                         await _paymentService.UpdatePaymentStatusByIntentIdAsync(paymentIntent.Id, newStatus);
                     }
                 }

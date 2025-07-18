@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const doctors = await response.json();
 
         if (doctors.length === 0) {
-            doctorListDiv.innerHTML = "<p>No doctors found.</p>";
+            doctorListDiv.innerHTML = "<p>Không tìm thấy bác sĩ nào.</p>";
             return;
         }
 
@@ -26,19 +26,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <h3>${doc.account.fullname}</h3>
                         <p class="degree">${doc.degree}</p>
                         <p class="email">${doc.account.email}</p>
-                        <p class="dob">DOB: ${doc.account.dob}</p>
+                        <p class="dob">Ngày sinh: ${doc.account.dob}</p>
                     </div>
                 </div>
                 <p class="bio">${doc.bio}</p>
                 <div class="doctor-actions">
-                    <a class="btn-chat" href="mailto:${doc.account.email}?subject=Contact%20from%20CareFirst%20HIV%20Clinic" target="_blank">
-                        <i class="fas fa-envelope"></i> Contact the Doctor
+                    <a class="btn-chat" href="mailto:${doc.account.email}?subject=Liên%20hệ%20từ%20CareFirst%20HIV%20Clinic" target="_blank">
+                        <i class="fas fa-envelope"></i> Liên hệ bác sĩ
                     </a>
                     <button class="btn-chat" onclick="chatToDoctor('${doc.account.email}', '${doc.account.fullname}')">
-                        <i class="fas fa-comments"></i> Chat to Doctor
+                        <i class="fas fa-comments"></i> Nhắn tin với bác sĩ
                     </button>
                     <button class="btn-book" onclick="bookDoctor('${doc.account.email}', ${doc.doctorId})">
-                        <i class="fas fa-calendar-plus"></i> Book Appointment
+                        <i class="fas fa-calendar-plus"></i> Đặt lịch hẹn
                     </button>
                 </div>
             </div>
@@ -52,15 +52,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 function chatToDoctor(doctorEmail, doctorName) {
     // Show modal
     document.getElementById('chat-modal').style.display = 'flex';
-    document.getElementById('chat-doctor-name').textContent = `Chat with Dr. ${doctorName}`;
-    document.getElementById('chat-messages').innerHTML = '<div style="color:#888;">Start your conversation...</div>';
+    document.getElementById('chat-doctor-name').textContent = `Trò chuyện với Bs. ${doctorName}`;
+    document.getElementById('chat-messages').innerHTML = '<div style="color:#888;">Bắt đầu cuộc trò chuyện...</div>';
     document.getElementById('chat-input').value = '';
     // Optionally, store doctorId for sending messages
     document.getElementById('chat-send-btn').onclick = function() {
         const msg = document.getElementById('chat-input').value.trim();
         if (msg) {
             const chatBox = document.getElementById('chat-messages');
-            chatBox.innerHTML += `<div><b>You:</b> ${msg}</div>`;
+            chatBox.innerHTML += `<div><b>Bạn:</b> ${msg}</div>`;
             document.getElementById('chat-input').value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
             // Here you can implement sending the message to backend if needed

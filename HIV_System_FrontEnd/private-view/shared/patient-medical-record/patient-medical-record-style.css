@@ -575,3 +575,244 @@
     padding: 4px 12px;
     font-weight: 600;
 }
+
+/* Payment History Styles */
+.payments-container {
+    display: grid;
+    gap: 1rem;
+}
+
+.payment-card {
+    background: white;
+    border: 1px solid #e0e6ed;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.payment-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e6ed;
+}
+
+.payment-id-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.payment-id {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.payment-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.payment-status-0 {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.payment-status-1 {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.payment-status-2 {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.payment-amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e74c3c;
+}
+
+.payment-details {
+    padding: 1rem;
+}
+
+.payment-info {
+    margin-bottom: 1rem;
+}
+
+.payment-info p {
+    margin: 0.5rem 0;
+    color: #2c3e50;
+    line-height: 1.5;
+}
+
+.payment-info strong {
+    color: #34495e;
+    min-width: 120px;
+    display: inline-block;
+}
+
+.payment-metadata {
+    padding-top: 1rem;
+    border-top: 1px solid #f1f3f4;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.payment-metadata small {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.payment-metadata strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* Empty state for payments */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Responsive design for payments */
+@media (max-width: 768px) {
+    .payment-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .payment-amount {
+        font-size: 1.1rem;
+    }
+    
+    .payment-info strong {
+        min-width: auto;
+        display: block;
+        margin-bottom: 0.2rem;
+    }
+}
+
+/* Payment Modal Styles */
+#paymentModal .modal-content {
+    max-width: 500px;
+    width: 90%;
+}
+
+#paymentModal .form-group {
+    margin-bottom: 1rem;
+}
+
+#paymentModal .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+#paymentModal .form-group input,
+#paymentModal .form-group select,
+#paymentModal .form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease;
+}
+
+#paymentModal .form-group input:focus,
+#paymentModal .form-group select:focus,
+#paymentModal .form-group textarea:focus {
+    outline: none;
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1);
+}
+
+#paymentModal .form-message {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+#paymentModal .form-message:not(:empty) {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+#paymentModal .modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+#createPaymentContainer {
+    text-align: right;
+}
+
+#openPaymentModalBtn {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#openPaymentModalBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+}
+
+/* Service Description Styling */
+.service-description {
+    border-left: 3px solid #e74c3c;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.service-description:empty {
+    display: none !important;
+}

@@ -26,10 +26,13 @@ const regimenStatusMap = {
 };
 
 // Payment status mapping
+
+// Set window.isStaff and window.i// Payment status mapping
 const paymentStatusMap = {
-  1: "Chờ xử lý",
-  2: "Thành công",
-  3: "Thất bại"
+    1: 'Chờ thanh toán',
+    2: 'Đã thanh toán',
+    3: 'Đã hủy',
+    4: 'Đã hoàn tiền'
 };
 
 // Set window.isStaff and window.isDoctor globally
@@ -92,6 +95,129 @@ async function fetchPatientArvMedications(patientId) {
         console.error('Error fetching ARV medications:', error);
         return [];
     }
+}
+
+// Fetch patient payment history
+async function fetchPatientPayments(pmrId) {
+    try {
+        const response = await fetch(`https://localhost:7009/api/Payment/GetPaymentsByPmrId/${pmrId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) throw new Error('Lỗi thất bại lấy lịch sử thanh toán của bệnh nhân');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching patient payments:', error);
+        return [];
+    }
+}
+
+// Fetch all services for payment creation
+async function fetchAllServices() {
+    try {
+        const response = await fetch('https://localhost:7009/api/MedicalService/GetAllMedicalServices', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) throw new Error('Lỗi lấy danh sách dịch vụ');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching services:', error);
+        return [];
+    }
+}
+
+// Create new payment
+async function createPayment(paymentData) {
+    try {
+        const response = await fetch('https://localhost:7009/api/Payment/CreatePayment', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentData)
+        });
+        if (!response.ok) throw new Error('Lỗi tạo thanh toán');
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating payment:', error);
+        throw error;
+    }
+}
+
+// Render payment history
+function renderPaymentHistory(payments) {
+    const section = document.getElementById('paymentHistorySection');
+    
+    if (!payments || payments.length === 0) {
+        section.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-credit-card"></i>
+                <p>Không tìm thấy lịch sử giao dịch cho bệnh nhân này.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div class="payments-container">
+    `;
+
+    payments.forEach(payment => {
+        const statusClass = `payment-status-${payment.paymentStatus}`;
+        const statusText = paymentStatusMap[payment.paymentStatus] || 'Không xác định';
+        
+        html += `
+            <div class="payment-card">
+                <div class="payment-header">
+                    <div class="payment-id-info">
+                        <span class="payment-id">Mã thanh toán: ${payment.payId}</span>
+                        <span class="payment-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="payment-amount">
+                        ${formatCurrency(payment.amount)} ${payment.currency}
+                    </div>
+                </div>
+                <div class="payment-details">
+                    <div class="payment-info">
+                        <p><strong>Ngày thanh toán:</strong> ${formatDateTime(payment.paymentDate)}</p>
+                        <p><strong>Phương thức:</strong> ${payment.paymentMethod}</p>
+                        <p><strong>Mô tả:</strong> ${payment.description}</p>
+                        ${payment.serviceName ? `<p><strong>Dịch vụ:</strong> ${payment.serviceName}</p>` : ''}
+                        ${payment.servicePrice ? `<p><strong>Giá dịch vụ:</strong> ${formatCurrency(payment.servicePrice)} VND</p>` : ''}
+                    </div>
+                    <div class="payment-metadata">
+                        <small><strong>Tạo lúc:</strong> ${formatDateTime(payment.createdAt)}</small>
+                        <small><strong>Cập nhật:</strong> ${formatDateTime(payment.updatedAt)}</small>
+                        ${payment.paymentIntentId ? `<small><strong>Intent ID:</strong> ${payment.paymentIntentId}</small>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+    section.innerHTML = html;
+}
+
+// Utility functions for formatting
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN').format(amount);
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 // Render patient profile
@@ -979,11 +1105,13 @@ async function loadPatientData() {
         if (medicalData && medicalData.arvRegimens) {
             medications = medicalData.arvRegimens.flatMap(r => r.arvMedications || []);
         }
+
             if (medicalData) {
                 renderAppointments(medicalData.appointments || []);
                 renderTestResults(medicalData.testResults || []);
                 renderARVRegimens(medicalData.arvRegimens || [], medications);
             renderPayments(medicalData.payments || []);
+
         } else {
             renderAppointments([]);
             renderTestResults([]);
@@ -998,6 +1126,7 @@ async function loadPatientData() {
             } else {
                 btnContainer.style.display = 'none';
             }
+
         }
     } catch (error) {
         console.error('Error loading patient data:', error);
@@ -1012,3 +1141,158 @@ async function loadPatientData() {
 
 // Initialize page when DOM is loaded
 window.addEventListener('DOMContentLoaded', loadPatientData);
+
+// Payment Creation Modal Logic
+document.addEventListener('DOMContentLoaded', async function() {
+    // Show payment creation button for doctors only
+    if (window.isDoctor) {
+        document.getElementById('createPaymentContainer').style.display = '';
+    }
+
+    // Load services for payment creation
+    let allServices = [];
+    try {
+        allServices = await fetchAllServices();
+        const serviceSelect = document.getElementById('paymentServiceSelect');
+        if (serviceSelect && allServices.length > 0) {
+            allServices.forEach(service => {
+                // Only show available services
+                if (service.isAvailable) {
+                    const option = document.createElement('option');
+                    option.value = service.serviceId;
+                    option.textContent = `${service.serviceName} - ${service.price ? service.price.toLocaleString() : 'N/A'} VND`;
+                    option.dataset.price = service.price || 0;
+                    option.dataset.description = service.serviceDescription || '';
+                    serviceSelect.appendChild(option);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading services:', error);
+    }
+
+    // Modal elements
+    const openPaymentBtn = document.getElementById('openPaymentModalBtn');
+    const paymentModal = document.getElementById('paymentModal');
+    const closePaymentBtn = document.getElementById('closePaymentModalBtn');
+    const cancelPaymentBtn = document.getElementById('cancelPaymentBtn');
+    const paymentForm = document.getElementById('paymentForm');
+    const paymentFormMsg = document.getElementById('paymentFormMsg');
+    const serviceSelect = document.getElementById('paymentServiceSelect');
+    const amountInput = document.getElementById('paymentAmount');
+    const pmrIdInput = document.getElementById('paymentPmrId');
+    const serviceDescription = document.getElementById('serviceDescription');
+    const descriptionTextarea = document.getElementById('paymentDescription');
+
+    // Update amount and description when service is selected
+    if (serviceSelect && amountInput) {
+        serviceSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                // Update amount
+                if (selectedOption.dataset.price) {
+                    amountInput.value = selectedOption.dataset.price;
+                }
+                // Show service description
+                if (selectedOption.dataset.description) {
+                    serviceDescription.textContent = selectedOption.dataset.description;
+                    serviceDescription.style.display = 'block';
+                } else {
+                    serviceDescription.style.display = 'none';
+                }
+                // Auto-fill payment description
+                if (descriptionTextarea) {
+                    const serviceName = selectedOption.textContent.split(' - ')[0];
+                    descriptionTextarea.value = `Thanh toán cho dịch vụ: ${serviceName}`;
+                }
+            } else {
+                // Hide service description when no service selected
+                serviceDescription.style.display = 'none';
+                if (descriptionTextarea) {
+                    descriptionTextarea.value = '';
+                }
+            }
+        });
+    }
+
+    // Modal open/close logic
+    function openPaymentModal() {
+        paymentFormMsg.textContent = '';
+        paymentForm.reset();
+        // Set default values
+        document.getElementById('paymentAmount').value = '50000';
+        document.getElementById('paymentCurrency').value = 'VND';
+        
+        // Set pmrId from current patient data
+        const patientId = getPatientIdFromUrl();
+        if (patientId) {
+            fetchPatientMRId(patientId).then(mrData => {
+                if (mrData && mrData.pmrId) {
+                    pmrIdInput.value = mrData.pmrId;
+                }
+            });
+        }
+        
+        paymentModal.style.display = 'block';
+    }
+
+    function closePaymentModal() {
+        paymentModal.style.display = 'none';
+        paymentForm.reset();
+        paymentFormMsg.textContent = '';
+    }
+
+    // Event listeners
+    if (openPaymentBtn) openPaymentBtn.addEventListener('click', openPaymentModal);
+    if (closePaymentBtn) closePaymentBtn.addEventListener('click', closePaymentModal);
+    if (cancelPaymentBtn) cancelPaymentBtn.addEventListener('click', closePaymentModal);
+
+    // Close modal on outside click
+    window.addEventListener('click', function(event) {
+        if (event.target === paymentModal) {
+            closePaymentModal();
+        }
+    });
+
+    // Form submission
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            paymentFormMsg.textContent = '';
+
+            // Validate form
+            const formData = new FormData(paymentForm);
+            const pmrId = parseInt(formData.get('pmrId'));
+            const srvId = parseInt(formData.get('serviceId'));
+            const amount = parseFloat(formData.get('amount'));
+            const currency = formData.get('currency');
+            const paymentMethod = formData.get('paymentMethod');
+            const description = formData.get('description');
+
+            if (!pmrId || !srvId || !amount || !currency || !paymentMethod || !description) {
+                paymentFormMsg.textContent = 'Vui lòng điền đầy đủ tất cả các trường.';
+                return;
+            }
+
+            // Create payment object
+            const paymentData = {
+                pmrId: pmrId,
+                srvId: srvId,
+                amount: amount,
+                currency: currency,
+                paymentMethod: paymentMethod,
+                description: description
+            };
+
+            try {
+                await createPayment(paymentData);
+                closePaymentModal();
+                alert('Tạo thanh toán thành công!');
+                // Reload patient data to refresh payment history
+                loadPatientData();
+            } catch (error) {
+                paymentFormMsg.textContent = 'Lỗi khi tạo thanh toán. Vui lòng thử lại.';
+            }
+        });
+    }
+});

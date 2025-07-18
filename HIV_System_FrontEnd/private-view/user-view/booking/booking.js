@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function renderTimeSlots(grid, onSelect, date) {
-        grid.innerHTML = '<div class="loader">Loading available time slots...</div>';
+        grid.innerHTML = '<div class="loader">Đang tải các khung giờ trống...</div>';
         
         const allTimeSlots = await fetchAvailableTimeSlots(date);
         
@@ -136,9 +136,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (timeSlots.length === 0) {
             if (allTimeSlots.length === 0) {
-                grid.innerHTML = '<div class="no-time-slots">No available time slots for this date.</div>';
+                grid.innerHTML = '<div class="no-time-slots">Không có khung giờ trống cho ngày này.</div>';
             } else {
-                grid.innerHTML = '<div class="no-time-slots">No available time slots remaining for today.</div>';
+                grid.innerHTML = '<div class="no-time-slots">Không còn khung giờ trống cho hôm nay.</div>';
             }
             return;
         }
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selected.setHours(0, 0, 0, 0);
         
         if (selected < today) {
-            timeSlotGrid.innerHTML = '<div class="no-time-slots">Cannot book appointments for past dates.</div>';
+            timeSlotGrid.innerHTML = '<div class="no-time-slots">Không thể đặt lịch hẹn cho những ngày đã qua.</div>';
             availableDoctorsSection.style.display = 'none';
             confirmTimeBookingBtn.style.display = 'none';
             return;
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => {
             if (response.status === 404) {
                 console.log('No doctors available for this time slot');
-                doctorList.innerHTML = '<div class="no-doctors">No doctors available for this time slot.</div>';
+                doctorList.innerHTML = '<div class="no-doctors">Không có bác sĩ nào rảnh trong khung giờ này.</div>';
                 availableDoctorsSection.style.display = 'block';
                 confirmTimeBookingBtn.style.display = 'none';
                 return [];
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error fetching doctors:', error);
-            doctorList.innerHTML = '<div class="error-message">Error loading doctors. Please try again.</div>';
+            doctorList.innerHTML = '<div class="error-message">Lỗi tải danh sách bác sĩ. Vui lòng thử lại.</div>';
             availableDoctorsSection.style.display = 'block';
             confirmTimeBookingBtn.style.display = 'none';
         });
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!data || data.length === 0) {
                 console.log('No doctors found');
                 const noDataOption = document.createElement('option');
-                noDataOption.textContent = 'No doctors available';
+                noDataOption.textContent = 'Không có bác sĩ nào';
                 noDataOption.disabled = true;
                 doctorSelect.appendChild(noDataOption);
                 return;
@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error fetching doctors:', error);
             const errorOption = document.createElement('option');
-            errorOption.textContent = 'Error loading doctors';
+            errorOption.textContent = 'Lỗi tải danh sách bác sĩ';
             errorOption.disabled = true;
             doctorSelect.appendChild(errorOption);
         });
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selected.setHours(0, 0, 0, 0);
         
         if (selected < today) {
-            doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Cannot book appointments for past dates.</div>';
+            doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Không thể đặt lịch hẹn cho những ngày đã qua.</div>';
             confirmDoctorBookingBtn.style.display = 'none';
             return;
         }
@@ -414,13 +414,13 @@ document.addEventListener('DOMContentLoaded', function() {
             doctorTimeSlotGrid.innerHTML = '';
             
             if (!schedule) {
-                doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">No schedule available for this date.</div>';
+                doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Không có lịch làm việc cho ngày này.</div>';
                 confirmDoctorBookingBtn.style.display = 'none';
                 return;
             }
             
             if (!schedule.isAvailable) {
-                doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Doctor is not available on this date.</div>';
+                doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Bác sĩ không làm việc vào ngày này.</div>';
                 confirmDoctorBookingBtn.style.display = 'none';
                 return;
             }
@@ -435,9 +435,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (timeSlots.length === 0) {
                 if (allTimeSlots.length === 0) {
-                    doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">No available time slots for this date.</div>';
+                    doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Không có khung giờ trống cho ngày này.</div>';
                 } else {
-                    doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">No available time slots remaining for today.</div>';
+                    doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Không còn khung giờ trống cho hôm nay.</div>';
                 }
                 confirmDoctorBookingBtn.style.display = 'none';
                 return;
@@ -459,8 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmDoctorBookingBtn.style.display = 'none';
         })
         .catch(error => {
-            console.error('Error fetching doctor schedule:', error);
-            doctorTimeSlotGrid.innerHTML = '<div class="error-message">Error fetching schedule. Please try again.</div>';
+            console.error('Error fetching doctor schedule:', error);                doctorTimeSlotGrid.innerHTML = '<div class="error-message">Lỗi tải lịch làm việc. Vui lòng thử lại.</div>';
             confirmDoctorBookingBtn.style.display = 'none';
         });
     }
@@ -516,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const calendarContainer = document.createElement('div');
         calendarContainer.className = 'doctor-schedule-calendar';
         calendarContainer.innerHTML = `
-            <h4>Doctor's Work Schedule</h4>
+            <h4>Lịch làm việc của bác sĩ</h4>
             <div class="calendar-grid">
                 <div class="calendar-header">
                     <div class="day-header">Sun</div>
@@ -608,39 +607,39 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.innerHTML = `
             <div class="confirmation-modal">
                 <div class="modal-header">
-                    <h3><i class="fas fa-calendar-check"></i> Confirm Appointment</h3>
+                    <h3><i class="fas fa-calendar-check"></i> Xác nhận lịch hẹn</h3>
                     <button class="modal-close" onclick="closeModal()">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="booking-summary">
-                        <h4><i class="fas fa-clipboard-list"></i> Booking Summary</h4>
+                        <h4><i class="fas fa-clipboard-list"></i> Thông tin lịch hẹn</h4>
                         <div class="summary-item">
-                            <span class="summary-label"><i class="fas fa-calendar"></i> Date:</span>
+                            <span class="summary-label"><i class="fas fa-calendar"></i> Ngày:</span>
                             <span class="summary-value">${formatDate(bookingData.appointmentDate)}</span>
                         </div>
                         <div class="summary-item">
-                            <span class="summary-label"><i class="fas fa-clock"></i> Time:</span>
+                            <span class="summary-label"><i class="fas fa-clock"></i> Thời gian:</span>
                             <span class="summary-value">${bookingData.appointmentTime}</span>
                         </div>
                         <div class="summary-item">
-                            <span class="summary-label"><i class="fas fa-stethoscope"></i> Type:</span>
-                            <span class="summary-value">HIV Care Consultation</span>
+                            <span class="summary-label"><i class="fas fa-stethoscope"></i> Loại:</span>
+                            <span class="summary-value">Tư vấn điều trị HIV</span>
                         </div>
                     </div>
                     
                     <div class="doctor-summary">
-                        <h5><i class="fas fa-user-md"></i> Doctor Information</h5>
-                        <p><strong>Name:</strong> ${bookingData.doctorName}</p>
+                        <h5><i class="fas fa-user-md"></i> Thông tin bác sĩ</h5>
+                        <p><strong>Tên:</strong> ${bookingData.doctorName}</p>
                         <p><strong>Email:</strong> ${bookingData.doctorEmail}</p>
-                        <p><strong>Specialization:</strong> ${bookingData.degree || 'HIV/AIDS Care'}</p>
+                        <p><strong>Chuyên môn:</strong> ${bookingData.degree || 'Điều trị HIV/AIDS'}</p>
                     </div>
                     
                     <div class="modal-actions">
                         <button class="modal-btn modal-btn-cancel" onclick="closeModal()">
-                            <i class="fas fa-times"></i> Cancel
+                            <i class="fas fa-times"></i> Hủy bỏ
                         </button>
                         <button class="modal-btn modal-btn-confirm" onclick="confirmBooking()">
-                            <i class="fas fa-check"></i> Confirm Booking
+                            <i class="fas fa-check"></i> Xác nhận đặt lịch
                         </button>
                     </div>
                 </div>
@@ -682,7 +681,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cancelBtn = document.querySelector('.modal-btn-cancel');
         
         confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<span class="loading-spinner"></span>Creating Appointment...';
+        confirmBtn.innerHTML = '<span class="loading-spinner"></span>Đang tạo lịch hẹn...';
         cancelBtn.disabled = true;
         
         createAppointment(window.currentBookingData)
@@ -712,9 +711,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="success-icon">
                     <i class="fas fa-check-circle"></i>
                 </div>
-                <h4>Appointment Created Successfully!</h4>
-                <p>You will receive a confirmation email shortly.</p>
-                <p>Redirecting to your appointments...</p>
+                <h4>Đã tạo lịch hẹn thành công!</h4>
+                <p>Bạn sẽ nhận được email xác nhận trong thời gian ngắn.</p>
+                <p>Đang chuyển đến trang lịch hẹn của bạn...</p>
             </div>
         `;
     }
@@ -727,10 +726,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
-                    <h4 style="color: #e74c3c; margin: 0 0 10px 0;">Booking Failed</h4>
+                    <h4 style="color: #e74c3c; margin: 0 0 10px 0;">Đặt lịch thất bại</h4>
                     <p style="color: #6c757d; margin: 0 0 20px 0;">${errorMessage}</p>
                     <button class="modal-btn modal-btn-confirm" onclick="closeModal()">
-                        <i class="fas fa-arrow-left"></i> Try Again
+                        <i class="fas fa-arrow-left"></i> Thử lại
                     </button>
                 </div>
             </div>
@@ -774,7 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners for Booking Buttons
     confirmTimeBookingBtn.addEventListener('click', function() {
         if (!calendarDate.value || !selectedTimeSlot || !selectedDoctor) {
-            alert('Please select all fields.');
+            alert('Vui lòng chọn đầy đủ thông tin.');
             return;
         }
         
@@ -820,7 +819,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .find(opt => opt.value === selectedEmail)?.doctorData;
         
         if (!doctor) {
-            alert('Doctor information not found.');
+            alert('Không tìm thấy thông tin bác sĩ.');
             return;
         }
         
