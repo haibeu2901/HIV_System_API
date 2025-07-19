@@ -723,9 +723,9 @@ namespace HIV_System_API_Services.Implements
         }
 
         public async Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenWithMedicationsAsync(
-            int parId, 
-            PatientArvRegimenRequestDTO regimenRequest, 
-            List<PatientArvMedicationRequestDTO> medicationRequests, 
+            int parId,
+            PatientArvRegimenRequestDTO regimenRequest,
+            List<PatientArvMedicationRequestDTO> medicationRequests,
             int accId)
         {
             Debug.WriteLine($"Updating ARV regimen with medications for AccountId: {accId}");
@@ -770,6 +770,9 @@ namespace HIV_System_API_Services.Implements
                 if (existingRegimen == null)
                     throw new InvalidOperationException($"Phác đồ ARV với ID {parId} không tồn tại.");
 
+                if (existingRegimen.RegimenStatus == 4) // Failed
+                    throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đã được đánh dấu là thất bại.");
+
                 if (existingRegimen.RegimenStatus == 5) // Completed
                     throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đã được đánh dấu là hoàn thành.");
 
@@ -778,27 +781,51 @@ namespace HIV_System_API_Services.Implements
                 updatedRegimenEntity.ParId = parId;
                 var updatedRegimen = await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, updatedRegimenEntity);
 
-                // Delete existing medications
-                var existingMedications = await _context.PatientArvMedications
-                    .Where(pam => pam.ParId == parId)
-                    .ToListAsync();
-                foreach (var med in existingMedications)
-                {
-                    await _patientArvMedicationRepo.DeletePatientArvMedicationAsync(med.PamId);
-                }
+                // Get existing medications for this regimen
+                var existingMedications = await _patientArvMedicationRepo.GetPatientArvMedicationsByPatientRegimenIdAsync(parId);
 
-                // Create new medications
-                var medicationEntities = new List<PatientArvMedication>();
+                // Create dictionaries for easier lookup
+                var existingMedDict = existingMedications.ToDictionary(m => m.AmdId, m => m);
+                var requestMedDict = medicationRequests.ToDictionary(m => m.ArvMedDetailId, m => m);
+
+                var updatedMedications = new List<PatientArvMedication>();
+
+                // Update existing medications or create new ones
                 foreach (var medRequest in medicationRequests)
                 {
-                    var medEntity = new PatientArvMedication
+                    if (existingMedDict.ContainsKey(medRequest.ArvMedDetailId))
                     {
-                        ParId = parId,
-                        AmdId = medRequest.ArvMedDetailId,
-                        Quantity = medRequest.Quantity
-                    };
-                    var createdMed = await _patientArvMedicationRepo.CreatePatientArvMedicationAsync(medEntity);
-                    medicationEntities.Add(createdMed);
+                        // Update existing medication
+                        var existingMed = existingMedDict[medRequest.ArvMedDetailId];
+                        var updatedMedEntity = new PatientArvMedication
+                        {
+                            PamId = existingMed.PamId,
+                            ParId = parId,
+                            AmdId = medRequest.ArvMedDetailId,
+                            Quantity = medRequest.Quantity
+                        };
+                        var updatedMed = await _patientArvMedicationRepo.UpdatePatientArvMedicationAsync(existingMed.PamId, updatedMedEntity);
+                        updatedMedications.Add(updatedMed);
+                    }
+                    else
+                    {
+                        // Create new medication
+                        var newMedEntity = new PatientArvMedication
+                        {
+                            ParId = parId,
+                            AmdId = medRequest.ArvMedDetailId,
+                            Quantity = medRequest.Quantity
+                        };
+                        var createdMed = await _patientArvMedicationRepo.CreatePatientArvMedicationAsync(newMedEntity);
+                        updatedMedications.Add(createdMed);
+                    }
+                }
+
+                // Delete medications that are no longer in the request
+                var medicationsToDelete = existingMedications.Where(em => !requestMedDict.ContainsKey(em.AmdId)).ToList();
+                foreach (var medToDelete in medicationsToDelete)
+                {
+                    await _patientArvMedicationRepo.DeletePatientArvMedicationAsync(medToDelete.PamId);
                 }
 
                 // Update TotalCost
@@ -810,7 +837,7 @@ namespace HIV_System_API_Services.Implements
                 var notification = new Notification
                 {
                     NotiType = "Cập nhật phác đồ ARV",
-                    NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {medicationEntities.Count} loại thuốc.",
+                    NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {updatedMedications.Count} loại thuốc.",
                     SendAt = DateTime.UtcNow
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
