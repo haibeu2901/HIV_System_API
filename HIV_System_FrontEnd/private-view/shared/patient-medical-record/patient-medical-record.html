@@ -37,32 +37,34 @@
             </div>
 
             <!-- Test Results Section -->
-            <div class="section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h3>Tất cả kết quả xét nghiệm</h3>
-                    <!-- Button for staff only - moved to top -->
-                    <div id="createTestResultContainer" style="display: none;">
-                        <button id="openTestResultModalBtn" class="primary-btn">
-                            <i class="fas fa-plus"></i> Tạo kết quả xét nghiệm
-                        </button>
-                    </div>
-                </div>
-                <div id="testResultsSection" class="content-section">
-                    <p>Đang tải kết quả xét nghiệm...</p>
+<!-- Test Results Section -->
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Tất cả kết quả xét nghiệm</h3>
+                <div id="createTestResultContainer" style="display: none;">
+                    <button id="openTestResultModalBtn" class="primary-btn">
+                        <i class="fas fa-plus"></i> Tạo kết quả xét nghiệm
+                    </button>
                 </div>
             </div>
+            <div id="testResultsSection" class="content-section">
+                <p>Đang tải kết quả xét nghiệm...</p>
+            </div>
+        </div>
 
             <!-- ARV Regimens Section -->
             <div class="section">
-                <h3>Tất cả phác đồ ARV của bệnh nhân</h3>
-                <!-- Create New Regimen Button and Modal (only for doctor) -->
-    <div id="regimenCreateContainer" style="text-align: right; margin-bottom: 2rem; display:none;">
-        <button id="openRegimenModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo phác đồ ARV</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>Tất cả phác đồ ARV của bệnh nhân</h3>
+        <div id="regimenCreateContainer" style="display:none;">
+            <button id="openRegimenModalBtn" class="primary-btn">
+                <i class="fas fa-plus"></i> Tạo phác đồ ARV
+            </button>
+        </div>
     </div>
-                <div id="arvRegimensSection" class="content-section">
-                    <p>Đang tải phác đồ ARV...</p>
-                </div>
-            </div>
+    <div id="arvRegimensSection" class="content-section">
+        <p>Đang tải phác đồ ARV...</p>
+    </div>
             <!-- Payment History Section -->
             <div class="section">
                 <h3>Lịch sử thanh toán</h3>
@@ -142,7 +144,7 @@
     <div id="updateRegimenStatusModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" id="closeUpdateRegimenStatusModalBtn">&times;</span>
-            <h2>Update ARV Regimen Status</h2>
+            <h2>Cập nhật trạng thái phác đồ ARV</h2>
             <form id="updateRegimenStatusForm">
                 <div class="form-group">
                     <label for="updateRegimenStatusSelect">Cập nhật trạng thái</label>
@@ -338,7 +340,7 @@
     <!-- Payment Creation Modal -->
     <div id="paymentModal" class="modal" style="display:none;">
         <div class="modal-content">
-            <div class="modal-header">
+                <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2>Tạo thanh toán mới</h2>
                 <span id="closePaymentModalBtn" class="close">&times;</span>
             </div>
