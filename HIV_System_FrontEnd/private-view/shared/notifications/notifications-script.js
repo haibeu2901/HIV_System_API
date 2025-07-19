@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if token exists
     const token = localStorage.getItem("token");
     if (!token) {
-        alert('You need to be logged in to view notifications. Redirecting to login...');
+        alert('Bạn cần đăng nhập để xem thông báo. Đang chuyển hướng đến trang đăng nhập...');
         window.location.href = '/public-view/landingpage.html';
         return;
     }
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load notifications for main page
     async function loadMainNotifications() {
-        list.innerHTML = "<p>Loading...</p>";
+        list.innerHTML = "<p>Đang tải...</p>";
         try {
             const allNotifications = await fetchNotifications('/api/Notification/GetPersonalNotifications');
             const unreadNotifications = await fetchNotifications('/api/Notification/GetUnreadNotifications');
@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="no-notifications-icon">
                             <i class="fa-solid fa-bell-slash"></i>
                         </div>
-                        <h3>No Notifications</h3>
-                        <p>You don't have any notifications yet.</p>
+                        <h3>Không có thông báo</h3>
+                        <p>Bạn chưa có thông báo nào.</p>
                     </div>
                 `;
                 return;
@@ -41,11 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const controlsHTML = `
                 <div class="notification-controls">
                     <div class="filter-tabs">
-                        <button class="filter-tab active" data-filter="all">All (${allNotifications.length})</button>
-                        <button class="filter-tab" data-filter="unread">Unread (${unreadNotifications.length})</button>
+                        <button class="filter-tab active" data-filter="all">Tất cả (${allNotifications.length})</button>
+                        <button class="filter-tab" data-filter="unread">Chưa đọc (${unreadNotifications.length})</button>
                     </div>
                     <button class="mark-all-read-btn">
-                        <i class="fa-solid fa-check-double"></i> Mark All as Read
+                        <i class="fa-solid fa-check-double"></i> Đánh dấu tất cả là đã đọc
                     </button>
                 </div>
             `;
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Mark all as read
             document.querySelector('.mark-all-read-btn').addEventListener('click', markAllAsRead);
         } catch (error) {
-            list.innerHTML = `<div class="error-container"><h3>Error Loading Notifications</h3><p>${error.message}</p></div>`;
+            list.innerHTML = `<div class="error-container"><h3>Lỗi khi tải thông báo</h3><p>${error.message}</p></div>`;
         }
     }
 
@@ -79,12 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="no-notifications-icon">
                         <i class="fa-solid fa-bell-slash"></i>
                     </div>
-                    <h3>No ${filter === 'unread' ? 'Unread' : ''} Notifications</h3>
-                    <p>You don't have any ${filter === 'unread' ? 'unread' : ''} notifications.</p>
+                    <h3>Không có thông báo ${filter === 'unread' ? 'chưa đọc' : ''}</h3>
+                    <p>Bạn không có thông báo nào ${filter === 'unread' ? 'chưa đọc' : ''}.</p>
                 </div>
             `;
             return;
         }
+
+        // Notification card template
         container.innerHTML = filteredNotifications.map(noti => {
             const isUnread = unreadIds.has(noti.notiId);
             return `
@@ -93,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="notification-icon ${getNotificationTypeClass(noti.notiType)}">
                             <i class="${getNotificationIcon(noti.notiType)}"></i>
                         </div>
-                        <div class="notification-type">${noti.notiType}</div>
+                        <div class="notification-type">${translateNotificationType(noti.notiType)}</div>
                         <div class="notification-date">
                             <i class="fa-regular fa-clock"></i>
                             ${formatDateTime(noti.sendAt)}
@@ -103,11 +105,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="notification-content">
                         <div class="notification-message">${noti.notiMessage}</div>
                         <div class="notification-meta">
-                            <span class="notification-id">ID: ${noti.notiId}</span>
-                            <span class="notification-created">Created: ${formatDateTime(noti.createdAt)}</span>
+                            <span class="notification-id">Mã: ${noti.notiId}</span>
+                            <span class="notification-created">Tạo lúc: ${formatDateTime(noti.createdAt)}</span>
                             <div class="notification-actions">
                                 ${isUnread ? `<button class="mark-read-btn" data-notification-id="${noti.notiId}">
-                                    <i class="fa-solid fa-check"></i> Mark as Read
+                                    <i class="fa-solid fa-check"></i> Đánh dấu đã đọc
                                 </button>` : ''}
                             </div>
                         </div>
@@ -178,17 +180,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const minutes = Math.floor(diff / 60000);
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
-            if (minutes < 1) return 'Just now';
-            if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-            if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-            if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-            return d.toLocaleDateString('en-GB', {
+            if (minutes < 1) return 'Vừa xong';
+            if (minutes < 60) return `${minutes} phút trước`;
+            if (hours < 24) return `${hours} giờ trước`;
+            if (days < 7) return `${days} ngày trước`;
+            return d.toLocaleDateString('vi-VN', {
                 year: 'numeric', month: '2-digit', day: '2-digit',
                 hour: '2-digit', minute: '2-digit'
             });
         } catch (error) {
             return dateStr;
         }
+    }
+
+    // Add new function to translate notification types
+    function translateNotificationType(type) {
+        const translations = {
+            'Appt Confirm': 'Xác nhận lịch hẹn',
+            'Appointment Update': 'Cập nhật lịch hẹn',
+            'Appointment Reminder': 'Nhắc nhở lịch hẹn',
+            'Test Result': 'Kết quả xét nghiệm',
+            'Medical Record': 'Hồ sơ y tế',
+            'System': 'Hệ thống',
+            'General': 'Thông báo chung'
+        };
+        return translations[type] || type;
     }
 
     function getNotificationIcon(notiType) {

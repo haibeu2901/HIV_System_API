@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Patient Medical Record</title>
+    <title>Hồ Sơ Y Tế Bệnh Nhân</title>
     <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
     <link rel="stylesheet" href="patient-medical-record-style.css">
 </head>
@@ -11,7 +11,7 @@
 
     <div class="dashboard-container" style="padding-top: 5px;">
         <main class="main-content">
-            <div class="dashboard-header">Patient Medical Record</div>
+            <div class="dashboard-header">Hồ Sơ Y Tế Bệnh Nhân</div>
             
             <!-- Patient Profile Section -->
             <div class="patient-profile-section">
@@ -21,10 +21,10 @@
                 <div class="patient-info">
                     <h2 id="patientName">Đang tải...</h2>
                     <div class="patient-details">
-                        <p><strong>Gender:</strong> <span id="patientGender">-</span></p>
-                        <p><strong>Date of Birth:</strong> <span id="patientDOB">-</span></p>
+                        <p><strong>Giới tính:</strong> <span id="patientGender">-</span></p>
+                        <p><strong>Ngày sinh:</strong> <span id="patientDOB">-</span></p>
                         <p><strong>Email:</strong> <span id="patientEmail">-</span></p>
-                        <p><strong>Patient ID:</strong> <span id="patientId">-</span></p>
+                        <p><strong>Mã bệnh nhân:</strong> <span id="patientId">-</span></p>
                     </div>
                 </div>
             </div>
@@ -39,13 +39,17 @@
 
             <!-- Test Results Section -->
             <div class="section">
-                <h3>Tất cả kết quả xét nghiệm</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Tất cả kết quả xét nghiệm</h3>
+                    <!-- Button for staff only - moved to top -->
+                    <div id="createTestResultContainer" style="display: none;">
+                        <button id="openTestResultModalBtn" class="primary-btn">
+                            <i class="fas fa-plus"></i> Tạo kết quả xét nghiệm
+                        </button>
+                    </div>
+                </div>
                 <div id="testResultsSection" class="content-section">
                     <p>Đang tải kết quả xét nghiệm...</p>
-                </div>
-                <!-- Button for staff only -->
-                <div id="createTestResultContainer" style="margin-top: 1.5rem; display: none;">
-                    <button id="openTestResultModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo kết quả xét nghiệm</button>
                 </div>
             </div>
 
@@ -70,50 +74,50 @@
             <h2>Tạo phác đồ ARV mới</h2>
             <form id="regimenForm">
                 <div class="form-group">
-                    <label for="regimenLevel">Regimen Level</label>
+                    <label for="regimenLevel">Cấp độ phác đồ</label>
                     <select id="regimenLevel" name="regimenLevel" required>
-                        <option value="">Select level</option>
+                        <option value="">Chọn cấp độ</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
-                        <option value="4">Special Case</option>
+                        <option value="4">Trường hợp đặc biệt</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="regimenTemplate">Regimen Template</label>
+                    <label for="regimenTemplate">Mẫu phác đồ</label>
                     <select id="regimenTemplate" name="regimenTemplate" required>
-                        <option value="">Select template</option>
+                        <option value="">Chọn mẫu</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="regimenNotes">Notes</label>
+                    <label for="regimenNotes">Ghi chú</label>
                     <textarea id="regimenNotes" name="regimenNotes" rows="2"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="regimenStartDate">Start Date</label>
+                    <label for="regimenStartDate">Ngày bắt đầu</label>
                     <input type="date" id="regimenStartDate" name="regimenStartDate" required />
                 </div>
                 <div class="form-group">
-                    <label>Medications</label>
+                    <label>Thuốc</label>
                     <table id="medicationsTable" class="medications-table">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Dosage</th>
-                                <th>Quantity</th>
-                                <th>Manufacturer</th>
-                                <th>Action</th>
+                                <th>Tên thuốc</th>
+                                <th>Liều lượng</th>
+                                <th>Số lượng</th>
+                                <th>Nhà sản xuất</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             <!-- Medication rows will be inserted here -->
                         </tbody>
                     </table>
-                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Add Medication</button>
+                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Thêm thuốc</button>
                 </div>
                 <div class="form-actions" style="margin-top: 2rem;">
-                    <button type="submit" class="primary-btn">Create Regimen</button>
-                    <button type="button" id="cancelRegimenBtn" class="secondary-btn">Cancel</button>
+                    <button type="submit" class="primary-btn">Tạo phác đồ</button>
+                    <button type="button" id="cancelRegimenBtn" class="secondary-btn">Hủy</button>
                 </div>
             </form>
         </div>
@@ -229,36 +233,36 @@
                 <div class="footer-section">
                     <div class="footer-logo">
                         <i class="fas fa-heartbeat"></i>
-                        <span>CareFirst HIV Clinic</span>
+                        <span>Phòng khám HIV CareFirst</span>
                     </div>
-                    <p>Providing compassionate HIV care and support for everyone in our community.</p>
+                    <p>Chăm sóc và hỗ trợ điều trị HIV với tình thương và trách nhiệm.</p>
                 </div>
                 <div class="footer-section">
-                    <h3>Quick Links</h3>
+                    <h3>Liên kết nhanh</h3>
                     <ul>
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#services">Services</a></li>
-                        <li><a href="#about">About</a></li>
-                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#home">Trang chủ</a></li>
+                        <li><a href="#services">Dịch vụ</a></li>
+                        <li><a href="#about">Giới thiệu</a></li>
+                        <li><a href="#contact">Liên hệ</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h3>Services</h3>
+                    <h3>Dịch vụ</h3>
                     <ul>
-                        <li><a href="#">HIV Testing</a></li>
-                        <li><a href="#">Treatment</a></li>
-                        <li><a href="#">Support Groups</a></li>
-                        <li><a href="#">Prevention</a></li>
+                        <li><a href="#">Xét nghiệm HIV</a></li>
+                        <li><a href="#">Điều trị</a></li>
+                        <li><a href="#">Nhóm hỗ trợ</a></li>
+                        <li><a href="#">Phòng ngừa</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h3>Emergency</h3>
-                    <p>24/7 Hotline: <strong>(555) 911-HIV1</strong></p>
-                    <p>Crisis Support Available</p>
+                    <h3>Khẩn cấp</h3>
+                    <p>Đường dây nóng 24/7: <strong>(555) 911-HIV1</strong></p>
+                    <p>Hỗ trợ khủng hoảng</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 CareFirst HIV Clinic. All rights reserved. | Privacy Policy | Terms of Service</p>
+                <p>&copy; 2025 Phòng khám HIV CareFirst. Bảo lưu mọi quyền. | Chính sách bảo mật | Điều khoản dịch vụ</p>
             </div>
         </div>
     </footer>
