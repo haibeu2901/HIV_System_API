@@ -16,6 +16,32 @@ namespace HIV_System_API_Backend.Controllers
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
 
+        // Test card numbers for different scenarios
+        private readonly Dictionary<string, (string PaymentMethod, string Description, bool IsSuccess)> _testCardNumbers = new()
+        {
+            // Success scenarios
+            { "4242424242424242", ("pm_card_visa", "Visa - Success", true) },
+            { "4000056655665556", ("pm_card_visa_debit", "Visa Debit - Success", true) },
+            { "5555555555554444", ("pm_card_mastercard", "Mastercard - Success", true) },
+            { "2223003122003222", ("pm_card_mastercard", "Mastercard 2-series - Success", true) },
+            { "378282246310005", ("pm_card_amex", "American Express - Success", true) },
+            { "6011111111111117", ("pm_card_discover", "Discover - Success", true) },
+            { "3056930009020004", ("pm_card_diners", "Diners Club - Success", true) },
+            { "30569309025904", ("pm_card_diners", "Diners Club 14-digit - Success", true) },
+            { "6200000000000005", ("pm_card_unionpay", "UnionPay - Success", true) },
+            { "3566002020360505", ("pm_card_jcb", "JCB - Success", true) },
+
+            // Failure scenarios
+            { "4000000000000002", ("pm_card_chargeDeclined", "Visa - Generic decline", false) },
+            { "4000000000009995", ("pm_card_chargeDeclinedInsufficientFunds", "Visa - Insufficient funds", false) },
+            { "4000000000009987", ("pm_card_chargeDeclinedLostCard", "Visa - Lost card", false) },
+            { "4000000000009979", ("pm_card_chargeDeclinedStolenCard", "Visa - Stolen card", false) },
+            { "4000000000000069", ("pm_card_chargeDeclinedExpiredCard", "Visa - Expired card", false) },
+            { "4000000000000127", ("pm_card_chargeDeclinedIncorrectCvc", "Visa - Incorrect CVC", false) },
+            { "4000000000000119", ("pm_card_chargeDeclinedProcessingError", "Visa - Processing error", false) },
+            { "4242424242424241", ("pm_card_chargeDeclinedIncorrectNumber", "Visa - Incorrect number", false) }
+        };
+
         public PaymentController(IPaymentService paymentService, IConfiguration configuration)
         {
             _paymentService = paymentService;
@@ -23,7 +49,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreatePayment")]
-        [Authorize (Roles = "1, 2, 4, 5")]
+        [Authorize(Roles = "1, 2, 4, 5")]
         public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO request)
         {
             try
@@ -60,7 +86,7 @@ namespace HIV_System_API_Backend.Controllers
                     var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
                     if (paymentIntent != null)
                     {
-                        byte newStatus = stripeEvent.Type == "payment_intent.succeeded" ? (byte)1 : (byte)2; // 1: Success, 2: Failed
+                        byte newStatus = stripeEvent.Type == "payment_intent.succeeded" ? (byte)2 : (byte)3; // 2: Success, 3: Failed
                         await _paymentService.UpdatePaymentStatusByIntentIdAsync(paymentIntent.Id, newStatus);
                     }
                 }
@@ -134,17 +160,48 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("confirm-payment/{id}")]
         [Authorize]
-        public async Task<IActionResult> ConfirmPayment(string id)
+        public async Task<IActionResult> ConfirmPayment(string id, [FromBody] TestCardRequest request)
         {
             try
             {
+                // Remove spaces and validate card number format
+                var cardNumber = request.CardNumber?.Replace(" ", "");
+
+                if (string.IsNullOrEmpty(cardNumber))
+                {
+                    return BadRequest(new { Error = "Card number is required" });
+                }
+
+                // Check if the card number exists in our test scenarios
+                if (!_testCardNumbers.TryGetValue(cardNumber, out var cardInfo))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Invalid test card number",
+                        Message = "Please use a valid test card number from the supported scenarios"
+                    });
+                }
+
                 var service = new PaymentIntentService();
                 var options = new PaymentIntentConfirmOptions
                 {
-                    PaymentMethod = "pm_card_visa" // Simulates Visa: 4242 4242 4242 4242
+                    PaymentMethod = cardInfo.PaymentMethod
                 };
+
                 var paymentIntent = await service.ConfirmAsync(id, options);
-                return Ok(new { Status = paymentIntent.Status, PaymentIntentId = paymentIntent.Id, CustomerEmail = paymentIntent.Customer?.Email ?? paymentIntent.ReceiptEmail });
+
+                // Update payment status based on card scenario
+                byte newStatus = cardInfo.IsSuccess ? (byte)2 : (byte)3; // 2: Success, 3: Failed
+                await _paymentService.UpdatePaymentStatusByIntentIdAsync(paymentIntent.Id, newStatus);
+
+                return Ok(new
+                {
+                    Status = cardInfo.IsSuccess ? "succeeded" : "failed",
+                    PaymentIntentId = paymentIntent.Id,
+                    CustomerEmail = paymentIntent.Customer?.Email ?? paymentIntent.ReceiptEmail,
+                    CardInfo = cardInfo.Description,
+                    TestScenario = cardInfo.IsSuccess ? "Success" : "Failure"
+                });
             }
             catch (StripeException ex)
             {
@@ -154,22 +211,72 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("fail-payment/{id}")]
         [Authorize]
-        public async Task<IActionResult> FailPayment(string id)
+        public async Task<IActionResult> FailPayment(string id, [FromBody] TestCardRequest request)
         {
             try
             {
+                // Remove spaces and validate card number format
+                var cardNumber = request.CardNumber?.Replace(" ", "");
+
+                if (string.IsNullOrEmpty(cardNumber))
+                {
+                    return BadRequest(new { Error = "Card number is required" });
+                }
+
+                // Check if the card number exists in our test scenarios
+                if (!_testCardNumbers.TryGetValue(cardNumber, out var cardInfo))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Invalid test card number",
+                        Message = "Please use a valid test card number from the supported scenarios"
+                    });
+                }
+
                 var service = new PaymentIntentService();
                 var options = new PaymentIntentConfirmOptions
                 {
-                    PaymentMethod = "pm_card_chargeDeclined" // Simulates Visa: 4000 0000 0000 0002
+                    PaymentMethod = cardInfo.PaymentMethod
                 };
+
                 var paymentIntent = await service.ConfirmAsync(id, options);
-                return Ok(new { Status = paymentIntent.Status, PaymentIntentId = paymentIntent.Id, CustomerEmail = paymentIntent.Customer?.Email ?? paymentIntent.ReceiptEmail });
+
+                // Always set to failed status for this endpoint, regardless of card scenario
+                byte newStatus = (byte)3; // 3: Failed
+                await _paymentService.UpdatePaymentStatusByIntentIdAsync(paymentIntent.Id, newStatus);
+
+                return Ok(new
+                {
+                    Status = "failed",
+                    PaymentIntentId = paymentIntent.Id,
+                    CustomerEmail = paymentIntent.Customer?.Email ?? paymentIntent.ReceiptEmail,
+                    CardInfo = cardInfo.Description,
+                    TestScenario = "Forced Failure"
+                });
             }
             catch (StripeException ex)
             {
                 return BadRequest(new { Error = ex.Message });
             }
+        }
+
+        [HttpGet("test-card-numbers")]
+        [Authorize]
+        public IActionResult GetTestCardNumbers()
+        {
+            var successCards = _testCardNumbers.Where(x => x.Value.IsSuccess)
+                .Select(x => new { CardNumber = x.Key, Description = x.Value.Description })
+                .ToList();
+
+            var failureCards = _testCardNumbers.Where(x => !x.Value.IsSuccess)
+                .Select(x => new { CardNumber = x.Key, Description = x.Value.Description })
+                .ToList();
+
+            return Ok(new
+            {
+                SuccessScenarios = successCards,
+                FailureScenarios = failureCards
+            });
         }
 
         [HttpGet("GetAllPersonalPayments")]
@@ -196,5 +303,10 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, new { Error = ex.Message });
             }
         }
+    }
+
+    public class TestCardRequest
+    {
+        public string CardNumber { get; set; } = string.Empty;
     }
 }

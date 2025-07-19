@@ -39,7 +39,7 @@ namespace HIV_System_API_Services.Implements
                 Currency = dto.Currency,
                 PaymentMethod = dto.PaymentMethod ?? "card",
                 Notes = dto.Description,
-                PaymentStatus = 0, // Pending
+                PaymentStatus = 1, // Pending
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 PaymentDate = DateTime.UtcNow,
@@ -47,34 +47,37 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        private PaymentResponseDTO MapToResponseDTO(Payment entity)
+        private async Task<PaymentResponseDTO> MapToResponseDTOAsync(Payment entity)
         {
-            var pmr = _context.PatientMedicalRecords
-                .Include(p => p.Ptn)
-                    .ThenInclude(ptn => ptn.Acc)
-                .FirstOrDefault(p => p.PmrId == entity.PmrId);
+            // Force fresh data fetch by reloading the entity
+            var freshPayment = await _context.Payments
+                .Include(p => p.Pmr)
+                    .ThenInclude(pmr => pmr.Ptn)
+                        .ThenInclude(ptn => ptn.Acc)
+                .Include(p => p.Srv)
+                .FirstOrDefaultAsync(p => p.PayId == entity.PayId);
 
-            var patient = pmr?.Ptn;
+            if (freshPayment == null)
+                throw new KeyNotFoundException($"Payment with ID {entity.PayId} not found.");
+
+            var patient = freshPayment.Pmr?.Ptn;
             var account = patient?.Acc;
-
-            var service = entity.SrvId.HasValue
-                ? _context.MedicalServices.FirstOrDefault(s => s.SrvId == entity.SrvId.Value)
-                : null;
+            var service = freshPayment.Srv;
 
             return new PaymentResponseDTO
             {
-                PayId = entity.PayId,
-                PmrId = entity.PmrId,
-                SrvId = entity.SrvId ?? null,
-                PaymentIntentId = entity.PaymentIntentId,
-                Amount = entity.Amount,
-                Currency = entity.Currency,
-                PaymentDate = entity.PaymentDate,
-                PaymentStatus = entity.PaymentStatus,
-                PaymentMethod = entity.PaymentMethod,
-                Description = entity.Notes,
-                CreatedAt = entity.CreatedAt,
-                UpdatedAt = entity.UpdatedAt,
+                PayId = freshPayment.PayId,
+                PmrId = freshPayment.PmrId,
+                SrvId = freshPayment.SrvId,
+                PaymentIntentId = freshPayment.PaymentIntentId,
+                Amount = freshPayment.Amount,
+                Currency = freshPayment.Currency,
+                PaymentDate = freshPayment.PaymentDate,
+                PaymentStatus = freshPayment.PaymentStatus, // This will now reflect the updated status
+                PaymentMethod = freshPayment.PaymentMethod,
+                Description = freshPayment.Notes,
+                CreatedAt = freshPayment.CreatedAt,
+                UpdatedAt = freshPayment.UpdatedAt,
                 PatientId = patient?.PtnId,
                 PatientName = account?.Fullname,
                 PatientEmail = account?.Email,
@@ -129,7 +132,7 @@ namespace HIV_System_API_Services.Implements
             var paymentEntity = MapToEntity(dto, paymentIntent.Id);
             var created = await _paymentRepo.CreatePaymentAsync(paymentEntity);
 
-            var paymentDto = MapToResponseDTO(created);
+            var paymentDto = await MapToResponseDTOAsync(created);
             return (paymentIntent.ClientSecret, paymentDto);
         }
 
@@ -137,7 +140,7 @@ namespace HIV_System_API_Services.Implements
         {
             var all = await _paymentRepo.GetAllPaymentsAsync();
             var entity = all.FirstOrDefault(p => p.PaymentIntentId == paymentIntentId);
-            return entity != null ? MapToResponseDTO(entity) : null;
+            return entity != null ? await MapToResponseDTOAsync(entity) : null;
         }
 
         public async Task UpdatePaymentStatusByIntentIdAsync(string paymentIntentId, byte status)
@@ -155,7 +158,14 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<PaymentResponseDTO>> GetAllPaymentsAsync()
         {
             var entities = await _paymentRepo.GetAllPaymentsAsync();
-            return entities.Select(MapToResponseDTO).ToList();
+            var result = new List<PaymentResponseDTO>();
+            
+            foreach (var entity in entities)
+            {
+                result.Add(await MapToResponseDTOAsync(entity));
+            }
+            
+            return result;
         }
 
         public async Task<PaymentResponseDTO> GetPaymentByIdAsync(int id)
@@ -163,13 +173,20 @@ namespace HIV_System_API_Services.Implements
             var entity = await _paymentRepo.GetPaymentByIdAsync(id);
             if (entity == null)
                 throw new KeyNotFoundException($"Thanh toán với ID {id} không tìm thấy.");
-            return MapToResponseDTO(entity);
+            return await MapToResponseDTOAsync(entity);
         }
 
         public async Task<List<PaymentResponseDTO>> GetPaymentsByPmrIdAsync(int pmrId)
         {
             var entities = await _paymentRepo.GetPaymentsByPatientMedicalRecordIdAsync(pmrId);
-            return entities.Select(MapToResponseDTO).ToList();
+            var result = new List<PaymentResponseDTO>();
+            
+            foreach (var entity in entities)
+            {
+                result.Add(await MapToResponseDTOAsync(entity));
+            }
+            
+            return result;
         }
 
         public async Task<PaymentResponseDTO> UpdatePaymentAsync(int payId, PaymentRequestDTO dto)
@@ -179,7 +196,7 @@ namespace HIV_System_API_Services.Implements
 
             var entity = MapToEntity(dto);
             var updated = await _paymentRepo.UpdatePaymentAsync(payId, entity);
-            return MapToResponseDTO(updated);
+            return await MapToResponseDTOAsync(updated);
         }
 
         public async Task<bool> DeletePaymentAsync(int payId)
@@ -195,7 +212,14 @@ namespace HIV_System_API_Services.Implements
                 throw new InvalidOperationException($"No patient found for account ID {accId}.");
 
             var entities = await _paymentRepo.GetPersonalPaymentsAsync(patient.PtnId);
-            return entities.Select(MapToResponseDTO).ToList();
+            var result = new List<PaymentResponseDTO>();
+            
+            foreach (var entity in entities)
+            {
+                result.Add(await MapToResponseDTOAsync(entity));
+            }
+            
+            return result;
         }
     }
 }

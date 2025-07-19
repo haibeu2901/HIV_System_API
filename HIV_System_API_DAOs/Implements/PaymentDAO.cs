@@ -39,6 +39,8 @@ namespace HIV_System_API_DAOs.Implements
                 return await _context.Payments
                     .Include(p => p.Pmr)
                     .Include(p => p.Srv)
+                    .OrderByDescending(p => p.PaymentDate)
+                    .ThenByDescending(p => p.CreatedAt)
                     .ToListAsync();
             }
             catch(Exception ex)
@@ -72,6 +74,8 @@ namespace HIV_System_API_DAOs.Implements
                     .Where(p => p.PmrId == pmrId)
                     .Include(p => p.Pmr)
                     .Include(p => p.Srv)
+                    .OrderByDescending(p => p.PaymentDate)
+                    .ThenByDescending(p => p.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -91,6 +95,7 @@ namespace HIV_System_API_DAOs.Implements
                     .Include(p => p.Srv)
                     .Where(p => p.Pmr.PtnId == patientId)
                     .OrderByDescending(p => p.PaymentDate)
+                    .ThenByDescending(p => p.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)

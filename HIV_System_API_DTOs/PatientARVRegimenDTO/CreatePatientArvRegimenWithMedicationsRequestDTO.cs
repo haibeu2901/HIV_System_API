@@ -12,4 +12,10 @@ namespace HIV_System_API_DTOs.PatientARVRegimenDTO
         public PatientArvRegimenRequestDTO Regimen { get; set; } = null!;
         public List<PatientArvMedicationRequestDTO> Medications { get; set; } = null!;
     }
+
+    public class UpdatePatientArvRegimenWithMedicationsRequestDTO
+    {
+        public PatientArvRegimenRequestDTO RegimenRequest { get; set; } = null!;
+        public List<PatientArvMedicationRequestDTO> MedicationRequests { get; set; } = null!;
+    }
 }

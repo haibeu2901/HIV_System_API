@@ -12,7 +12,6 @@
     <div class="dashboard-container" style="padding-top: 5px;">
         <main class="main-content">
             <div class="dashboard-header">Hồ Sơ Y Tế Bệnh Nhân</div>
-            
             <!-- Patient Profile Section -->
             <div class="patient-profile-section">
                 <div class="patient-avatar">
@@ -24,7 +23,7 @@
                         <p><strong>Giới tính:</strong> <span id="patientGender">-</span></p>
                         <p><strong>Ngày sinh:</strong> <span id="patientDOB">-</span></p>
                         <p><strong>Email:</strong> <span id="patientEmail">-</span></p>
-                        <p><strong>Mã bệnh nhân:</strong> <span id="patientId">-</span></p>
+                        <p><strong>ID Bệnh nhân:</strong> <span id="patientId">-</span></p>
                     </div>
                 </div>
             </div>
@@ -64,6 +63,18 @@
                     <p>Đang tải phác đồ ARV...</p>
                 </div>
             </div>
+            <!-- Payment History Section -->
+            <div class="section">
+                <h3>Lịch sử thanh toán</h3>
+                <!-- Create Payment Button Container (only for staff/doctor) -->
+                <div id="createPaymentContainer" style="text-align: right; margin-bottom: 1.5rem; display: none;">
+                    <button id="openPaymentModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo thanh toán</button>
+                </div>
+                <div id="paymentsSection" class="content-section">
+                    <p>Đang tải lịch sử thanh toán...</p>
+
+                </div>
+            </div>
         </main>
     </div>
 
@@ -98,6 +109,10 @@
                     <input type="date" id="regimenStartDate" name="regimenStartDate" required />
                 </div>
                 <div class="form-group">
+                    <label for="regimenEndDate">Ngày kết thúc</label>
+                    <input type="date" id="regimenEndDate" name="regimenEndDate" required />
+                </div>
+                <div class="form-group">
                     <label>Thuốc</label>
                     <table id="medicationsTable" class="medications-table">
                         <thead>
@@ -130,22 +145,22 @@
             <h2>Update ARV Regimen Status</h2>
             <form id="updateRegimenStatusForm">
                 <div class="form-group">
-                    <label for="updateRegimenStatusSelect">New Status</label>
+                    <label for="updateRegimenStatusSelect">Cập nhật trạng thái</label>
                     <select id="updateRegimenStatusSelect" name="regimenStatus" required>
-                        <option value="">Select status</option>
-                        <option value="2">Active</option>
-                        <option value="3">Paused</option>
-                        <option value="4">Failed</option>
-                        <option value="5">Completed</option>
+                        <option value="">Chọn trạng thái</option>
+                        <option value="2">Đang hoạt động</option>
+                        <option value="3">Tạm dừng</option>
+                        <option value="4">Đã hủy</option>
+                        <option value="5">Hoàng thành</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="updateRegimenStatusNotes">Notes</label>
+                    <label for="updateRegimenStatusNotes">Ghi chú</label>
                     <textarea id="updateRegimenStatusNotes" name="notes" rows="2" required></textarea>
                 </div>
                 <input type="hidden" id="updateRegimenStatusId" name="regimenId" />
                 <div class="form-group" style="text-align:right;">
-                    <button type="submit" class="primary-btn">Update Status</button>
+                    <button type="submit" class="primary-btn">Cập nhật trạng thái</button>
                 </div>
             </form>
             <div id="updateRegimenStatusMsg" style="color:red;margin-top:10px;"></div>
@@ -219,6 +234,44 @@
           </div>
           <div id="updateComponentTestMsg" style="color:red; margin-top:10px;"></div>
         </form>
+        </div>
+    </div>
+
+    <!-- Update Test Result Modal -->
+    <div id="updateTestResultModal" class="modal" style="display:none;">
+      <div class="modal-content" style="max-width:600px;">
+        <span class="close" id="closeUpdateTestResultModalBtn">&times;</span>
+        <h2>Cập nhật kết quả xét nghiệm</h2>
+        <form id="updateTestResultForm">
+          <input type="hidden" id="updateTestResultId" name="testResultId" />
+          <div class="form-group">
+            <label for="updateTestResultDate">Ngày xét nghiệm <span style="color:red">*</span></label>
+            <input type="date" id="updateTestResultDate" name="testDate" required />
+          </div>
+          <div class="form-group">
+            <label for="updateTestResultSelect">Kết quả <span style="color:red">*</span></label>
+            <select id="updateTestResultSelect" name="result" required style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 0.5rem;">
+              <option value="">Chọn kết quả</option>
+              <option value="true">Dương tính</option>
+              <option value="false">Âm tính</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="updateTestResultNotes">Ghi chú <span style="color:red">*</span></label>
+            <textarea id="updateTestResultNotes" name="notes" rows="2" required></textarea>
+          </div>
+          <hr>
+          <div id="updateComponentTestsContainer">
+            <h3>Thành phần xét nghiệm</h3>
+            <!-- Component test fieldsets will be inserted here -->
+          </div>
+          <button type="button" id="addUpdateComponentTestBtn" class="secondary-btn" style="margin-bottom: 1rem;">+ Thêm thành phần</button>
+          <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
+            <button type="submit" class="primary-btn">Cập nhật</button>
+            <button type="button" id="cancelUpdateTestResultBtn" class="secondary-btn">Hủy</button>
+          </div>
+          <div id="updateTestResultMsg" style="color:red; margin-top:10px;"></div>
+        </form>
       </div>
     </div>
 
@@ -281,5 +334,59 @@
         }
       });
     </script>
+
+    <!-- Payment Creation Modal -->
+    <div id="paymentModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tạo thanh toán mới</h2>
+                <span id="closePaymentModalBtn" class="close">&times;</span>
+            </div>
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="paymentServiceSelect">Dịch vụ <span style="color:red">*</span></label>
+                    <select id="paymentServiceSelect" name="serviceId" required>
+                        <option value="">Chọn dịch vụ...</option>
+                        <!-- Services will be loaded here -->
+                    </select>
+                    <div id="serviceDescription" class="service-description" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d; display: none;">
+                        <!-- Service description will be shown here -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="paymentAmount">Số tiền <span style="color:red">*</span></label>
+                    <input type="number" id="paymentAmount" name="amount" value="50000" min="1" required />
+                </div>
+                <div class="form-group">
+                    <label for="paymentCurrency">Đơn vị tiền tệ <span style="color:red">*</span></label>
+                    <select id="paymentCurrency" name="currency" required>
+                        <option value="VND" selected>VND</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Phương thức thanh toán <span style="color:red">*</span></label>
+                    <select id="paymentMethod" name="paymentMethod" required>
+                        <option value="">Chọn phương thức...</option>
+                        <option value="Tiền mặt">Tiền mặt</option>
+                        <option value="Chuyển khoản">Chuyển khoản</option>
+                        <option value="Thẻ tín dụng">Thẻ tín dụng</option>
+                        <option value="Ví điện tử">Ví điện tử</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentDescription">Mô tả <span style="color:red">*</span></label>
+                    <textarea id="paymentDescription" name="description" rows="3" placeholder="Nhập mô tả cho thanh toán..." required></textarea>
+                </div>
+                <input type="hidden" id="paymentPmrId" name="pmrId" />
+                <div id="paymentFormMsg" class="form-message"></div>
+                <div class="modal-footer">
+                    <button type="button" id="cancelPaymentBtn" class="secondary-btn">Hủy</button>
+                    <button type="submit" class="primary-btn">Tạo thanh toán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </body>
 </html>
