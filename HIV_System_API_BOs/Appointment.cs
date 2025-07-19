@@ -19,6 +19,12 @@ public partial class Appointment
 
     public byte ApmStatus { get; set; }
 
+    public DateOnly? RequestDate { get; set; }
+
+    public TimeOnly? RequestTime { get; set; }
+
+    public int? RequestBy { get; set; }
+
     public virtual Doctor Dct { get; set; } = null!;
 
     public virtual Patient Ptn { get; set; } = null!;

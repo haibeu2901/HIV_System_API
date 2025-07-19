@@ -13,6 +13,8 @@ public partial class ArvMedicationTemplate
 
     public int? Quantity { get; set; }
 
+    public string? MedicationUsage { get; set; }
+
     public virtual ArvMedicationDetail Amd { get; set; } = null!;
 
     public virtual ArvRegimenTemplate Art { get; set; } = null!;
