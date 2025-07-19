@@ -723,12 +723,13 @@ regimenTemplate.onchange = function() {
     const template = JSON.parse(selected);
     // Fill form fields
     regimenNotes.value = template.description;
-    // Set start date to today
+    // Set start date to today in Vietnam timezone
     const today = new Date();
-    regimenStartDate.value = today.toISOString().slice(0, 10);
+    const vietnamToday = new Date(today.getTime() + (7 * 60 * 60 * 1000));
+    regimenStartDate.value = vietnamToday.toISOString().slice(0, 10);
     // Set end date to start date + duration days
     if (template.duration) {
-        const endDate = new Date(today.getTime() + template.duration * 24 * 60 * 60 * 1000);
+        const endDate = new Date(vietnamToday.getTime() + template.duration * 24 * 60 * 60 * 1000);
         if (document.getElementById('regimenEndDate')) {
             document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
         }
@@ -867,7 +868,7 @@ regimenForm.onsubmit = async function(e) {
             patientMedRecordId: window.pmrId, // Use the global pmrId from the patient's medical record
             notes: regimenNotes.value,
             regimenLevel: +regimenLevel.value,
-            createdAt: new Date().toISOString(),
+            createdAt: getVietnamDateTime(),
             startDate: regimenStartDate.value,
             endDate: document.getElementById('regimenEndDate') ? document.getElementById('regimenEndDate').value : null,
             regimenStatus: 1,
@@ -915,7 +916,7 @@ regimenForm.onsubmit = async function(e) {
         patientMedRecordId: window.pmrId,
         notes: regimenNotes.value,
         regimenLevel: +regimenLevel.value,
-        createdAt: new Date().toISOString(),
+        createdAt: getVietnamDateTime(),
         startDate: regimenStartDate.value,
         endDate: document.getElementById('regimenEndDate') ? document.getElementById('regimenEndDate').value : null,
         regimenStatus: 1, // active
@@ -964,6 +965,29 @@ regimenForm.onsubmit = async function(e) {
     }
 };
 
+// Global timezone helper functions for Vietnam (GMT+7)
+function getToday() {
+  const d = new Date();
+  // Convert to Vietnam timezone (GMT+7)
+  const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+  return vietnamTime.toISOString().slice(0, 10);
+}
+
+function getVietnamDateTime() {
+  const d = new Date();
+  // Convert to Vietnam timezone (GMT+7)
+  const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+  return vietnamTime.toISOString();
+}
+
+function toVietnamDate(date) {
+  if (!date) return null;
+  const d = new Date(date);
+  // Convert to Vietnam timezone (GMT+7)
+  const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+  return vietnamTime.toISOString().slice(0, 10);
+}
+
 // --- Create Test Result Modal Logic ---
 document.addEventListener('DOMContentLoaded', function() {
   // Modal elements
@@ -978,12 +1002,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const componentTestsContainer = document.getElementById('componentTestsContainer');
   const addComponentBtn = document.getElementById('addComponentTestBtn');
   const resultSelect = document.getElementById('testResultSelect');
-
-  // Helper: get today in yyyy-mm-dd
-  function getToday() {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  }
 
   // --- Component Test Fieldset Logic ---
   function createComponentTestFieldset(idx) {
