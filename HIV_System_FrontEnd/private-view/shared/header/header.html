@@ -1,51 +1,52 @@
 <!DOCTYPE html>
 <!-- Shared Header -->
 <header class="shared-header">
-  <div class="header-logo">
-  </div>
-  <nav class="shared-header-nav">
-    <div class="shared-header-logo">
-        <a href="/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html" class="logo-link">
-            <i class="fas fa-stethoscope"></i>
-            <span>Phòng khám CareFirst HIV</span>
-        </a>
+    <div class="header-logo">
     </div>
-    <button class="shared-header-hamburger" id="shared-header-hamburger" aria-label="Toggle navigation">
-        <span></span>
-        <span></span>
-        <span></span>
-    </button>
-    <ul class="shared-header-links" id="shared-header-links">
-        <li class="dropdown" id="sharedDropdown">
-            <button class="btn-shared-dropdown" id="sharedDropdownBtn" type="button" aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-user-md"></i> User <i class="fas fa-caret-down"></i>
-            </button>
-            <div class="dropdown-content">
-                <a href="/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="/private-view/doctor-view/doctor-work-schedule/doctor-work-schedule.html" id="nav-work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a>
-                <a href="/private-view/shared/appointment-list/appoiment-list.html" id="nav-appointments"><i class="fas fa-calendar-check"></i> Appointments</a>
-                <a href="/private-view/shared/patient-list/patient-list.html" id="nav-patient-list"><i class="fas fa-users"></i> Patient List</a>
-                <a href="/private-view/shared/medical-resources/medical-resources.html" id="nav-medical-resources"><i class="fas fa-book-medical"></i> Medical Resources</a>
-                <a href="#" id="nav-blog"><i class="fas fa-blog"></i> Blog & Community</a>
-                <a href="/private-view/shared/user-profile/user-profile.html" id="nav-profile"><i class="fas fa-id-card"></i> Profile</a>
-                <a href="/private-view/shared/notifications/notifications.html" id="nav-notifications"><i class="fas fa-bell"></i> Notifications</a>
-                <!-- TODO: Add/remove menu items based on role in header.js -->
-            </div>
-        </li>
-        <li>
-            <button class="btn-logout" id="nav-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </li>
-    </ul>
-    <button class="shared-header-bell" id="notificationBell" aria-label="Show notifications">
-        <i class="fas fa-bell"></i>
-        <span id="shared-unread-badge-header" class="unread-badge" style="display:none;">0</span>
-    </button>
-    <div id="notification-popup" class="notification-popup hidden">
-        <div class="notification-popup-header">
-            <span>Notifications</span>
-            <button id="closeNotificationPopup" aria-label="Close notifications"><i class="fas fa-times"></i></button>
+    <nav class="shared-header-nav">
+        <div class="shared-header-logo">
+            <a href="/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html" class="logo-link">
+                <i class="fas fa-stethoscope"></i>
+                <span>Phòng khám HIV CareFirst</span>
+            </a>
         </div>
-        <div id="popup-notification-list"></div>
-    </div>
-</nav>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> 
+        <button class="shared-header-hamburger" id="shared-header-hamburger" aria-label="Chuyển đổi điều hướng">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <ul class="shared-header-links" id="shared-header-links">
+            <li class="dropdown" id="sharedDropdown">
+                <button class="btn-shared-dropdown" id="sharedDropdownBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-user-md"></i> Người dùng <i class="fas fa-caret-down"></i>
+                </button>
+                <div class="dropdown-content">
+                    <a href="/private-view/doctor-view/doctor-dashboard/doctor-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Trang chủ</a>
+                    <a href="/private-view/doctor-view/doctor-work-schedule/doctor-work-schedule.html" id="nav-work-schedule"><i class="fas fa-calendar-alt"></i> Lịch làm việc</a>
+                    <a href="/private-view/shared/appointment-list/appoiment-list.html" id="nav-appointments"><i class="fas fa-calendar-check"></i> Lịch hẹn</a>
+                    <a href="/private-view/shared/patient-list/patient-list.html" id="nav-patient-list"><i class="fas fa-users"></i> Danh sách bệnh nhân</a>
+                    <a href="/private-view/shared/medical-resources/medical-resources.html" id="nav-medical-resources"><i class="fas fa-book-medical"></i> Tài liệu y tế</a>
+                    <a href="#" id="nav-blog"><i class="fas fa-blog"></i> Blog & Cộng đồng</a>
+                    <a href="/private-view/shared/user-profile/user-profile.html" id="nav-profile"><i class="fas fa-id-card"></i> Hồ sơ</a>
+                    <a href="/private-view/shared/notifications/notifications.html" id="nav-notifications"><i class="fas fa-bell"></i> Thông báo</a>
+                    <!-- TODO: Add/remove menu items based on role in header.js -->
+                </div>
+            </li>
+            <li>
+                <button class="btn-logout" id="nav-logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+            </li>
+        </ul>
+        <button class="shared-header-bell" id="notificationBell" aria-label="Hiển thị thông báo">
+            <i class="fas fa-bell"></i>
+            <span id="shared-unread-badge-header" class="unread-badge" style="display:none;">0</span>
+        </button>
+        <div id="notification-popup" class="notification-popup hidden">
+            <div class="notification-popup-header">
+                <span>Thông báo</span>
+                <button id="closeNotificationPopup" aria-label="Đóng thông báo"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="popup-notification-list"></div>
+        </div>
+    </nav>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</header>
