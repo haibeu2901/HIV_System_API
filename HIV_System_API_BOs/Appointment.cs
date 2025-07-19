@@ -11,9 +11,9 @@ public partial class Appointment
 
     public int DctId { get; set; }
 
-    public DateOnly ApmtDate { get; set; }
+    public DateOnly? ApmtDate { get; set; }
 
-    public TimeOnly ApmTime { get; set; }
+    public TimeOnly? ApmTime { get; set; }
 
     public string? Notes { get; set; }
 

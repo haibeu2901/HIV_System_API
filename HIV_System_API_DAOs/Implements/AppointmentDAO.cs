@@ -68,10 +68,13 @@ namespace HIV_System_API_DAOs.Implements
             {
                 DctId = doctor.DctId,
                 PtnId = patient.PtnId,
-                ApmtDate = createDto.AppointmentDate,
-                ApmTime = createDto.AppointmentTime,
+                ApmtDate = null, // Now nullable, set to null initially
+                ApmTime = null,  // Now nullable, set to null initially
                 Notes = createDto.Notes,
-                ApmStatus = 1 // Default status, adjust as needed
+                ApmStatus = 1, // Default status, adjust as needed
+                RequestDate = createDto.AppointmentDate, // From DTO
+                RequestTime = createDto.AppointmentTime, // From DTO
+                RequestBy = accId // Set to the account ID
             };
 
             try
@@ -117,18 +120,25 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<Appointment> UpdateAppointmentByIdAsync(int id, Appointment appointment)
         {
             Debug.WriteLine($"Attempting to update appointment with ApmId: {id}");
+
             var existingAppointment = await _context.Appointments
                 .Include(a => a.Dct)
                 .Include(a => a.Ptn)
                 .FirstOrDefaultAsync(a => a.ApmId == id);
+
             if (existingAppointment == null)
                 throw new KeyNotFoundException($"Appointment with id {id} not found.");
 
-            // Update fields
-            existingAppointment.ApmtDate = appointment.ApmtDate;
-            existingAppointment.ApmTime = appointment.ApmTime;
+            // Update fields (including the new nullable datetime fields)
+            existingAppointment.ApmtDate = appointment.ApmtDate; // Now nullable
+            existingAppointment.ApmTime = appointment.ApmTime;   // Now nullable
             existingAppointment.Notes = appointment.Notes;
             existingAppointment.ApmStatus = appointment.ApmStatus;
+
+            // Update request-related fields
+            existingAppointment.RequestDate = appointment.RequestDate;
+            existingAppointment.RequestTime = appointment.RequestTime;
+            existingAppointment.RequestBy = appointment.RequestBy;
 
             // Only update DctId if it's different and the new doctor exists
             if (appointment.DctId != existingAppointment.DctId)
@@ -259,37 +269,49 @@ namespace HIV_System_API_DAOs.Implements
             }
         }
 
-        public async Task<Appointment> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO updateDto, int accId)
+        public async Task<Appointment> UpdateAppointmentAsync(int appointmentId, UpdateAppointmentRequestDTO appointmentUpdate, int accId)
         {
-            if (updateDto == null)
-                throw new ArgumentNullException(nameof(updateDto), "Appointment update data cannot be null.");
+            if (appointmentUpdate == null)
+                throw new ArgumentNullException(nameof(appointmentUpdate), "Appointment update data cannot be null.");
+
+            Debug.WriteLine($"Attempting to update appointment with ApmId: {appointmentId} by account: {accId}");
 
             // Find the appointment by its ID
-            var appointment = await _context.Appointments
+            var existingAppointment = await _context.Appointments
                 .Include(a => a.Dct)
                 .Include(a => a.Ptn)
                 .FirstOrDefaultAsync(a => a.ApmId == appointmentId);
 
-            if (appointment == null)
+            if (existingAppointment == null)
                 throw new KeyNotFoundException($"Appointment with id {appointmentId} not found.");
 
-            // Update fields
-            appointment.ApmtDate = updateDto.AppointmentDate;
-            appointment.ApmTime = updateDto.AppointmentTime;
-            appointment.Notes = updateDto.Notes;
+            // Optional: Add authorization check
+            // Uncomment if you need to verify the user can update this appointment
+            /*
+            if (existingAppointment.Ptn.AccId != accId && existingAppointment.Dct.AccId != accId)
+                throw new UnauthorizedAccessException("You are not authorized to update this appointment.");
+            */
+
+            // Update the appointment fields based on the DTO
+            existingAppointment.RequestDate = appointmentUpdate.AppointmentDate;
+            existingAppointment.RequestTime = appointmentUpdate.AppointmentTime;
+            existingAppointment.Notes = appointmentUpdate.Notes;
+            existingAppointment.RequestBy = accId;
 
             try
             {
                 await _context.SaveChangesAsync();
-                // Reload with related entities
-                var updated = await _context.Appointments
+                Debug.WriteLine($"Successfully updated appointment with ApmId: {appointmentId}");
+
+                // Return the updated appointment with related entities
+                var updatedAppointment = await _context.Appointments
                     .Include(a => a.Dct)
                         .ThenInclude(d => d.Acc)
                     .Include(a => a.Ptn)
                         .ThenInclude(p => p.Acc)
-                    .FirstOrDefaultAsync(a => a.ApmId == appointment.ApmId);
+                    .FirstOrDefaultAsync(a => a.ApmId == appointmentId);
 
-                return updated ?? throw new InvalidOperationException("Failed to retrieve updated appointment.");
+                return updatedAppointment ?? throw new InvalidOperationException("Failed to retrieve updated appointment.");
             }
             catch (DbUpdateException ex)
             {
