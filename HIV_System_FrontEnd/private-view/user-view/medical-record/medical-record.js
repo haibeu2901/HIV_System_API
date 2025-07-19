@@ -269,11 +269,6 @@ function renderPayments(payments) {
                 <i class="fas fa-credit-card"></i>
                 <p>No payment history found.</p>
                 <p class="empty-state-subtitle">Payment records will appear here after transactions are completed.</p>
-                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
-                    <button class="btn-book-appointment" onclick="openDemoCardModal()">
-                        <i class="fas fa-credit-card"></i> Demo Payment
-                    </button>
-                </div>
             </div>
         `;
         return;
@@ -301,13 +296,6 @@ function renderPayments(payments) {
                 <div class="stat-number">${payments.reduce((total, p) => p.paymentStatus === 2 ? total + p.amount : total, 0).toLocaleString()}</div>
                 <div class="stat-label">Total Paid (VND)</div>
             </div>
-        </div>
-        
-        <!-- Demo Payment Button -->
-        <div style="text-align: center; margin-bottom: 25px;">
-            <button class="btn-book-appointment" onclick="openDemoCardModal()">
-                <i class="fas fa-credit-card"></i> Test Demo Payment
-            </button>
         </div>
         
         <div class="payments-grid">
@@ -396,10 +384,10 @@ function renderPayments(payments) {
                     
                     ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
                         <div class="payment-actions">
-                            <button class="payment-action-btn confirm-btn" onclick="openDemoCardModal()">
+                            <button class="payment-action-btn confirm-btn" onclick="openCardPaymentModal('${payment.paymentIntentId}')">
                                 <i class="fas fa-check"></i> Xác nhận thanh toán
                             </button>
-                            <button class="payment-action-btn fail-btn" onclick="failPayment('${payment.paymentIntentId}')">
+                            <button class="payment-action-btn fail-btn" onclick="failPaymentWithTestCard('${payment.paymentIntentId}')">
                                 <i class="fas fa-times"></i> Đánh dấu thất bại
                             </button>
                         </div>
@@ -508,6 +496,59 @@ async function failPayment(paymentIntentId) {
         }
     } catch (error) {
         console.error('Error failing payment:', error);
+        alert('Có lỗi xảy ra khi đánh dấu thanh toán thất bại. Vui lòng thử lại.');
+    }
+}
+
+// Payment failure function using test card numbers
+async function failPaymentWithTestCard(paymentIntentId) {
+    if (!paymentIntentId) {
+        alert('Không tìm thấy Payment Intent ID');
+        return;
+    }
+
+    // Show confirmation dialog
+    if (!confirm('Bạn có chắc chắn muốn đánh dấu thanh toán này là thất bại?')) {
+        return;
+    }
+
+    try {
+        // Fetch test card data if not already loaded
+        if (!testCardData) {
+            testCardData = await fetchTestCardNumbers();
+        }
+
+        // Get the first failure card from test data
+        const failureCard = testCardData.failureScenarios && testCardData.failureScenarios.length > 0 
+            ? testCardData.failureScenarios[0] 
+            : { cardNumber: "4000000000000002", description: "Visa - Generic decline" };
+
+        console.log('Using failure card for payment failure:', failureCard);
+
+        const response = await fetch(`https://localhost:7009/api/Payment/fail-payment/${paymentIntentId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cardNumber: failureCard.cardNumber,
+                description: failureCard.description
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(`Thanh toán đã được đánh dấu thất bại!\nMô tả: ${failureCard.description}\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`);
+            
+            // Reload payments to reflect the new status
+            await loadPaymentData();
+        } else {
+            alert(`Lỗi khi đánh dấu thanh toán thất bại: ${result.Error || 'Không xác định'}`);
+        }
+    } catch (error) {
+        console.error('Error failing payment with test card:', error);
         alert('Có lỗi xảy ra khi đánh dấu thanh toán thất bại. Vui lòng thử lại.');
     }
 }
@@ -730,57 +771,51 @@ async function loadPatientData() {
                 </div>
             </div>
             
-            <!-- Demo Card Payment Modal -->
-            <div id="demoCardModal" class="demo-card-modal">
-                <div class="demo-card-modal-content">
-                    <div class="demo-card-modal-header">
-                        <h2 class="demo-card-modal-title">Demo Card Payment</h2>
-                        <button class="demo-card-close" onclick="closeDemoCardModal()">&times;</button>
+            <!-- Card Payment Modal -->
+            <div id="cardPaymentModal" class="card-payment-modal">
+                <div class="card-payment-modal-content">
+                    <div class="card-payment-modal-header">
+                        <h2 class="card-payment-modal-title">Nhập thông tin thẻ thanh toán</h2>
+                        <button class="card-payment-close" onclick="closeCardPaymentModal()">&times;</button>
                     </div>
                     
-                    <div class="demo-card-info">
-                        <h4>Test Card Information</h4>
-                        <p>Use these test card numbers to simulate different payment outcomes:</p>
-                        <div class="demo-cards-list">
-                            <strong>✅ Success Cards (Will call confirm-payment API):</strong><br>
-                            • <strong>Visa:</strong> 4242 4242 4242 4242<br>
-                            • <strong>Mastercard:</strong> 5555 5555 5555 4444<br>
-                            • <strong>Amex:</strong> 3782 8224 6310 005<br><br>
-                            <strong>❌ Declined Card (Will call fail-payment API):</strong><br>
-                            • <strong>Declined:</strong> 4000 0000 0000 0002<br><br>
-                            <em>Use any future expiry date (e.g., 12/25) and any 3-4 digit CVC</em>
+                    <div class="card-payment-info">
+                        <h4>Thông tin thẻ test</h4>
+                        <p>Sử dụng các số thẻ test sau để mô phỏng thanh toán:</p>
+                        <div class="test-cards-list" id="testCardsList">
+                            <em>Đang tải danh sách thẻ test...</em>
                         </div>
                     </div>
                     
-                    <form id="demoCardForm">
+                    <form id="cardPaymentForm">
                         <div class="form-group">
-                            <label for="demo-card-number">Card Number</label>
-                            <input type="text" id="demo-card-number" placeholder="4242 4242 4242 4242" maxlength="23" required />
+                            <label for="card-number">Số thẻ</label>
+                            <input type="text" id="card-number" placeholder="4242 4242 4242 4242" maxlength="23" required />
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="demo-card-expiry">Expiry Date</label>
-                                <input type="text" id="demo-card-expiry" placeholder="MM/YY" maxlength="5" required />
+                                <label for="card-expiry">Ngày hết hạn</label>
+                                <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" required />
                             </div>
                             <div class="form-group">
-                                <label for="demo-card-cvc">CVC</label>
-                                <input type="text" id="demo-card-cvc" placeholder="123" maxlength="4" required />
+                                <label for="card-cvc">CVC</label>
+                                <input type="text" id="card-cvc" placeholder="123" maxlength="4" required />
                             </div>
                         </div>
                         
                         <div class="form-group">
-                            <label for="demo-card-name">Cardholder Name</label>
-                            <input type="text" id="demo-card-name" placeholder="John Doe" required />
+                            <label for="card-name">Tên chủ thẻ</label>
+                            <input type="text" id="card-name" placeholder="Nguyen Van A" required />
                         </div>
                         
-                        <div class="demo-card-form-actions">
-                            <button type="button" class="demo-card-btn demo-card-btn-cancel" onclick="closeDemoCardModal()">
-                                Cancel
+                        <div class="card-payment-form-actions">
+                            <button type="button" class="card-payment-btn card-payment-btn-cancel" onclick="closeCardPaymentModal()">
+                                Hủy
                             </button>
-                            <button type="button" id="demoCardSubmit" class="demo-card-btn demo-card-btn-submit" onclick="submitDemoCardPayment()">
+                            <button type="button" id="cardPaymentSubmit" class="card-payment-btn card-payment-btn-submit" onclick="submitCardPayment()">
                                 <div class="spinner"></div>
-                                <span class="btn-text">Pay Now</span>
+                                <span class="btn-text">Thanh toán</span>
                             </button>
                         </div>
                     </form>
@@ -892,44 +927,126 @@ async function loadPatientData() {
 document.addEventListener('DOMContentLoaded', function() {
     // Load patient data
     loadPatientData();
+    
+    // Pre-load test card data for better user experience
+    fetchTestCardNumbers();
 });
 
 // ============================
 // DEMO CARD PAYMENT FUNCTIONS
 // ============================
 
-// Function to open demo card payment modal
-function openDemoCardModal() {
-    console.log('Opening demo card modal...');
-    const modal = document.getElementById('demoCardModal');
-    console.log('Modal element:', modal);
-    if (modal) {
-        modal.classList.add('show');
-        modal.style.display = 'flex'; // Ensure it's visible
-        console.log('Modal should be visible now');
-        // Reset form
-        resetDemoCardForm();
-        // Setup event listeners for modal inputs
-        setupModalEventListeners();
-    } else {
-        console.error('Modal with ID "demoCardModal" not found!');
+// Global variable to store test card data
+let testCardData = null;
+
+// Function to fetch test card numbers from API
+async function fetchTestCardNumbers() {
+    try {
+        const response = await fetch('https://localhost:7009/api/Payment/test-card-numbers', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch test card numbers');
+        }
+        
+        const data = await response.json();
+        testCardData = data;
+        console.log('Test card data fetched:', testCardData);
+        return data;
+    } catch (error) {
+        console.error('Error fetching test card numbers:', error);
+        // Return fallback data if API fails
+        return {
+            successScenarios: [
+                { cardNumber: "4242424242424242", description: "Visa - Success" },
+                { cardNumber: "5555555555554444", description: "Mastercard - Success" },
+                { cardNumber: "378282246310005", description: "American Express - Success" }
+            ],
+            failureScenarios: [
+                { cardNumber: "4000000000000002", description: "Visa - Generic decline" }
+            ]
+        };
     }
 }
 
-// Function to close demo card payment modal
-function closeDemoCardModal() {
-    console.log('Closing demo card modal...');
-    const modal = document.getElementById('demoCardModal');
+// Global variable to store current payment intent ID
+let currentPaymentIntentId = null;
+
+// Function to open card payment modal
+async function openCardPaymentModal(paymentIntentId) {
+    currentPaymentIntentId = paymentIntentId;
+    console.log('Opening card payment modal for payment intent:', paymentIntentId);
+    
+    // Fetch test card data if not already loaded
+    if (!testCardData) {
+        testCardData = await fetchTestCardNumbers();
+    }
+    
+    const modal = document.getElementById('cardPaymentModal');
+    if (modal) {
+        // Update modal content with dynamic test card data
+        updateModalWithTestCards();
+        
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+        
+        // Reset form
+        resetCardPaymentForm();
+        
+        // Setup event listeners for modal inputs
+        setupCardModalEventListeners();
+    } else {
+        console.error('Card payment modal not found!');
+    }
+}
+
+// Function to close card payment modal
+function closeCardPaymentModal() {
+    const modal = document.getElementById('cardPaymentModal');
     if (modal) {
         modal.classList.remove('show');
-        modal.style.display = 'none'; // Ensure it's hidden
-        resetDemoCardForm();
+        modal.style.display = 'none';
+        resetCardPaymentForm();
     }
+    currentPaymentIntentId = null;
 }
 
-// Function to reset demo card form
-function resetDemoCardForm() {
-    const form = document.getElementById('demoCardForm');
+// Function to update modal with test card data from API
+function updateModalWithTestCards() {
+    if (!testCardData) return;
+    
+    const testCardsList = document.getElementById('testCardsList');
+    if (!testCardsList) return;
+    
+    let successCardsHtml = '';
+    testCardData.successScenarios.forEach((card) => {
+        const formattedCardNumber = card.cardNumber.replace(/(.{4})/g, '$1 ').trim();
+        successCardsHtml += `• <strong>${card.description}:</strong> ${formattedCardNumber}<br>`;
+    });
+    
+    let failureCardsHtml = '';
+    testCardData.failureScenarios.forEach((card) => {
+        const formattedCardNumber = card.cardNumber.replace(/(.{4})/g, '$1 ').trim();
+        failureCardsHtml += `• <strong>${card.description}:</strong> ${formattedCardNumber}<br>`;
+    });
+    
+    testCardsList.innerHTML = `
+        <strong>✅ Thẻ thành công (Sẽ gọi confirm-payment API):</strong><br>
+        ${successCardsHtml}<br>
+        <strong>❌ Thẻ thất bại (Sẽ gọi fail-payment API):</strong><br>
+        ${failureCardsHtml}<br>
+        <em>Sử dụng ngày hết hạn tương lai (vd: 12/25) và CVC bất kỳ (3-4 số)</em>
+    `;
+}
+
+// Function to reset card payment form
+function resetCardPaymentForm() {
+    const form = document.getElementById('cardPaymentForm');
     if (form) {
         form.reset();
         
@@ -944,11 +1061,11 @@ function resetDemoCardForm() {
         });
         
         // Reset submit button
-        const submitBtn = document.getElementById('demoCardSubmit');
+        const submitBtn = document.getElementById('cardPaymentSubmit');
         if (submitBtn) {
             submitBtn.classList.remove('loading');
             submitBtn.disabled = false;
-            submitBtn.querySelector('.btn-text').textContent = 'Pay Now';
+            submitBtn.querySelector('.btn-text').textContent = 'Thanh toán';
         }
     }
 }
@@ -958,14 +1075,14 @@ function validateCardForm() {
     let isValid = true;
     
     // Get form elements
-    const cardNumber = document.getElementById('demo-card-number');
-    const expiry = document.getElementById('demo-card-expiry');
-    const cvc = document.getElementById('demo-card-cvc');
-    const name = document.getElementById('demo-card-name');
+    const cardNumber = document.getElementById('card-number');
+    const expiry = document.getElementById('card-expiry');
+    const cvc = document.getElementById('card-cvc');
+    const name = document.getElementById('card-name');
     
     // Validate card number
     if (!cardNumber.value || cardNumber.value.replace(/\s/g, '').length < 13) {
-        showFieldError(cardNumber, 'Please enter a valid card number (13-19 digits)');
+        showFieldError(cardNumber, 'Vui lòng nhập số thẻ hợp lệ (13-19 số)');
         isValid = false;
     } else {
         showFieldSuccess(cardNumber);
@@ -973,7 +1090,7 @@ function validateCardForm() {
     
     // Validate expiry date
     if (!expiry.value || !expiry.value.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
-        showFieldError(expiry, 'Please enter a valid expiry date (MM/YY)');
+        showFieldError(expiry, 'Vui lòng nhập ngày hết hạn hợp lệ (MM/YY)');
         isValid = false;
     } else {
         // Check if expiry date is in the future
@@ -983,7 +1100,7 @@ function validateCardForm() {
         now.setDate(1); // Set to first day of current month for comparison
         
         if (expiryDate < now) {
-            showFieldError(expiry, 'Card has expired');
+            showFieldError(expiry, 'Thẻ đã hết hạn');
             isValid = false;
         } else {
             showFieldSuccess(expiry);
@@ -992,7 +1109,7 @@ function validateCardForm() {
     
     // Validate CVC
     if (!cvc.value || cvc.value.length < 3 || cvc.value.length > 4) {
-        showFieldError(cvc, 'Please enter a valid CVC (3-4 digits)');
+        showFieldError(cvc, 'Vui lòng nhập CVC hợp lệ (3-4 số)');
         isValid = false;
     } else {
         showFieldSuccess(cvc);
@@ -1000,7 +1117,7 @@ function validateCardForm() {
     
     // Validate cardholder name
     if (!name.value || name.value.trim().length < 2) {
-        showFieldError(name, 'Please enter the cardholder name');
+        showFieldError(name, 'Vui lòng nhập tên chủ thẻ');
         isValid = false;
     } else {
         showFieldSuccess(name);
@@ -1055,10 +1172,15 @@ function formatCardNumber(input) {
     }
     
     if (parts.length) {
-        input.value = parts.join(' ');
+        value = parts.join(' ');
+        if (value.length > 23) {
+            value = value.substring(0, 23);
+        }
     } else {
-        input.value = value;
+        value = '';
     }
+    
+    input.value = value;
 }
 
 // Function to format expiry date input
@@ -1072,14 +1194,19 @@ function formatExpiryDate(input) {
     input.value = value;
 }
 
-// Function to handle demo card payment submission
-async function submitDemoCardPayment() {
+// Function to handle card payment submission
+async function submitCardPayment() {
     // Validate form
     if (!validateCardForm()) {
         return;
     }
     
-    const submitBtn = document.getElementById('demoCardSubmit');
+    if (!currentPaymentIntentId) {
+        alert('Không tìm thấy Payment Intent ID');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('cardPaymentSubmit');
     
     try {
         // Show loading state
@@ -1087,51 +1214,45 @@ async function submitDemoCardPayment() {
         submitBtn.disabled = true;
         
         // Get form data
-        const cardNumber = document.getElementById('demo-card-number').value.replace(/\s/g, '');
-        const expiry = document.getElementById('demo-card-expiry').value;
-        const cvc = document.getElementById('demo-card-cvc').value;
-        const name = document.getElementById('demo-card-name').value;
+        const cardNumber = document.getElementById('card-number').value.replace(/\s/g, '');
+        const expiry = document.getElementById('card-expiry').value;
+        const cvc = document.getElementById('card-cvc').value;
+        const name = document.getElementById('card-name').value;
         
-        console.log('Processing demo payment with card:', cardNumber);
-        
-        // Get the first pending payment to use its paymentIntentId
-        const payments = await fetchPatientPayments();
-        const pendingPayment = payments.find(p => p.paymentStatus === 1 && p.paymentIntentId);
-        
-        if (!pendingPayment) {
-            alert('Không tìm thấy thanh toán đang chờ xử lý với Payment Intent ID');
-            return;
-        }
-        
-        const paymentIntentId = pendingPayment.paymentIntentId;
-        console.log('Using payment intent ID:', paymentIntentId);
+        console.log('Processing payment with card:', cardNumber);
         
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Check if it's a valid test card number
-        const validTestCards = [
-            '4242424242424242', // Visa (Success)
-            '5555555555554444', // Mastercard (Success)
-            '378282246310005',  // American Express (Success)
-        ];
+        // Ensure test card data is loaded
+        if (!testCardData) {
+            testCardData = await fetchTestCardNumbers();
+        }
         
-        const declinedTestCards = [
-            '4000000000000002'  // Card declined
-        ];
+        // Get card numbers from API response
+        const successCardNumbers = testCardData.successScenarios.map(card => card.cardNumber);
+        const failureCardNumbers = testCardData.failureScenarios.map(card => card.cardNumber);
         
         let apiResult;
+        let cardInfo = null;
         
-        if (validTestCards.includes(cardNumber)) {
-            // Call confirm payment API for valid cards
-            console.log('Calling confirm payment API...');
+        // Find the card info based on the entered card number
+        if (successCardNumbers.includes(cardNumber)) {
+            cardInfo = testCardData.successScenarios.find(card => card.cardNumber === cardNumber);
+            
+            // Call confirm payment API for success cards
+            console.log('Calling confirm payment API with card:', cardInfo);
             try {
-                const response = await fetch(`https://localhost:7009/api/Payment/confirm-payment/${paymentIntentId}`, {
+                const response = await fetch(`https://localhost:7009/api/Payment/confirm-payment/${currentPaymentIntentId}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({
+                        cardNumber: cardInfo.cardNumber,
+                        description: cardInfo.description
+                    })
                 });
 
                 const result = await response.json();
@@ -1139,7 +1260,7 @@ async function submitDemoCardPayment() {
                 if (response.ok) {
                     apiResult = {
                         success: true,
-                        message: `Thanh toán được xác nhận thành công!\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`,
+                        message: `Thanh toán được xác nhận thành công!\nMô tả: ${cardInfo.description}\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`,
                         type: 'confirm'
                     };
                 } else {
@@ -1157,16 +1278,22 @@ async function submitDemoCardPayment() {
                     type: 'confirm'
                 };
             }
-        } else if (declinedTestCards.includes(cardNumber)) {
-            // Call fail payment API for declined cards
-            console.log('Calling fail payment API...');
+        } else if (failureCardNumbers.includes(cardNumber)) {
+            cardInfo = testCardData.failureScenarios.find(card => card.cardNumber === cardNumber);
+            
+            // Call fail payment API for failure cards
+            console.log('Calling fail payment API with card:', cardInfo);
             try {
-                const response = await fetch(`https://localhost:7009/api/Payment/fail-payment/${paymentIntentId}`, {
+                const response = await fetch(`https://localhost:7009/api/Payment/fail-payment/${currentPaymentIntentId}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({
+                        cardNumber: cardInfo.cardNumber,
+                        description: cardInfo.description
+                    })
                 });
 
                 const result = await response.json();
@@ -1174,7 +1301,7 @@ async function submitDemoCardPayment() {
                 if (response.ok) {
                     apiResult = {
                         success: true,
-                        message: `Thanh toán được đánh dấu thất bại!\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`,
+                        message: `Thanh toán được đánh dấu thất bại!\nMô tả: ${cardInfo.description}\nTrạng thái: ${result.Status}\nPayment Intent ID: ${result.PaymentIntentId}`,
                         type: 'fail'
                     };
                 } else {
@@ -1193,10 +1320,22 @@ async function submitDemoCardPayment() {
                 };
             }
         } else {
-            // Invalid card number
+            // Invalid card number - generate dynamic message with test cards
+            let validCardsMessage = 'Số thẻ không hợp lệ!\n\nVui lòng sử dụng một trong các thẻ test sau:\n\n✅ Thẻ thành công:\n';
+            testCardData.successScenarios.forEach(card => {
+                const formattedCardNumber = card.cardNumber.replace(/(.{4})/g, '$1 ').trim();
+                validCardsMessage += `• ${formattedCardNumber} (${card.description})\n`;
+            });
+            
+            validCardsMessage += '\n❌ Thẻ thất bại:\n';
+            testCardData.failureScenarios.forEach(card => {
+                const formattedCardNumber = card.cardNumber.replace(/(.{4})/g, '$1 ').trim();
+                validCardsMessage += `• ${formattedCardNumber} (${card.description})\n`;
+            });
+            
             apiResult = {
                 success: false,
-                message: `Số thẻ không hợp lệ cho demo!\n\nVui lòng sử dụng:\n• 4242 4242 4242 4242 (Success)\n• 5555 5555 5555 4444 (Success)\n• 3782 8224 6310 005 (Success)\n• 4000 0000 0000 0002 (Declined)`,
+                message: validCardsMessage,
                 type: 'invalid'
             };
         }
@@ -1207,15 +1346,15 @@ async function submitDemoCardPayment() {
         if (apiResult.success) {
             // Close modal after success
             setTimeout(() => {
-                closeDemoCardModal();
+                closeCardPaymentModal();
                 // Reload payment data to reflect changes
                 loadPaymentData();
             }, 2000);
         }
         
     } catch (error) {
-        console.error('Error processing demo payment:', error);
-        alert('Có lỗi xảy ra khi xử lý thanh toán demo. Vui lòng thử lại.');
+        console.error('Error processing payment:', error);
+        alert('Có lỗi xảy ra khi xử lý thanh toán. Vui lòng thử lại.');
     } finally {
         // Reset loading state
         submitBtn.classList.remove('loading');
@@ -1223,92 +1362,66 @@ async function submitDemoCardPayment() {
     }
 }
 
-// Function to show payment success message
-function showPaymentSuccess(result) {
-    // Create success message element
-    const successDiv = document.createElement('div');
-    successDiv.className = 'success-message';
-    successDiv.innerHTML = `
-        Payment Successful!
-        <br>Payment Intent: ${result.paymentIntentId}
-        <br>Amount: ${result.amount.toLocaleString()} ${result.currency}
-        ${result.warning ? '<br><small>' + result.warning + '</small>' : ''}
-    `;
+// Event listener setup for modal inputs
+function setupCardModalEventListeners() {
+    console.log('Setting up card modal event listeners...');
     
-    // Insert success message at the top of the form
-    const form = document.getElementById('demoCardForm');
-    form.insertBefore(successDiv, form.firstChild);
-}
-
-// Event listeners for form inputs - moved to separate function
-function setupModalEventListeners() {
-    console.log('Setting up modal event listeners...');
+    // Check if modal exists in DOM
+    const modal = document.getElementById('cardPaymentModal');
+    if (!modal) {
+        console.log('Card payment modal not found in DOM yet');
+        return;
+    }
+    
+    console.log('Card payment modal found, setting up event listeners');
     
     // Card number formatting
-    const cardNumberInput = document.getElementById('demo-card-number');
+    const cardNumberInput = document.getElementById('card-number');
     if (cardNumberInput) {
-        console.log('Card number input found');
         cardNumberInput.addEventListener('input', function() {
             formatCardNumber(this);
         });
-    } else {
-        console.log('Card number input NOT found');
     }
     
     // Expiry date formatting
-    const expiryInput = document.getElementById('demo-card-expiry');
+    const expiryInput = document.getElementById('card-expiry');
     if (expiryInput) {
-        console.log('Expiry input found');
         expiryInput.addEventListener('input', function() {
             formatExpiryDate(this);
         });
-    } else {
-        console.log('Expiry input NOT found');
     }
     
-    // CVC validation (numbers only)
-    const cvcInput = document.getElementById('demo-card-cvc');
+    // CVC input (numbers only)
+    const cvcInput = document.getElementById('card-cvc');
     if (cvcInput) {
-        console.log('CVC input found');
         cvcInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '').substring(0, 4);
+            this.value = this.value.replace(/\D/g, '').substring(0, 4);
         });
-    } else {
-        console.log('CVC input NOT found');
     }
     
-    // Modal close on outside click
-    const modal = document.getElementById('demoCardModal');
-    if (modal) {
-        console.log('Modal found for event listeners');
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeDemoCardModal();
-            }
-        });
-    } else {
-        console.log('Modal NOT found for event listeners');
-    }
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeCardPaymentModal();
+        }
+    });
     
-    // Close modal on Escape key
+    // Close modal with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            closeDemoCardModal();
+            const modal = document.getElementById('cardPaymentModal');
+            if (modal && modal.classList.contains('show')) {
+                closeCardPaymentModal();
+            }
         }
     });
 }
 
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded');
     // Load patient data
     loadPatientData();
     
-    // Setup modal event listeners after a short delay to ensure DOM is fully ready
-    setTimeout(setupModalEventListeners, 1000);
+    // Pre-load test card data for better user experience
+    fetchTestCardNumbers();
 });
-
-// Make functions available globally
-window.openDemoCardModal = openDemoCardModal;
-window.closeDemoCardModal = closeDemoCardModal;
-window.submitDemoCardPayment = submitDemoCardPayment;
