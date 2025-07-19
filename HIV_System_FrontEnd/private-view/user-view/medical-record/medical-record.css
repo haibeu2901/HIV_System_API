@@ -2191,69 +2191,6 @@
     padding: 32px 28px;
 }
 
-.card-payment-info {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    padding: 24px;
-    border-radius: 16px;
-    margin-bottom: 28px;
-    border-left: 5px solid #667eea;
-    position: relative;
-    overflow: hidden;
-}
-
-.card-payment-info::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    border-radius: 50%;
-    transform: translate(20px, -20px);
-}
-
-.card-payment-info h4 {
-    margin: 0 0 16px 0;
-    color: #333;
-    font-size: 18px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    letter-spacing: -0.01em;
-}
-
-.card-payment-info h4::before {
-    content: "🔧";
-    font-size: 20px;
-}
-
-.card-payment-info p {
-    margin: 0 0 16px 0;
-    color: #666;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.test-cards-list {
-    color: #444;
-    line-height: 1.7;
-    font-size: 13px;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    border: 2px solid #e9ecef;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: all 0.3s ease;
-}
-
-.test-cards-list:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.1);
-}
-
 #cardPaymentForm {
     display: grid;
     gap: 24px;
@@ -2550,11 +2487,6 @@
         font-size: 16px;
     }
     
-    .test-cards-list {
-        font-size: 12px;
-        padding: 16px;
-    }
-    
     .form-row {
         grid-template-columns: 1fr;
         gap: 16px;
@@ -2569,15 +2501,6 @@
         width: 100%;
         padding: 14px 24px;
         min-width: auto;
-    }
-    
-    .card-payment-info {
-        padding: 20px;
-        margin-bottom: 24px;
-    }
-    
-    .card-payment-info h4 {
-        font-size: 16px;
     }
 }
 
@@ -2610,21 +2533,6 @@
     
     .form-group input {
         padding: 12px 14px;
-        font-size: 15px;
-    }
-    
-    .test-cards-list {
-        font-size: 11px;
-        padding: 14px;
-        line-height: 1.6;
-    }
-    
-    .card-payment-info {
-        padding: 16px;
-        margin-bottom: 20px;
-    }
-    
-    .card-payment-info h4 {
         font-size: 15px;
     }
     

@@ -387,9 +387,6 @@ function renderPayments(payments) {
                             <button class="payment-action-btn confirm-btn" onclick="openCardPaymentModal('${payment.paymentIntentId}')">
                                 <i class="fas fa-check"></i> Xác nhận thanh toán
                             </button>
-                            <button class="payment-action-btn fail-btn" onclick="failPaymentWithTestCard('${payment.paymentIntentId}')">
-                                <i class="fas fa-times"></i> Đánh dấu thất bại
-                            </button>
                         </div>
                     ` : ''}
                 </div>
@@ -779,13 +776,7 @@ async function loadPatientData() {
                         <button class="card-payment-close" onclick="closeCardPaymentModal()">&times;</button>
                     </div>
                     
-                    <div class="card-payment-info">
-                        <h4>Thông tin thẻ test</h4>
-                        <p>Sử dụng các số thẻ test sau để mô phỏng thanh toán:</p>
-                        <div class="test-cards-list" id="testCardsList">
-                            <em>Đang tải danh sách thẻ test...</em>
-                        </div>
-                    </div>
+
                     
                     <form id="cardPaymentForm">
                         <div class="form-group">
@@ -1018,30 +1009,8 @@ function closeCardPaymentModal() {
 
 // Function to update modal with test card data from API
 function updateModalWithTestCards() {
-    if (!testCardData) return;
-    
-    const testCardsList = document.getElementById('testCardsList');
-    if (!testCardsList) return;
-    
-    let successCardsHtml = '';
-    testCardData.successScenarios.forEach((card) => {
-        const formattedCardNumber = card.cardNumber.replace(/(.{4})/g, '$1 ').trim();
-        successCardsHtml += `• <strong>${card.description}:</strong> ${formattedCardNumber}<br>`;
-    });
-    
-    let failureCardsHtml = '';
-    testCardData.failureScenarios.forEach((card) => {
-        const formattedCardNumber = card.cardNumber.replace(/(.{4})/g, '$1 ').trim();
-        failureCardsHtml += `• <strong>${card.description}:</strong> ${formattedCardNumber}<br>`;
-    });
-    
-    testCardsList.innerHTML = `
-        <strong>✅ Thẻ thành công (Sẽ gọi confirm-payment API):</strong><br>
-        ${successCardsHtml}<br>
-        <strong>❌ Thẻ thất bại (Sẽ gọi fail-payment API):</strong><br>
-        ${failureCardsHtml}<br>
-        <em>Sử dụng ngày hết hạn tương lai (vd: 12/25) và CVC bất kỳ (3-4 số)</em>
-    `;
+    // This function is now empty since we removed the test cards display
+    console.log('Test card data loaded but not displayed in modal');
 }
 
 // Function to reset card payment form
