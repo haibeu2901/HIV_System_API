@@ -240,7 +240,9 @@ namespace HIV_System_API_Services.Implements
                         throw new InvalidOperationException("Không thể thay đổi trạng thái cuộc hẹn vì thời gian hẹn nhỏ hơn 12 giờ từ bây giờ.");
                 }
 
-                
+                // Only doctor can change status to 5 (Completed)
+                if (status == 5 && appointment.DctId != accId)
+                    throw new UnauthorizedAccessException("Chỉ bác sĩ của cuộc hẹn này mới có thể hoàn thành nó.");
 
                 // If confirming appointment (status 2 or 3), copy request date/time to actual appointment date/time
                 if ((status == 2 || status == 3) && appointment.RequestDate.HasValue && appointment.RequestTime.HasValue)
