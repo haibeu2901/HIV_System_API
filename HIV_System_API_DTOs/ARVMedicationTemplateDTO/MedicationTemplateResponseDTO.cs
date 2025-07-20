@@ -17,5 +17,6 @@ namespace HIV_System_API_DTOs.ARVMedicationTemplateDTO
         public string? Dosage { get; set; }
         public string? MedicationType { get; set; }
         public int Quantity { get; set; }
+        public string? MedicationUsage { get; set; }
     }
 }
