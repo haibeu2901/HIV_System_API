@@ -47,7 +47,8 @@ namespace HIV_System_API_Services.Implements
                 MedDescription = dto.ARVMedicationDescription,
                 Dosage = dto.ARVMedicationDosage,
                 Price = dto.ARVMedicationPrice,
-                Manufactorer = dto.ARVMedicationManufacturer
+                Manufactorer = dto.ARVMedicationManufacturer,
+                MedicationType = dto.ARVMedicationType
             };
         }
 
@@ -63,7 +64,8 @@ namespace HIV_System_API_Services.Implements
                 ARVMedicationDescription = entity.MedDescription,
                 ARVMedicationDosage = entity.Dosage,
                 ARVMedicationPrice = entity.Price,
-                ARVMedicationManufacturer = entity.Manufactorer
+                ARVMedicationManufacturer = entity.Manufactorer,
+                ARVMedicationType = entity.MedicationType
             };
         }
 
