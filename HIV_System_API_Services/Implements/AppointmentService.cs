@@ -230,10 +230,6 @@ namespace HIV_System_API_Services.Implements
                 if (appointment == null)
                     throw new InvalidOperationException($"Không tìm thấy cuộc hẹn với ID {id}.");
 
-                // Check if the user trying to change status is the same as the one who requested the appointment
-                if (appointment.RequestBy == accId)
-                    throw new InvalidOperationException("Bạn không thể thay đổi trạng thái cuộc hẹn mà chính bạn đã tạo.");
-
                 // Check time constraints if appointment has scheduled date/time
                 if (appointment.ApmtDate.HasValue && appointment.ApmTime.HasValue)
                 {
@@ -244,9 +240,16 @@ namespace HIV_System_API_Services.Implements
                         throw new InvalidOperationException("Không thể thay đổi trạng thái cuộc hẹn vì thời gian hẹn nhỏ hơn 12 giờ từ bây giờ.");
                 }
 
+                
+
                 // If confirming appointment (status 2 or 3), copy request date/time to actual appointment date/time
                 if ((status == 2 || status == 3) && appointment.RequestDate.HasValue && appointment.RequestTime.HasValue)
                 {
+                    // Check if the user trying to change status is the same as the one who requested the appointment
+                    // Can not accept or confirm an appointment that the user created
+                    if (appointment.RequestBy == accId)
+                        throw new InvalidOperationException("Bạn không thể thay đổi trạng thái cuộc hẹn mà chính bạn đã tạo.");
+
                     appointment.ApmtDate = appointment.RequestDate;
                     appointment.ApmTime = appointment.RequestTime;
 
