@@ -58,6 +58,7 @@ namespace HIV_System_API_Services.Implements
                 MedicationName = medicationDetail?.MedName,
                 MedicationDescription = medicationDetail?.MedDescription,
                 Dosage = medicationDetail?.Dosage,
+                MedicationType = medicationDetail?.MedicationType,
                 Quantity = entity.Quantity ?? 0
             };
         }
