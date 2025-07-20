@@ -13,6 +13,7 @@ namespace HIV_System_API_DTOs.PatientArvMedicationDTO
         public int PatientArvRegiId { get; set; }
         public int ArvMedId { get; set; }
         public int? Quantity { get; set; }
+        public string? UsageInstructions { get; set; }
         public ArvMedicationDetailResponseDTO? MedicationDetail { get; set; }
     }
 }
