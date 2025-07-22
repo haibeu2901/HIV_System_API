@@ -771,6 +771,7 @@ function renderMedicationRows() {
             <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
             <td><input type="number" min="1" value="${med.quantity || ''}" class="medication-qty-input" data-idx="${idx}" style="width:70px;"></td>
             <td>${medDetail ? medDetail.arvMedicationManufacturer : med.manufacturer || ''}</td>
+            <td><input type="text" class="medication-usage-input" data-idx="${idx}" value="${med.usageInstructions || med.medicationUsage || ''}" placeholder="Nhập cách sử dụng"></td>
             <td><button type="button" class="remove-med-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button></td>
         `;
         medicationsTableBody.appendChild(row);
@@ -814,6 +815,9 @@ medicationsTableBody.onchange = function(e) {
     } else if (e.target.classList.contains('medication-qty-input')) {
         const idx = +e.target.dataset.idx;
         selectedTemplateMedications[idx].quantity = +e.target.value;
+    } else if (e.target.classList.contains('medication-usage-input')) {
+        const idx = +e.target.dataset.idx;
+        selectedTemplateMedications[idx].usageInstructions = e.target.value;
     }
 };
 
@@ -859,7 +863,8 @@ regimenForm.onsubmit = async function(e) {
             return {
                 patientArvRegId: patientArvRegId,
                 arvMedDetailId: medDetail ? medDetail.arvMedicationId : med.arvMedDetailId,
-                quantity: med.quantity
+                quantity: med.quantity,
+                usageInstructions: med.usageInstructions || med.medicationUsage
             };
         });
         // Build regimenRequest object
@@ -908,7 +913,8 @@ regimenForm.onsubmit = async function(e) {
         return {
         patientArvRegId: 0,
             arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
-        quantity: med.quantity
+        quantity: med.quantity,
+        usageInstructions: med.usageInstructions || med.medicationUsage
         };
     });
     // Build regimen object
