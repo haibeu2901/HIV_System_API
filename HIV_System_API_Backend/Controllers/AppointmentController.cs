@@ -142,9 +142,16 @@ namespace HIV_System_API_Backend.Controllers
         [Authorize]
         public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
         {
+            // Extract the account ID from the JWT token claims.
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+            {
+                return Unauthorized("User session is invalid or has expired.");
+            }
+
             try
             {
-                var updatedAppointment = await _appointmentService.ChangeAppointmentStatusAsync(id, status);
+                var updatedAppointment = await _appointmentService.ChangeAppointmentStatusAsync(id, status, accountId.Value);
                 return Ok(updatedAppointment);
             }
             catch (ArgumentException ex)

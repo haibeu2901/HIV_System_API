@@ -14,5 +14,6 @@ namespace HIV_System_API_DTOs.ArvMedicationDetailDTO
         public string? ARVMedicationDosage { get; set; }
         public double ARVMedicationPrice { get; set; }
         public string? ARVMedicationManufacturer { get; set; }
+        public string? ARVMedicationType { get; set; }
     }
 }
