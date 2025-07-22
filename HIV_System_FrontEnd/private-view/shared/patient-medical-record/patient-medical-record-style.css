@@ -824,3 +824,12 @@
 .service-description:empty {
     display: none !important;
 }
+select.medication-name-select {
+    color: #222 !important;
+    background: #fff !important;
+    text-indent: 0 !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    appearance: auto !important;
+  }

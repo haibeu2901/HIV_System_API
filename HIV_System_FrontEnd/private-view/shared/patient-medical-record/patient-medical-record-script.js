@@ -481,22 +481,26 @@ function renderARVRegimens(regimens, medications) {
                         <table class="medications-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Dosage</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Manufacturer</th>
-                                    <th>Description</th>
+                                    <th>Tên thuốc</th>
+                                    <th>Loại thuốc</th>
+                                    <th>Liều lượng</th>
+                                    <th>Số lượng</th>
+                                    <th>Nhà sản xuất</th>
+                                    <th>Cách sử dụng</th>
+                                    <th>Giá</th>
+                                    <th>Mô tả</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${regimenMeds.map(med => `
                                     <tr>
                                         <td>${med.medicationDetail.arvMedicationName}</td>
+                                        <td>${med.medicationDetail.arvMedicationType || med.medicationDetail.medicationType || ''}</td>
                                         <td>${med.medicationDetail.arvMedicationDosage}</td>
                                         <td>${med.quantity}</td>
-                                        <td>${med.medicationDetail.arvMedicationPrice ? med.medicationDetail.arvMedicationPrice.toLocaleString() : 'N/A'}</td>
                                         <td>${med.medicationDetail.arvMedicationManufacturer}</td>
+                                        <td>${med.usageInstructions || med.medicationDetail.medicationUsage || ''}</td>
+                                        <td>${med.medicationDetail.arvMedicationPrice ? med.medicationDetail.arvMedicationPrice.toLocaleString() : 'N/A'}</td>
                                         <td>${med.medicationDetail.arvMedicationDescription}</td>
                                     </tr>
                                 `).join('')}
@@ -734,12 +738,14 @@ regimenTemplate.onchange = function() {
             document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
         }
     }
-    // Fill medications
-    selectedTemplateMedications = template.medications.map(med => ({
+    // Fill medications (FIXED MAPPING)
+    selectedTemplateMedications = (template.medications || []).map(med => ({
         arvMedicationName: med.medicationName,
+        arvMedDetailId: med.arvMedicationDetailId,
         dosage: med.dosage,
         quantity: med.quantity,
-        manufacturer: ''
+        manufacturer: '',
+        usageInstructions: med.medicationUsage || ''
     }));
     renderMedicationRows();
 };
@@ -759,28 +765,49 @@ function resetRegimenForm() {
 function renderMedicationRows() {
     medicationsTableBody.innerHTML = '';
     selectedTemplateMedications.forEach((med, idx) => {
-        const medDetail = allMedicationDetails.find(m => m.arvMedicationName === med.arvMedicationName);
+        // Use arvMedDetailId if available, otherwise try to find by name
+        let medDetail = null;
+        let selectedId = '';
+        if (med.arvMedDetailId) {
+            medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(med.arvMedDetailId));
+            selectedId = med.arvMedDetailId;
+        }
+        if (!medDetail && med.arvMedicationName) {
+            medDetail = allMedicationDetails.find(m => m.arvMedicationName === med.arvMedicationName);
+            selectedId = medDetail ? medDetail.arvMedicationId : '';
+        }
+        // If usageInstructions is not set, use medicationUsage from medDetail
+        let usageValue = (typeof med.usageInstructions === 'string' && med.usageInstructions.length > 0)
+            ? med.usageInstructions
+            : (medDetail && medDetail.medicationUsage ? medDetail.medicationUsage : '');
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
                 <select class="medication-name-select" data-idx="${idx}">
                     <option value="">Chọn</option>
-                    ${allMedicationDetails.map(m => `<option value="${m.arvMedicationId}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
+                    ${allMedicationDetails.map(m => `<option value="${String(m.arvMedicationId)}" ${String(m.arvMedicationId) === String(selectedId) ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
                 </select>
             </td>
             <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
             <td><input type="number" min="1" value="${med.quantity || ''}" class="medication-qty-input" data-idx="${idx}" style="width:70px;"></td>
             <td>${medDetail ? medDetail.arvMedicationManufacturer : med.manufacturer || ''}</td>
-            <td><input type="text" class="medication-usage-input" data-idx="${idx}" value="${med.usageInstructions || med.medicationUsage || ''}" placeholder="Nhập cách sử dụng"></td>
+            <td><input type="text" class="medication-usage-input" data-idx="${idx}" value="${usageValue}" placeholder="Nhập cách sử dụng"></td>
             <td><button type="button" class="remove-med-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button></td>
         `;
         medicationsTableBody.appendChild(row);
+        // Explicitly set the dropdown value to ensure it displays the selected medicine
+        const select = row.querySelector('.medication-name-select');
+        if (select) {
+            select.value = String(selectedId);
+        }
     });
     updateAddMedicationBtnState();
 }
 
+// When adding a new medication from a template, set usageInstructions to medicationUsage by default
 addMedicationBtn.onclick = function() {
-    selectedTemplateMedications.push({ arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' });
+    // Default to empty, but if a template is selected, use its medicationUsage
+    selectedTemplateMedications.push({ arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' });
     renderMedicationRows();
 };
 
@@ -796,6 +823,7 @@ medicationsTableBody.onclick = function(e) {
         renderMedicationRows();
     }
 };
+// In the .onchange handler for .medication-name-select, update arvMedDetailId, arvMedicationName, and usageInstructions in selectedTemplateMedications
 medicationsTableBody.onchange = function(e) {
     if (e.target.classList.contains('medication-name-select')) {
         const idx = +e.target.dataset.idx;
@@ -804,12 +832,14 @@ medicationsTableBody.onchange = function(e) {
         if (medDetail) {
             selectedTemplateMedications[idx] = {
                 arvMedicationName: medDetail.arvMedicationName,
+                arvMedDetailId: medDetail.arvMedicationId,
                 dosage: medDetail.arvMedicationDosage,
                 quantity: selectedTemplateMedications[idx].quantity || 1,
-                manufacturer: medDetail.arvMedicationManufacturer
+                manufacturer: medDetail.arvMedicationManufacturer,
+                usageInstructions: medDetail.medicationUsage || ''
             };
         } else {
-            selectedTemplateMedications[idx] = { arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' };
+            selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' };
         }
         renderMedicationRows();
     } else if (e.target.classList.contains('medication-qty-input')) {
