@@ -161,19 +161,25 @@ namespace HIV_System_API_DAOs.Implements
                     ws.IsAvailable == true))
                 .ToListAsync();
 
-            // Step 2: Get all existing appointments for these doctors on the specified date
+            // Step 2: Get all existing appointments and requests for these doctors on the specified date
             var doctorIds = doctorsWithSchedules.Select(d => d.DctId).ToList();
             var existingAppointments = await _context.Appointments
                 .Where(a =>
                     doctorIds.Contains(a.DctId) &&
-                    a.ApmtDate == appointmentDate &&
-                    a.ApmTime.HasValue && // Only consider appointments with actual scheduled times
-                    a.ApmStatus != CANCELLED_STATUS)
+                    a.ApmStatus != CANCELLED_STATUS &&
+                    (
+                        // Check scheduled appointments
+                        (a.ApmtDate == appointmentDate && a.ApmTime.HasValue) ||
+                        // Check appointment requests
+                        (a.RequestDate == appointmentDate && a.RequestTime.HasValue)
+                    )
+                )
                 .Select(a => new
                 {
                     a.DctId,
-                    ApmTime = a.ApmTime!.Value, // Safe to use ! since we filtered for HasValue
-                    EndTime = a.ApmTime!.Value.Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES))
+                    // Use either the actual appointment time or request time
+                    StartTime = a.ApmTime ?? a.RequestTime!.Value,
+                    EndTime = (a.ApmTime ?? a.RequestTime!.Value).Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES))
                 })
                 .ToListAsync();
 
@@ -190,16 +196,16 @@ namespace HIV_System_API_DAOs.Implements
                     // Check if this time slot can accommodate the appointment duration
                     if (schedule.StartTime <= appointmentTime && schedule.EndTime >= appointmentEndTime)
                     {
-                        // Check if there are any conflicting appointments in this time slot
+                        // Check if there are any conflicting appointments or requests in this time slot
                         var conflictingAppointments = existingAppointments
                             .Where(a => a.DctId == doctor.DctId)
                             .Where(a =>
                                 // Check for time overlap: two appointments overlap if one starts before the other ends
-                                a.ApmTime < appointmentEndTime &&
+                                a.StartTime < appointmentEndTime &&
                                 a.EndTime > appointmentTime &&
                                 // Ensure the conflicting appointment falls within this work schedule
-                                a.ApmTime >= schedule.StartTime &&
-                                a.ApmTime < schedule.EndTime)
+                                a.StartTime >= schedule.StartTime &&
+                                a.StartTime < schedule.EndTime)
                             .ToList();
 
                         if (!conflictingAppointments.Any())
