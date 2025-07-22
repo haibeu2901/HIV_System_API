@@ -14,8 +14,8 @@ const token = localStorage.getItem('token');
 // Appointment status mapping (add virtual status for frontend display)
 const appointmentStatusMap = {
   1: "Chờ xác nhận", // Pending
-  2: "Đã xác nhận",   // Scheduled
-  3: "Đã xác nhận lại", // Rescheduled
+  2: "Đã lên lịch",   // Scheduled
+  3: "Đã lên lịch lại", // Rescheduled
   4: "Đã hủy",        // Cancelled
   5: "Đã hoàn thành", // Completed
   6: "Đã từ chối"     // Rejected (virtual, frontend only)
