@@ -323,6 +323,12 @@ namespace HIV_System_API_Services.Implements
                     throw new InvalidOperationException($"Phác đồ ARV bệnh nhân với ID {parId} không tồn tại.");
                 }
 
+                // Validate the whether the regimen is failed
+                if (existingRegimen.RegimenStatus == 4) // Failed
+                {
+                    throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đã được đánh dấu là thất bại.");
+                }
+
                 // Validate the whether the regimen is completed
                 if (existingRegimen.RegimenStatus == 5) // Completed
                 {
@@ -713,6 +719,156 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Lỗi không mong muốn khi cập nhật trạng thái phác đồ ARV: {ex.InnerException}");
+            }
+        }
+
+        public async Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenWithMedicationsAsync(
+            int parId,
+            PatientArvRegimenRequestDTO regimenRequest,
+            List<PatientArvMedicationRequestDTO> medicationRequests,
+            int accId)
+        {
+            Debug.WriteLine($"Updating ARV regimen with medications for AccountId: {accId}");
+
+            if (regimenRequest == null)
+                throw new ArgumentNullException(nameof(regimenRequest), "Yêu cầu phác đồ là bắt buộc.");
+            if (medicationRequests == null || !medicationRequests.Any())
+                throw new ArgumentNullException(nameof(medicationRequests), "Ít nhất một yêu cầu thuốc là bắt buộc.");
+            if (parId <= 0)
+                throw new ArgumentException("ID phác đồ ARV không hợp lệ", nameof(parId));
+
+            // Validate regimen inputs
+            if (regimenRequest.PatientMedRecordId <= 0)
+                throw new ArgumentException("ID hồ sơ y tế bệnh nhân không hợp lệ", nameof(regimenRequest.PatientMedRecordId));
+            await ValidatePatientMedicalRecordExists(regimenRequest.PatientMedRecordId);
+            await ValidateRegimenLevel(regimenRequest.RegimenLevel);
+            await ValidateRegimenStatus(regimenRequest.RegimenStatus);
+            if (regimenRequest.StartDate.HasValue && regimenRequest.EndDate.HasValue
+                && regimenRequest.StartDate > regimenRequest.EndDate)
+                throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");
+
+            // Validate medication inputs
+            foreach (var med in medicationRequests)
+            {
+                if (med.ArvMedDetailId <= 0)
+                    throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ", nameof(med.ArvMedDetailId));
+                if (!med.Quantity.HasValue || med.Quantity <= 0)
+                    throw new ArgumentException("Số lượng phải lớn hơn 0.", nameof(med.Quantity));
+                await ValidateArvMedicationDetailExists(med.ArvMedDetailId);
+            }
+
+            // Check for duplicate medications
+            var medIds = medicationRequests.Select(m => m.ArvMedDetailId).ToList();
+            if (medIds.Distinct().Count() != medIds.Count)
+                throw new ArgumentException("ID thuốc ARV trùng lặp không được phép trong cùng một phác đồ.");
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Get existing regimen
+                var existingRegimen = await _patientArvRegimenRepo.GetPatientArvRegimenByIdAsync(parId);
+                if (existingRegimen == null)
+                    throw new InvalidOperationException($"Phác đồ ARV với ID {parId} không tồn tại.");
+
+                if (existingRegimen.RegimenStatus == 4) // Failed
+                    throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đã được đánh dấu là thất bại.");
+
+                if (existingRegimen.RegimenStatus == 5) // Completed
+                    throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đã được đánh dấu là hoàn thành.");
+
+                // Update regimen
+                var updatedRegimenEntity = MapToEntity(regimenRequest);
+                updatedRegimenEntity.ParId = parId;
+                var updatedRegimen = await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, updatedRegimenEntity);
+
+                // Get existing medications for this regimen
+                var existingMedications = await _patientArvMedicationRepo.GetPatientArvMedicationsByPatientRegimenIdAsync(parId);
+
+                // Create dictionaries for easier lookup
+                var existingMedDict = existingMedications.ToDictionary(m => m.AmdId, m => m);
+                var requestMedDict = medicationRequests.ToDictionary(m => m.ArvMedDetailId, m => m);
+
+                var updatedMedications = new List<PatientArvMedication>();
+
+                // Update existing medications or create new ones
+                foreach (var medRequest in medicationRequests)
+                {
+                    if (existingMedDict.ContainsKey(medRequest.ArvMedDetailId))
+                    {
+                        // Update existing medication
+                        var existingMed = existingMedDict[medRequest.ArvMedDetailId];
+                        var updatedMedEntity = new PatientArvMedication
+                        {
+                            PamId = existingMed.PamId,
+                            ParId = parId,
+                            AmdId = medRequest.ArvMedDetailId,
+                            Quantity = medRequest.Quantity
+                        };
+                        var updatedMed = await _patientArvMedicationRepo.UpdatePatientArvMedicationAsync(existingMed.PamId, updatedMedEntity);
+                        updatedMedications.Add(updatedMed);
+                    }
+                    else
+                    {
+                        // Create new medication
+                        var newMedEntity = new PatientArvMedication
+                        {
+                            ParId = parId,
+                            AmdId = medRequest.ArvMedDetailId,
+                            Quantity = medRequest.Quantity
+                        };
+                        var createdMed = await _patientArvMedicationRepo.CreatePatientArvMedicationAsync(newMedEntity);
+                        updatedMedications.Add(createdMed);
+                    }
+                }
+
+                // Delete medications that are no longer in the request
+                var medicationsToDelete = existingMedications.Where(em => !requestMedDict.ContainsKey(em.AmdId)).ToList();
+                foreach (var medToDelete in medicationsToDelete)
+                {
+                    await _patientArvMedicationRepo.DeletePatientArvMedicationAsync(medToDelete.PamId);
+                }
+
+                // Update TotalCost
+                var totalCost = await CalculateTotalCostAsync(parId);
+                updatedRegimen.TotalCost = totalCost;
+                await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, updatedRegimen);
+
+                // Create notification
+                var notification = new Notification
+                {
+                    NotiType = "Cập nhật phác đồ ARV",
+                    NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {updatedMedications.Count} loại thuốc.",
+                    SendAt = DateTime.UtcNow
+                };
+                var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+
+                // Send notification to patient
+                var medicalRecord = await _context.PatientMedicalRecords
+                    .Include(pmr => pmr.Ptn)
+                    .FirstOrDefaultAsync(pmr => pmr.PmrId == regimenRequest.PatientMedRecordId);
+                if (medicalRecord?.Ptn != null)
+                    await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, medicalRecord.Ptn.AccId);
+
+                // Send notification to doctor (if updater is not a doctor)
+                var account = await _context.Accounts.FindAsync(accId);
+                if (account != null && account.Roles != 2) // 2 = Doctor
+                {
+                    var activeAppointments = await _context.Appointments
+                        .Include(a => a.Dct)
+                        .Where(a => a.PtnId == medicalRecord.PtnId && (a.ApmStatus == 2 || a.ApmStatus == 3)) // 2, 3 = scheduled/re-scheduled
+                        .FirstOrDefaultAsync();
+                    if (activeAppointments?.Dct != null)
+                        await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, activeAppointments.Dct.AccId);
+                }
+
+                await transaction.CommitAsync();
+                return MapToResponseDTO(updatedRegimen);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to update ARV regimen with medications: {ex.Message}");
+                await transaction.RollbackAsync();
+                throw;
             }
         }
     }

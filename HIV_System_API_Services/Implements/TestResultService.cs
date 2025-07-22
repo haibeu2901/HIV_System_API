@@ -5,7 +5,6 @@ using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using System.Diagnostics;
 
 namespace HIV_System_API_Services.Implements
@@ -14,6 +13,7 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly ITestResultRepo _testResultRepo;
         private readonly IComponentTestResultRepo _componentTestResultRepo;
+        private readonly IComponentTestResultService _componentTestResultService;
         private readonly IPatientRepo _patientRepo;
         private readonly INotificationRepo _notificationRepo;
         private readonly HivSystemApiContext _context;
@@ -22,6 +22,7 @@ namespace HIV_System_API_Services.Implements
         {
             _testResultRepo = new TestResultRepo() ?? throw new ArgumentNullException(nameof(_testResultRepo));
             _componentTestResultRepo = new ComponentTestResultRepo() ?? throw new ArgumentNullException(nameof(_componentTestResultRepo));
+            _componentTestResultService = new ComponentTestResultService() ?? throw new ArgumentNullException(nameof(_componentTestResultService));
             _patientRepo = new PatientRepo() ?? throw new ArgumentNullException(nameof(_patientRepo));
             _notificationRepo = new NotificationRepo() ?? throw new ArgumentNullException(nameof(_notificationRepo));
             _context = new HivSystemApiContext() ?? throw new ArgumentNullException(nameof(_context));
@@ -38,16 +39,26 @@ namespace HIV_System_API_Services.Implements
             };
         }
 
-        private TestResultResponseDTO MapToResponse(TestResult testResult)
+        private async Task<TestResultResponseDTO> MapToResponseAsync(TestResult testResult)
         {
+            var refreshedResult = await _context.TestResults
+                .Include(tr => tr.ComponentTestResults)
+                    .ThenInclude(ct => ct.Stf)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(tr => tr.TrsId == testResult.TrsId);
+
+            if (refreshedResult == null)
+                throw new KeyNotFoundException($"Test result with ID {testResult.TrsId} not found");
+
             return new TestResultResponseDTO
             {
-                PatientMedicalRecordId = testResult.PmrId,
-                TestDate = testResult.TestDate,
-                Result = testResult.ResultValue,
-                Notes = testResult.Notes,
-                TestResultId = testResult.TrsId,
-                ComponentTestResults = testResult.ComponentTestResults?
+                PatientMedicalRecordId = refreshedResult.PmrId,
+                TestDate = refreshedResult.TestDate,
+                Result = refreshedResult.ResultValue,
+                Notes = refreshedResult.Notes,
+                TestResultId = refreshedResult.TrsId,
+                ComponentTestResults = refreshedResult.ComponentTestResults?
+                    .OrderBy(ct => ct.CtrName)
                     .Select(component => new ComponentTestResultResponseDTO
                     {
                         ComponentTestResultId = component.CtrId,
@@ -65,18 +76,7 @@ namespace HIV_System_API_Services.Implements
         {
             var exists = await _context.PatientMedicalRecords.AnyAsync(pmr => pmr.PmrId == pmrId);
             if (!exists)
-            {
                 throw new InvalidOperationException($"Hồ sơ bệnh án với ID {pmrId} không tồn tại.");
-            }
-        }
-
-        private async Task ValidateStaffExists(int staffId)
-        {
-            var exists = await _context.Staff.AnyAsync(s => s.StfId == staffId);
-            if (!exists)
-            {
-                throw new InvalidOperationException($"Nhân viên với ID {staffId} không tồn tại.");
-            }
         }
 
         private async Task ValidateAccountExists(int accId)
@@ -97,7 +97,7 @@ namespace HIV_System_API_Services.Implements
 
             var entity = MapToRequest(testResult);
             var created = await _testResultRepo.CreateTestResult(entity);
-            return MapToResponse(created);
+            return await MapToResponseAsync(created);
         }
 
         public async Task<bool> DeleteTestResult(int id)
@@ -114,20 +114,28 @@ namespace HIV_System_API_Services.Implements
 
         public async Task<List<TestResultResponseDTO>> GetAllTestResult()
         {
-            // Ensure component test results are included
             var results = await _testResultRepo.GetAllTestResult();
 
-            // If your repo does not include navigation properties, load them here:
             if (results.Any(r => r.ComponentTestResults == null || !r.ComponentTestResults.Any()))
             {
-                using var context = new HivSystemApiContext();
-                results = await context.TestResults
+                results = await _context.TestResults
                     .Include(tr => tr.ComponentTestResults)
                     .ThenInclude(ct => ct.Stf)
+                    .OrderByDescending(tr => tr.TestDate)
+                    .ThenByDescending(tr => tr.TrsId)
                     .ToListAsync();
             }
+            else
+            {
+                results = results.OrderByDescending(r => r.TestDate).ToList();
+            }
 
-            return results.Select(MapToResponse).ToList();
+            var responseList = new List<TestResultResponseDTO>();
+            foreach (var result in results)
+            {
+                responseList.Add(await MapToResponseAsync(result));
+            }
+            return responseList;
         }
 
         public async Task<List<PersonalTestResultResponseDTO>> GetPersonalTestResult(int id)
@@ -140,37 +148,56 @@ namespace HIV_System_API_Services.Implements
             if (results == null || !results.Any())
                 throw new KeyNotFoundException($"Không tìm thấy kết quả xét nghiệm cho bệnh nhân với ID {id}.");
 
-            var response = results.Select(r => new PersonalTestResultResponseDTO
+            var orderedResults = results.OrderByDescending(r => r.TestDate).ThenByDescending(r => r.TrsId);
+
+            var response = new List<PersonalTestResultResponseDTO>();
+            foreach (var r in orderedResults)
             {
-                PatientMedicalRecordId = r.PmrId,
-                TestDate = r.TestDate,
-                Result = r.ResultValue,
-                Notes = r.Notes,
-                ComponentTestResults = r.ComponentTestResults?
-                    .Select(ct => new ComponentTestResultResponseDTO
-                    {
-                        ComponentTestResultId = ct.CtrId,
-                        TestResultId = ct.TrsId,
-                        StaffId = ct.Stf.StfId,
-                        ComponentTestResultName = ct.CtrName,
-                        CtrDescription = ct.CtrDescription ?? string.Empty,
-                        ResultValue = ct.ResultValue,
-                        Notes = ct.Notes
-                    }).ToList() ?? new List<ComponentTestResultResponseDTO>()
-            }).ToList();
+                var refreshedResult = await _context.TestResults
+                    .Include(tr => tr.ComponentTestResults)
+                    .ThenInclude(ct => ct.Stf)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(tr => tr.TrsId == r.TrsId);
+
+                response.Add(new PersonalTestResultResponseDTO
+                {
+                    PatientMedicalRecordId = refreshedResult.PmrId,
+                    TestDate = refreshedResult.TestDate,
+                    Result = refreshedResult.ResultValue,
+                    Notes = refreshedResult.Notes,
+                    ComponentTestResults = refreshedResult.ComponentTestResults?
+                        .OrderBy(ct => ct.CtrName)
+                        .Select(ct => new ComponentTestResultResponseDTO
+                        {
+                            ComponentTestResultId = ct.CtrId,
+                            TestResultId = ct.TrsId,
+                            StaffId = ct.Stf.StfId,
+                            ComponentTestResultName = ct.CtrName,
+                            CtrDescription = ct.CtrDescription ?? string.Empty,
+                            ResultValue = ct.ResultValue,
+                            Notes = ct.Notes
+                        }).ToList() ?? new List<ComponentTestResultResponseDTO>()
+                });
+            }
             return response;
         }
 
         public async Task<List<TestResultResponseDTO>> GetSustainTestResultPatient()
         {
-            using var context = new HivSystemApiContext();
-            var positiveResults = await context.TestResults
+            var positiveResults = await _context.TestResults
                 .Include(tr => tr.ComponentTestResults)
                 .ThenInclude(ct => ct.Stf)
                 .Where(r => r.ResultValue == true)
+                .OrderByDescending(r => r.TestDate)
+                .ThenByDescending(r => r.TrsId)
                 .ToListAsync();
 
-            return positiveResults.Select(MapToResponse).ToList();
+            var responseList = new List<TestResultResponseDTO>();
+            foreach (var result in positiveResults)
+            {
+                responseList.Add(await MapToResponseAsync(result));
+            }
+            return responseList;
         }
 
         public async Task<TestResultResponseDTO> GetTestResultById(int id)
@@ -179,20 +206,10 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("ID kết quả xét nghiệm không hợp lệ", nameof(id));
 
             var testResult = await _testResultRepo.GetTestResultById(id);
-
-            if (testResult != null && (testResult.ComponentTestResults == null || !testResult.ComponentTestResults.Any()))
-            {
-                using var context = new HivSystemApiContext();
-                testResult = await context.TestResults
-                    .Include(tr => tr.ComponentTestResults)
-                    .ThenInclude(ct => ct.Stf)
-                    .FirstOrDefaultAsync(tr => tr.TrsId == id);
-            }
-
             if (testResult == null)
                 throw new KeyNotFoundException($"Kết quả xét nghiệm với ID {id} không tìm thấy.");
 
-            return MapToResponse(testResult);
+            return await MapToResponseAsync(testResult);
         }
 
         public async Task<TestResultResponseDTO> UpdateTestResult(TestResultUpdateRequestDTO testResult, int id)
@@ -219,7 +236,7 @@ namespace HIV_System_API_Services.Implements
                 throw new Exception("Cập nhật thất bại.");
 
             var updatedResult = await _testResultRepo.GetTestResultById(id);
-            return MapToResponse(updatedResult!);
+            return await MapToResponseAsync(updatedResult!);
         }
 
         public async Task<TestResultResponseDTO> CreateTestResultWithComponentTestsAsync(
@@ -374,10 +391,10 @@ namespace HIV_System_API_Services.Implements
                         if (resultWithComponents == null)
                         {
                             Debug.WriteLine("Warning: Could not load created test result with components");
-                            return MapToResponse(createdTestResult);
+                            return await MapToResponseAsync(createdTestResult);
                         }
 
-                        return MapToResponse(resultWithComponents);
+                        return await MapToResponseAsync(resultWithComponents);
                     }
                     catch (Exception ex)
                     {
@@ -386,6 +403,151 @@ namespace HIV_System_API_Services.Implements
                         transaction.Rollback();
                         throw;
                     }
+                }
+            });
+        }
+
+        public async Task<TestResultResponseDTO> UpdateTestResultWithComponentTestsAsync(
+            int testResultId,
+            TestResultRequestDTO testResult,
+            List<ComponentTestResultRequestDTO> componentTestResults,
+            int accId)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = _context.Database.BeginTransaction();
+                try
+                {
+                    // Validate inputs
+                    if (testResult == null)
+                        throw new ArgumentNullException(nameof(testResult));
+                    if (componentTestResults == null)
+                        throw new ArgumentNullException(nameof(componentTestResults));
+                    if (testResultId <= 0)
+                        throw new ArgumentException("ID kết quả xét nghiệm không hợp lệ", nameof(testResultId));
+
+                    // Validate existence
+                    var existingTestResult = await _context.TestResults
+                        .Include(tr => tr.ComponentTestResults)
+                        .FirstOrDefaultAsync(tr => tr.TrsId == testResultId);
+
+                    if (existingTestResult == null)
+                        throw new KeyNotFoundException($"Không tìm thấy kết quả xét nghiệm với ID {testResultId}");
+
+                    await ValidatePatientMedicalRecordExists(testResult.PatientMedicalRecordId);
+
+                    // Update main test result
+                    existingTestResult.TestDate = testResult.TestDate;
+                    existingTestResult.ResultValue = testResult.Result;
+                    existingTestResult.Notes = testResult.Notes;
+
+                    // Handle component test results - AUTO MATCH BY COMPONENT NAME
+                    // Get existing components and create dictionary for easier lookup
+                    var existingComponents = existingTestResult.ComponentTestResults.ToList();
+                    var existingComponentDict = existingComponents.ToDictionary(c => c.CtrName.Trim().ToLower(), c => c);
+                    var requestComponentDict = componentTestResults.ToDictionary(c => c.ComponentTestResultName.Trim().ToLower(), c => c);
+
+                    var updatedComponents = new List<ComponentTestResult>();
+
+                    // Process each component in the request
+                    foreach (var componentRequest in componentTestResults)
+                    {
+                        if (string.IsNullOrWhiteSpace(componentRequest.ComponentTestResultName))
+                            throw new ArgumentException("Tên kết quả kiểm tra thành phần là bắt buộc");
+
+                        var componentNameKey = componentRequest.ComponentTestResultName.Trim().ToLower();
+
+                        if (existingComponentDict.ContainsKey(componentNameKey))
+                        {
+                            // Update existing component - match by component name
+                            var existingComponent = existingComponentDict[componentNameKey];
+                            var updatedComponent = new ComponentTestResult
+                            {
+                                CtrId = existingComponent.CtrId,
+                                TrsId = existingComponent.TrsId,
+                                StfId = accId, // Update with current staff ID
+                                CtrName = componentRequest.ComponentTestResultName?.Trim(),
+                                CtrDescription = componentRequest.CtrDescription?.Trim(),
+                                ResultValue = componentRequest.ResultValue?.Trim(),
+                                Notes = componentRequest.Notes?.Trim()
+                            };
+
+                            await _componentTestResultRepo.UpdateTestComponent(updatedComponent);
+                            updatedComponents.Add(updatedComponent);
+                        }
+                        else
+                        {
+                            // Add new component - component name doesn't exist
+                            var newComponent = new ComponentTestResult
+                            {
+                                TrsId = testResultId,
+                                StfId = accId,
+                                CtrName = componentRequest.ComponentTestResultName?.Trim(),
+                                CtrDescription = componentRequest.CtrDescription?.Trim(),
+                                ResultValue = componentRequest.ResultValue?.Trim(),
+                                Notes = componentRequest.Notes?.Trim()
+                            };
+
+                            var createdComponent = await _componentTestResultRepo.AddTestComponent(newComponent);
+                            updatedComponents.Add(createdComponent);
+                        }
+                    }
+
+                    // Delete components that are no longer in the request
+                    var componentsToDelete = existingComponents.Where(ec => !requestComponentDict.ContainsKey(ec.CtrName.Trim().ToLower())).ToList();
+                    foreach (var componentToDelete in componentsToDelete)
+                    {
+                        await _componentTestResultRepo.DeleteTestComponent(componentToDelete.CtrId);
+                    }
+
+                    // Create notification
+                    var notification = new Notification
+                    {
+                        NotiType = "Cập nhật KQ XN",
+                        NotiMessage = $"Kết quả xét nghiệm ID {testResultId} đã được cập nhật với {updatedComponents.Count} thành phần.",
+                        SendAt = DateTime.UtcNow
+                    };
+                    var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+
+                    // Get medical record with patient information
+                    var medicalRecord = await _context.PatientMedicalRecords
+                        .Include(pmr => pmr.Ptn)
+                        .FirstOrDefaultAsync(pmr => pmr.PmrId == testResult.PatientMedicalRecordId);
+
+                    if (medicalRecord?.Ptn != null)
+                    {
+                        // Send notification to patient
+                        await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, medicalRecord.Ptn.AccId);
+
+                        // Send notification to the most recent doctor for this patient
+                        var recentAppointment = await _context.Appointments
+                            .Include(a => a.Dct)
+                            .Where(a => a.PtnId == medicalRecord.PtnId)
+                            .OrderByDescending(a => a.ApmtDate)
+                            .FirstOrDefaultAsync();
+
+                        if (recentAppointment?.Dct != null)
+                        {
+                            await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, recentAppointment.Dct.AccId);
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // Reload the test result with all related data
+                    var updatedResult = await _context.TestResults
+                        .Include(tr => tr.ComponentTestResults)
+                        .ThenInclude(ct => ct.Stf)
+                        .FirstAsync(tr => tr.TrsId == testResultId);
+
+                    return await MapToResponseAsync(updatedResult);
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"Cập nhật kết quả xét nghiệm thất bại: {ex.Message}", ex);
                 }
             });
         }

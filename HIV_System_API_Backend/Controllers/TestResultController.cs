@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace HIV_System_API_Backend.Controllers
 {
@@ -15,13 +14,11 @@ namespace HIV_System_API_Backend.Controllers
     public class TestResultController : ControllerBase
     {
         private readonly ITestResultService _testResultService;
-        private readonly IMemoryCache _cache;
         private readonly ILogger<TestResultController> _logger;
 
-        public TestResultController(ITestResultService testResultService, IMemoryCache cache, ILogger<TestResultController> logger)
+        public TestResultController(ITestResultService testResultService, ILogger<TestResultController> logger)
         {
             _testResultService = testResultService ?? throw new ArgumentNullException(nameof(testResultService));
-            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -38,11 +35,6 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var result = await _testResultService.CreateTestResult(dto);
-
-                // Clear related cache entries
-                _cache.Remove($"test_results_all");
-                _cache.Remove($"sustain_test_results");
-
                 return CreatedAtAction(nameof(GetTestResultById), new { id = result.TestResultId }, result);
             }
             catch (ArgumentException ex)
@@ -57,37 +49,48 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        [HttpGet("GetById/{id:int}")]
+        [HttpGet("GetById/{id}")]
         [Authorize(Roles = "1,2,3,4,5")]
         public async Task<ActionResult<TestResultResponseDTO>> GetTestResultById(int id)
         {
+            _logger.LogInformation("Attempting to retrieve test result with ID: {Id}", id);
+
             if (id <= 0)
+            {
+                _logger.LogWarning("Invalid test result ID provided: {Id}", id);
                 return BadRequest("Invalid test result ID.");
+            }
 
             try
             {
-                var cacheKey = $"test_result_{id}";
-                if (_cache.TryGetValue(cacheKey, out TestResultResponseDTO? cachedResult) && cachedResult != null)
-                {
-                    return Ok(cachedResult);
-                }
-
                 var result = await _testResultService.GetTestResultById(id);
 
-                // Cache for 5 minutes
-                _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+                if (result == null)
+                {
+                    _logger.LogWarning("Test result not found for ID: {Id}", id);
+                    return NotFound($"Test result with ID {id} not found.");
+                }
 
+                _logger.LogInformation("Successfully retrieved test result ID: {Id}", id);
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogWarning("Test result not found: {Id}", id);
-                return NotFound(ex.Message);
+                _logger.LogWarning(ex, "Test result not found: {Id}", id);
+                return NotFound($"Test result with ID {id} not found: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid argument for test result retrieval: {Id}", id);
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving test result {Id}", id);
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while retrieving the test result.");
+                _logger.LogError(ex, "Unexpected error retrieving test result {Id}", id);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError, 
+                    "An error occurred while retrieving the test result."
+                );
             }
         }
 
@@ -97,17 +100,7 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
-                var cacheKey = "test_results_all";
-                if (_cache.TryGetValue(cacheKey, out List<TestResultResponseDTO>? cachedResults) && cachedResults != null)
-                {
-                    return Ok(cachedResults);
-                }
-
                 var results = await _testResultService.GetAllTestResult();
-
-                // Cache for 2 minutes since this data changes frequently
-                _cache.Set(cacheKey, results, TimeSpan.FromMinutes(2));
-
                 return Ok(results);
             }
             catch (Exception ex)
@@ -129,11 +122,6 @@ namespace HIV_System_API_Backend.Controllers
                 var deleted = await _testResultService.DeleteTestResult(id);
                 if (!deleted)
                     return NotFound($"Test result with ID {id} not found.");
-
-                // Clear related cache entries
-                _cache.Remove($"test_result_{id}");
-                _cache.Remove($"test_results_all");
-                _cache.Remove($"sustain_test_results");
 
                 return NoContent();
             }
@@ -160,12 +148,6 @@ namespace HIV_System_API_Backend.Controllers
             try
             {
                 var result = await _testResultService.UpdateTestResult(dto, id);
-
-                // Clear related cache entries
-                _cache.Remove($"test_result_{id}");
-                _cache.Remove($"test_results_all");
-                _cache.Remove($"sustain_test_results");
-
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)
@@ -195,17 +177,7 @@ namespace HIV_System_API_Backend.Controllers
 
             try
             {
-                var cacheKey = $"personal_test_results_{accId}";
-                if (_cache.TryGetValue(cacheKey, out List<PersonalTestResultResponseDTO>? cachedResults) && cachedResults != null)
-                {
-                    return Ok(cachedResults);
-                }
-
                 var result = await _testResultService.GetPersonalTestResult(accId);
-
-                // Cache for 5 minutes
-                _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
-
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)
@@ -226,17 +198,7 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
-                var cacheKey = "sustain_test_results";
-                if (_cache.TryGetValue(cacheKey, out List<TestResultResponseDTO>? cachedResults) && cachedResults != null)
-                {
-                    return Ok(cachedResults);
-                }
-
                 var results = await _testResultService.GetSustainTestResultPatient();
-
-                // Cache for 10 minutes since this data doesn't change as frequently
-                _cache.Set(cacheKey, results, TimeSpan.FromMinutes(10));
-
                 return Ok(results);
             }
             catch (Exception ex)
@@ -246,16 +208,10 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
-        /// <summary>
-        /// Creates a new test result with associated component tests.
-        /// </summary>
-        /// <param name="request">Object containing test result and component test data.</param>
-        /// <returns>Created test result with component tests.</returns>
         [HttpPost("CreateTestResultWithComponentTests")]
         [Authorize(Roles = "1,4,5")]
         public async Task<IActionResult> CreateTestResultWithComponentTests([FromBody] CreatePatientTestResultWithComponentTestsRequestDTO request)
         {
-            // Validate request structure
             if (request == null)
             {
                 return BadRequest("Request body cannot be null.");
@@ -271,13 +227,11 @@ namespace HIV_System_API_Backend.Controllers
                 return BadRequest("At least one component test is required.");
             }
 
-            // Validate test result data
             if (request.TestResult.PatientMedicalRecordId <= 0)
             {
                 return BadRequest("Patient medical record ID must be greater than 0.");
             }
 
-            // Validate component test data
             foreach (var componentTest in request.ComponentTests)
             {
                 if (string.IsNullOrWhiteSpace(componentTest.ComponentTestResultName))
@@ -286,7 +240,6 @@ namespace HIV_System_API_Backend.Controllers
                 }
             }
 
-            // Check for duplicate component test names
             var componentTestNames = request.ComponentTests
                 .Select(ct => ct.ComponentTestResultName?.Trim().ToLower())
                 .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -333,17 +286,101 @@ namespace HIV_System_API_Backend.Controllers
             }
             catch (DbUpdateException ex)
             {
-                // Log the full exception details for debugging (uncomment when logger is available)
-                // _logger.LogError(ex, "Database error while creating test result with component tests");
-
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     "Database error occurred while creating test result. Please try again.");
             }
             catch (Exception ex)
             {
-                // Log the full exception details for debugging (uncomment when logger is available)
-                // _logger.LogError(ex, "Unexpected error creating test result with component tests");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "An unexpected error occurred. Please try again.");
+            }
+        }
 
+        [HttpPut("UpdateTestResultWithComponentTests/{testResultId}")]
+        [Authorize(Roles = "1,4,5")]
+        public async Task<IActionResult> UpdateTestResultWithComponentTests(
+            int testResultId,
+            [FromBody] UpdatePatientTestResultWithComponentTestsRequestDTO request)
+        {
+            if (testResultId <= 0)
+            {
+                return BadRequest("Test result ID must be greater than 0.");
+            }
+
+            if (request == null)
+            {
+                return BadRequest("Request body cannot be null.");
+            }
+            if (request.TestResult == null)
+            {
+                return BadRequest("Test result data is required.");
+            }
+            if (request.ComponentTests == null || !request.ComponentTests.Any())
+            {
+                return BadRequest("At least one component test is required.");
+            }
+
+            if (request.TestResult.PatientMedicalRecordId <= 0)
+            {
+                return BadRequest("Patient medical record ID must be greater than 0.");
+            }
+
+            foreach (var componentTest in request.ComponentTests)
+            {
+                if (string.IsNullOrWhiteSpace(componentTest.ComponentTestResultName))
+                {
+                    return BadRequest("All component tests must have a valid name.");
+                }
+            }
+
+            var componentTestNames = request.ComponentTests
+                .Select(ct => ct.ComponentTestResultName?.Trim().ToLower())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .ToList();
+            if (componentTestNames.Distinct().Count() != componentTestNames.Count)
+            {
+                return BadRequest("Component test names must be unique within the same test result.");
+            }
+
+            try
+            {
+                var accId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+                if (accId == null)
+                {
+                    return Unauthorized("Account ID not found in token.");
+                }
+
+                var updatedTestResult = await _testResultService.UpdateTestResultWithComponentTestsAsync(
+                    testResultId,
+                    request.TestResult,
+                    request.ComponentTests,
+                    accId.Value);
+
+                return Ok(updatedTestResult);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest($"Missing required data: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid input: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest($"Operation failed: {ex.Message}");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound($"Resource not found: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Database error occurred while updating test result. Please try again.");
+            }
+            catch (Exception ex)
+            {
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     "An unexpected error occurred. Please try again.");
             }
