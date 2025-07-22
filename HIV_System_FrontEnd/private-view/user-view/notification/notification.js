@@ -13,7 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
             PROFILE: '../profile/profile.html',
             APPOINTMENTS: '../appointment-view/view-appointment.html',
             MEDICAL_RECORDS: '../medical-record/medical-record.html',
-            FIND_DOCTOR: '../view-doctor/view-doctor.html'
+            FIND_DOCTOR: '../view-doctor/view-doctor.html',
+            ARV_MEDICATIONS: '../ARV/arv-medications.html',
+            BOOKING: '../booking/appointment-booking.html'
         },
         MESSAGES: {
             LOGIN_REQUIRED: 'You need to be logged in to view notifications. Redirecting to login...',
@@ -373,15 +375,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = notification.notiMessage ? notification.notiMessage.toLowerCase() : '';
         const type = notification.notiType ? notification.notiType.toLowerCase() : '';
         
-        // Check for appointment confirmations (default priority)
+        // Check for appointment-related notifications
         if (message.includes('appointment') || message.includes('cuộc hẹn') || 
             type.includes('appointment') || type.includes('cuộc hẹn') ||
             message.includes('confirmed') || message.includes('xác nhận') ||
-            message.includes('scheduled') || message.includes('lịch hẹn')) {
+            message.includes('scheduled') || message.includes('lịch hẹn') ||
+            message.includes('booking') || message.includes('đặt lịch') ||
+            message.includes('cancel') || message.includes('hủy') ||
+            message.includes('reschedule') || message.includes('đổi lịch')) {
             return {
                 category: 'appointment',
                 icon: 'fa-calendar-check',
-                displayType: 'APPOINTMENT'
+                displayType: 'APPOINTMENT',
+                navigationUrl: CONFIG.NAVIGATION.APPOINTMENTS,
+                actionText: 'View Appointments'
+            };
+        }
+        
+        // Check for ARV-related notifications
+        if (message.includes('arv') || message.includes('antiretroviral') ||
+            message.includes('regimen') || message.includes('phác đồ') ||
+            message.includes('arv medication') || message.includes('thuốc arv') ||
+            type.includes('arv') || type.includes('regimen')) {
+            return {
+                category: 'arv',
+                icon: 'fa-pills',
+                displayType: 'ARV REGIMEN',
+                navigationUrl: CONFIG.NAVIGATION.ARV_MEDICATIONS,
+                actionText: 'View ARV Medications'
+            };
+        }
+        
+        // Check for general medication notifications
+        if (message.includes('medication') || message.includes('medicine') ||
+            message.includes('thuốc') || message.includes('prescription') ||
+            message.includes('đơn thuốc') || message.includes('dosage') ||
+            message.includes('liều lượng') || type.includes('medication') ||
+            type.includes('medicine') || type.includes('prescription')) {
+            return {
+                category: 'medication',
+                icon: 'fa-capsules',
+                displayType: 'MEDICATION',
+                navigationUrl: CONFIG.NAVIGATION.MEDICAL_RECORDS,
+                actionText: 'View Medical Records'
             };
         }
         
@@ -389,11 +425,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (message.includes('medical') || message.includes('health') || 
             message.includes('doctor') || message.includes('bác sĩ') ||
             message.includes('treatment') || message.includes('điều trị') ||
-            message.includes('prescription') || message.includes('đơn thuốc')) {
+            message.includes('test result') || message.includes('kết quả xét nghiệm') ||
+            message.includes('lab') || message.includes('xét nghiệm')) {
             return {
                 category: 'medical',
                 icon: 'fa-user-doctor',
-                displayType: 'MEDICAL'
+                displayType: 'MEDICAL',
+                navigationUrl: CONFIG.NAVIGATION.MEDICAL_RECORDS,
+                actionText: 'View Medical Records'
+            };
+        }
+        
+        // Check for payment-related notifications
+        if (message.includes('payment') || message.includes('thanh toán') ||
+            message.includes('bill') || message.includes('hóa đơn') ||
+            message.includes('invoice') || message.includes('fee') ||
+            message.includes('phí') || type.includes('payment')) {
+            return {
+                category: 'payment',
+                icon: 'fa-credit-card',
+                displayType: 'PAYMENT',
+                navigationUrl: CONFIG.NAVIGATION.MEDICAL_RECORDS,
+                actionText: 'View Payment History'
             };
         }
         
@@ -404,7 +457,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return {
                 category: 'system',
                 icon: 'fa-cog',
-                displayType: 'SYSTEM'
+                displayType: 'SYSTEM',
+                navigationUrl: null,
+                actionText: null
             };
         }
         
@@ -412,7 +467,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             category: 'appointment',
             icon: 'fa-bell',
-            displayType: 'NOTIFICATION'
+            displayType: 'NOTIFICATION',
+            navigationUrl: CONFIG.NAVIGATION.APPOINTMENTS,
+            actionText: 'View Details'
         };
     }
     
@@ -438,9 +495,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         notificationList.innerHTML = filteredNotifications.map(notification => {
             const categoryInfo = categorizeNotification(notification);
+            const isUnread = unreadNotifications.find(u => u.notiId === notification.notiId);
             
             return `
-                <div class="notification-item ${unreadNotifications.find(u => u.notiId === notification.notiId) ? 'unread' : 'read'}" data-id="${notification.notiId}">
+                <div class="notification-item ${isUnread ? 'unread' : 'read'}" 
+                     data-id="${notification.notiId}" 
+                     ${categoryInfo.navigationUrl ? `onclick="handleNotificationClick(${notification.notiId}, '${categoryInfo.navigationUrl}')"` : ''}>
                     <div class="notification-content">
                         <div class="notification-icon ${categoryInfo.category}">
                             <i class="fa-solid ${categoryInfo.icon}"></i>
@@ -453,14 +513,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             <h3 class="notification-title">${notification.notiType || 'Notification'}</h3>
                             <p class="notification-message">${notification.notiMessage || 'No message available'}</p>
                             <div class="notification-actions">
-                                ${unreadNotifications.find(u => u.notiId === notification.notiId) ? `
-                                    <button onclick="markAsRead(${notification.notiId})" class="mark-read-btn">
+                                ${isUnread ? `
+                                    <button onclick="event.stopPropagation(); markAsRead(${notification.notiId})" class="mark-read-btn">
                                         <i class="fa-solid fa-check"></i> Mark as Read
+                                    </button>
+                                ` : ''}
+                                ${categoryInfo.navigationUrl ? `
+                                    <button onclick="event.stopPropagation(); navigateToSection('${categoryInfo.navigationUrl}')" class="action-btn">
+                                        <i class="fa-solid fa-external-link-alt"></i> ${categoryInfo.actionText}
                                     </button>
                                 ` : ''}
                             </div>
                         </div>
                     </div>
+                    ${categoryInfo.navigationUrl ? '<div class="notification-click-hint">Click to view details</div>' : ''}
                 </div>
             `;
         }).join('');
@@ -474,10 +540,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     const categoryInfo = categorizeNotification(n);
                     return categoryInfo.category === 'appointment';
                 });
+            case 'arv':
+                return notifications.filter(n => {
+                    const categoryInfo = categorizeNotification(n);
+                    return categoryInfo.category === 'arv';
+                });
+            case 'medication':
+                return notifications.filter(n => {
+                    const categoryInfo = categorizeNotification(n);
+                    return categoryInfo.category === 'medication';
+                });
             case 'medical':
                 return notifications.filter(n => {
                     const categoryInfo = categorizeNotification(n);
                     return categoryInfo.category === 'medical';
+                });
+            case 'payment':
+                return notifications.filter(n => {
+                    const categoryInfo = categorizeNotification(n);
+                    return categoryInfo.category === 'payment';
                 });
             case 'system':
                 return notifications.filter(n => {
@@ -618,6 +699,51 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadNotifications = loadNotifications;
     window.markAsRead = markAsRead;
     window.markAllAsRead = markAllAsRead;
+    
+    // Navigation functions
+    function handleNotificationClick(notificationId, navigationUrl) {
+        // Mark as read if unread
+        const isUnread = unreadNotifications.find(u => u.notiId === notificationId);
+        if (isUnread) {
+            markAsRead(notificationId);
+        }
+        
+        // Navigate to the appropriate section
+        navigateToSection(navigationUrl);
+    }
+    
+    function navigateToSection(url) {
+        if (url) {
+            window.location.href = url;
+        }
+    }
+    
+    // Extract appointment ID from notification for direct navigation
+    function extractAppointmentId(notification) {
+        const message = notification.notiMessage || '';
+        const match = message.match(/appointment[^\d]*(\d+)/i) || 
+                     message.match(/cuộc hẹn[^\d]*(\d+)/i) ||
+                     message.match(/id[^\d]*(\d+)/i);
+        return match ? match[1] : null;
+    }
+    
+    // Enhanced navigation for appointments with specific ID
+    function navigateToAppointment(notificationId) {
+        const notification = notifications.find(n => n.notiId === notificationId);
+        if (notification) {
+            const appointmentId = extractAppointmentId(notification);
+            if (appointmentId) {
+                window.location.href = `${CONFIG.NAVIGATION.APPOINTMENTS}?id=${appointmentId}`;
+            } else {
+                window.location.href = CONFIG.NAVIGATION.APPOINTMENTS;
+            }
+        }
+    }
+    
+    // Expose navigation functions globally
+    window.handleNotificationClick = handleNotificationClick;
+    window.navigateToSection = navigateToSection;
+    window.navigateToAppointment = navigateToAppointment;
     
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {

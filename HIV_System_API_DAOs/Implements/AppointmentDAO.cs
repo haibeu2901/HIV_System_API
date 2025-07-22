@@ -41,6 +41,7 @@ namespace HIV_System_API_DAOs.Implements
                     .ThenInclude(d => d.Acc)
                 .Include(a => a.Ptn)
                     .ThenInclude(p => p.Acc)
+                .OrderByDescending(p => p.ApmId)
                 .OrderByDescending(a => a.ApmtDate)
                 .ThenByDescending(a => a.ApmTime)
                 .ThenByDescending(a => a.RequestDate)
@@ -256,6 +257,7 @@ namespace HIV_System_API_DAOs.Implements
                 }
 
                 return await query
+                    .OrderByDescending(p => p.ApmId)
                     .OrderByDescending(a => a.ApmtDate)
                     .ThenByDescending(a => a.ApmTime)
                     .ThenByDescending(a => a.RequestDate)
@@ -328,6 +330,7 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(a => a.Ptn)
                     .ThenInclude(p => p.Acc)
                 .Where(a => a.Ptn.AccId == accId || a.Dct.AccId == accId)
+                .OrderByDescending(p => p.ApmId)
                 .OrderByDescending(a => a.ApmtDate)
                 .ThenByDescending(a => a.ApmTime)
                 .ThenByDescending(a => a.RequestDate)
