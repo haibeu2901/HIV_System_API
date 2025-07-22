@@ -168,7 +168,7 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
         
-        [HttpPost("UpdateAppointmentRequest")]
+        [HttpPut("UpdateAppointmentRequest")]
         [Authorize]
         public async Task<IActionResult> UpdateAppointment(int id, [FromBody] UpdateAppointmentRequestDTO dto)
         {
