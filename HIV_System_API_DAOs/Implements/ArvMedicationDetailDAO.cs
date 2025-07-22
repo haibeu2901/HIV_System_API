@@ -95,6 +95,7 @@ namespace HIV_System_API_DAOs.Implements
             existingDetail.Dosage = arvMedicationDetail.Dosage;
             existingDetail.Price = arvMedicationDetail.Price;
             existingDetail.Manufactorer = arvMedicationDetail.Manufactorer;
+            existingDetail.MedicationType = arvMedicationDetail.MedicationType;
             // Save changes to the database
             await _context.SaveChangesAsync();
             // Return the updated entity
