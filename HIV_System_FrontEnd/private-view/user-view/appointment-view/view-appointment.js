@@ -273,7 +273,7 @@ async function updateAppointment() {
     const response = await fetch(
       `https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${appointmentId}`,
       {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -283,21 +283,104 @@ async function updateAppointment() {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to update appointment: ${response.status}`);
+      const errorData = await response.text();
+      
+      // Handle specific error cases
+      if (response.status === 409) {
+        // Conflict - usually doctor availability issues
+        const errorMessage = errorData || 'Conflict occurred';
+        
+        // Check if it's a doctor availability error
+        if (errorMessage.includes('lịch làm việc') || errorMessage.includes('working hours') || 
+            errorMessage.includes('khả dụng') || errorMessage.includes('available')) {
+          // Extract working hours from error message if possible
+          const timePattern = /(\d{2}:\d{2}\s*-\s*\d{2}:\d{2})/g;
+          const workingHours = errorMessage.match(timePattern);
+          
+          let userFriendlyMessage = 'Thời gian yêu cầu không nằm trong giờ làm việc của bác sĩ.';
+          if (workingHours && workingHours.length > 0) {
+            userFriendlyMessage += `\n\nGiờ làm việc của bác sĩ: ${workingHours.join(', ')}`;
+            userFriendlyMessage += '\n\nVui lòng chọn thời gian khác trong khung giờ làm việc.';
+          }
+          
+          showNotification(userFriendlyMessage, "error");
+          
+          // Reset button state and return early
+          const saveButton = document.getElementById("save-update-btn");
+          saveButton.disabled = false;
+          saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+          return;
+        }
+      }
+      
+      // Handle other HTTP errors
+      let userErrorMessage = 'Không thể cập nhật lịch hẹn. ';
+      
+      switch (response.status) {
+        case 400:
+          userErrorMessage += 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+          break;
+        case 401:
+          userErrorMessage += 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+          break;
+        case 403:
+          userErrorMessage += 'Bạn không có quyền thực hiện thao tác này.';
+          break;
+        case 404:
+          userErrorMessage += 'Không tìm thấy lịch hẹn.';
+          break;
+        case 409:
+          userErrorMessage += 'Có xung đột trong dữ liệu. Vui lòng thử lại.';
+          break;
+        case 500:
+          userErrorMessage += 'Lỗi hệ thống. Vui lòng thử lại sau.';
+          break;
+        default:
+          userErrorMessage += 'Vui lòng thử lại.';
+      }
+      
+      throw new Error(userErrorMessage);
     }
 
-    // Success - close modal and show success message
+    // Get the updated appointment data from response
+    const updatedAppointment = await response.json();
+    console.log('Updated appointment data:', updatedAppointment);
+
+    // Success - close modal and show success message with updated info
     document.getElementById("update-appointment-modal").classList.add("hidden");
-    showNotification("Cập nhật lịch hẹn thành công! Vui lòng làm mới trang để xem thay đổi.", "success");
     
-    // Optionally refresh the page after a delay
+    // Show detailed success message based on appointment status
+    if (updatedAppointment.apmStatus === 1) {
+      // Pending appointment - show request date/time
+      const requestDate = new Date(updatedAppointment.requestDate).toLocaleDateString('vi-VN');
+      const requestTime = updatedAppointment.requestTime.slice(0, 5);
+      showNotification(
+        `Cập nhật yêu cầu lịch hẹn thành công!\nNgày yêu cầu: ${requestDate}\nGiờ yêu cầu: ${requestTime}\nTrạng thái: Đang chờ xác nhận`,
+        "success"
+      );
+    } else {
+      // Confirmed appointment - show appointment date/time
+      const appointmentDate = updatedAppointment.apmtDate ? 
+        new Date(updatedAppointment.apmtDate).toLocaleDateString('vi-VN') : 'Chưa xác định';
+      const appointmentTime = updatedAppointment.apmTime ? 
+        updatedAppointment.apmTime.slice(0, 5) : 'Chưa xác định';
+      showNotification(
+        `Cập nhật lịch hẹn thành công!\nNgày hẹn: ${appointmentDate}\nGiờ hẹn: ${appointmentTime}`,
+        "success"
+      );
+    }
+    
+    // Reload the page to reflect changes
     setTimeout(() => {
       location.reload();
-    }, 2000);
+    }, 2500);
 
   } catch (error) {
     console.error("Error updating appointment:", error);
-    showNotification("Không thể cập nhật lịch hẹn. Vui lòng thử lại.", "error");
+    
+    // Show user-friendly error message
+    const errorMessage = error.message || "Không thể cập nhật lịch hẹn. Vui lòng thử lại.";
+    showNotification(errorMessage, "error");
     
     // Reset button state
     const saveButton = document.getElementById("save-update-btn");
@@ -375,13 +458,15 @@ function showNotification(message, type = "info") {
     top: 20px;
     right: 20px;
     padding: 15px 20px;
-    border-radius: 5px;
+    border-radius: 8px;
     color: white;
     font-weight: 500;
     z-index: 10000;
-    max-width: 300px;
+    max-width: 350px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     transition: all 0.3s ease;
+    white-space: pre-line;
+    line-height: 1.4;
   `;
   
   // Set background color based on type
@@ -399,7 +484,8 @@ function showNotification(message, type = "info") {
   notification.textContent = message;
   document.body.appendChild(notification);
   
-  // Remove notification after 3 seconds
+  // Remove notification after longer time for error messages
+  const displayTime = type === "error" ? 6000 : 3000;
   setTimeout(() => {
     notification.style.opacity = "0";
     notification.style.transform = "translateX(100%)";
@@ -408,5 +494,5 @@ function showNotification(message, type = "info") {
         notification.parentNode.removeChild(notification);
       }
     }, 300);
-  }, 3000);
+  }, displayTime);
 }
