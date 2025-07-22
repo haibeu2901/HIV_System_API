@@ -42,10 +42,10 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(a => a.Ptn)
                     .ThenInclude(p => p.Acc)
                 .OrderByDescending(p => p.ApmId)
-                .OrderByDescending(a => a.ApmtDate)
-                .ThenByDescending(a => a.ApmTime)
+                .OrderByDescending(a => a.RequestTime)
                 .ThenByDescending(a => a.RequestDate)
-                .ThenByDescending(a => a.RequestTime)
+                .ThenByDescending(a => a.ApmTime)
+                .ThenByDescending(a => a.ApmtDate)
                 .ToListAsync();
         }
 
@@ -258,10 +258,10 @@ namespace HIV_System_API_DAOs.Implements
 
                 return await query
                     .OrderByDescending(p => p.ApmId)
-                    .OrderByDescending(a => a.ApmtDate)
-                    .ThenByDescending(a => a.ApmTime)
+                    .OrderByDescending(a => a.RequestTime)
                     .ThenByDescending(a => a.RequestDate)
-                    .ThenByDescending(a => a.RequestTime)
+                    .ThenByDescending(a => a.ApmTime)
+                    .ThenByDescending(a => a.ApmtDate)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -331,10 +331,10 @@ namespace HIV_System_API_DAOs.Implements
                     .ThenInclude(p => p.Acc)
                 .Where(a => a.Ptn.AccId == accId || a.Dct.AccId == accId)
                 .OrderByDescending(p => p.ApmId)
-                .OrderByDescending(a => a.ApmtDate)
-                .ThenByDescending(a => a.ApmTime)
+                .OrderByDescending(a => a.RequestTime)
                 .ThenByDescending(a => a.RequestDate)
-                .ThenByDescending(a => a.RequestTime)
+                .ThenByDescending(a => a.ApmTime)
+                .ThenByDescending(a => a.ApmtDate)
                 .ToListAsync();
         }
     }

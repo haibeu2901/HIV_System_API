@@ -219,87 +219,87 @@ namespace HIV_System_API_Services.Implements
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Load appointment with necessary related data in a single query
+                // Load appointment with all necessary related data in a single optimized query
                 var appointment = await _context.Appointments
                     .Include(a => a.Dct)
                         .ThenInclude(d => d.Acc)
                     .Include(a => a.Ptn)
                         .ThenInclude(p => p.Acc)
+                    .AsNoTracking() // Add for read-only initial query
                     .FirstOrDefaultAsync(a => a.ApmId == id);
 
                 if (appointment == null)
                     throw new InvalidOperationException($"Không tìm thấy cuộc hẹn với ID {id}.");
 
-                // Check time constraints if appointment has scheduled date/time
-                if (appointment.ApmtDate.HasValue && appointment.ApmTime.HasValue)
+                // Time validation for cancellation
+                if (status == 4 && appointment.ApmtDate.HasValue && appointment.ApmTime.HasValue)
                 {
                     var appointmentDateTime = appointment.ApmtDate.Value.ToDateTime(appointment.ApmTime.Value);
-                    var timeDifference = appointmentDateTime - DateTime.UtcNow;
-
-                    // If status is 4 (Cancelled), can not cancel an appointment within 12 hours of the scheduled time
-                    if (status == 4 && timeDifference.TotalHours < 12)
+                    if ((appointmentDateTime - DateTime.UtcNow).TotalHours < 12)
                         throw new InvalidOperationException("Không thể thay đổi trạng thái cuộc hẹn vì thời gian hẹn nhỏ hơn 12 giờ từ bây giờ.");
                 }
 
-                // Only doctor can change status to 5 (Completed)
+                // Authorization check for completion
                 if (status == 5 && appointment.DctId != accId)
                     throw new UnauthorizedAccessException("Chỉ bác sĩ của cuộc hẹn này mới có thể hoàn thành nó.");
 
-                // If confirming appointment (status 2 or 3), copy request date/time to actual appointment date/time
-                if ((status == 2 || status == 3) && appointment.RequestDate.HasValue && appointment.RequestTime.HasValue)
+                // Handle appointment confirmation (status 2 or 3)
+                var updatedAppointment = await _context.Appointments.FindAsync(id);
+                if ((status == 2 || status == 3) && updatedAppointment.RequestDate.HasValue && updatedAppointment.RequestTime.HasValue)
                 {
-                    // Check if the user trying to change status is the same as the one who requested the appointment
-                    // Can not accept or confirm an appointment that the user created
-                    if (appointment.RequestBy == accId)
+                    if (updatedAppointment.RequestBy == accId)
                         throw new InvalidOperationException("Bạn không thể thay đổi trạng thái cuộc hẹn mà chính bạn đã tạo.");
 
-                    appointment.ApmtDate = appointment.RequestDate;
-                    appointment.ApmTime = appointment.RequestTime;
-
-                    // Prepare DTO for validation
+                    // Check availability only when confirming
                     var requestDto = new AppointmentRequestDTO
                     {
-                        PatientId = appointment.PtnId,
-                        DoctorId = appointment.DctId,
-                        ApmtDate = appointment.RequestDate.Value,
-                        ApmTime = appointment.RequestTime.Value,
-                        Notes = appointment.Notes,
+                        PatientId = updatedAppointment.PtnId,
+                        DoctorId = updatedAppointment.DctId,
+                        ApmtDate = updatedAppointment.RequestDate.Value,
+                        ApmTime = updatedAppointment.RequestTime.Value,
+                        Notes = updatedAppointment.Notes,
                         ApmStatus = status
                     };
 
-                    // Validate the appointment
-                    await ValidateAppointmentAsync(requestDto, validateStatus: true, apmId: appointment.ApmId);
+                    await ValidateAppointmentAsync(requestDto, validateStatus: true, apmId: id);
+                    
+                    updatedAppointment.ApmtDate = updatedAppointment.RequestDate;
+                    updatedAppointment.ApmTime = updatedAppointment.RequestTime;
                 }
 
-                // Update appointment status
-                appointment.ApmStatus = status;
-                _context.Appointments.Update(appointment);
+                // Update status
+                updatedAppointment.ApmStatus = status;
+                await _appointmentRepo.UpdateAppointmentByIdAsync(updatedAppointment.ApmId, updatedAppointment);
                 await _context.SaveChangesAsync();
 
-                // Create notification
+                // Create and send notification in a single operation
                 var notification = new Notification
                 {
                     NotiType = GetNotificationTypeForStatus(status),
                     NotiMessage = CreateNotificationMessage(appointment, status),
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.UtcNow,
+                    NotificationAccounts = new List<NotificationAccount>
+                    {
+                        new NotificationAccount { AccId = appointment.PtnId },
+                        new NotificationAccount { AccId = appointment.DctId }
+                    }
                 };
 
-                // Save notification and create notification accounts in a single operation
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
-
-                // Create notification accounts for both patient and doctor
-                var notificationAccounts = new[]
-                {
-                    new NotificationAccount { NtfId = notification.NtfId, AccId = appointment.PtnId },
-                    new NotificationAccount { NtfId = notification.NtfId, AccId = appointment.DctId }
-                };
-
-                _context.NotificationAccounts.AddRange(notificationAccounts);
-                await _context.SaveChangesAsync();
-
+                
                 await transaction.CommitAsync();
-                return MapToResponseDTO(appointment);
+
+                // Load updated appointment data for response
+                var result = await _context.Appointments
+                    .Include(a => a.Dct)
+                        .ThenInclude(d => d.Acc)
+                    .Include(a => a.Ptn)
+                        .ThenInclude(p => p.Acc)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.ApmId == id);
+
+                return MapToResponseDTO(result);
             }
             catch (Exception ex)
             {
@@ -628,9 +628,9 @@ namespace HIV_System_API_Services.Implements
 
                 // Use ChangeAppointmentStatusAsync to handle status change and notifications
                 // This will create its own transaction internally
-                var result = await ChangeAppointmentStatusAsync(appointmentId, 5, accId); // 5 = Completed
+                var result = await _appointmentRepo.ChangeAppointmentStatusAsync(appointmentId, 5); // 5 = Completed
 
-                return result;
+                return MapToResponseDTO(result);
             }
             catch (Exception ex)
             {
