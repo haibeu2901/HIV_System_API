@@ -738,7 +738,7 @@ regimenTemplate.onchange = function() {
             document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
         }
     }
-    // Fill medications (FIXED MAPPING)
+    // Fill medications: always set usageInstructions from medicationUsage
     selectedTemplateMedications = (template.medications || []).map(med => ({
         arvMedicationName: med.medicationName,
         arvMedDetailId: med.arvMedicationDetailId,
@@ -868,6 +868,11 @@ regimenForm.onsubmit = async function(e) {
         alert('Please fill all medication fields.');
         return;
     }
+    // New validation: usageInstructions must not be empty
+    if (selectedTemplateMedications.some(m => !m.usageInstructions || !m.usageInstructions.trim())) {
+        alert('Vui lòng nhập "Cách sử dụng" cho tất cả các thuốc.');
+        return;
+    }
     // Check that every medication selection is valid
     if (selectedTemplateMedications.some(m => {
         const medDetail = allMedicationDetails.find(md => md.arvMedicationName === m.arvMedicationName);
@@ -883,7 +888,6 @@ regimenForm.onsubmit = async function(e) {
         // Build medicationRequests array
         const medicationRequests = selectedTemplateMedications.map(med => {
             const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
-            // Try to find patientArvRegId from the current regimen's medications if available
             let patientArvRegId = 0; // Default to 0 for new medications
             const regimen = (window._lastRegimens || []).find(r => String(r.patientArvRegiId) === String(updateId));
             if (regimen && regimen.arvMedications) {
@@ -894,7 +898,7 @@ regimenForm.onsubmit = async function(e) {
                 patientArvRegId: patientArvRegId,
                 arvMedDetailId: medDetail ? medDetail.arvMedicationId : med.arvMedDetailId,
                 quantity: med.quantity,
-                usageInstructions: med.usageInstructions || med.medicationUsage
+                usageInstructions: (med.usageInstructions || '').trim()
             };
         });
         // Build regimenRequest object
@@ -941,10 +945,10 @@ regimenForm.onsubmit = async function(e) {
     const medications = selectedTemplateMedications.map(med => {
         const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
         return {
-        patientArvRegId: 0,
+            patientArvRegId: 0,
             arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
-        quantity: med.quantity,
-        usageInstructions: med.usageInstructions || med.medicationUsage
+            quantity: med.quantity,
+            usageInstructions: (med.usageInstructions || '').trim()
         };
     });
     // Build regimen object
@@ -959,12 +963,8 @@ regimenForm.onsubmit = async function(e) {
         totalCost: 0
     };
     const payload = { regimen, medications };
-    // Detailed logging of regimen properties
-    console.log('DEBUG: Regimen details:');
-    Object.entries(regimen).forEach(([key, value]) => {
-        console.log(`  ${key}:`, value);
-    });
-    console.log('DEBUG: Submitting ARV regimen payload:', payload);
+    // Log the payload for confirmation
+    console.log('Submitting create payload:', payload);
     // Call new API
     try {
         const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
