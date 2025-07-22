@@ -140,9 +140,13 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPatch("ChangeAppointmentStatus")]
         [Authorize]
-        public async Task<IActionResult> ChangeAppointmentStatusAsync(int id, byte status)
+        public async Task<IActionResult> ChangeAppointmentStatusAsync([FromQuery] int appointmentId, [FromQuery] byte status)
         {
-            // Extract the account ID from the JWT token claims.
+            if (status is < 0 or > 5) // Assuming status values are 0-5
+            {
+                return BadRequest("Invalid appointment status value");
+            }
+
             var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
             if (!accountId.HasValue)
             {
@@ -151,23 +155,34 @@ namespace HIV_System_API_Backend.Controllers
 
             try
             {
-                var updatedAppointment = await _appointmentService.ChangeAppointmentStatusAsync(id, status, accountId.Value);
+                var updatedAppointment = await _appointmentService.ChangeAppointmentStatusAsync(
+                    appointmentId, 
+                    status, 
+                    accountId.Value);
+
+                if (updatedAppointment == null)
+                {
+                    return NotFound($"Appointment with ID {appointmentId} not found");
+                }
+
                 return Ok(updatedAppointment);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { error = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(ex.Message);
+                return StatusCode(StatusCodes.Status409Conflict, new { error = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError, 
+                    new { error = "An unexpected error occurred while processing your request" });
             }
         }
-        
+
         [HttpPut("UpdateAppointmentRequest")]
         [Authorize]
         public async Task<IActionResult> UpdateAppointment(int id, [FromBody] UpdateAppointmentRequestDTO dto)
