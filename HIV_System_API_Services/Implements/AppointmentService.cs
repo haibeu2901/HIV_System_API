@@ -236,7 +236,8 @@ namespace HIV_System_API_Services.Implements
                     var appointmentDateTime = appointment.ApmtDate.Value.ToDateTime(appointment.ApmTime.Value);
                     var timeDifference = appointmentDateTime - DateTime.UtcNow;
 
-                    if (timeDifference.TotalHours < 12)
+                    // If status is 4 (Cancelled), can not cancel an appointment within 12 hours of the scheduled time
+                    if (status == 4 && timeDifference.TotalHours < 12)
                         throw new InvalidOperationException("Không thể thay đổi trạng thái cuộc hẹn vì thời gian hẹn nhỏ hơn 12 giờ từ bây giờ.");
                 }
 
