@@ -99,6 +99,7 @@ namespace HIV_System_API_DAOs.Implements
             existingTemplate.ArtId = medicationTemplate.ArtId;
             existingTemplate.AmdId = medicationTemplate.AmdId;
             existingTemplate.Quantity = medicationTemplate.Quantity;
+            existingTemplate.MedicationUsage = medicationTemplate.MedicationUsage;
 
             _context.ArvMedicationTemplates.Update(existingTemplate);
             await _context.SaveChangesAsync();

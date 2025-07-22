@@ -81,6 +81,7 @@ namespace HIV_System_API_DAOs.Implements
             existingMedication.ParId = patientArvMedication.ParId;
             existingMedication.AmdId = patientArvMedication.AmdId;
             existingMedication.Quantity = patientArvMedication.Quantity;
+            existingMedication.UsageInstructions = patientArvMedication.UsageInstructions;
 
             _context.PatientArvMedications.Update(existingMedication);
             await _context.SaveChangesAsync();

@@ -167,12 +167,13 @@ namespace HIV_System_API_DAOs.Implements
                 .Where(a =>
                     doctorIds.Contains(a.DctId) &&
                     a.ApmtDate == appointmentDate &&
+                    a.ApmTime.HasValue && // Only consider appointments with actual scheduled times
                     a.ApmStatus != CANCELLED_STATUS)
                 .Select(a => new
                 {
                     a.DctId,
-                    a.ApmTime,
-                    EndTime = a.ApmTime.Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES))
+                    ApmTime = a.ApmTime!.Value, // Safe to use ! since we filtered for HasValue
+                    EndTime = a.ApmTime!.Value.Add(TimeSpan.FromMinutes(APPOINTMENT_DURATION_MINUTES))
                 })
                 .ToListAsync();
 
