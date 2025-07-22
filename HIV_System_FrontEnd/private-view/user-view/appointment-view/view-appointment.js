@@ -18,21 +18,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!res.ok) throw new Error("Failed to fetch appointments");
     const data = await res.json();
 
-    events = data.map((appt) => ({
-      title: `Dr. ${appt.doctorName}\n${appt.apmTime} (${renderStatusText(
-        appt.apmStatus
-      )})`,
-      start: `${appt.apmtDate}T${appt.apmTime}`,
-      end: `${appt.apmtDate}T${addMinutes(appt.apmTime, 30)}`, // 30 min duration
-      color: getStatusColor(appt.apmStatus),
-      extendedProps: {
-        appointmentId: appt.appointmentId,
-        notes: appt.notes || "None",
-        status: renderStatusText(appt.apmStatus),
-        statusCode: appt.apmStatus,
-      },
-    }))
-    .filter(event => event.extendedProps.statusCode !== 3 && event.extendedProps.statusCode !== 4); // Remove cancelled appointments
+    events = data.map((appt) => {
+      // For pending appointments (status 1), use requestDate and requestTime
+      // For other statuses, use apmtDate and apmTime
+      const displayDate = appt.apmStatus === 1 ? appt.requestDate : appt.apmtDate;
+      const displayTime = appt.apmStatus === 1 ? appt.requestTime : appt.apmTime;
+      
+      // Skip appointments that don't have valid date/time
+      if (!displayDate || !displayTime) {
+        return null;
+      }
+      
+      return {
+        title: `Dr. ${appt.doctorName}\n${displayTime.slice(0, 5)} (${renderStatusText(
+          appt.apmStatus
+        )})`,
+        start: `${displayDate}T${displayTime}`,
+        end: `${displayDate}T${addMinutes(displayTime.slice(0, 5), 30)}`, // 30 min duration
+        color: getStatusColor(appt.apmStatus),
+        extendedProps: {
+          appointmentId: appt.appointmentId,
+          notes: appt.notes || "None",
+          status: renderStatusText(appt.apmStatus),
+          statusCode: appt.apmStatus,
+          originalDate: appt.apmtDate,
+          originalTime: appt.apmTime,
+          requestDate: appt.requestDate,
+          requestTime: appt.requestTime,
+        },
+      };
+    })
+    .filter(event => event !== null && event.extendedProps.statusCode !== 3 && event.extendedProps.statusCode !== 4); // Remove cancelled appointments and null events
   } catch (err) {
     calendarEl.innerHTML = `<p style="color:red;">${err.message}</p>`;
     return;
@@ -63,12 +79,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     eventClick: function (info) {
       // Store current appointment data globally for update functionality
+      const eventStatusCode = info.event.extendedProps.statusCode;
+      
+      // For pending appointments (status 1), use request date/time, otherwise use appointment date/time
+      let displayDate, displayTime;
+      if (eventStatusCode === 1) {
+        displayDate = info.event.extendedProps.requestDate;
+        displayTime = info.event.extendedProps.requestTime;
+      } else {
+        displayDate = info.event.extendedProps.originalDate || info.event.start.toISOString().split('T')[0];
+        displayTime = info.event.extendedProps.originalTime || info.event.start.toTimeString().slice(0, 8);
+      }
+      
       window.currentAppointment = {
         id: info.event.extendedProps.appointmentId,
-        date: info.event.start.toISOString().split('T')[0],
-        time: info.event.start.toTimeString().slice(0, 5),
+        date: displayDate,
+        time: displayTime ? displayTime.slice(0, 5) : info.event.start.toTimeString().slice(0, 5),
         notes: info.event.extendedProps.notes === "None" ? "" : info.event.extendedProps.notes,
-        statusCode: info.event.extendedProps.statusCode
+        statusCode: eventStatusCode
       };
       
       // Fill modal fields
@@ -94,9 +122,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Show/hide buttons based on appointment status
       const updateButton = document.getElementById("update-appointment-btn");
       const cancelButton = document.getElementById("cancel-appointment-btn");
-      const statusCode = info.event.extendedProps.statusCode;
       
-      if (statusCode === 1 || statusCode === 2) { // Pending or Confirmed
+      if (eventStatusCode === 1 || eventStatusCode === 2) { // Pending or Confirmed
         if (updateButton) {
           updateButton.style.display = "block";
           updateButton.onclick = () => openUpdateModal();
@@ -197,8 +224,10 @@ function getStatusColor(status) {
 }
 
 function addMinutes(time, minsToAdd) {
-  // time: "09:00", minsToAdd: 30 => "09:30"
-  const [h, m] = time.split(":").map(Number);
+  // time: "09:00" or "09:00:00", minsToAdd: 30 => "09:30"
+  const timeParts = time.split(":");
+  const h = parseInt(timeParts[0]);
+  const m = parseInt(timeParts[1]);
   const date = new Date(0, 0, 0, h, m + minsToAdd, 0, 0);
   return date.toTimeString().slice(0, 5);
 }
@@ -208,6 +237,7 @@ function openUpdateModal() {
   const modal = document.getElementById("update-appointment-modal");
   
   // Pre-fill the form with current appointment data
+  // For pending appointments (status 1), use request date/time, otherwise use appointment date/time
   document.getElementById("update-date").value = window.currentAppointment.date;
   document.getElementById("update-time").value = window.currentAppointment.time;
   document.getElementById("update-notes").value = window.currentAppointment.notes;
