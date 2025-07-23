@@ -606,7 +606,7 @@ namespace HIV_System_API_Services.Implements
                 if (!string.IsNullOrWhiteSpace(dto.Notes))
                 {
                     appointment.Notes = dto.Notes;
-                    _context.Appointments.Update(appointment);
+                    await _appointmentRepo.UpdateAppointmentByIdAsync(appointmentId, appointment);
                     await _context.SaveChangesAsync();
                 }
 
