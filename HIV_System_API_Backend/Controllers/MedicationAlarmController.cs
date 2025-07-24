@@ -289,7 +289,7 @@ namespace HIV_System_API_Backend.Controllers
         /// <response code="200">If the processing was triggered successfully</response>
         /// <response code="500">If there was an internal server error</response>
         [HttpPost("ProcessMedicationAlarms")]
-        [Authorize(Roles = "1")] // Only admin
+        [Authorize(Roles = "1, 2, 4")] 
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ProcessMedicationAlarms()
