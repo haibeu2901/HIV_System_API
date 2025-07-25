@@ -128,13 +128,15 @@ namespace HIV_System_API_Services.Implements
                     PatientArvRegiId = pam.ParId,
                     ArvMedId = pam.AmdId,
                     Quantity = pam.Quantity,
+                    UsageInstructions = pam.UsageInstructions,
                     MedicationDetail = pam.Amd != null ? new ArvMedicationDetailResponseDTO
                     {
                         ARVMedicationName = pam.Amd.MedName,
                         ARVMedicationDescription = pam.Amd.MedDescription,
                         ARVMedicationDosage = pam.Amd.Dosage,
                         ARVMedicationPrice = pam.Amd.Price,
-                        ARVMedicationManufacturer = pam.Amd.Manufactorer
+                        ARVMedicationManufacturer = pam.Amd.Manufactorer,
+                        ARVMedicationType = pam.Amd.MedicationType
                     } : null
                 })
                 .ToList();
@@ -634,7 +636,8 @@ namespace HIV_System_API_Services.Implements
                     {
                         ParId = createdRegimen.ParId,
                         AmdId = medRequest.ArvMedDetailId,
-                        Quantity = medRequest.Quantity
+                        Quantity = medRequest.Quantity,
+                        UsageInstructions = medRequest.UsageInstructions ?? string.Empty // Default to empty string if null
                     };
                     var createdMed = await _patientArvMedicationRepo.CreatePatientArvMedicationAsync(medEntity);
                     medicationEntities.Add(createdMed);
@@ -805,7 +808,8 @@ namespace HIV_System_API_Services.Implements
                             PamId = existingMed.PamId,
                             ParId = parId,
                             AmdId = medRequest.ArvMedDetailId,
-                            Quantity = medRequest.Quantity
+                            Quantity = medRequest.Quantity,
+                            UsageInstructions = medRequest.UsageInstructions
                         };
                         var updatedMed = await _patientArvMedicationRepo.UpdatePatientArvMedicationAsync(existingMed.PamId, updatedMedEntity);
                         updatedMedications.Add(updatedMed);

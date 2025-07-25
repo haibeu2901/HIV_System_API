@@ -60,7 +60,10 @@ namespace HIV_System_API_Services.Implements
                     ApmtDate = a.ApmtDate,
                     ApmTime = a.ApmTime,
                     Notes = a.Notes,
-                    ApmStatus = a.ApmStatus
+                    ApmStatus = a.ApmStatus,
+                    RequestDate = a.RequestDate,
+                    RequestTime = a.RequestTime,
+                    RequestBy = a.RequestBy
                 })
                 .ToList();
 
@@ -112,13 +115,15 @@ namespace HIV_System_API_Services.Implements
                             PatientArvRegiId = pam.ParId,
                             ArvMedId = pam.AmdId,
                             Quantity = pam.Quantity,
+                            UsageInstructions = pam.UsageInstructions,
                             MedicationDetail = new ArvMedicationDetailResponseDTO
                             {
                                 ARVMedicationName = pam.Amd.MedName,
                                 ARVMedicationDescription = pam.Amd.MedDescription,
                                 ARVMedicationDosage = pam.Amd.Dosage,
                                 ARVMedicationPrice = pam.Amd.Price,
-                                ARVMedicationManufacturer = pam.Amd.Manufactorer
+                                ARVMedicationManufacturer = pam.Amd.Manufactorer,
+                                ARVMedicationType = pam.Amd.MedicationType
                             }
                         })
                         .ToList()

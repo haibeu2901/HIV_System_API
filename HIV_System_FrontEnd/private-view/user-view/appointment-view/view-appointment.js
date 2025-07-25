@@ -18,21 +18,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!res.ok) throw new Error("Failed to fetch appointments");
     const data = await res.json();
 
-    events = data.map((appt) => ({
-      title: `Dr. ${appt.doctorName}\n${appt.apmTime} (${renderStatusText(
-        appt.apmStatus
-      )})`,
-      start: `${appt.apmtDate}T${appt.apmTime}`,
-      end: `${appt.apmtDate}T${addMinutes(appt.apmTime, 30)}`, // 30 min duration
-      color: getStatusColor(appt.apmStatus),
-      extendedProps: {
-        appointmentId: appt.appointmentId,
-        notes: appt.notes || "None",
-        status: renderStatusText(appt.apmStatus),
-        statusCode: appt.apmStatus,
-      },
-    }))
-    .filter(event => event.extendedProps.statusCode !== 3 && event.extendedProps.statusCode !== 4); // Remove cancelled appointments
+    events = data.map((appt) => {
+      // For pending appointments (status 1), use requestDate and requestTime
+      // For other statuses, use apmtDate and apmTime
+      const displayDate = appt.apmStatus === 1 ? appt.requestDate : appt.apmtDate;
+      const displayTime = appt.apmStatus === 1 ? appt.requestTime : appt.apmTime;
+      
+      // Skip appointments that don't have valid date/time
+      if (!displayDate || !displayTime) {
+        return null;
+      }
+      
+      return {
+        title: `Dr. ${appt.doctorName}\n${displayTime.slice(0, 5)} (${renderStatusText(
+          appt.apmStatus
+        )})`,
+        start: `${displayDate}T${displayTime}`,
+        end: `${displayDate}T${addMinutes(displayTime.slice(0, 5), 30)}`, // 30 min duration
+        color: getStatusColor(appt.apmStatus),
+        extendedProps: {
+          appointmentId: appt.appointmentId,
+          notes: appt.notes || "None",
+          status: renderStatusText(appt.apmStatus),
+          statusCode: appt.apmStatus,
+          originalDate: appt.apmtDate,
+          originalTime: appt.apmTime,
+          requestDate: appt.requestDate,
+          requestTime: appt.requestTime,
+        },
+      };
+    })
+    .filter(event => event !== null && event.extendedProps.statusCode !== 3 && event.extendedProps.statusCode !== 4); // Remove cancelled appointments and null events
   } catch (err) {
     calendarEl.innerHTML = `<p style="color:red;">${err.message}</p>`;
     return;
@@ -63,12 +79,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     eventClick: function (info) {
       // Store current appointment data globally for update functionality
+      const eventStatusCode = info.event.extendedProps.statusCode;
+      
+      // For pending appointments (status 1), use request date/time, otherwise use appointment date/time
+      let displayDate, displayTime;
+      if (eventStatusCode === 1) {
+        displayDate = info.event.extendedProps.requestDate;
+        displayTime = info.event.extendedProps.requestTime;
+      } else {
+        displayDate = info.event.extendedProps.originalDate || info.event.start.toISOString().split('T')[0];
+        displayTime = info.event.extendedProps.originalTime || info.event.start.toTimeString().slice(0, 8);
+      }
+      
       window.currentAppointment = {
         id: info.event.extendedProps.appointmentId,
-        date: info.event.start.toISOString().split('T')[0],
-        time: info.event.start.toTimeString().slice(0, 5),
+        date: displayDate,
+        time: displayTime ? displayTime.slice(0, 5) : info.event.start.toTimeString().slice(0, 5),
         notes: info.event.extendedProps.notes === "None" ? "" : info.event.extendedProps.notes,
-        statusCode: info.event.extendedProps.statusCode
+        statusCode: eventStatusCode
       };
       
       // Fill modal fields
@@ -94,9 +122,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Show/hide buttons based on appointment status
       const updateButton = document.getElementById("update-appointment-btn");
       const cancelButton = document.getElementById("cancel-appointment-btn");
-      const statusCode = info.event.extendedProps.statusCode;
       
-      if (statusCode === 1 || statusCode === 2) { // Pending or Confirmed
+      if (eventStatusCode === 1 || eventStatusCode === 2) { // Pending or Confirmed
         if (updateButton) {
           updateButton.style.display = "block";
           updateButton.onclick = () => openUpdateModal();
@@ -197,8 +224,10 @@ function getStatusColor(status) {
 }
 
 function addMinutes(time, minsToAdd) {
-  // time: "09:00", minsToAdd: 30 => "09:30"
-  const [h, m] = time.split(":").map(Number);
+  // time: "09:00" or "09:00:00", minsToAdd: 30 => "09:30"
+  const timeParts = time.split(":");
+  const h = parseInt(timeParts[0]);
+  const m = parseInt(timeParts[1]);
   const date = new Date(0, 0, 0, h, m + minsToAdd, 0, 0);
   return date.toTimeString().slice(0, 5);
 }
@@ -208,6 +237,7 @@ function openUpdateModal() {
   const modal = document.getElementById("update-appointment-modal");
   
   // Pre-fill the form with current appointment data
+  // For pending appointments (status 1), use request date/time, otherwise use appointment date/time
   document.getElementById("update-date").value = window.currentAppointment.date;
   document.getElementById("update-time").value = window.currentAppointment.time;
   document.getElementById("update-notes").value = window.currentAppointment.notes;
@@ -243,7 +273,7 @@ async function updateAppointment() {
     const response = await fetch(
       `https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${appointmentId}`,
       {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -253,21 +283,104 @@ async function updateAppointment() {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to update appointment: ${response.status}`);
+      const errorData = await response.text();
+      
+      // Handle specific error cases
+      if (response.status === 409) {
+        // Conflict - usually doctor availability issues
+        const errorMessage = errorData || 'Conflict occurred';
+        
+        // Check if it's a doctor availability error
+        if (errorMessage.includes('lịch làm việc') || errorMessage.includes('working hours') || 
+            errorMessage.includes('khả dụng') || errorMessage.includes('available')) {
+          // Extract working hours from error message if possible
+          const timePattern = /(\d{2}:\d{2}\s*-\s*\d{2}:\d{2})/g;
+          const workingHours = errorMessage.match(timePattern);
+          
+          let userFriendlyMessage = 'Thời gian yêu cầu không nằm trong giờ làm việc của bác sĩ.';
+          if (workingHours && workingHours.length > 0) {
+            userFriendlyMessage += `\n\nGiờ làm việc của bác sĩ: ${workingHours.join(', ')}`;
+            userFriendlyMessage += '\n\nVui lòng chọn thời gian khác trong khung giờ làm việc.';
+          }
+          
+          showNotification(userFriendlyMessage, "error");
+          
+          // Reset button state and return early
+          const saveButton = document.getElementById("save-update-btn");
+          saveButton.disabled = false;
+          saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+          return;
+        }
+      }
+      
+      // Handle other HTTP errors
+      let userErrorMessage = 'Không thể cập nhật lịch hẹn. ';
+      
+      switch (response.status) {
+        case 400:
+          userErrorMessage += 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+          break;
+        case 401:
+          userErrorMessage += 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+          break;
+        case 403:
+          userErrorMessage += 'Bạn không có quyền thực hiện thao tác này.';
+          break;
+        case 404:
+          userErrorMessage += 'Không tìm thấy lịch hẹn.';
+          break;
+        case 409:
+          userErrorMessage += 'Có xung đột trong dữ liệu. Vui lòng thử lại.';
+          break;
+        case 500:
+          userErrorMessage += 'Lỗi hệ thống. Vui lòng thử lại sau.';
+          break;
+        default:
+          userErrorMessage += 'Vui lòng thử lại.';
+      }
+      
+      throw new Error(userErrorMessage);
     }
 
-    // Success - close modal and show success message
+    // Get the updated appointment data from response
+    const updatedAppointment = await response.json();
+    console.log('Updated appointment data:', updatedAppointment);
+
+    // Success - close modal and show success message with updated info
     document.getElementById("update-appointment-modal").classList.add("hidden");
-    showNotification("Cập nhật lịch hẹn thành công! Vui lòng làm mới trang để xem thay đổi.", "success");
     
-    // Optionally refresh the page after a delay
+    // Show detailed success message based on appointment status
+    if (updatedAppointment.apmStatus === 1) {
+      // Pending appointment - show request date/time
+      const requestDate = new Date(updatedAppointment.requestDate).toLocaleDateString('vi-VN');
+      const requestTime = updatedAppointment.requestTime.slice(0, 5);
+      showNotification(
+        `Cập nhật yêu cầu lịch hẹn thành công!\nNgày yêu cầu: ${requestDate}\nGiờ yêu cầu: ${requestTime}\nTrạng thái: Đang chờ xác nhận`,
+        "success"
+      );
+    } else {
+      // Confirmed appointment - show appointment date/time
+      const appointmentDate = updatedAppointment.apmtDate ? 
+        new Date(updatedAppointment.apmtDate).toLocaleDateString('vi-VN') : 'Chưa xác định';
+      const appointmentTime = updatedAppointment.apmTime ? 
+        updatedAppointment.apmTime.slice(0, 5) : 'Chưa xác định';
+      showNotification(
+        `Cập nhật lịch hẹn thành công!\nNgày hẹn: ${appointmentDate}\nGiờ hẹn: ${appointmentTime}`,
+        "success"
+      );
+    }
+    
+    // Reload the page to reflect changes
     setTimeout(() => {
       location.reload();
-    }, 2000);
+    }, 2500);
 
   } catch (error) {
     console.error("Error updating appointment:", error);
-    showNotification("Không thể cập nhật lịch hẹn. Vui lòng thử lại.", "error");
+    
+    // Show user-friendly error message
+    const errorMessage = error.message || "Không thể cập nhật lịch hẹn. Vui lòng thử lại.";
+    showNotification(errorMessage, "error");
     
     // Reset button state
     const saveButton = document.getElementById("save-update-btn");
@@ -345,13 +458,15 @@ function showNotification(message, type = "info") {
     top: 20px;
     right: 20px;
     padding: 15px 20px;
-    border-radius: 5px;
+    border-radius: 8px;
     color: white;
     font-weight: 500;
     z-index: 10000;
-    max-width: 300px;
+    max-width: 350px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     transition: all 0.3s ease;
+    white-space: pre-line;
+    line-height: 1.4;
   `;
   
   // Set background color based on type
@@ -369,7 +484,8 @@ function showNotification(message, type = "info") {
   notification.textContent = message;
   document.body.appendChild(notification);
   
-  // Remove notification after 3 seconds
+  // Remove notification after longer time for error messages
+  const displayTime = type === "error" ? 6000 : 3000;
   setTimeout(() => {
     notification.style.opacity = "0";
     notification.style.transform = "translateX(100%)";
@@ -378,5 +494,5 @@ function showNotification(message, type = "info") {
         notification.parentNode.removeChild(notification);
       }
     }, 300);
-  }, 3000);
+  }, displayTime);
 }

@@ -320,6 +320,102 @@ body {
     transform: translateY(-1px);
 }
 
+/* Action Button Styles */
+.action-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid #28a745;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 8px;
+    color: #28a745;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
+}
+
+.action-btn:hover {
+    background: #28a745;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Clickable Notification Styles */
+.notification-item[onclick] {
+    cursor: pointer;
+}
+
+.notification-item[onclick]:hover {
+    background: rgba(102, 126, 234, 0.08);
+    transform: translateX(8px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.notification-click-hint {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 0.75rem;
+    color: #667eea;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-style: italic;
+}
+
+.notification-item[onclick]:hover .notification-click-hint {
+    opacity: 0.7;
+}
+
+/* Category-specific Icon Colors */
+.notification-icon.arv {
+    background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+}
+
+.notification-icon.medication {
+    background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+}
+
+.notification-icon.payment {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+}
+
+.notification-icon.medical {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.notification-icon.system {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+}
+
+/* Category-specific Type Badge Colors */
+.notification-type.arv {
+    background: rgba(142, 68, 173, 0.1);
+    color: #8e44ad;
+}
+
+.notification-type.medication {
+    background: rgba(230, 126, 34, 0.1);
+    color: #e67e22;
+}
+
+.notification-type.payment {
+    background: rgba(39, 174, 96, 0.1);
+    color: #27ae60;
+}
+
+.notification-type.medical {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+}
+
+.notification-type.system {
+    background: rgba(52, 73, 94, 0.1);
+    color: #34495e;
+}
+
 /* Empty States */
 .no-notifications {
     text-align: center;
@@ -553,6 +649,24 @@ body {
     .nav-buttons {
         flex-direction: column;
         align-items: center;
+    }
+    
+    .notification-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .action-btn {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .notification-click-hint {
+        position: static;
+        text-align: center;
+        opacity: 0.7;
+        margin-top: 0.5rem;
     }
 }
 

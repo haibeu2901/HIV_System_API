@@ -111,6 +111,9 @@ public partial class HivSystemApiContext : DbContext
             entity.HasIndex(e => new { e.PtnId, e.ApmtDate }, "IX_Appointment_Patient_Date");
 
             entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.RequestBy).HasColumnName("requestBy");
+            entity.Property(e => e.RequestDate).HasColumnName("requestDate");
+            entity.Property(e => e.RequestTime).HasColumnName("requestTime");
 
             entity.HasOne(d => d.Dct).WithMany(p => p.Appointments)
                 .HasForeignKey(d => d.DctId)
@@ -132,12 +135,17 @@ public partial class HivSystemApiContext : DbContext
             entity.Property(e => e.Manufactorer).HasMaxLength(50);
             entity.Property(e => e.MedDescription).HasMaxLength(200);
             entity.Property(e => e.MedName).HasMaxLength(50);
+            entity.Property(e => e.MedicationType)
+                .HasMaxLength(20)
+                .HasDefaultValue("Viên");
         });
 
         modelBuilder.Entity<ArvMedicationTemplate>(entity =>
         {
             entity.HasKey(e => e.AmtId).HasName("PK__ARV_Medi__6A58991F30090AC9");
             entity.ToTable("ARV_Medication_Template");
+
+            entity.Property(e => e.MedicationUsage).HasMaxLength(200);
 
             entity.HasOne(d => d.Amd).WithMany(p => p.ArvMedicationTemplates)
                 .HasForeignKey(d => d.AmdId)
@@ -321,6 +329,8 @@ public partial class HivSystemApiContext : DbContext
         {
             entity.HasKey(e => e.PamId).HasName("PK__Patient___F2159F185082BC2E");
             entity.ToTable("Patient_ARV_Medication");
+
+            entity.Property(e => e.UsageInstructions).HasMaxLength(500);
 
             entity.HasOne(d => d.Amd).WithMany(p => p.PatientArvMedications)
                 .HasForeignKey(d => d.AmdId)
