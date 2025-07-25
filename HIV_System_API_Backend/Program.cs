@@ -7,6 +7,9 @@ using HIV_System_API_Repositories.Implements.DashboardRepo;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Implements;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting; 
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -131,6 +134,9 @@ builder.Services.AddScoped<DoctorDashboardRepo>();
 builder.Services.AddScoped<PatientDashboardRepo>();
 builder.Services.AddScoped<StaffDashboardRepo>();
 builder.Services.AddScoped<ManagerDashboardRepo>();
+builder.Services.AddScoped<IPatientArvRegimenRepo, PatientArvRegimenRepo>();
+builder.Services.AddScoped<IPatientArvMedicationRepo, PatientArvMedicationRepo>();
+builder.Services.AddScoped<INotificationRepo, NotificationRepo>();
 
 // Add Services
 builder.Services.AddScoped<IArvMedicationDetailService, ArvMedicationDetailService>();
@@ -161,8 +167,18 @@ builder.Services.AddScoped<IBlogImageRepo, BlogImageRepo>();
 builder.Services.AddScoped<IBlogImageService, BlogImageService>();
 builder.Services.AddScoped<ITestResultService, TestResultService>();
 
+
 // Add Background Services
 builder.Services.AddHostedService<HIV_System_API_Backend.Services.MedicationAlarmBackgroundService>(); // Add this line
+// Register the background service
+builder.Services.AddHostedService<RegimenReminderBackgroundService>();
+
+// Configure logging
+builder.Services.AddLogging(logging =>
+{
+    logging.AddConsole();
+    logging.AddDebug();
+});
 
 // Add CORS policy
 // In Program.cs or Startup.cs
