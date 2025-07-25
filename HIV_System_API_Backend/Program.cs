@@ -192,7 +192,6 @@ app.UseHttpsRedirection();
 // Add Authentication & Authorization middleware in the pipeline
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.UseCors("AllowAll");
 app.MapControllers();
 app.UseStaticFiles();
