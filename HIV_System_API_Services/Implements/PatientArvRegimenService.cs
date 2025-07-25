@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.ArvMedicationDetailDTO;
+using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_DTOs.PatientArvMedicationDTO;
 using HIV_System_API_DTOs.PatientARVRegimenDTO;
 using HIV_System_API_Repositories.Implements;
@@ -20,6 +21,7 @@ namespace HIV_System_API_Services.Implements
         private readonly IPatientArvRegimenRepo _patientArvRegimenRepo;
         private readonly IPatientArvMedicationRepo _patientArvMedicationRepo;
         private readonly INotificationRepo _notificationRepo;
+        private readonly INotificationService _notificationService;
         private readonly HivSystemApiContext _context; // Add this field
 
         public PatientArvRegimenService()
@@ -27,6 +29,7 @@ namespace HIV_System_API_Services.Implements
             _patientArvRegimenRepo = new PatientArvRegimenRepo() ?? throw new ArgumentNullException(nameof(_patientArvRegimenRepo));
             _patientArvMedicationRepo = new PatientArvMedicationRepo() ?? throw new ArgumentNullException(nameof(_patientArvMedicationRepo));
             _notificationRepo = new NotificationRepo() ?? throw new ArgumentNullException(nameof(_notificationRepo));
+            _notificationService = new NotificationService() ?? throw new ArgumentNullException(nameof(_notificationService));
             _context = new HivSystemApiContext() ?? throw new ArgumentNullException(nameof(_context)); // Initialize context
         }
 
@@ -869,6 +872,69 @@ namespace HIV_System_API_Services.Implements
                 Debug.WriteLine($"Failed to update ARV regimen with medications: {ex.Message}");
                 await transaction.RollbackAsync();
                 throw;
+            }
+        }
+
+        public async Task<List<PatientArvRegimenResponseDTO>> SendEndDateReminderNotificationsAsync(int daysBeforeEnd)
+        {
+            if (daysBeforeEnd < 0)
+                throw new ArgumentException("Số ngày trước khi kết thúc phải lớn hơn hoặc bằng 0.", nameof(daysBeforeEnd));
+
+            try
+            {
+                var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                var targetDate = currentDate.AddDays(daysBeforeEnd);
+
+                var regimens = await _context.PatientArvRegimen
+                    .Include(par => par.Pmr)
+                    .ThenInclude(pmr => pmr.Ptn)
+                    .Where(par => par.EndDate.HasValue
+                        && par.EndDate.Value == targetDate
+                        && par.RegimenStatus == 2) // 2 = Active
+                    .ToListAsync();
+
+                if (!regimens.Any())
+                {
+                    return new List<PatientArvRegimenResponseDTO>();
+                }
+
+                var responseDTOs = new List<PatientArvRegimenResponseDTO>();
+
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    foreach (var regimen in regimens)
+                    {
+                        if (regimen.Pmr?.Ptn == null)
+                            continue;
+
+                        var notificationRequest = new CreateNotificationRequestDTO
+                        {
+                            NotiType = "Nhắc nhở kết thúc phác đồ",
+                            NotiMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng đặt lịch hẹn để tái khám.",
+                            SendAt = DateTime.UtcNow
+                        };
+
+                        var response = await _notificationService.CreateAndSendToAccountIdAsync(notificationRequest, regimen.Pmr.Ptn.AccId);
+                        responseDTOs.Add(MapToResponseDTO(regimen));
+                    }
+
+                    await transaction.CommitAsync();
+                    return responseDTOs;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"Lỗi khi gửi thông báo nhắc nhở hết hạn phác đồ: {ex.InnerException?.Message ?? ex.Message}");
+                }
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi gửi thông báo nhắc nhở hết hạn phác đồ: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Lỗi không mong muốn khi gửi thông báo nhắc nhở hết hạn phác đồ: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
     }
