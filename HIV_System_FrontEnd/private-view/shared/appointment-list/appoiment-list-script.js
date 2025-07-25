@@ -234,7 +234,6 @@ function renderAppointments(appointments) {
 // Modal logic
 window.addEventListener('DOMContentLoaded', async () => {
     let appointments = await fetchAppointments();
-    console.log('Fetched appointments:', appointments); // Debug line
     renderAppointments(appointments);
 
     // Modal close/cancel (set up once)
@@ -398,14 +397,29 @@ window.addEventListener('DOMContentLoaded', async () => {
                 if (!res.ok) {
                     let msg = 'Không thể cập nhật lịch hẹn.';
                     try {
-                        const data = await res.json();
-                        if (data && data.error) msg = data.error;
-                        else if (typeof data === 'string') msg = data;
+                        // Try to read as plain text first (409 returns a string)
+                        const text = await res.text();
+                        if (text && text.trim().length > 0) {
+                            msg = text;
+                        } else {
+                            // If not text, try to parse as JSON
+                            const data = JSON.parse(text);
+                            if (data) {
+                                if (data.error) msg = data.error;
+                                else if (data.message) msg = data.message;
+                                else if (data.title) msg = data.title;
+                                else if (data.detail) msg = data.detail;
+                                else if (data.errors && typeof data.errors === 'object') {
+                                    // Show the first error message in errors object
+                                    const firstKey = Object.keys(data.errors)[0];
+                                    if (firstKey && Array.isArray(data.errors[firstKey]) && data.errors[firstKey][0]) {
+                                        msg = data.errors[firstKey][0];
+                                    }
+                                }
+                            }
+                        }
                     } catch (e) {
-                        try {
-                            const text = await res.text();
-                            if (text) msg = text;
-                        } catch (e2) {}
+                        // If text or JSON parsing fails, fallback to default
                     }
                     setMessage(msg, false);
                     return;
@@ -421,11 +435,32 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Replace setMessage to use popup modal
 function setMessage(msg, success) {
-    const msgDiv = document.getElementById('appointment-message');
-    msgDiv.textContent = msg;
-    msgDiv.style.color = success ? '#27ae60' : '#c0392b';
+    const modal = document.getElementById('messageModal');
+    const modalText = document.getElementById('messageModalText');
+    if (!modal || !modalText) return;
+    modalText.textContent = msg;
+    modalText.className = success ? 'modal-success' : 'modal-error';
+    modal.classList.add('show');
 }
+
+// Modal close logic
+window.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('messageModal');
+    const closeBtn = document.getElementById('closeMessageModal');
+    if (closeBtn && modal) {
+        closeBtn.onclick = function() {
+            modal.classList.remove('show');
+        };
+        // Close when clicking outside modal-content
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.classList.remove('show');
+            }
+        };
+    }
+});
 // Get user role utilities
 const userRoleId = window.roleUtils && window.roleUtils.getUserRole ? window.roleUtils.getUserRole() : null;
 const userRoleName = (window.roleUtils && window.roleUtils.ROLE_NAMES && userRoleId) ? window.roleUtils.ROLE_NAMES[userRoleId] : 'guest';
