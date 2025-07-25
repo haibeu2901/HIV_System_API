@@ -23,5 +23,7 @@ namespace HIV_System_API_DTOs.SocialBlogDTO
         public int LikesCount { get; set; } = 0;
         public int DislikesCount { get; set; } = 0;
         public string AuthorName { get; set; } = string.Empty;
+        public List<string> ImageUrl { get; set; } = new List<string>();
+
     }
 }

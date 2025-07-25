@@ -23,5 +23,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<PatientArvRegimenResponseDTO> CreatePatientArvRegimenWithMedicationsAsync(PatientArvRegimenRequestDTO regimenRequest, List<PatientArvMedicationRequestDTO> medicationRequests, int accId);
         Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenStatusAsync(int parId, PatientArvRegimenStatusRequestDTO request);
         Task<PatientArvRegimenResponseDTO> UpdatePatientArvRegimenWithMedicationsAsync(int parId, PatientArvRegimenRequestDTO regimenRequest, List<PatientArvMedicationRequestDTO> medicationRequests, int accId);
+        Task<List<PatientArvRegimenResponseDTO>> SendEndDateReminderNotificationsAsync(int daysBeforeEnd);
     }
 }
