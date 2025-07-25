@@ -34,7 +34,8 @@ namespace HIV_System_API_Services.Implements
                 AmtId = 0, // Assuming 0 for new entities; set appropriately if updating
                 ArtId = dto.ArtId,
                 AmdId = dto.AmdId,
-                Quantity = dto.Quantity
+                Quantity = dto.Quantity,
+                MedicationUsage = dto.MedicationUsage
             };
         }
 
@@ -58,7 +59,9 @@ namespace HIV_System_API_Services.Implements
                 MedicationName = medicationDetail?.MedName,
                 MedicationDescription = medicationDetail?.MedDescription,
                 Dosage = medicationDetail?.Dosage,
-                Quantity = entity.Quantity ?? 0
+                MedicationType = medicationDetail?.MedicationType,
+                Quantity = entity.Quantity ?? 0,
+                MedicationUsage = entity.MedicationUsage
             };
         }
 

@@ -13,9 +13,12 @@ namespace HIV_System_API_DTOs.Appointment
         public string? PatientName { get; set; }
         public int DoctorId { get; set; }
         public string? DoctorName { get; set; }
-        public DateOnly ApmtDate { get; set; }
-        public TimeOnly ApmTime { get; set; }
+        public DateOnly? ApmtDate { get; set; }
+        public TimeOnly? ApmTime { get; set; }
         public string? Notes { get; set; }
         public byte ApmStatus { get; set; }
+        public DateOnly? RequestDate { get; set; }
+        public TimeOnly? RequestTime { get; set; }
+        public int? RequestBy { get; set; }
     }
 }

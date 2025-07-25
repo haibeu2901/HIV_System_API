@@ -114,7 +114,8 @@ namespace HIV_System_API_Services.Implements
                 // FIXED: Corrected the mapping - PatientArvMedId should map to ParId, not ParId to ParId
                 ParId = requestDTO.PatientArvRegId,
                 AmdId = requestDTO.ArvMedDetailId,
-                Quantity = requestDTO.Quantity
+                Quantity = requestDTO.Quantity,
+                UsageInstructions = requestDTO.UsageInstructions
             };
         }
 
@@ -125,7 +126,8 @@ namespace HIV_System_API_Services.Implements
                 PatientArvMedId = entity.PamId,
                 PatientArvRegiId = entity.ParId,
                 ArvMedId = entity.AmdId,
-                Quantity = entity.Quantity
+                Quantity = entity.Quantity,
+                UsageInstructions = entity.UsageInstructions
             };
 
             // Map medication details if available
@@ -137,7 +139,8 @@ namespace HIV_System_API_Services.Implements
                     ARVMedicationDescription = entity.Amd.MedDescription,
                     ARVMedicationDosage = entity.Amd.Dosage,
                     ARVMedicationPrice = entity.Amd.Price,
-                    ARVMedicationManufacturer = entity.Amd.Manufactorer
+                    ARVMedicationManufacturer = entity.Amd.Manufactorer,
+                    ARVMedicationType = entity.Amd.MedicationType
                 };
             }
 

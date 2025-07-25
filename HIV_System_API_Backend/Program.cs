@@ -143,6 +143,7 @@ builder.Services.AddScoped<IDoctorWorkScheduleService, DoctorWorkScheduleService
 builder.Services.AddScoped<IPatientMedicalRecordService, PatientMedicalRecordService>();
 builder.Services.AddScoped<IPatientArvRegimenService, PatientArvRegimenService>();
 builder.Services.AddScoped<IPatientArvMedicationService, PatientArvMedicationService>();
+builder.Services.AddScoped<IMedicationAlarmService, MedicationAlarmService>(); // Add this line
 builder.Services.AddScoped<IMedicalServiceService, MedicalServiceService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddMemoryCache();
@@ -159,6 +160,9 @@ builder.Services.AddScoped<IBlogImageDAO, BlogImageDAO>();
 builder.Services.AddScoped<IBlogImageRepo, BlogImageRepo>();
 builder.Services.AddScoped<IBlogImageService, BlogImageService>();
 builder.Services.AddScoped<ITestResultService, TestResultService>();
+
+// Add Background Services
+builder.Services.AddHostedService<HIV_System_API_Backend.Services.MedicationAlarmBackgroundService>(); // Add this line
 
 // Add CORS policy
 // In Program.cs or Startup.cs

@@ -56,8 +56,10 @@ namespace HIV_System_API_Services.Implements
                     ArvMedicationDetailId = medicationTemplate.AmdId,
                     MedicationName = medicationDetail?.MedName,
                     MedicationDescription = medicationDetail?.MedDescription,
+                    MedicationType = medicationDetail?.MedicationType,
                     Dosage = medicationDetail?.Dosage,
-                    Quantity = medicationTemplate.Quantity ?? 0
+                    Quantity = medicationTemplate.Quantity ?? 0,
+                    MedicationUsage = medicationTemplate.MedicationUsage
                 };
             }).ToList();
 
