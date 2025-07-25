@@ -510,6 +510,7 @@ namespace HIV_System_API_Services.Implements
                 existingAppointment.RequestTime = appointment.AppointmentTime;
                 existingAppointment.RequestBy = accId;
                 existingAppointment.Notes = appointment.Notes;
+                existingAppointment.ApmStatus = 1;
 
                 var updatedAppointment = await _appointmentRepo.UpdateAppointmentAsync(appointmentId, appointment, accId);
 
