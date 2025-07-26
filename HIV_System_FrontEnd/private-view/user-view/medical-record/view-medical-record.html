@@ -11,6 +11,129 @@
 <body>
     <div id="header-placeholder"></div>
     
+    <!-- Loading State -->
+    <div class="loading-container" id="loadingContainer">
+        <div class="loading-spinner"></div>
+        <p>Đang tải hồ sơ bệnh án của bạn...</p>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="medical-record-container" id="mainContent" style="display: none;">
+        <div class="page-header">
+            <h1>My Medical Records</h1>
+            <button class="btn-back" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+        
+        <!-- Section Navigation -->
+        <div class="section-navigation">
+            <button class="nav-btn active" onclick="showSection('appointments')" id="appointmentsNav">
+                <i class="fas fa-calendar-alt"></i> Appointments
+            </button>
+            <button class="nav-btn" onclick="showSection('testResults')" id="testResultsNav">
+                <i class="fas fa-flask"></i> Test Results
+            </button>
+            <button class="nav-btn" onclick="showSection('arvRegimens')" id="arvRegimensNav">
+                <i class="fas fa-pills"></i> ARV Regimens
+            </button>
+            <button class="nav-btn" onclick="showSection('payments')" id="paymentsNav">
+                <i class="fas fa-credit-card"></i> Payments
+            </button>
+        </div>
+        
+        <div class="medical-record-content">
+            <!-- Appointments Section -->
+            <section class="medical-section active" id="appointmentsSection">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-alt"></i> Appointments</h2>
+                    <p class="section-description">View your scheduled and completed appointments</p>
+                </div>
+                <div id="appointmentsContent"></div>
+            </section>
+            
+            <!-- Test Results Section -->
+            <section class="medical-section" id="testResultsSection">
+                <div class="section-header">
+                    <h2><i class="fas fa-flask"></i> Test Results</h2>
+                    <p class="section-description">View your laboratory test results and reports</p>
+                </div>
+                <div id="testResultsContent"></div>
+            </section>
+            
+            <!-- ARV Regimens Section -->
+            <section class="medical-section" id="arvRegimensSection">
+                <div class="section-header">
+                    <h2><i class="fas fa-pills"></i> ARV Regimens</h2>
+                    <p class="section-description">View your current and past ARV treatment regimens</p>
+                </div>
+                <div id="arvRegimensContent"></div>
+            </section>
+            
+            <!-- Payments Section -->
+            <section class="medical-section" id="paymentsSection">
+                <div class="section-header">
+                    <h2><i class="fas fa-credit-card"></i> Payment History</h2>
+                    <p class="section-description">View your payment transactions and billing history</p>
+                </div>
+                <div id="paymentsContent"></div>
+            </section>
+        </div>
+    </div>
+    
+    <!-- Card Payment Modal -->
+    <div id="cardPaymentModal" class="card-payment-modal">
+        <div class="card-payment-modal-content">
+            <div class="card-payment-modal-header">
+                <h2 class="card-payment-modal-title">Nhập thông tin thẻ thanh toán</h2>
+                <button class="card-payment-close" onclick="closeCardPaymentModal()">&times;</button>
+            </div>
+            
+            <div class="card-payment-modal-body">
+                <!-- Test Cards Section -->
+                <div id="testCardsSection" class="test-cards-section">
+                    <h3>Test Cards Available</h3>
+                    <div class="loading-test-cards">
+                        <i class="fas fa-spinner fa-spin"></i> Đang tải danh sách thẻ test...
+                    </div>
+                </div>
+                
+                <form id="cardPaymentForm">
+                    <div class="form-group">
+                        <label for="card-number">Số thẻ</label>
+                        <input type="text" id="card-number" placeholder="4242 4242 4242 4242" maxlength="23" required />
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="card-expiry">Ngày hết hạn</label>
+                            <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="card-cvc">CVC</label>
+                            <input type="text" id="card-cvc" placeholder="123" maxlength="4" required />
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="card-name">Tên chủ thẻ</label>
+                        <input type="text" id="card-name" placeholder="Nguyen Van A" required />
+                    </div>
+                    
+                    <div class="card-payment-form-actions">
+                        <button type="button" class="card-payment-btn card-payment-btn-cancel" onclick="closeCardPaymentModal()">
+                            Hủy
+                        </button>
+                        <button type="button" id="cardPaymentSubmit" class="card-payment-btn card-payment-btn-submit" onclick="submitCardPayment()">
+                            <div class="spinner"></div>
+                            <span class="btn-text">Thanh toán</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <script src="../header/header.js"></script>
     <script src="medical-record.js"></script>
 </body>
