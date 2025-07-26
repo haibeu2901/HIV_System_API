@@ -202,22 +202,40 @@ function renderTestResults(testResults) {
         <div class="test-results-grid">
     `;
     
-    testResults.forEach(testResult => {
+    testResults.forEach((testResult, index) => {
         const resultClass = testResult.result ? 'test-result-positive' : 'test-result-negative';
         const resultText = testResult.result ? 'Positive' : 'Negative';
+        const hasDetails = (testResult.notes && testResult.notes.trim() !== '') || 
+                          (testResult.componentTestResults && testResult.componentTestResults.length > 0);
 
         html += `
             <div class="test-result-card">
-                <div class="test-result-header">
-                    <span class="test-result-date">Test Date: ${testResult.testDate}</span>
-                    <span class="test-result-overall ${resultClass}">${resultText}</span>
+                <div class="test-result-header" onclick="toggleTestDetails(${index})">
+                    <div class="test-result-basic-info">
+                        <span class="test-result-date">Test Date: ${testResult.testDate}</span>
+                        <span class="test-result-overall ${resultClass}">${resultText}</span>
+                    </div>
+                    ${hasDetails ? `
+                        <div class="test-result-toggle">
+                            <i class="fas fa-chevron-down dropdown-icon" id="dropdownIcon${index}"></i>
+                            <span class="toggle-text">View Details</span>
+                        </div>
+                    ` : ''}
                 </div>
+                
+                ${hasDetails ? `
+                    <div class="test-result-details" id="testDetails${index}" style="display: none;">
+                ` : ''}
         `;
 
-        if (testResult.notes) {
+        if (testResult.notes && testResult.notes.trim() !== '') {
             html += `
                 <div class="test-result-notes">
-                    <strong>Notes:</strong> ${testResult.notes}
+                    <div class="notes-header">
+                        <i class="fas fa-sticky-note"></i>
+                        <strong>Notes</strong>
+                    </div>
+                    <div class="notes-content">${testResult.notes}</div>
                 </div>
             `;
         }
@@ -225,31 +243,40 @@ function renderTestResults(testResults) {
         if (testResult.componentTestResults && testResult.componentTestResults.length > 0) {
             html += `
                 <div class="component-test-results">
-                    <h4>Component Tests</h4>
-                    <table class="component-tests-table">
-                        <thead>
-                            <tr>
-                                <th>Component</th>
-                                <th>Result Value</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <div class="component-header">
+                        <i class="fas fa-microscope"></i>
+                        <h4>Component Test Results</h4>
+                    </div>
+                    <div class="component-tests-table-container">
+                        <table class="component-tests-table">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Result Value</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
             `;
             testResult.componentTestResults.forEach(component => {
                 html += `
                     <tr>
-                        <td>${component.componentTestResultName}</td>
-                        <td>${component.resultValue}</td>
-                        <td>${component.notes || '-'}</td>
+                        <td class="component-name">${component.componentTestResultName}</td>
+                        <td class="component-value">${component.resultValue}</td>
+                        <td class="component-notes">${component.notes || '-'}</td>
                     </tr>
                 `;
             });
             html += `
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             `;
+        }
+
+        if (hasDetails) {
+            html += `</div>`;
         }
 
         html += `</div>`;
@@ -257,6 +284,29 @@ function renderTestResults(testResults) {
     
     html += `</div>`;
     section.innerHTML = html;
+}
+
+// Toggle test result details
+function toggleTestDetails(index) {
+    const detailsElement = document.getElementById(`testDetails${index}`);
+    const iconElement = document.getElementById(`dropdownIcon${index}`);
+    const toggleTextElement = detailsElement?.parentElement.querySelector('.toggle-text');
+    
+    if (detailsElement) {
+        const isVisible = detailsElement.style.display !== 'none';
+        
+        if (isVisible) {
+            // Hide details
+            detailsElement.style.display = 'none';
+            if (iconElement) iconElement.classList.remove('rotated');
+            if (toggleTextElement) toggleTextElement.textContent = 'View Details';
+        } else {
+            // Show details
+            detailsElement.style.display = 'block';
+            if (iconElement) iconElement.classList.add('rotated');
+            if (toggleTextElement) toggleTextElement.textContent = 'Hide Details';
+        }
+    }
 }
 
 // Render payment history

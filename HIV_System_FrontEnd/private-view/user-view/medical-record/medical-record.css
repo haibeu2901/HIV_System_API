@@ -786,6 +786,222 @@
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
 }
 
+/* Test Result Dropdown Styles */
+.test-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0 !important;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.test-result-header:hover {
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 8px;
+    margin: -10px;
+    padding: 25px 10px;
+}
+
+.test-result-basic-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-grow: 1;
+    margin-right: 20px;
+}
+
+.test-result-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #3b82f6;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.test-result-toggle:hover {
+    background: rgba(59, 130, 246, 0.15);
+    color: #1d4ed8;
+}
+
+.dropdown-icon {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.dropdown-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.test-result-details {
+    margin-top: 20px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.test-result-notes {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.notes-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #92400e;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.notes-content {
+    color: #92400e;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.component-test-results {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #0ea5e9;
+    border-radius: 16px;
+    padding: 25px;
+    margin-top: 20px;
+    position: relative;
+}
+
+.component-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    color: #0c4a6e;
+}
+
+.component-header h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.component-tests-table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.1);
+}
+
+.component-tests-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #0ea5e9;
+}
+
+.component-tests-table thead {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+}
+
+.component-tests-table th {
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #0284c7;
+}
+
+.component-tests-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #f0f9ff;
+    font-size: 14px;
+    color: #1e293b;
+    vertical-align: middle;
+}
+
+.component-tests-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.component-tests-table tbody tr:hover {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    transform: scale(1.01);
+}
+
+.component-tests-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.component-name {
+    font-weight: 700;
+    color: #0c4a6e;
+}
+
+.component-value {
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.component-notes {
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Responsive adjustments for test results */
+@media (max-width: 768px) {
+    .test-result-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .test-result-basic-info {
+        flex-direction: column;
+        gap: 10px;
+        margin-right: 0;
+    }
+    
+    .test-result-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .component-tests-table {
+        font-size: 12px;
+    }
+    
+    .component-tests-table th,
+    .component-tests-table td {
+        padding: 10px 8px;
+    }
+}
+
 /* Medical regimen details grid */
 .regimen-details {
     display: grid;
