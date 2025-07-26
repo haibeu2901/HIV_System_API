@@ -301,6 +301,15 @@ function renderPayments(payments) {
         </div>
         
         <div class="payments-list">
+            <div class="payment-header-single-line">
+                <div>ID</div>
+                <div>Amount</div>
+                <div>Date</div>
+                <div>Description</div>
+                <div>Method</div>
+                <div>Status</div>
+                <div>Actions</div>
+            </div>
     `;
 
     payments.forEach(payment => {
@@ -310,64 +319,46 @@ function renderPayments(payments) {
         const formattedDate = formatDateTime(payment.paymentDate);
         
         html += `
-            <div class="payment-item ${statusClass}">
-                <div class="payment-header">
-                    <div class="payment-id">
-                        <span class="label">Payment ID:</span>
-                        <span class="value">#${payment.payId}</span>
+            <div class="payment-item-single-line ${statusClass}">
+                <div class="payment-single-row">
+                    <div class="payment-id-compact" data-label="ID">
+                        <span class="payment-id-value">#${payment.payId}</span>
                     </div>
-                    <div class="payment-status">
+                    
+                    <div class="payment-amount-compact" data-label="Amount">
+                        <span class="amount-value">${formattedAmount}</span>
+                        <span class="currency-value">${payment.currency}</span>
+                    </div>
+                    
+                    <div class="payment-date-compact" data-label="Date">
+                        <span class="date-value">${formattedDate}</span>
+                    </div>
+                    
+                    <div class="payment-description-compact" data-label="Description">
+                        <span class="description-value">${payment.description || 'No description'}</span>
+                    </div>
+                    
+                    <div class="payment-method-compact" data-label="Method">
+                        <span class="method-value">${payment.paymentMethod}</span>
+                    </div>
+                    
+                    <div class="payment-status-compact" data-label="Status">
                         ${statusBadge}
                     </div>
-                </div>
-                
-                <div class="payment-details">
-                    <div class="payment-row">
-                        <div class="payment-info">
-                            <span class="label">Amount:</span>
-                            <span class="amount">${formattedAmount} ${payment.currency}</span>
-                        </div>
-                        <div class="payment-info">
-                            <span class="label">Date:</span>
-                            <span class="value">${formattedDate}</span>
-                        </div>
-                    </div>
                     
-                    <div class="payment-row">
-                        <div class="payment-info">
-                            <span class="label">Description:</span>
-                            <span class="value">${payment.description || 'No description'}</span>
-                        </div>
-                        <div class="payment-info">
-                            <span class="label">Customer:</span>
-                            <span class="value">${payment.patientEmail}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="payment-row">
-                        <div class="payment-info">
-                            <span class="label">Payment Method:</span>
-                            <span class="value">${payment.paymentMethod}</span>
-                        </div>
-                        <div class="payment-info">
-                            <span class="label">Intent ID:</span>
-                            <span class="value">${payment.paymentIntentId || 'N/A'}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="payment-actions">
-                    ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
-                        <button class="btn-action btn-confirm" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
-                            <i class="fas fa-check"></i> Confirm Payment
+                    <div class="payment-actions-compact" data-label="Actions">
+                        ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
+                            <button class="btn-action-compact btn-confirm" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn-action-compact btn-details" onclick="viewPaymentDetails(${payment.payId})" title="View Details">
+                            <i class="fas fa-eye"></i>
                         </button>
-                    ` : ''}
-                    <button class="btn-action btn-details" onclick="viewPaymentDetails(${payment.payId})">
-                        <i class="fas fa-eye"></i> View Details
-                    </button>
-                    <button class="btn-action btn-copy" onclick="copyPaymentId(${payment.payId})">
-                        <i class="fas fa-copy"></i> Copy ID
-                    </button>
+                        <button class="btn-action-compact btn-copy" onclick="copyPaymentId(${payment.payId})" title="Copy ID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
