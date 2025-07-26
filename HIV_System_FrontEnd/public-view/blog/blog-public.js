@@ -342,55 +342,51 @@ function renderBlogs() {
         const adminActionsHTML = generateAdminActions(blog, availableActions);
         
         return `
-            <div class="reddit-post">
-                <div class="post-voting">
-                    <button class="vote-btn upvote ${availableActions.includes('like') ? '' : 'disabled'}" 
-                            onclick="handleVote(${blog.id}, true)" 
-                            ${!availableActions.includes('like') ? 'disabled' : ''}>
-                        <i class="fas fa-arrow-up"></i>
-                    </button>
-                    <span class="vote-count">${blog.likesCount || 0}</span>
-                    <button class="vote-btn downvote ${availableActions.includes('dislike') ? '' : 'disabled'}" 
-                            onclick="handleVote(${blog.id}, false)"
-                            ${!availableActions.includes('dislike') ? 'disabled' : ''}>
-                        <i class="fas fa-arrow-down"></i>
-                    </button>
+            <div class="story-card">
+                <div class="story-header">
+                    <div class="story-meta">
+                        <span class="story-author">${blog.isAnonymous ? 'Anonymous Community Member' : 'Community Member ' + blog.authorId}</span>
+                        <span class="story-date">${formatDate(blog.publishedDate)}</span>
+                    </div>
+                    <div class="story-badges">
+                        ${blog.isAnonymous ? '<span class="anonymous-badge"><i class="fas fa-user-secret"></i> Anonymous</span>' : ''}
+                        ${window.BlogRoles.getBlogStatusBadge(blog.blogStatus)}
+                    </div>
                 </div>
-                <div class="post-content">
-                    <div class="post-header">
-                        <div class="post-meta">
-                            <span class="community">r/HIVSupport</span>
-                            <span class="separator">•</span>
-                            <span class="author">Posted by ${blog.isAnonymous ? 'Anonymous' : 'u/user' + blog.authorId}</span>
-                            <span class="separator">•</span>
-                            <span class="timestamp">${formatDate(blog.publishedDate)}</span>
-                            ${blog.isAnonymous ? '<span class="anonymous-badge"><i class="fas fa-user-secret"></i> Anonymous</span>' : ''}
-                            ${window.BlogRoles.getBlogStatusBadge(blog.blogStatus)}
+                <div class="story-body">
+                    <h3 class="story-title" onclick="openBlogModal(${blog.id})">${blog.title}</h3>
+                    <div class="story-content">
+                        ${truncateText(blog.content, 300)}
+                    </div>
+                </div>
+                <div class="story-footer">
+                    <div class="story-actions">
+                        <button class="story-action-btn like-btn ${availableActions.includes('like') ? '' : 'disabled'}" 
+                                onclick="handleVote(${blog.id}, true)" 
+                                ${!availableActions.includes('like') ? 'disabled' : ''}>
+                            <i class="fas fa-heart"></i>
+                            <span>${blog.likesCount || 0} Hearts</span>
+                        </button>
+                        <button class="story-action-btn comment-btn" onclick="openBlogModal(${blog.id})">
+                            <i class="fas fa-comment"></i>
+                            <span>${blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0} Comments</span>
+                        </button>
+                        <button class="story-action-btn share-btn" onclick="handleShare(${blog.id})">
+                            <i class="fas fa-share"></i>
+                            <span>Share</span>
+                        </button>
+                        <button class="story-action-btn" onclick="openBlogModal(${blog.id})">
+                            <i class="fas fa-book-open"></i>
+                            <span>Read Full Story</span>
+                        </button>
+                    </div>
+                    <div class="story-engagement">
+                        <div class="engagement-item">
+                            <i class="fas fa-eye"></i>
+                            <span>Story shared ${formatDate(blog.publishedDate)}</span>
                         </div>
                     </div>
-                    <div class="post-body">
-                        <h3 class="post-title" onclick="openBlogModal(${blog.id})">${blog.title}</h3>
-                        <div class="post-text">
-                            ${truncateText(blog.content, 300)}
-                        </div>
-                    </div>
-                    <div class="post-footer">
-                        <div class="post-actions">
-                            <button class="action-btn" onclick="openBlogModal(${blog.id})">
-                                <i class="fas fa-comment"></i>
-                                <span>${blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0} Comments</span>
-                            </button>
-                            <button class="action-btn" onclick="handleShare(${blog.id})">
-                                <i class="fas fa-share"></i>
-                                <span>Share</span>
-                            </button>
-                            <button class="action-btn" onclick="openBlogModal(${blog.id})">
-                                <i class="fas fa-expand"></i>
-                                <span>Read More</span>
-                            </button>
-                        </div>
-                        ${adminActionsHTML}
-                    </div>
+                    ${adminActionsHTML}
                 </div>
             </div>
         `;
@@ -402,7 +398,7 @@ function renderBlogs() {
 function generateAdminActions(blog, availableActions) {
     if (availableActions.length === 0) return '';
     
-    let actionsHTML = '<div class="post-admin-actions">';
+    let actionsHTML = '<div class="story-admin-actions">';
     
     if (availableActions.includes('edit')) {
         actionsHTML += `<button class="admin-action-btn edit" onclick="editBlog(${blog.id})">
@@ -617,7 +613,7 @@ function showPendingBlogs() {
     renderBlogs();
     
     // Update filter tab
-    document.querySelectorAll('.sort-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
     alert(`Showing ${filteredBlogs.length} pending blog posts for review.`);
 }
 
@@ -666,14 +662,14 @@ function setupEventListeners() {
     }
 
     // Filter tabs
-    const sortTabs = document.querySelectorAll('.sort-tab');
-    sortTabs.forEach(tab => {
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    filterTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const filter = tab.getAttribute('data-sort');
             handleFilter(filter);
             
             // Update active tab
-            sortTabs.forEach(t => t.classList.remove('active'));
+            filterTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
         });
     });
@@ -889,7 +885,7 @@ function openBlogModal(blogId) {
 
     // Update modal content
     document.getElementById('modalTitle').textContent = blog.title;
-    document.getElementById('modalAuthor').textContent = blog.isAnonymous ? 'Anonymous Community Member' : `u/user${blog.authorId}`;
+    document.getElementById('modalAuthor').textContent = blog.isAnonymous ? 'Anonymous Community Member' : `Community Member ${blog.authorId}`;
     document.getElementById('modalDate').textContent = formatDate(blog.publishedDate);
     document.getElementById('modalContent').innerHTML = formatContent(blog.content);
     
@@ -897,21 +893,33 @@ function openBlogModal(blogId) {
     const modalEngagement = document.getElementById('modalEngagement');
     if (modalEngagement) {
         modalEngagement.innerHTML = `
-            <div class="engagement-stats">
-                <div class="stat-item">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>${blog.likesCount || 0}</span>
-                    <small>upvotes</small>
+            <div class="story-engagement-stats">
+                <div class="engagement-item">
+                    <div class="engagement-icon hearts">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="engagement-details">
+                        <span class="engagement-number">${blog.likesCount || 0}</span>
+                        <span class="engagement-label">Hearts of Support</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <i class="fas fa-arrow-down"></i>
-                    <span>${blog.dislikesCount || 0}</span>
-                    <small>downvotes</small>
+                <div class="engagement-item">
+                    <div class="engagement-icon comments">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="engagement-details">
+                        <span class="engagement-number">${blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0}</span>
+                        <span class="engagement-label">Supportive Messages</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <i class="fas fa-comments"></i>
-                    <span>${blog.blogReaction ? blog.blogReaction.filter(r => r.comment).length : 0}</span>
-                    <small>comments</small>
+                <div class="engagement-item">
+                    <div class="engagement-icon views">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="engagement-details">
+                        <span class="engagement-number">Community</span>
+                        <span class="engagement-label">Story Shared</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -920,32 +928,64 @@ function openBlogModal(blogId) {
     // Update modal comments with role-based commenting
     const modalComments = document.getElementById('modalComments');
     if (modalComments) {
-        let commentsHTML = '<div class="comments-section"><h4>Comments</h4>';
+        let commentsHTML = '<div class="support-messages-section"><h4><i class="fas fa-heart"></i> Community Support & Messages</h4>';
         
         if (blog.blogReaction && blog.blogReaction.length > 0) {
             const comments = blog.blogReaction.filter(r => r.comment);
             commentsHTML += comments.map(comment => `
-                <div class="comment">
-                    <div class="comment-author">
-                        <i class="fas fa-user"></i>
-                        <span>u/user${comment.userId}</span>
-                        <span class="comment-date">${formatDate(comment.createdDate)}</span>
+                <div class="support-message">
+                    <div class="message-header">
+                        <div class="supporter-info">
+                            <div class="supporter-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="supporter-details">
+                                <span class="supporter-name">Community Member ${comment.userId}</span>
+                                <span class="support-date">${formatDate(comment.createdDate)}</span>
+                            </div>
+                        </div>
+                        <div class="support-badge">
+                            <i class="fas fa-hands-helping"></i>
+                        </div>
                     </div>
-                    <div class="comment-text">${comment.comment}</div>
+                    <div class="support-message-text">${comment.comment}</div>
                 </div>
             `).join('');
         } else {
-            commentsHTML += '<p class="no-comments">No comments yet. Be the first to share your thoughts!</p>';
+            commentsHTML += `
+                <div class="no-messages">
+                    <div class="no-messages-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <p>No messages of support yet.</p>
+                    <p class="encourage-message">Be the first to offer encouragement and support!</p>
+                </div>
+            `;
         }
         
         // Add comment form if user has permission
         if (currentUser.hasPermission(window.BlogRoles.PERMISSIONS.COMMENT_BLOG)) {
             commentsHTML += `
-                <div class="comment-form">
-                    <textarea id="newComment" placeholder="Share your thoughts..."></textarea>
-                    <button onclick="addComment(${blog.id})" class="comment-btn">
-                        <i class="fas fa-paper-plane"></i> Post Comment
+                <div class="support-message-form">
+                    <h5><i class="fas fa-heart"></i> Share Your Support</h5>
+                    <p class="form-description">Your words of encouragement can make a real difference in someone's journey.</p>
+                    <textarea id="newComment" placeholder="Share a message of support, encouragement, or your own experience..."></textarea>
+                    <button onclick="addComment(${blog.id})" class="support-btn">
+                        <i class="fas fa-heart"></i> Send Support
                     </button>
+                </div>
+            `;
+        } else {
+            commentsHTML += `
+                <div class="login-prompt">
+                    <div class="prompt-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h5>Join Our Community</h5>
+                    <p>Sign in to offer support and encouragement to fellow community members.</p>
+                    <a href="../landingpage.html#contact" class="join-btn">
+                        <i class="fas fa-users"></i> Join Community
+                    </a>
                 </div>
             `;
         }
@@ -1243,19 +1283,6 @@ function updateStatistics() {
 // User menu function (placeholder)
 function showUserMenu() {
     alert(`User Menu for ${currentUser.getRoleDisplayName()}\n\nFeatures coming soon:\n• Profile settings\n• Notification preferences\n• Privacy settings`);
-}
-
-// Legacy functions for compatibility
-function showCreatePostModal() {
-    showCreatePostModal();
-}
-
-function closeCreatePostModal() {
-    closeCreatePostModal();
-}
-
-function getBlogStatusBadge(status) {
-    return window.BlogRoles.getBlogStatusBadge(status);
 }
 
 // Utility functions
