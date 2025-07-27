@@ -1,4 +1,5 @@
 ﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.ARVMedicationTemplateDTO;
 using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
 using System;
 using System.Collections.Generic;
@@ -17,5 +18,7 @@ namespace HIV_System_API_Services.Interfaces
         Task<bool> DeleteRegimenTemplateAsync(int id);
         Task<List<RegimenTemplateResponseDTO>> GetRegimenTemplatesByDescriptionAsync(string description);
         Task<List<RegimenTemplateResponseDTO>> GetRegimenTemplatesByLevelAsync(byte level);
+        Task<RegimenTemplateResponseDTO> CreateRegimenTemplateWithMedicationsTemplate(RegimenTemplateRequestDTO regimenTemplate, List<MedicationTemplateRequestDTO> medicationTemplates);
+        Task<RegimenTemplateResponseDTO> UpdateRegimenTemplateWithMedicationsTemplate(int id, RegimenTemplateWithMedicationsRequestDTO request);
     }
 }

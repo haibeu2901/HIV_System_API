@@ -154,7 +154,7 @@ public partial class HivSystemApiContext : DbContext
 
             entity.HasOne(d => d.Art).WithMany(p => p.ArvMedicationTemplates)
                 .HasForeignKey(d => d.ArtId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ARVMedTemplate_RegimenTemplate");
         });
 
