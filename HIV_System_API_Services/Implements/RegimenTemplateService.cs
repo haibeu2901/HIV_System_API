@@ -4,6 +4,8 @@ using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,12 +19,14 @@ namespace HIV_System_API_Services.Implements
         private readonly IRegimenTemplateRepo _regimenTemplateRepo;
         private readonly IArvMedicationDetailRepo _arvMedicationDetailRepo;
         private readonly IMedicationTemplateRepo _medicationTemplateRepo;
+        private readonly HivSystemApiContext _context;
 
         public RegimenTemplateService()
         {
             _regimenTemplateRepo = new RegimenTemplateRepo();
             _arvMedicationDetailRepo = new ArvMedicationDetailRepo();
             _medicationTemplateRepo = new MedicationTemplateRepo();
+            _context = new HivSystemApiContext();
         }
 
         private ArvRegimenTemplate MapToEntity(RegimenTemplateRequestDTO regimenTemplate)
@@ -38,7 +42,7 @@ namespace HIV_System_API_Services.Implements
 
         private RegimenTemplateResponseDTO MapToResponse(ArvRegimenTemplate regimenTemplate)
         {
-            if (regimenTemplate == null) 
+            if (regimenTemplate == null)
                 throw new ArgumentNullException(nameof(regimenTemplate));
 
             var medications = regimenTemplate.ArvMedicationTemplates ?? new List<ArvMedicationTemplate>();
@@ -295,9 +299,126 @@ namespace HIV_System_API_Services.Implements
             return MapToResponse(createdRegimenEntity);
         }
 
-        //public async Task<RegimenTemplateResponseDTO> UpdateRegimenTemplateWithMedicationsTemplate(int id, RegimenTemplateRequestDTO regimenTemplate, List<MedicationTemplateRequestDTO> medicationTemplates, int accId)
-        //{
-        //    throw new NotImplementedException();
-        //}
+        public async Task<RegimenTemplateResponseDTO> UpdateRegimenTemplateWithMedicationsTemplate(
+    int id,
+    RegimenTemplateWithMedicationsRequestDTO request)
+        {
+            // Validation
+            if (id <= 0)
+                throw new ArgumentException("Id phải lớn hơn 0.", nameof(id));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request), "Yêu cầu mẫu phác đồ là bắt buộc.");
+            if (request.RegimenTemplate == null)
+                throw new ArgumentNullException(nameof(request.RegimenTemplate), "Yêu cầu mẫu phác đồ là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.RegimenTemplate.Description))
+                throw new ArgumentException("Mô tả là bắt buộc.", nameof(request.RegimenTemplate.Description));
+            if (request.RegimenTemplate.Level == null)
+                throw new ArgumentException("Cấp độ là bắt buộc.", nameof(request.RegimenTemplate.Level));
+            if (request.RegimenTemplate.Duration == null)
+                throw new ArgumentException("Thời gian là bắt buộc.", nameof(request.RegimenTemplate.Duration));
+            if (request.MedicationTemplates == null || !request.MedicationTemplates.Any())
+                throw new ArgumentNullException(nameof(request.MedicationTemplates), "Ít nhất một yêu cầu thuốc là bắt buộc.");
+
+            var medIds = request.MedicationTemplates.Select(m => m.AmdId).ToList();
+            if (medIds.Distinct().Count() != medIds.Count)
+                throw new ArgumentException("ID thuốc ARV trùng lặp không được phép trong cùng một mẫu phác đồ.");
+
+            foreach (var med in request.MedicationTemplates)
+            {
+                if (med.AmdId <= 0)
+                    throw new ArgumentException("ID chi tiết thuốc ARV không hợp lệ", nameof(med.AmdId));
+                if (!med.Quantity.HasValue || med.Quantity <= 0)
+                    throw new ArgumentException("Số lượng phải lớn hơn 0.", nameof(med.Quantity));
+                var medDetail = await _arvMedicationDetailRepo.GetArvMedicationDetailByIdAsync(med.AmdId);
+                if (medDetail == null)
+                    throw new KeyNotFoundException($"Thuốc với id {med.AmdId} không tìm thấy.");
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Get existing regimen template
+                var existingRegimen = await _regimenTemplateRepo.GetRegimenTemplateByIdAsync(id);
+                if (existingRegimen == null)
+                    throw new KeyNotFoundException($"Mẫu phác đồ với id {id} không tìm thấy.");
+
+                // UPDATE REGIMEN TEMPLATE FIRST
+                existingRegimen.Description = request.RegimenTemplate.Description;
+                existingRegimen.Level = request.RegimenTemplate.Level;
+                existingRegimen.Duration = request.RegimenTemplate.Duration;
+
+                await _regimenTemplateRepo.UpdateRegimenTemplateAsync(id, existingRegimen);
+                Console.WriteLine($"Updated regimen template with id: {id}");
+
+                // THEN UPDATE MEDICATIONS
+                // Get current medications
+                var currentMedications = await _medicationTemplateRepo.GetMedicationTemplatesByArtIdAsync(id);
+                var currentMedDict = currentMedications.ToDictionary(m => m.AmdId, m => m);
+                var requestMedDict = request.MedicationTemplates.ToDictionary(m => m.AmdId, m => m);
+
+                // Delete orphaned medications
+                foreach (var medToDelete in currentMedications.Where(m => !requestMedDict.ContainsKey(m.AmdId)))
+                {
+                    if (medToDelete.AmtId <= 0)
+                        throw new InvalidOperationException($"Invalid AmtId {medToDelete.AmtId} for medication template to delete.");
+
+                    bool deleted = await _medicationTemplateRepo.DeleteMedicationTemplateAsync(medToDelete.AmtId);
+                    if (!deleted)
+                    {
+                        Console.WriteLine($"Failed to delete medication template with AmtId {medToDelete.AmtId}: Record not found.");
+                    }
+                }
+
+                // Update or create medications
+                var medicationEntities = new List<ArvMedicationTemplate>();
+                foreach (var medDto in request.MedicationTemplates)
+                {
+                    Console.WriteLine($"Processing medication with AmdId: {medDto.AmdId}, Quantity: {medDto.Quantity}");
+                    if (currentMedDict.TryGetValue(medDto.AmdId, out var existingMed))
+                    {
+                        if (existingMed.AmtId <= 0)
+                            throw new InvalidOperationException($"Invalid AmtId for existing medication with AmdId {medDto.AmdId}.");
+
+                        var updatedMed = new ArvMedicationTemplate
+                        {
+                            AmtId = existingMed.AmtId,
+                            ArtId = id,
+                            AmdId = medDto.AmdId,
+                            Quantity = medDto.Quantity,
+                            MedicationUsage = medDto.MedicationUsage ?? string.Empty
+                        };
+                        await _medicationTemplateRepo.UpdateMedicationTemplateAsync(updatedMed);
+                        Console.WriteLine($"Updated medication AmtId: {updatedMed.AmtId}, Quantity: {updatedMed.Quantity}");
+                        medicationEntities.Add(updatedMed);
+                    }
+                    else
+                    {
+                        var newMed = new ArvMedicationTemplate
+                        {
+                            ArtId = id,
+                            AmdId = medDto.AmdId,
+                            Quantity = medDto.Quantity,
+                            MedicationUsage = medDto.MedicationUsage ?? string.Empty
+                        };
+                        var createdMed = await _medicationTemplateRepo.CreateMedicationTemplateAsync(newMed);
+                        Console.WriteLine($"Created medication AmtId: {createdMed.AmtId}, AmdId: {createdMed.AmdId}, Quantity: {createdMed.Quantity}");
+                        medicationEntities.Add(createdMed);
+                    }
+                }
+
+                await transaction.CommitAsync();
+
+                // Get fresh regimen data with updated medications for response
+                existingRegimen.ArvMedicationTemplates = await _medicationTemplateRepo.GetMedicationTemplatesByArtIdAsync(id);
+                Console.WriteLine($"Retrieved {existingRegimen.ArvMedicationTemplates.Count} medications for ArtId: {id}");
+
+                return MapToResponse(existingRegimen);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 }

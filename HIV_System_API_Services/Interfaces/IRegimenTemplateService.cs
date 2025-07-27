@@ -19,6 +19,6 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<RegimenTemplateResponseDTO>> GetRegimenTemplatesByDescriptionAsync(string description);
         Task<List<RegimenTemplateResponseDTO>> GetRegimenTemplatesByLevelAsync(byte level);
         Task<RegimenTemplateResponseDTO> CreateRegimenTemplateWithMedicationsTemplate(RegimenTemplateRequestDTO regimenTemplate, List<MedicationTemplateRequestDTO> medicationTemplates);
-        //Task<RegimenTemplateResponseDTO> UpdateRegimenTemplateWithMedicationsTemplate(int id, RegimenTemplateRequestDTO regimenTemplate, List<MedicationTemplateRequestDTO> medicationTemplates, int accId);
+        Task<RegimenTemplateResponseDTO> UpdateRegimenTemplateWithMedicationsTemplate(int id, RegimenTemplateWithMedicationsRequestDTO request);
     }
 }

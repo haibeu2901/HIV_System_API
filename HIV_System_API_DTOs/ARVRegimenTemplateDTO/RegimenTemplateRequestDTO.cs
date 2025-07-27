@@ -14,7 +14,7 @@ namespace HIV_System_API_DTOs.ARVRegimenTemplateDTO
         public int? Duration { get; set; }
     }
 
-    public class CreateRegimenTemplateWithMedicationsRequestDTO
+    public class RegimenTemplateWithMedicationsRequestDTO
     {
         public RegimenTemplateRequestDTO RegimenTemplate { get; set; } = null!;
         public List<MedicationTemplateRequestDTO> MedicationTemplates { get; set; } = null!;

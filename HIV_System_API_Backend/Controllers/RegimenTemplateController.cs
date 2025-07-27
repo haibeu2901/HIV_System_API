@@ -177,7 +177,7 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("CreateRegimenTemplateWithMedicationsTemplate")]
         [Authorize(Roles = "1,5")]
-        public async Task<IActionResult> CreateRegimenTemplateWithMedicationsTemplate([FromBody] CreateRegimenTemplateWithMedicationsRequestDTO request)
+        public async Task<IActionResult> CreateRegimenTemplateWithMedicationsTemplate([FromBody] RegimenTemplateWithMedicationsRequestDTO request)
         {
             if (request == null || request.RegimenTemplate == null || request.MedicationTemplates == null || !request.MedicationTemplates.Any())
                 return BadRequest("Regimen template and medication templates are required.");
@@ -192,6 +192,33 @@ namespace HIV_System_API_Backend.Controllers
                     return StatusCode(500, "Failed to create regimen template with medications.");
 
                 return CreatedAtAction(nameof(GetRegimenTemplateById), new { id = createdTemplate.ArtId }, createdTemplate);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = ex.InnerException != null
+                    ? $"Internal server error: {ex.Message} | Inner exception: {ex.InnerException.Message}"
+                    : $"Internal server error: {ex.Message}";
+                return StatusCode(500, errorMessage);
+            }
+        }
+
+        [HttpPut("UpdateRegimenTemplateWithMedicationsTemplate")]
+        [Authorize(Roles = "1,5")]
+        public async Task<IActionResult> UpdateRegimenTemplateWithMedicationsTemplate(int id, [FromBody] RegimenTemplateWithMedicationsRequestDTO request)
+        {
+            // Validate input
+            if (id <= 0 || request == null || request.RegimenTemplate == null || request.MedicationTemplates == null || !request.MedicationTemplates.Any())
+                return BadRequest("Invalid regimen template or medication templates data.");
+
+            try
+            {
+                // Call the service to update the regimen template and its medications
+                var updatedTemplate = await _regimenTemplateService.UpdateRegimenTemplateWithMedicationsTemplate(id, request);
+
+                if (updatedTemplate == null)
+                    return NotFound($"Regimen template with ID {id} not found or could not be updated.");
+
+                return Ok(updatedTemplate);
             }
             catch (Exception ex)
             {
