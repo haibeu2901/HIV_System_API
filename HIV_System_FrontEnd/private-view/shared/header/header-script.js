@@ -233,29 +233,45 @@ function setBlogNavigationHandler() {
         blogLink.addEventListener('click', (e) => {
             e.preventDefault();
             
-            // Get user role
-            const userRoleId = window.roleUtils && window.roleUtils.getUserRole ? window.roleUtils.getUserRole() : null;
-            const userRoleName = (window.roleUtils && window.roleUtils.ROLE_NAMES && userRoleId) ? window.roleUtils.ROLE_NAMES[userRoleId] : 'guest';
+            // Get user role from localStorage (fallback to token info)
+            let userRoleName = 'guest';
+            const userRole = localStorage.getItem('userRole');
+            const token = localStorage.getItem('token');
+            
+            if (userRole) {
+                // Map role IDs to names
+                const roleMap = {
+                    '1': 'patient',
+                    '2': 'doctor', 
+                    '3': 'staff',
+                    '4': 'admin',
+                    '5': 'manager'
+                };
+                userRoleName = roleMap[userRole] || 'guest';
+            }
             
             // Route to appropriate blog page based on role
-            let blogUrl = '/public-view/blog/blog-public.html'; // default fallback
+            let blogUrl = '../../public-view/blog/blog-public.html'; // default fallback
             
             switch (userRoleName) {
                 case 'doctor':
-                    blogUrl = '/private-view/doctor-view/doctor-dashboard/doctor-dashboard-with-blog.html';
+                    blogUrl = '../doctor-view/doctor-dashboard/doctor-dashboard-with-blog.html';
                     break;
                 case 'admin':
-                    blogUrl = '/private-view/admin-view/blog-management.html';
+                    blogUrl = '../admin-view/blog-management.html';
                     break;
                 case 'staff':
-                    blogUrl = '/private-view/staff-view/staff-community.html';
+                    blogUrl = '../staff-view/staff-community.html';
                     break;
                 case 'manager':
-                    blogUrl = '/private-view/manager-view/manager-blog-overview.html';
+                    blogUrl = '../manager-view/manager-blog-overview.html';
+                    break;
+                case 'patient':
+                    blogUrl = '../user-view/community/patient-community.html';
                     break;
                 default:
-                    // For unknown roles, try public blog
-                    blogUrl = '/public-view/blog/blog-public.html';
+                    // For unknown roles, try public blog with relative path
+                    blogUrl = '../../public-view/blog/blog-public.html';
             }
             
             window.location.href = blogUrl;

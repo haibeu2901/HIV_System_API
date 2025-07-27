@@ -254,8 +254,16 @@
 .medications-table th,
 .medications-table td {
     border: 1px solid #e5e7eb;
-    padding: 14px 18px; /* Increased padding for more spacing */
+    padding: 8px 10px;
     text-align: left;
+}
+.medication-usage-input {
+    width: 100%;
+    min-width: 120px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
 }
 
 .medications-table th {
@@ -443,6 +451,42 @@
 #medicationsTable .remove-med-btn:hover {
     color: #c0392b;
 }
+
+/* Payments Table Styling */
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 1rem;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.payments-table th,
+.payments-table td {
+    border: 1px solid #e5e7eb;
+    padding: 12px 16px;
+    text-align: left;
+}
+.payments-table th {
+    background: #f3f4f6;
+    color: #e74c3c;
+    font-weight: 600;
+}
+.payments-table tr:nth-child(even) td {
+    background: #f9fafb;
+}
+.payment-status {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    display: inline-block;
+}
+.payment-status-1 { background: #fef3c7; color: #92400e; } /* Chờ xử lý */
+.payment-status-2 { background: #d1fae5; color: #065f46; } /* Thành công */
+.payment-status-3 { background: #fee2e2; color: #991b1b; } /* Thất bại */
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -780,3 +824,12 @@
 .service-description:empty {
     display: none !important;
 }
+select.medication-name-select {
+    color: #222 !important;
+    background: #fff !important;
+    text-indent: 0 !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    appearance: auto !important;
+  }

@@ -22,15 +22,16 @@ const regimenStatusMap = {
   2: "Đang hoạt động",
   3: "Tạm dừng",
   4: "Đã hủy",
-  5: "Đã hoàn thành"
+  5: "Hoàn thành"
 };
 
 // Payment status mapping
+
+// Set window.isStaff and window.i// Payment status mapping
 const paymentStatusMap = {
-    1: 'Chờ thanh toán',
+    1: 'Đang chờ',
     2: 'Đã thanh toán',
-    3: 'Đã hủy',
-    4: 'Đã hoàn tiền'
+    3: 'Thất bại'
 };
 
 // Set window.isStaff and window.isDoctor globally
@@ -41,6 +42,51 @@ if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NA
   const roleName = window.roleUtils.ROLE_NAMES[roleId];
   window.isStaff = (roleName === 'staff');
   window.isDoctor = (roleName === 'doctor');
+}
+
+// Add global modal for creating patient medical record if not found
+if (!document.getElementById('createPmrModal')) {
+  const modalHtml = `
+    <div id="createPmrModal" class="modal">
+      <div class="modal-content" style="max-width:400px; margin:auto; text-align:center;">
+        <span class="close" id="closeCreatePmrModal" style="float:right; font-size:24px; cursor:pointer;">&times;</span>
+        <div id="createPmrModalText" style="margin: 30px 0 10px 0; font-size: 1.1em;">
+          Bệnh nhân không có Hồ sơ bệnh án.<br>Bạn có muốn tạo một hồ sơ bệnh án cho bệnh nhân?
+        </div>
+        <div style="margin: 20px 0 10px 0;">
+          <button id="createPmrYesBtn" style="margin-right: 16px; padding: 6px 18px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer;">Có</button>
+          <button id="createPmrNoBtn" style="padding: 6px 18px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer;">Không</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function showCreatePmrModal(ptnId) {
+  const modal = document.getElementById('createPmrModal');
+  modal.style.display = 'block';
+  document.getElementById('closeCreatePmrModal').onclick = () => { modal.style.display = 'none'; };
+  document.getElementById('createPmrNoBtn').onclick = () => { modal.style.display = 'none'; };
+  document.getElementById('createPmrYesBtn').onclick = async () => {
+    try {
+      const res = await fetch('https://localhost:7009/api/PatientMedicalRecord/CreatePatientMedicalRecord', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ptnId })
+      });
+      if (!res.ok) throw new Error('Không thể tạo hồ sơ bệnh án.');
+      modal.style.display = 'none';
+      // Reload the page to reflect the new record
+      window.location.reload();
+      // setMessage('Tạo hồ sơ bệnh án thành công!', true); // This will not show after reload
+    } catch (err) {
+      setMessage('Lỗi khi tạo hồ sơ bệnh án.', false);
+    }
+  };
 }
 
 // Get patient ID from URL parameters
@@ -65,32 +111,23 @@ async function fetchPatientDetails(patientId) {
     }
 }
 
-// Fetch patient medical record ID
-async function fetchPatientMRId(patientId) {
+// Add new fetchPatientMedicalDataByPatientId
+async function fetchPatientMedicalDataByPatientId(patientId) {
     try {
-        const response = await fetch(`https://localhost:7009/api/Patient/GetPatientMRById/${patientId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordByPatientId?patientId=${patientId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Lỗi thất bại lấy ID sơ đồ bệnh án bệnh nhân');
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching patient MR ID:', error);
-        return null;
-    }
-}
-
-// Fetch all patient medical data (appointments, test results, arv regimens)
-async function fetchPatientMedicalData(pmrId) {
-    try {
-        const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordById/${pmrId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        if (!response.ok) throw new Error('Lỗi thất bại lấy sơ đồ thông tin bệnh án bệnh nhân');
-        return await response.json();
+        if (response.status === 404) {
+            showCreatePmrModal(patientId);
+            return null;
+        }
+        if (!response.ok) throw new Error('Lỗi thất bại lấy thông tin bệnh án bệnh nhân');
+        const data = await response.json();
+        if (!data || !data.pmrId) {
+            showCreatePmrModal(patientId);
+            return null;
+        }
+        return data;
     } catch (error) {
         console.error('Error fetching patient medical data:', error);
         return null;
@@ -349,13 +386,18 @@ function renderTestResults(testResults) {
             html += `</div>`;
         }
 
-        html += `</div>`;
+        html += `
+                <div style="margin-top:1rem;text-align:right;">
+                    ${window.isStaff ? `<button class="secondary-btn update-test-result-btn" data-id="${testResult.testResultId}">Cập nhật kết quả</button>` : ''}
+                </div>
+            </div>`;
     });
 
     section.innerHTML = html;
 
     // Add click event listeners for staff to open update modal
     if (window.isStaff) {
+      // Component test result update listeners
       section.querySelectorAll('.clickable-component-result').forEach(el => {
         el.addEventListener('click', async function() {
           const compId = this.getAttribute('data-id');
@@ -379,6 +421,34 @@ function renderTestResults(testResults) {
           } catch (err) {
             alert('Không thể tải dữ liệu thành phần xét nghiệm.');
           }
+        });
+      });
+      
+      // Test result update listeners
+      section.querySelectorAll('.update-test-result-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const testResultId = this.getAttribute('data-id');
+          if (!testResultId) return;
+          
+          // Find the test result data from the already loaded data
+          const testResult = testResults.find(tr => String(tr.testResultId) === String(testResultId));
+          if (!testResult) {
+            alert('Không tìm thấy dữ liệu kết quả xét nghiệm.');
+            return;
+          }
+          
+          // Populate modal fields with existing data
+          document.getElementById('updateTestResultId').value = testResult.testResultId;
+          document.getElementById('updateTestResultDate').value = testResult.testDate || '';
+          document.getElementById('updateTestResultSelect').value = testResult.result ? 'true' : 'false';
+          document.getElementById('updateTestResultNotes').value = testResult.notes || '';
+          document.getElementById('updateTestResultMsg').textContent = '';
+          
+          // Load component test results from existing data
+          loadComponentTestResultsFromData(testResult.componentTestResults || []);
+          
+          // Show modal
+          document.getElementById('updateTestResultModal').style.display = 'block';
         });
       });
     }
@@ -442,12 +512,16 @@ function renderARVRegimens(regimens, medications) {
                         <div class="regimen-detail-value">${regimen.endDate || 'Ongoing'}</div>
                     </div>
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">Regimen Level</div>
+                        <div class="regimen-detail-label">Bậc phác đồ</div>
                         <div class="regimen-detail-value">${levelText}</div>
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Created At</div>
                         <div class="regimen-detail-value">${new Date(regimen.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <div class="regimen-detail">
+                        <div class="regimen-detail-label">Tổng chi phí</div>
+                        <div class="regimen-detail-value">${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
                     </div>
                 </div>
                 ${regimen.notes ? `
@@ -461,22 +535,26 @@ function renderARVRegimens(regimens, medications) {
                         <table class="medications-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Dosage</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Manufacturer</th>
-                                    <th>Description</th>
+                                    <th>Tên thuốc</th>
+                                    <th>Loại thuốc</th>
+                                    <th>Liều lượng</th>
+                                    <th>Số lượng</th>
+                                    <th>Nhà sản xuất</th>
+                                    <th>Cách sử dụng</th>
+                                    <th>Giá</th>
+                                    <th>Mô tả</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${regimenMeds.map(med => `
                                     <tr>
                                         <td>${med.medicationDetail.arvMedicationName}</td>
+                                        <td>${med.medicationDetail.arvMedicationType || med.medicationDetail.medicationType || ''}</td>
                                         <td>${med.medicationDetail.arvMedicationDosage}</td>
                                         <td>${med.quantity}</td>
-                                        <td>${med.medicationDetail.arvMedicationPrice ? med.medicationDetail.arvMedicationPrice.toLocaleString() : 'N/A'}</td>
                                         <td>${med.medicationDetail.arvMedicationManufacturer}</td>
+                                        <td>${med.usageInstructions || med.medicationDetail.medicationUsage || ''}</td>
+                                        <td>${med.medicationDetail.arvMedicationPrice ? med.medicationDetail.arvMedicationPrice.toLocaleString() : 'N/A'}</td>
                                         <td>${med.medicationDetail.arvMedicationDescription}</td>
                                     </tr>
                                 `).join('')}
@@ -485,7 +563,8 @@ function renderARVRegimens(regimens, medications) {
                     ` : `<div class='empty-state'><i class='fas fa-capsules'></i> No medications for this regimen.</div>`}
                 </div>
                 <div style="margin-top:1rem;text-align:right;">
-                    ${(!window.isStaff && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Update Status</button>` : ''}
+                    ${(!window.isStaff && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Cập nhật trạng thái</button>` : ''}
+                    ${(window.isDoctor && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>` : ''}
                 </div>
             </div>
         `;
@@ -499,6 +578,47 @@ function renderARVRegimens(regimens, medications) {
             const currentStatus = this.getAttribute('data-status');
             openUpdateRegimenStatusModal(regimenId, currentStatus);
         };
+    });
+    // Add event listeners for update-regimen-btn
+    document.querySelectorAll('.update-regimen-btn').forEach(btn => {
+      btn.onclick = async function() {
+        const regimenId = this.getAttribute('data-id');
+        const regimen = regimens.find(r => String(r.patientArvRegiId) === String(regimenId));
+        if (!regimen) return alert('Không tìm thấy phác đồ.');
+        await loadMedicationDetails();
+        regimenModal.style.display = 'block';
+        // Change modal title for update
+        const modalTitle = regimenModal.querySelector('h2');
+        if (modalTitle) modalTitle.textContent = 'Cập nhật phác đồ ARV';
+        const updateRegimenTemplate = document.getElementById('regimenTemplate');
+        if (updateRegimenTemplate && updateRegimenTemplate.parentElement) {
+          updateRegimenTemplate.parentElement.style.display = 'none';
+          updateRegimenTemplate.removeAttribute('required');
+          updateRegimenTemplate.value = '';
+        }
+        // Pre-fill modal fields
+        regimenLevel.value = regimen.regimenLevel;
+        regimenNotes.value = regimen.notes || '';
+        regimenStartDate.value = regimen.startDate;
+        if (document.getElementById('regimenEndDate')) document.getElementById('regimenEndDate').value = regimen.endDate || '';
+        // Pre-fill medications
+        selectedTemplateMedications = (regimen.arvMedications || []).map(med => ({
+          arvMedicationName: med.medicationDetail.arvMedicationName,
+          arvMedDetailId: med.medicationDetail.arvMedicationId,
+          dosage: med.medicationDetail.arvMedicationDosage,
+          quantity: med.quantity,
+          manufacturer: med.medicationDetail.arvMedicationManufacturer
+        }));
+        renderMedicationRows();
+        // Set update mode
+        regimenForm.setAttribute('data-update-id', regimenId);
+        
+        // Change button text to "Update Regimen"
+        const submitBtn = regimenForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.textContent = 'Cập nhật phác đồ';
+        }
+      };
     });
 }
 
@@ -579,16 +699,27 @@ openRegimenModalBtn.onclick = async function() {
         alert('Cannot create a new regimen while one is active.');
         return;
     }
-    regimenModal.style.display = 'block';
     await loadMedicationDetails();
+    regimenModal.style.display = 'block';
     resetRegimenForm();
+    // Set modal title and show template dropdown for create
+    const modalTitle = regimenModal.querySelector('h2');
+    if (modalTitle) modalTitle.textContent = 'Tạo phác đồ ARV mới';
+    const createRegimenTemplate = document.getElementById('regimenTemplate');
+    if (createRegimenTemplate && createRegimenTemplate.parentElement) {
+      createRegimenTemplate.parentElement.style.display = '';
+      createRegimenTemplate.setAttribute('required', 'required');
+    }
+    regimenForm.removeAttribute('data-update-id');
 };
 closeRegimenModalBtn.onclick = cancelRegimenBtn.onclick = function() {
     regimenModal.style.display = 'none';
+    resetRegimenForm();
 };
 window.onclick = function(event) {
     if (event.target === regimenModal) {
         regimenModal.style.display = 'none';
+        resetRegimenForm();
     }
 };
 
@@ -631,7 +762,7 @@ const addMedicationBtn = document.getElementById('addMedicationBtn');
 const regimenForm = document.getElementById('regimenForm');
 
 regimenLevel.onchange = async function() {
-    regimenTemplate.innerHTML = '<option value="">Select template</option>';
+            regimenTemplate.innerHTML = '<option value="">Chọn mẫu</option>';
     if (!this.value) return;
     const templates = await fetchTemplatesByLevel(this.value);
     templates.forEach(t => {
@@ -650,14 +781,25 @@ regimenTemplate.onchange = function() {
     const template = JSON.parse(selected);
     // Fill form fields
     regimenNotes.value = template.description;
-    regimenStartDate.value = new Date().toISOString().slice(0, 10);
-    // Fill medications
-    selectedTemplateMedications = template.medications.map(med => ({
+    // Set start date to today in Vietnam timezone
+    const today = new Date();
+    const vietnamToday = new Date(today.getTime() + (7 * 60 * 60 * 1000));
+    regimenStartDate.value = vietnamToday.toISOString().slice(0, 10);
+    // Set end date to start date + duration days
+    if (template.duration) {
+        const endDate = new Date(vietnamToday.getTime() + template.duration * 24 * 60 * 60 * 1000);
+        if (document.getElementById('regimenEndDate')) {
+            document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
+        }
+    }
+    // Fill medications: always set usageInstructions from medicationUsage
+    selectedTemplateMedications = (template.medications || []).map(med => ({
         arvMedicationName: med.medicationName,
         arvMedDetailId: med.arvMedicationDetailId,
         dosage: med.dosage,
         quantity: med.quantity,
-        manufacturer: allMedicationDetails.find(m => m.arvMedicationName === med.medicationName)?.arvMedicationManufacturer || '',
+        manufacturer: '',
+        usageInstructions: med.medicationUsage || ''
     }));
     renderMedicationRows();
 };
@@ -666,38 +808,65 @@ function resetRegimenForm() {
     regimenForm.reset();
     medicationsTableBody.innerHTML = '';
     selectedTemplateMedications = [];
+    
+    // Reset button text to "Create Regimen"
+    const submitBtn = regimenForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.textContent = 'Tạo phác đồ';
+    }
 }
 
 function renderMedicationRows() {
     medicationsTableBody.innerHTML = '';
     selectedTemplateMedications.forEach((med, idx) => {
-        const medDetail = allMedicationDetails.find(m => m.arvMedicationName === med.arvMedicationName);
+        // Use arvMedDetailId if available, otherwise try to find by name
+        let medDetail = null;
+        let selectedId = '';
+        if (med.arvMedDetailId) {
+            medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(med.arvMedDetailId));
+            selectedId = med.arvMedDetailId;
+        }
+        if (!medDetail && med.arvMedicationName) {
+            medDetail = allMedicationDetails.find(m => m.arvMedicationName === med.arvMedicationName);
+            selectedId = medDetail ? medDetail.arvMedicationId : '';
+        }
+        // If usageInstructions is not set, use medicationUsage from medDetail
+        let usageValue = (typeof med.usageInstructions === 'string' && med.usageInstructions.length > 0)
+            ? med.usageInstructions
+            : (medDetail && medDetail.medicationUsage ? medDetail.medicationUsage : '');
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
                 <select class="medication-name-select" data-idx="${idx}">
-                    <option value="">Select</option>
-                    ${allMedicationDetails.map(m => `<option value="${m.arvMedicationName}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
+                    <option value="">Chọn</option>
+                    ${allMedicationDetails.map(m => `<option value="${String(m.arvMedicationId)}" ${String(m.arvMedicationId) === String(selectedId) ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
                 </select>
             </td>
             <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
             <td><input type="number" min="1" value="${med.quantity || ''}" class="medication-qty-input" data-idx="${idx}" style="width:70px;"></td>
             <td>${medDetail ? medDetail.arvMedicationManufacturer : med.manufacturer || ''}</td>
+            <td><input type="text" class="medication-usage-input" data-idx="${idx}" value="${usageValue}" placeholder="Nhập cách sử dụng"></td>
             <td><button type="button" class="remove-med-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button></td>
         `;
         medicationsTableBody.appendChild(row);
+        // Explicitly set the dropdown value to ensure it displays the selected medicine
+        const select = row.querySelector('.medication-name-select');
+        if (select) {
+            select.value = String(selectedId);
+        }
     });
     updateAddMedicationBtnState();
 }
 
+// When adding a new medication from a template, set usageInstructions to medicationUsage by default
 addMedicationBtn.onclick = function() {
-    if (selectedTemplateMedications.length >= 3) return;
-    selectedTemplateMedications.push({ arvMedicationName: '', arvMedDetailId: null, dosage: '', quantity: 1, manufacturer: '' });
+    // Default to empty, but if a template is selected, use its medicationUsage
+    selectedTemplateMedications.push({ arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' });
     renderMedicationRows();
 };
 
 function updateAddMedicationBtnState() {
-    addMedicationBtn.disabled = selectedTemplateMedications.length >= 3;
+    addMedicationBtn.disabled = false;
 }
 
 // Handle medication name/quantity changes and remove
@@ -708,26 +877,31 @@ medicationsTableBody.onclick = function(e) {
         renderMedicationRows();
     }
 };
+// In the .onchange handler for .medication-name-select, update arvMedDetailId, arvMedicationName, and usageInstructions in selectedTemplateMedications
 medicationsTableBody.onchange = function(e) {
     if (e.target.classList.contains('medication-name-select')) {
         const idx = +e.target.dataset.idx;
-        const medName = e.target.value;
-        const medDetail = allMedicationDetails.find(m => m.arvMedicationName === medName);
+        const medId = e.target.value;
+        const medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(medId));
         if (medDetail) {
             selectedTemplateMedications[idx] = {
                 arvMedicationName: medDetail.arvMedicationName,
-                arvMedDetailId: medDetail.arvMedicationDetailId || medDetail.arvMedDetailId || medDetail.id || medDetail.arvMedicationDetailId,
+                arvMedDetailId: medDetail.arvMedicationId,
                 dosage: medDetail.arvMedicationDosage,
                 quantity: selectedTemplateMedications[idx].quantity || 1,
-                manufacturer: medDetail.arvMedicationManufacturer
+                manufacturer: medDetail.arvMedicationManufacturer,
+                usageInstructions: medDetail.medicationUsage || ''
             };
         } else {
-            selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: null, dosage: '', quantity: 1, manufacturer: '' };
+            selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' };
         }
         renderMedicationRows();
     } else if (e.target.classList.contains('medication-qty-input')) {
         const idx = +e.target.dataset.idx;
         selectedTemplateMedications[idx].quantity = +e.target.value;
+    } else if (e.target.classList.contains('medication-usage-input')) {
+        const idx = +e.target.dataset.idx;
+        selectedTemplateMedications[idx].usageInstructions = e.target.value;
     }
 };
 
@@ -735,93 +909,177 @@ medicationsTableBody.onchange = function(e) {
 regimenForm.onsubmit = async function(e) {
     e.preventDefault();
     // Validation
-    if (selectedTemplateMedications.length === 0 || selectedTemplateMedications.length > 3) {
-        alert('Please select 1-3 medications.');
+    if (selectedTemplateMedications.length === 0) {
+        alert('Vui lòng thêm ít nhất một loại thuốc.');
         return;
     }
     const medNames = selectedTemplateMedications.map(m => m.arvMedicationName);
     if (new Set(medNames).size !== medNames.length) {
-        alert('Duplicate medications are not allowed.');
+        alert('Không được phép có thuốc trùng lặp.');
         return;
     }
     if (selectedTemplateMedications.some(m => !m.arvMedicationName || !m.quantity)) {
         alert('Please fill all medication fields.');
         return;
     }
-    // Prepare regimen payload
-    const patientId = getPatientIdFromUrl();
-    const mrData = await fetchPatientMRId(patientId);
-    if (!mrData || !mrData.pmrId) {
-        alert('Cannot find patient medical record.');
+    // New validation: usageInstructions must not be empty
+    if (selectedTemplateMedications.some(m => !m.usageInstructions || !m.usageInstructions.trim())) {
+        alert('Vui lòng nhập "Cách sử dụng" cho tất cả các thuốc.');
+        return;
+    }
+    // Check that every medication selection is valid
+    if (selectedTemplateMedications.some(m => {
+        const medDetail = allMedicationDetails.find(md => md.arvMedicationName === m.arvMedicationName);
+        return !medDetail;
+    })) {
+        alert('Vui lòng chọn thuốc hợp lệ cho mỗi dòng.');
+        return;
+    }
+    // Prepare payloads
+    const updateId = regimenForm.getAttribute('data-update-id');
+    if (updateId) {
+        // --- UPDATE MODE ---
+        // Build medicationRequests array
+        const medicationRequests = selectedTemplateMedications.map(med => {
+            const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
+            let patientArvRegId = 0; // Default to 0 for new medications
+            const regimen = (window._lastRegimens || []).find(r => String(r.patientArvRegiId) === String(updateId));
+            if (regimen && regimen.arvMedications) {
+                const match = regimen.arvMedications.find(m => m.medicationDetail.arvMedicationName === med.arvMedicationName);
+                if (match) patientArvRegId = match.patientArvRegId || match.patientArvRegiId || match.patientArvRegId || 0;
+            }
+            return {
+                patientArvRegId: patientArvRegId,
+                arvMedDetailId: medDetail ? medDetail.arvMedicationId : med.arvMedDetailId,
+                quantity: med.quantity,
+                usageInstructions: (med.usageInstructions || '').trim()
+            };
+        });
+        // Build regimenRequest object
+        const regimen = (window._lastRegimens || []).find(r => String(r.patientArvRegiId) === String(updateId));
+        const regimenRequest = {
+            patientMedRecordId: window.pmrId, // Use the global pmrId from the patient's medical record
+            notes: regimenNotes.value,
+            regimenLevel: +regimenLevel.value,
+            createdAt: getVietnamDateTime(),
+            startDate: regimenStartDate.value,
+            endDate: document.getElementById('regimenEndDate') ? document.getElementById('regimenEndDate').value : null,
+            regimenStatus: 1,
+            totalCost: 0
+        };
+        // Log the payload
+        console.log('Submitting update payload:', { regimenRequest, medicationRequests });
+        try {
+            const res = await fetch(`https://localhost:7009/api/PatientArvRegimen/UpdatePatientArvRegimenWithMedications/${updateId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ regimenRequest, medicationRequests })
+            });
+            if (!res.ok) {
+                let errorText = '';
+                try { errorText = await res.text(); } catch {}
+                alert('Cập nhật phác đồ thất bại. ' + errorText);
+                return;
+            }
+            alert('Cập nhật phác đồ thành công!');
+            regimenModal.style.display = 'none';
+            regimenForm.removeAttribute('data-update-id');
+            loadPatientData();
+        } catch (err) {
+            alert('Lỗi khi cập nhật phác đồ.');
+        }
+        return;
+    }
+    // --- CREATE MODE ---
+    if (!window.pmrId) {
+        alert('Không tìm thấy hồ sơ y tế của bệnh nhân.');
         return;
     }
     // Build medications array for API
-    const medications = selectedTemplateMedications.map(med => ({
-        patientArvRegId: 0,
-        arvMedDetailId: med.arvMedDetailId,
-        quantity: med.quantity
-    }));
+    const medications = selectedTemplateMedications.map(med => {
+        const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
+        return {
+            patientArvRegId: 0,
+            arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
+            quantity: med.quantity,
+            usageInstructions: (med.usageInstructions || '').trim()
+        };
+    });
     // Build regimen object
     const regimen = {
-        patientMedRecordId: mrData.pmrId,
+        patientMedRecordId: window.pmrId,
         notes: regimenNotes.value,
         regimenLevel: +regimenLevel.value,
-        createdAt: new Date().toISOString(),
+        createdAt: getVietnamDateTime(),
         startDate: regimenStartDate.value,
-        endDate: null,
+        endDate: document.getElementById('regimenEndDate') ? document.getElementById('regimenEndDate').value : null,
         regimenStatus: 1, // active
+        totalCost: 0
     };
+    const payload = { regimen, medications };
+    // Log the payload for confirmation
+    console.log('Submitting create payload:', payload);
     // Call new API
     try {
         const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ regimen, medications })
+            body: JSON.stringify(payload)
         });
         if (!res.ok) {
-            alert('Failed to create regimen.');
+            let errorMsg = 'Failed to create regimen.';
+            let errorText = '';
+            try {
+                // Try to read as JSON
+                const errorData = await res.json();
+                console.error('Backend error:', errorData);
+                if (errorData && errorData.message) errorMsg += '\n' + errorData.message;
+                else errorText = JSON.stringify(errorData);
+            } catch (e) {
+                // If not JSON, try as text (but only once)
+                try {
+                    errorText = await res.text();
+                } catch {}
+            }
+            if (errorText) errorMsg += '\n' + errorText;
+            alert(errorMsg);
             return;
         }
-        alert('Regimen and medications created successfully!');
+        alert('Tạo phác đồ và thuốc thành công!');
         regimenModal.style.display = 'none';
         // Refresh data
         loadPatientData();
     } catch (err) {
-        alert('Error creating regimen.');
+        alert('Lỗi khi tạo phác đồ.');
+        console.error('Error creating regimen:', err);
     }
 };
 
+// Global timezone helper functions for Vietnam (GMT+7)
+function getToday() {
+  const d = new Date();
+  // Convert to Vietnam timezone (GMT+7)
+  const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+  return vietnamTime.toISOString().slice(0, 10);
+}
+
+function getVietnamDateTime() {
+  const d = new Date();
+  // Convert to Vietnam timezone (GMT+7)
+  const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+  return vietnamTime.toISOString();
+}
+
+function toVietnamDate(date) {
+  if (!date) return null;
+  const d = new Date(date);
+  // Convert to Vietnam timezone (GMT+7)
+  const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+  return vietnamTime.toISOString().slice(0, 10);
+}
+
 // --- Create Test Result Modal Logic ---
-document.addEventListener('DOMContentLoaded', async function() {
-  // Show button for staff only
-  if (window.isStaff) {
-    document.getElementById('createTestResultContainer').style.display = '';
-  }
-
-  // Get pmrId (from loaded data or fetch)
-  let pmrId = null;
-  let patientId = null;
-  if (typeof getPatientIdFromUrl === 'function') {
-    patientId = getPatientIdFromUrl();
-    if (!patientId) {
-      alert('Không tìm thấy bệnh nhân. Vui lòng truy cập từ danh sách bệnh nhân.');
-      return;
-    }
-    // Try to fetch MR ID
-    try {
-      const mrIdResp = await fetchPatientMRId(patientId);
-      if (mrIdResp) {
-        pmrId = mrIdResp.patientMedicalRecordId || mrIdResp.pmrId;
-      }
-    } catch {}
-  }
-  // If pmrId is still not found, show error and do not allow modal open
-  if (!pmrId) {
-    document.getElementById('createTestResultContainer').style.display = 'none';
-    alert('Không tìm thấy hồ sơ bệnh án cho bệnh nhân này.');
-    return;
-  }
-
+document.addEventListener('DOMContentLoaded', function() {
   // Modal elements
   const openBtn = document.getElementById('openTestResultModalBtn');
   const modal = document.getElementById('testResultModal');
@@ -834,12 +1092,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   const componentTestsContainer = document.getElementById('componentTestsContainer');
   const addComponentBtn = document.getElementById('addComponentTestBtn');
   const resultSelect = document.getElementById('testResultSelect');
-
-  // Helper: get today in yyyy-mm-dd
-  function getToday() {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  }
 
   // --- Component Test Fieldset Logic ---
   function createComponentTestFieldset(idx) {
@@ -892,8 +1144,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     resetComponentTests();
     // Set today as default date
     dateInput.value = getToday();
-    // Set pmrId
-    if (pmrId) pmrIdInput.value = pmrId;
+    // Set pmrId from global
+    if (window.pmrId != null) pmrIdInput.value = window.pmrId;
     modal.style.display = 'block';
   }
   function closeModal() {
@@ -1054,6 +1306,230 @@ if (updateComponentTestForm) {
   };
 }
 
+// --- Update Test Result Modal Logic ---
+const updateTestResultModal = document.getElementById('updateTestResultModal');
+const closeUpdateTestResultModalBtn = document.getElementById('closeUpdateTestResultModalBtn');
+const cancelUpdateTestResultBtn = document.getElementById('cancelUpdateTestResultBtn');
+const updateTestResultForm = document.getElementById('updateTestResultForm');
+const updateTestResultMsg = document.getElementById('updateTestResultMsg');
+const addUpdateComponentTestBtn = document.getElementById('addUpdateComponentTestBtn');
+
+function closeUpdateTestResultModal() {
+  updateTestResultModal.style.display = 'none';
+  updateTestResultForm.reset();
+  updateTestResultMsg.textContent = '';
+  // Clear component tests container
+  const container = document.getElementById('updateComponentTestsContainer');
+  if (container) {
+    container.innerHTML = '<h3>Thành phần xét nghiệm</h3>';
+  }
+}
+
+if (closeUpdateTestResultModalBtn) closeUpdateTestResultModalBtn.onclick = closeUpdateTestResultModal;
+if (cancelUpdateTestResultBtn) cancelUpdateTestResultBtn.onclick = closeUpdateTestResultModal;
+window.addEventListener('click', function(event) {
+  if (event.target === updateTestResultModal) closeUpdateTestResultModal();
+});
+
+// Load component test results for update modal from existing data
+function loadComponentTestResultsFromData(componentResults) {
+    try {
+        // Clear existing component tests
+        const container = document.getElementById('updateComponentTestsContainer');
+        container.innerHTML = '<h3>Thành phần xét nghiệm</h3>';
+        
+        // Add existing component test results
+        componentResults.forEach((comp, idx) => {
+            const fieldset = document.createElement('div');
+            fieldset.className = 'component-test-fieldset';
+            fieldset.style = 'border:1px solid #eee; padding:12px; margin-bottom:12px; border-radius:8px; position:relative;';
+            fieldset.innerHTML = `
+                <input type="hidden" name="componentTestResultId" value="${comp.componentTestResultId}" />
+                <div class="form-group">
+                    <label>Tên thành phần <span style="color:red">*</span></label>
+                    <input type="text" name="componentTestResultName" value="${comp.componentTestResultName || ''}" required />
+                </div>
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <input type="text" name="ctrDescription" value="${comp.ctrDescription || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Giá trị kết quả <span style="color:red">*</span></label>
+                    <input type="text" name="resultValue" value="${comp.resultValue || ''}" required />
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú <span style="color:red">*</span></label>
+                    <textarea name="notes" rows="2" required>${comp.notes || ''}</textarea>
+                </div>
+                <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
+            `;
+            container.appendChild(fieldset);
+            
+            // Add remove button functionality
+            fieldset.querySelector('.removeComponentBtn').onclick = function() {
+                if (container.querySelectorAll('.component-test-fieldset').length > 1) {
+                    fieldset.remove();
+                }
+            };
+        });
+        
+        // Always add at least one empty component test fieldset if none exist
+        if (componentResults.length === 0) {
+            addUpdateComponentTestFieldset();
+        }
+        
+    } catch (err) {
+        console.error('Error in loadComponentTestResultsFromData:', err);
+        // Add at least one empty fieldset if there's an error
+        const container = document.getElementById('updateComponentTestsContainer');
+        if (container && container.querySelectorAll('.component-test-fieldset').length === 0) {
+            addUpdateComponentTestFieldset();
+        }
+    }
+}
+
+// Add new component test fieldset for update modal
+function addUpdateComponentTestFieldset() {
+    const container = document.getElementById('updateComponentTestsContainer');
+    const idx = container.querySelectorAll('.component-test-fieldset').length;
+    const fieldset = document.createElement('div');
+    fieldset.className = 'component-test-fieldset';
+    fieldset.style = 'border:1px solid #eee; padding:12px; margin-bottom:12px; border-radius:8px; position:relative;';
+    fieldset.innerHTML = `
+        <div class="form-group">
+            <label>Tên thành phần <span style="color:red">*</span></label>
+            <input type="text" name="componentTestResultName" required />
+        </div>
+        <div class="form-group">
+            <label>Mô tả</label>
+            <input type="text" name="ctrDescription" />
+        </div>
+        <div class="form-group">
+            <label>Giá trị kết quả <span style="color:red">*</span></label>
+            <input type="text" name="resultValue" required />
+        </div>
+        <div class="form-group">
+            <label>Ghi chú <span style="color:red">*</span></label>
+            <textarea name="notes" rows="2" required></textarea>
+        </div>
+        <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
+    `;
+    container.appendChild(fieldset);
+    
+    // Remove button logic
+    fieldset.querySelector('.removeComponentBtn').onclick = function() {
+        if (container.querySelectorAll('.component-test-fieldset').length > 1) {
+            fieldset.remove();
+        }
+    };
+}
+
+if (addUpdateComponentTestBtn) {
+    addUpdateComponentTestBtn.onclick = addUpdateComponentTestFieldset;
+}
+
+// Form submission with the new API
+if (updateTestResultForm) {
+    updateTestResultForm.onsubmit = async function(e) {
+        e.preventDefault();
+        updateTestResultMsg.textContent = '';
+        
+        const testResultId = document.getElementById('updateTestResultId').value;
+        const testDate = document.getElementById('updateTestResultDate').value;
+        const result = document.getElementById('updateTestResultSelect').value;
+        const notes = document.getElementById('updateTestResultNotes').value.trim();
+        
+        if (!testResultId || !testDate || !result || !notes) {
+            updateTestResultMsg.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc.';
+            return;
+        }
+        
+        // Collect component test data
+        const componentFieldsets = document.querySelectorAll('#updateComponentTestsContainer .component-test-fieldset');
+        const componentTests = [];
+        
+        for (const fieldset of componentFieldsets) {
+            const name = fieldset.querySelector('input[name="componentTestResultName"]')?.value.trim();
+            const desc = fieldset.querySelector('input[name="ctrDescription"]')?.value.trim();
+            const value = fieldset.querySelector('input[name="resultValue"]')?.value.trim();
+            const compNotes = fieldset.querySelector('textarea[name="notes"]')?.value.trim();
+            
+            if (!name || !value || !compNotes) {
+                updateTestResultMsg.textContent = 'Vui lòng điền đầy đủ thông tin thành phần xét nghiệm.';
+                return;
+            }
+            
+            componentTests.push({
+                testResultId: 0, // Backend will handle this
+                staffId: 0, // Backend will handle this
+                componentTestResultName: name,
+                ctrDescription: desc,
+                resultValue: value,
+                notes: compNotes
+            });
+        }
+        
+        // Build payload according to the API specification
+        const payload = {
+            testResult: {
+                patientMedicalRecordId: window.pmrId, // Use the global pmrId
+                testDate: testDate,
+                result: result === 'true',
+                notes: notes
+            },
+            componentTests: componentTests
+        };
+        
+        try {
+            const res = await fetch(`https://localhost:7009/api/TestResult/UpdateTestResultWithComponentTests/${testResultId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!res.ok) {
+                let errorText = '';
+                try { errorText = await res.text(); } catch {}
+                updateTestResultMsg.textContent = 'Cập nhật kết quả xét nghiệm thất bại. ' + errorText;
+                return;
+            }
+            
+            alert('Cập nhật kết quả xét nghiệm thành công!');
+            closeUpdateTestResultModal();
+            // Refresh test results
+            if (typeof loadPatientData === 'function') loadPatientData();
+            
+        } catch (err) {
+            updateTestResultMsg.textContent = 'Lỗi khi cập nhật kết quả xét nghiệm: ' + err.message;
+        }
+    };
+}
+
+// Render payments
+function renderPayments(payments) {
+    const section = document.getElementById('paymentsSection');
+    if (!section) return;
+    if (!payments || payments.length === 0) {
+        section.innerHTML = `<div class="empty-state"><i class="fas fa-money-bill-wave"></i><p>Không có giao dịch thanh toán nào.</p></div>`;
+        return;
+    }
+    let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
+    payments.forEach(pay => {
+        html += `<tr>
+            <td>${pay.paymentDate ? new Date(pay.paymentDate).toLocaleString() : '-'}</td>
+            <td>${pay.amount ? pay.amount.toLocaleString() + ' ₫' : '-'}</td>
+            <td>${pay.paymentMethod || '-'}</td>
+            <td><span class="payment-status payment-status-${pay.paymentStatus}">${paymentStatusMap[pay.paymentStatus] || pay.paymentStatus}</span></td>
+            <td>${pay.description || '-'}</td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    section.innerHTML = html;
+}
+
 // Main function to load all patient data
 async function loadPatientData() {
     const patientId = getPatientIdFromUrl();
@@ -1072,35 +1548,41 @@ async function loadPatientData() {
         // Fetch patient details
         const patient = await fetchPatientDetails(patientId);
         renderPatientProfile(patient);
+        // Fetch all medical data (appointments, test results, arv regimens, payments)
+        const medicalData = await fetchPatientMedicalDataByPatientId(patientId);
+        // Store pmrId globally for modal logic
+        if (medicalData && medicalData.pmrId != null) {
+            window.pmrId = medicalData.pmrId;
+        } else {
+            window.pmrId = null;
+        }
+        // Fetch all ARV medications for the patient (if needed for regimens)
+        let medications = [];
+        if (medicalData && medicalData.arvRegimens) {
+            medications = medicalData.arvRegimens.flatMap(r => r.arvMedications || []);
+        }
 
-        // Fetch patient MR ID
-        const mrData = await fetchPatientMRId(patientId);
-        
-        if (mrData && mrData.pmrId) {
-            // Fetch all medical data (appointments, test results, arv regimens)
-            const medicalData = await fetchPatientMedicalData(mrData.pmrId);
-            // Fetch all ARV medications for the patient
-            const medications = await fetchPatientArvMedications(patientId);
-            // Fetch payment history for the patient
-            const payments = await fetchPatientPayments(mrData.pmrId);
-            
             if (medicalData) {
                 renderAppointments(medicalData.appointments || []);
                 renderTestResults(medicalData.testResults || []);
                 renderARVRegimens(medicalData.arvRegimens || [], medications);
-            } else {
-                renderAppointments([]);
-                renderTestResults([]);
-                renderARVRegimens([], []);
-            }
-            
-            // Render payment history
-            renderPaymentHistory(payments || []);
+            renderPayments(medicalData.payments || []);
+
         } else {
             renderAppointments([]);
             renderTestResults([]);
             renderARVRegimens([], []);
-            renderPaymentHistory([]);
+            renderPayments([]);
+        }
+        // After data is loaded, show/hide staff button
+        const btnContainer = document.getElementById('createTestResultContainer');
+        if (btnContainer) {
+            if (window.isStaff && window.pmrId != null) {
+                btnContainer.style.display = '';
+            } else {
+                btnContainer.style.display = 'none';
+            }
+
         }
     } catch (error) {
         console.error('Error loading patient data:', error);
@@ -1197,14 +1679,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('paymentAmount').value = '50000';
         document.getElementById('paymentCurrency').value = 'VND';
         
-        // Set pmrId from current patient data
-        const patientId = getPatientIdFromUrl();
-        if (patientId) {
-            fetchPatientMRId(patientId).then(mrData => {
-                if (mrData && mrData.pmrId) {
-                    pmrIdInput.value = mrData.pmrId;
-                }
-            });
+        // Set pmrId from global window.pmrId (set when page loads)
+        const pmrIdInput = document.getElementById('paymentPmrId');
+        if (window.pmrId != null) {
+            pmrIdInput.value = window.pmrId;
+        } else {
+            // If window.pmrId is not available, try to fetch it
+            const patientId = getPatientIdFromUrl();
+            if (patientId) {
+                fetchPatientMedicalDataByPatientId(patientId).then(medicalData => {
+                    if (medicalData && medicalData.pmrId) {
+                        pmrIdInput.value = medicalData.pmrId;
+                        window.pmrId = medicalData.pmrId; // Store globally for future use
+                    }
+                });
+            }
         }
         
         paymentModal.style.display = 'block';
