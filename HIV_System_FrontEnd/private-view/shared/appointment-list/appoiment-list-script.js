@@ -11,14 +11,16 @@ if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NA
 // Get token from localStorage
 const token = localStorage.getItem('token');
 
+// Define section globally for use in renderAppointments and event delegation
+const section = document.getElementById('appointmentListSection');
+
 // Appointment status mapping (add virtual status for frontend display)
 const appointmentStatusMap = {
-  1: "Chờ xác nhận", // Pending
-  2: "Đã lên lịch",   // Scheduled
-  3: "Đã lên lịch lại", // Rescheduled
-  4: "Đã hủy",        // Cancelled
-  5: "Đã hoàn thành", // Completed
-  6: "Đã từ chối"     // Rejected (virtual, frontend only)
+  1: "Chờ xác nhận", 
+  2: "Đã lên lịch",  
+  4: "Đã hủy",
+  5: "Đã hoàn thành",
+  6: "Đã từ chối"    
 };
 
 // Helper to determine display status (virtual rejected for pending->cancelled)
@@ -54,13 +56,11 @@ async function fetchAppointments() {
 }
 
 function renderAppointments(appointments) {
-    const section = document.getElementById('appointmentListSection');
+    if (!section) return; // Ensure section is available
     if (!appointments.length) {
         section.innerHTML = '<p>Không có lịch hẹn nào.</p>';
         return;
     }
-    // Get current user accId
-    const accId = window.accId || (window.roleUtils && window.roleUtils.getCurrentAccountId && window.roleUtils.getCurrentAccountId());
     let html = `<table class="appointment-table">
         <thead>
             <tr>
@@ -75,161 +75,81 @@ function renderAppointments(appointments) {
         </thead>
         <tbody>
             ${appointments.map((apmt, idx) => {
-                let actionButtons = '';
-                // Staff: Only Accept and Reject
-                if (window.isStaff) {
-                    if (apmt.apmStatus === 1) {
-                        actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Chấp nhận</button>`;
-                    }
-                    if (apmt.apmStatus !== 4 && apmt.apmStatus !== 5) {
-                        let rejectLabel = (apmt.apmStatus === 1) ? 'Từ chối' : 'Hủy lịch';
-                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}" data-apmt-status="${apmt.apmStatus}">${rejectLabel}</button>`;
-                    }
-                }
-                // Doctor: Accept, Modify, Reject, Complete
-                else if (window.isDoctor) {
-                    if (apmt.apmStatus === 1) {
-                        if (apmt.requestBy !== accId) {
-                            actionButtons += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Chấp nhận</button>`;
-                        }
-                        actionButtons += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Chỉnh sửa</button>`;
-                    }
-                    if (apmt.apmStatus !== 4 && apmt.apmStatus !== 5) {
-                        let rejectLabel = (apmt.apmStatus === 1) ? 'Từ chối' : 'Hủy lịch';
-                        actionButtons += `<button class="button-reject" data-reject-id="${apmt.appointmentId}" data-apmt-status="${apmt.apmStatus}">${rejectLabel}</button>`;
-                    }
-                    if (apmt.apmStatus === 2) {
-                        actionButtons += `<button class="button-complete" data-complete-id="${apmt.appointmentId}">Hoàn thành</button>`;
-                    }
-                }
-                // Determine display status (virtual rejected)
-                let displayStatus = getDisplayStatus(apmt);
-                // Determine which date/time to show based on status
-                let dateToShow = '';
-                let timeToShow = '';
-                if (apmt.apmStatus === 1) {
-                    // If requestDate or requestTime is missing/null/empty, fall back to apmtDate/apmTime
-                    if (apmt.requestDate && apmt.requestTime) {
-                        dateToShow = apmt.requestDate;
-                        timeToShow = apmt.requestTime ? apmt.requestTime.slice(0, 5) : '';
-                    } else {
-                        dateToShow = apmt.apmtDate || '';
-                        timeToShow = apmt.apmTime ? apmt.apmTime.slice(0, 5) : '';
-                    }
-                } else {
-                    dateToShow = apmt.apmtDate || '';
-                    timeToShow = apmt.apmTime ? apmt.apmTime.slice(0, 5) : '';
-                }
-                return `
-                <tr data-apmt-id="${apmt.appointmentId}" data-apmt-date="${apmt.apmtDate}" data-apmt-time="${apmt.apmTime}" data-apmt-notes="${apmt.notes || ''}">
+                return `<tr data-apmt-id="${apmt.appointmentId}">
                     <td>${idx + 1}</td>
                     <td>${apmt.patientName}</td>
-                    <td>${dateToShow}</td>
-                    <td>${timeToShow}</td>
+                    <td>${apmt.apmtDate || apmt.requestDate || ''}</td>
+                    <td>${apmt.apmTime || apmt.requestTime || ''}</td>
                     <td>${apmt.notes || ''}</td>
-                    <td class="status ${displayStatus.class}">${displayStatus.label}</td>
-                    <td>${actionButtons}</td>
-                </tr>
-                `;
+                    <td>${getDisplayStatus(apmt).label}</td>
+                    <td><button class="button-view" data-view-id="${apmt.appointmentId}">Xem</button></td>
+                </tr>`;
             }).join('')}
         </tbody>
-    </table>
-    <div id="appointment-message" style="margin-top:10px;"></div>`;
+    </table>`;
     section.innerHTML = html;
+}
 
-    // Accept button logic
-    document.querySelectorAll('.button-accept').forEach(btn => {
-        btn.onclick = async function() {
-            const apmtId = this.getAttribute('data-accept-id');
-            try {
-                const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=2`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) {
-                    let msg = 'Không thể chấp nhận lịch hẹn.';
-                    try {
-                        const data = await res.json();
-                        if (data && data.error) msg = data.error;
-                        else if (typeof data === 'string') msg = data;
-                    } catch (e) {
-                        try {
-                            const text = await res.text();
-                            if (text) msg = text;
-                        } catch (e2) {}
-                    }
-                    setMessage(msg, false);
-                    return;
-                }
-                let appointments = await fetchAppointments();
-                renderAppointments(appointments);
-            } catch (err) {
-                setMessage('Lỗi khi chấp nhận lịch hẹn.', false);
-            }
-        };
-    });
+// Event delegation for view button
+section.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.button-view');
+    if (btn) {
+        const apmtId = btn.getAttribute('data-view-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/GetAppointmentById/${apmtId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Không thể lấy chi tiết lịch hẹn');
+            const apmt = await res.json();
+            showAppointmentDetailsModal(apmt);
+        } catch (err) {
+            setMessage('Lỗi khi lấy chi tiết lịch hẹn.', false);
+        }
+    }
+});
 
-    // Reject button logic
-    document.querySelectorAll('.button-reject').forEach(btn => {
-        btn.onclick = async function() {
-            const apmtId = this.getAttribute('data-reject-id');
-            const apmtStatus = parseInt(this.getAttribute('data-apmt-status'));
-            let confirmMsg = (apmtStatus === 1) ? 'Bạn có chắc muốn từ chối lịch hẹn này không?' : 'Bạn có chắc muốn hủy lịch hẹn này không?';
-            if (!confirm(confirmMsg)) return;
-            this.disabled = true;
-            setMessage('Đang xử lý...', false);
-            try {
-                // Always send status=4 (cancelled) to backend
-                const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=4`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) {
-                    let msg = 'Không thể từ chối/hủy lịch hẹn';
-                    try {
-                        const data = await res.json();
-                        if (data && data.error) msg = data.error;
-                        else if (typeof data === 'string') msg = data;
-                    } catch (e) {
-                        try {
-                            const text = await res.text();
-                            if (text) msg = text;
-                        } catch (e2) {}
-                    }
-                    setMessage(msg, false);
-                    this.disabled = false;
-                    return;
-                }
-                setMessage((apmtStatus === 1) ? 'Đã từ chối lịch hẹn!' : 'Đã hủy lịch hẹn!', true);
-                // Mark _wasPending for frontend display if needed
-                let appointments = await fetchAppointments();
-                if (apmtStatus === 1) {
-                  appointments = appointments.map(apmt => apmt.appointmentId == apmtId ? { ...apmt, _wasPending: true, apmStatus: 4 } : apmt);
-                }
-                renderAppointments(appointments);
-            } catch (err) {
-                setMessage('Lỗi khi từ chối/hủy lịch hẹn.', false);
-                this.disabled = false;
-            }
-        };
-    });
+function showAppointmentDetailsModal(apmt) {
+    const modal = document.getElementById('appointmentDetailsModal');
+    const content = document.getElementById('appointmentDetailsContent');
+    const actions = document.getElementById('appointmentDetailsActions');
+    // Render appointment info
+    content.innerHTML = `
+      <p><b>Bệnh nhân:</b> ${apmt.patientName}</p>
+      <p><b>Bác sĩ:</b> ${apmt.doctorName}</p>
+      <p><b>Ngày hẹn:</b> ${apmt.apmtDate || apmt.requestDate || ''}</p>
+      <p><b>Giờ hẹn:</b> ${apmt.apmTime || apmt.requestTime || ''}</p>
+      <p><b>Ghi chú:</b> ${apmt.notes || ''}</p>
+      <p><b>Trạng thái:</b> ${getDisplayStatus(apmt).label}</p>
+    `;
+    // Render action buttons
+    let btns = '';
+    if (window.isStaff || window.isDoctor) {
+        if (apmt.apmStatus === 1) {
+            btns += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Chấp nhận</button>`;
+            btns += `<button class="button-reject" data-reject-id="${apmt.appointmentId}" data-apmt-status="${apmt.apmStatus}">Từ chối</button>`;
+        }
+        if (apmt.apmStatus === 2 || apmt.apmStatus === 3) {
+            btns += `<button class="button-cancel" data-cancel-id="${apmt.appointmentId}">Hủy lịch</button>`;
+            btns += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Chỉnh sửa</button>`;
+        }
+    }
+    actions.innerHTML = btns;
+    modal.style.display = 'block';
 
-    // Complete button logic
-    document.querySelectorAll('.button-complete').forEach(btn => {
-        btn.onclick = function() {
-            const apmtId = this.getAttribute('data-complete-id');
-            // Open modal and store appointment ID
-            const completeModal = document.getElementById('completeAppointmentModal');
-            const completeForm = document.getElementById('completeAppointmentForm');
-            const completeNotes = document.getElementById('completeNotes');
-            if (completeModal && completeForm && completeNotes) {
-                completeModal.style.display = 'block';
-                completeForm.setAttribute('data-apmt-id', apmtId);
-                completeNotes.value = '';
-            }
-        };
+    // Add event listener for modify button (only in modal)
+    actions.querySelector('.button-modify')?.addEventListener('click', function() {
+        // Prefill and open modify modal
+        document.getElementById('modifyDate').value = apmt.apmtDate || apmt.requestDate || '';
+        document.getElementById('modifyNotes').value = apmt.notes || '';
+        document.getElementById('modifyAppointmentModal').style.display = 'block';
+        document.getElementById('modifyAppointmentForm').setAttribute('data-apmt-id', apmt.appointmentId);
+        // Optionally, fetch and fill time dropdown as before
     });
 }
+
+document.getElementById('closeAppointmentDetailsModal').onclick = function() {
+    document.getElementById('appointmentDetailsModal').style.display = 'none';
+};
 
 // Modal logic
 window.addEventListener('DOMContentLoaded', async () => {
@@ -296,60 +216,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Only doctors can modify appointments
     if (window.isDoctor) { // Changed from userRoleName to window.isDoctor
-        // Modify button logic
-        document.querySelectorAll('.button-modify').forEach(btn => {
-            btn.onclick = async function() {
-                const apmtId = this.getAttribute('data-modify-id');
-                const row = this.closest('tr');
-                // Prefill modal
-                document.getElementById('modifyDate').value = row.getAttribute('data-apmt-date');
-                document.getElementById('modifyNotes').value = row.getAttribute('data-apmt-notes');
-                document.getElementById('modifyAppointmentModal').style.display = 'block';
-                document.getElementById('modifyAppointmentForm').setAttribute('data-apmt-id', apmtId);
-                // Fetch available times for doctor
-                const accId = localStorage.getItem('accId');
-                let timeSelect = document.getElementById('modifyTime');
-                timeSelect.innerHTML = '';
-                try {
-                    const wsRes = await fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetDoctorWorkSchedulesByDoctorId/${accId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (wsRes.ok) {
-                        const schedules = await wsRes.json();
-                        // Flatten all available times
-                        let times = [];
-                        schedules.forEach(sch => {
-                            if (sch.startTime && sch.endTime) {
-                                // Assume times are in HH:mm:ss format
-                                let start = sch.startTime.slice(0,5);
-                                let end = sch.endTime.slice(0,5);
-                                // Add every 30 min slot between start and end
-                                let [h1, m1] = start.split(':').map(Number);
-                                let [h2, m2] = end.split(':').map(Number);
-                                let t1 = h1 * 60 + m1;
-                                let t2 = h2 * 60 + m2;
-                                for (let t = t1; t <= t2; t += 30) {
-                                    let h = Math.floor(t/60).toString().padStart(2,'0');
-                                    let m = (t%60).toString().padStart(2,'0');
-                                    times.push(`${h}:${m}`);
-                                }
-                            }
-                        });
-                        // Remove duplicates
-                        times = [...new Set(times)];
-                        times.forEach(time => {
-                            let opt = document.createElement('option');
-                            opt.value = time;
-                            opt.textContent = time;
-                            timeSelect.appendChild(opt);
-                        });
-                    }
-                } catch (err) {
-                    timeSelect.innerHTML = '<option value="">Không có thời gian khả dụng</option>';
-                }
-            };
-        });
-
+        // Remove the duplicate per-button .button-modify event handler
         // Modal close/cancel for modify
         document.getElementById('closeModifyModal').onclick = closeModifyModal;
         document.getElementById('cancelModifyBtn').onclick = closeModifyModal;
@@ -464,3 +331,29 @@ window.addEventListener('DOMContentLoaded', () => {
 // Get user role utilities
 const userRoleId = window.roleUtils && window.roleUtils.getUserRole ? window.roleUtils.getUserRole() : null;
 const userRoleName = (window.roleUtils && window.roleUtils.ROLE_NAMES && userRoleId) ? window.roleUtils.ROLE_NAMES[userRoleId] : 'guest';
+
+// Helper to convert date to mm/dd/yyyy for display
+function toDisplayDateFormat(dateStr) {
+    if (!dateStr) return '';
+    // yyyy-mm-dd to mm/dd/yyyy
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [y, m, d] = dateStr.split('-');
+        return `${m}/${d}/${y}`;
+    }
+    // dd/mm/yyyy to mm/dd/yyyy
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+        const [d, m, y] = dateStr.split('/');
+        return `${m}/${d}/${y}`;
+    }
+    return dateStr;
+}
+// Helper to convert to yyyy-mm-dd for input value
+function toInputDateFormat(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+        const [d, m, y] = dateStr.split('/');
+        return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
+    return '';
+}
