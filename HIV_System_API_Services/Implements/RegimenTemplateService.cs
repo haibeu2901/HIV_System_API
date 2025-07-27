@@ -16,11 +16,13 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IRegimenTemplateRepo _regimenTemplateRepo;
         private readonly IArvMedicationDetailRepo _arvMedicationDetailRepo;
+        private readonly IMedicationTemplateRepo _medicationTemplateRepo;
 
         public RegimenTemplateService()
         {
             _regimenTemplateRepo = new RegimenTemplateRepo();
             _arvMedicationDetailRepo = new ArvMedicationDetailRepo();
+            _medicationTemplateRepo = new MedicationTemplateRepo();
         }
 
         private ArvRegimenTemplate MapToEntity(RegimenTemplateRequestDTO regimenTemplate)
@@ -233,5 +235,69 @@ namespace HIV_System_API_Services.Implements
             // Map to response DTO
             return MapToResponse(updatedEntity);
         }
+
+        public async Task<RegimenTemplateResponseDTO> CreateRegimenTemplateWithMedicationsTemplate(RegimenTemplateRequestDTO regimenTemplate, List<MedicationTemplateRequestDTO> medicationTemplates)
+        {
+            // Validation
+            if (regimenTemplate == null)
+                throw new ArgumentNullException(nameof(regimenTemplate));
+
+            if (string.IsNullOrWhiteSpace(regimenTemplate.Description))
+                throw new ArgumentException("Mô tả là bắt buộc.", nameof(regimenTemplate.Description));
+
+            if (regimenTemplate.Level == null)
+                throw new ArgumentException("Cấp độ là bắt buộc.", nameof(regimenTemplate.Level));
+
+            if (regimenTemplate.Duration == null)
+                throw new ArgumentException("Thời gian là bắt buộc.", nameof(regimenTemplate.Duration));
+
+            if (medicationTemplates == null || !medicationTemplates.Any())
+                throw new ArgumentException("Danh sách thuốc là bắt buộc.", nameof(medicationTemplates));
+
+            // Map DTO to Entity
+            var regimenEntity = MapToEntity(regimenTemplate);
+
+            // Persist regimen template entity
+            var createdRegimenEntity = await _regimenTemplateRepo.CreateRegimenTemplateAsync(regimenEntity);
+
+            // If creation failed
+            if (createdRegimenEntity == null)
+                throw new InvalidOperationException("Không thể tạo mẫu phác đồ.");
+
+            // Create medication templates
+            foreach (var medicationTemplate in medicationTemplates)
+            {
+                // Verify medication detail exists
+                var medicationDetail = await _arvMedicationDetailRepo.GetArvMedicationDetailByIdAsync(medicationTemplate.AmdId);
+                if (medicationDetail == null)
+                    throw new KeyNotFoundException($"Thuốc với id {medicationTemplate.AmdId} không tìm thấy.");
+
+                // Create medication template entity
+                var medicationEntity = new ArvMedicationTemplate
+                {
+                    ArtId = createdRegimenEntity.ArtId,
+                    AmdId = medicationTemplate.AmdId,
+                    Quantity = medicationTemplate.Quantity,
+                    MedicationUsage = medicationTemplate.MedicationUsage
+                };
+
+                // Persist medication template entity
+                var createdMedicationEntity = await _medicationTemplateRepo.CreateMedicationTemplateAsync(medicationEntity);
+
+                if (createdMedicationEntity == null)
+                    throw new InvalidOperationException($"Không thể tạo mẫu thuốc cho thuốc với id {medicationTemplate.AmdId}.");
+
+                // Add to regimen template's medications collection
+                createdRegimenEntity.ArvMedicationTemplates.Add(createdMedicationEntity);
+            }
+
+            // Map Entity to Response DTO
+            return MapToResponse(createdRegimenEntity);
+        }
+
+        //public async Task<RegimenTemplateResponseDTO> UpdateRegimenTemplateWithMedicationsTemplate(int id, RegimenTemplateRequestDTO regimenTemplate, List<MedicationTemplateRequestDTO> medicationTemplates, int accId)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }
