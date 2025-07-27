@@ -44,6 +44,51 @@ if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NA
   window.isDoctor = (roleName === 'doctor');
 }
 
+// Add global modal for creating patient medical record if not found
+if (!document.getElementById('createPmrModal')) {
+  const modalHtml = `
+    <div id="createPmrModal" class="modal">
+      <div class="modal-content" style="max-width:400px; margin:auto; text-align:center;">
+        <span class="close" id="closeCreatePmrModal" style="float:right; font-size:24px; cursor:pointer;">&times;</span>
+        <div id="createPmrModalText" style="margin: 30px 0 10px 0; font-size: 1.1em;">
+          Bệnh nhân không có Hồ sơ bệnh án.<br>Bạn có muốn tạo một hồ sơ bệnh án cho bệnh nhân?
+        </div>
+        <div style="margin: 20px 0 10px 0;">
+          <button id="createPmrYesBtn" style="margin-right: 16px; padding: 6px 18px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer;">Có</button>
+          <button id="createPmrNoBtn" style="padding: 6px 18px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer;">Không</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function showCreatePmrModal(ptnId) {
+  const modal = document.getElementById('createPmrModal');
+  modal.style.display = 'block';
+  document.getElementById('closeCreatePmrModal').onclick = () => { modal.style.display = 'none'; };
+  document.getElementById('createPmrNoBtn').onclick = () => { modal.style.display = 'none'; };
+  document.getElementById('createPmrYesBtn').onclick = async () => {
+    try {
+      const res = await fetch('https://localhost:7009/api/PatientMedicalRecord/CreatePatientMedicalRecord', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ptnId })
+      });
+      if (!res.ok) throw new Error('Không thể tạo hồ sơ bệnh án.');
+      modal.style.display = 'none';
+      // Reload the page to reflect the new record
+      window.location.reload();
+      // setMessage('Tạo hồ sơ bệnh án thành công!', true); // This will not show after reload
+    } catch (err) {
+      setMessage('Lỗi khi tạo hồ sơ bệnh án.', false);
+    }
+  };
+}
+
 // Get patient ID from URL parameters
 function getPatientIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -72,8 +117,17 @@ async function fetchPatientMedicalDataByPatientId(patientId) {
         const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordByPatientId?patientId=${patientId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (response.status === 404) {
+            showCreatePmrModal(patientId);
+            return null;
+        }
         if (!response.ok) throw new Error('Lỗi thất bại lấy thông tin bệnh án bệnh nhân');
-        return await response.json();
+        const data = await response.json();
+        if (!data || !data.pmrId) {
+            showCreatePmrModal(patientId);
+            return null;
+        }
+        return data;
     } catch (error) {
         console.error('Error fetching patient medical data:', error);
         return null;
