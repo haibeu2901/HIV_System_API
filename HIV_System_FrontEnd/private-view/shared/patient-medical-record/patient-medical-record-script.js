@@ -321,8 +321,8 @@ function renderAppointments(appointments) {
         
         html += `
             <tr>
-                <td>${appt.apmtDate}</td>
-                <td>${appt.apmTime ? appt.apmTime.slice(0, 5) : '-'}</td>
+                <td>${appt.apmtDate || appt.requestDate}</td>
+                <td>${(appt.apmTime || appt.requestTime || '-').slice(0, 5)}</td>
                 <td>${appt.doctorName || '-'}</td>
 <td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
                 <td>${appt.notes || '-'}</td>
