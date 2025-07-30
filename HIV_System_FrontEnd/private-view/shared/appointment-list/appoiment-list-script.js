@@ -127,14 +127,95 @@ function showAppointmentDetailsModal(apmt) {
         if (apmt.apmStatus === 1) {
             btns += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Chấp nhận</button>`;
             btns += `<button class="button-reject" data-reject-id="${apmt.appointmentId}" data-apmt-status="${apmt.apmStatus}">Từ chối</button>`;
+            btns += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Chỉnh sửa</button>`;
         }
         if (apmt.apmStatus === 2 || apmt.apmStatus === 3) {
             btns += `<button class="button-cancel" data-cancel-id="${apmt.appointmentId}">Hủy lịch</button>`;
             btns += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Chỉnh sửa</button>`;
+            btns += `<button class="button-complete" data-complete-id="${apmt.appointmentId}">Hoàn thành</button>`;
         }
     }
     actions.innerHTML = btns;
     modal.style.display = 'block';
+
+    // Accept button
+    actions.querySelector('.button-accept')?.addEventListener('click', async function() {
+        const apmtId = this.getAttribute('data-accept-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=2`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setMessage('Lịch hẹn đã được chấp nhận!', true);
+            modal.style.display = 'none';
+            let appointments = await fetchAppointments();
+            renderAppointments(appointments);
+        } catch (err) {
+            let msg = err.message;
+            // Try to extract error message if it's a JSON string with an 'error' property
+            try {
+                const parsed = JSON.parse(msg);
+                if (parsed && parsed.error) msg = parsed.error;
+            } catch (e) {}
+            setMessage('Lỗi khi chấp nhận lịch hẹn: ' + msg, false);
+        }
+    });
+    // Reject button
+    actions.querySelector('.button-reject')?.addEventListener('click', async function() {
+        const apmtId = this.getAttribute('data-reject-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=4`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setMessage('Lịch hẹn đã bị từ chối!', true);
+            modal.style.display = 'none';
+            let appointments = await fetchAppointments();
+            renderAppointments(appointments);
+        } catch (err) {
+            let msg = err.message;
+            try {
+                const parsed = JSON.parse(msg);
+                if (parsed && parsed.error) msg = parsed.error;
+            } catch (e) {}
+            setMessage('Lỗi khi từ chối lịch hẹn: ' + msg, false);
+        }
+    });
+    // Cancel button
+    actions.querySelector('.button-cancel')?.addEventListener('click', async function() {
+        const apmtId = this.getAttribute('data-cancel-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=4`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setMessage('Lịch hẹn đã được hủy!', true);
+            modal.style.display = 'none';
+            let appointments = await fetchAppointments();
+            renderAppointments(appointments);
+        } catch (err) {
+            let msg = err.message;
+            try {
+                const parsed = JSON.parse(msg);
+                if (parsed && parsed.error) msg = parsed.error;
+            } catch (e) {}
+            setMessage('Lỗi khi hủy lịch hẹn: ' + msg, false);
+        }
+    });
+    // Complete button
+    actions.querySelector('.button-complete')?.addEventListener('click', function() {
+        const apmtId = this.getAttribute('data-complete-id');
+        // Open complete modal and set appointment ID
+        const completeModal = document.getElementById('completeAppointmentModal');
+        const completeForm = document.getElementById('completeAppointmentForm');
+        if (completeForm) completeForm.setAttribute('data-apmt-id', apmtId);
+        if (completeModal) completeModal.style.display = 'block';
+        // Hide the appointment details modal so the complete modal is upfront
+        modal.style.display = 'none';
+    });
 
     // Add event listener for modify button (only in modal)
     actions.querySelector('.button-modify')?.addEventListener('click', function() {
@@ -143,7 +224,51 @@ function showAppointmentDetailsModal(apmt) {
         document.getElementById('modifyNotes').value = apmt.notes || '';
         document.getElementById('modifyAppointmentModal').style.display = 'block';
         document.getElementById('modifyAppointmentForm').setAttribute('data-apmt-id', apmt.appointmentId);
-        // Optionally, fetch and fill time dropdown as before
+        // Hide the appointment details modal so the modify modal is upfront
+        modal.style.display = 'none';
+        // Fetch and populate available time slots from work schedule
+        const doctorId = apmt.doctorId;
+        const date = apmt.apmtDate || apmt.requestDate || '';
+        const timeSelect = document.getElementById('modifyTime');
+        timeSelect.innerHTML = '<option>Đang tải...</option>';
+        fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetPersonalWorkSchedules?doctorId=${doctorId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(schedules => {
+            // Filter for the selected date and available slots
+            const slots = (schedules || []).filter(s => s.workDate === date && s.isAvailable);
+            let options = [];
+            slots.forEach(s => {
+                let start = s.startTime.slice(0,5);
+                let end = s.endTime.slice(0,5);
+                let [sh, sm] = start.split(':').map(Number);
+                let [eh, em] = end.split(':').map(Number);
+                let current = new Date(0,0,0,sh,sm);
+                let endTime = new Date(0,0,0,eh,em);
+                while (current < endTime) {
+                    let h = current.getHours().toString().padStart(2,'0');
+                    let m = current.getMinutes().toString().padStart(2,'0');
+                    options.push(`${h}:${m}`);
+                    current.setHours(current.getHours() + 1);
+                }
+            });
+            // Remove duplicates and sort
+            options = Array.from(new Set(options)).sort();
+            if (options.length > 0) {
+                timeSelect.innerHTML = options.map(t => `<option value="${t}">${t}</option>`).join('');
+                // Pre-select current time if present
+                const currentTime = (apmt.apmTime || apmt.requestTime || '').slice(0,5);
+                if (options.includes(currentTime)) {
+                    timeSelect.value = currentTime;
+                }
+            } else {
+                timeSelect.innerHTML = '<option value="">Không có khung giờ khả dụng</option>';
+            }
+        })
+        .catch(() => {
+            timeSelect.innerHTML = '<option value="">Lỗi tải khung giờ</option>';
+        });
     });
 }
 
@@ -204,7 +329,9 @@ window.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
                 setMessage('Lịch hẹn đã được đánh dấu hoàn thành!', true);
-                closeCompleteModal();
+                // Close both modals
+                document.getElementById('completeAppointmentModal').style.display = 'none';
+                document.getElementById('appointmentDetailsModal').style.display = 'none';
                 let appointments = await fetchAppointments();
                 renderAppointments(appointments);
             } catch (err) {
@@ -292,7 +419,9 @@ window.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
                 setMessage('Lịch hẹn đã được cập nhật thành công!', true);
-                closeModifyModal();
+                // Close both modals
+                document.getElementById('modifyAppointmentModal').style.display = 'none';
+                document.getElementById('appointmentDetailsModal').style.display = 'none';
                 let appointments = await fetchAppointments();
                 renderAppointments(appointments);
             } catch (err) {
