@@ -318,11 +318,13 @@ function renderAppointments(appointments) {
     appointments.forEach(appt => {
         const statusLabel = appointmentStatusMap[appt.apmStatus] || 'Unknown';
         const statusClass = `status-${appt.apmStatus}`;
-        
+        // Use the same logic as appointment list for date and time
+        const displayDate = appt.apmtDate || appt.requestDate || '-';
+        const displayTime = (appt.apmTime || appt.requestTime || '-').slice(0, 5);
         html += `
             <tr>
-                <td>${appt.apmtDate}</td>
-                <td>${appt.apmTime ? appt.apmTime.slice(0, 5) : '-'}</td>
+                <td>${displayDate}</td>
+                <td>${displayTime}</td>
                 <td>${appt.doctorName || '-'}</td>
                 <td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
                 <td>${appt.notes || '-'}</td>
