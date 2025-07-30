@@ -1001,7 +1001,7 @@ regimenForm.onsubmit = async function(e) {
     const medications = selectedTemplateMedications.map(med => {
         const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
         return {
-            patientArvRegId: 0,
+        patientArvRegId: 0,
             arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
             quantity: med.quantity,
             usageInstructions: (med.usageInstructions || '').trim()
@@ -1570,18 +1570,18 @@ async function loadPatientData() {
                 renderARVRegimens(medicalData.arvRegimens || [], medications);
             renderPayments(medicalData.payments || []);
 
-        } else {
-            renderAppointments([]);
-            renderTestResults([]);
-            renderARVRegimens([], []);
+            } else {
+                renderAppointments([]);
+                renderTestResults([]);
+                renderARVRegimens([], []);
             renderPayments([]);
-        }
+            }
         // After data is loaded, show/hide staff button
         const btnContainer = document.getElementById('createTestResultContainer');
         if (btnContainer) {
             if (window.isStaff && window.pmrId != null) {
                 btnContainer.style.display = '';
-            } else {
+        } else {
                 btnContainer.style.display = 'none';
             }
 
