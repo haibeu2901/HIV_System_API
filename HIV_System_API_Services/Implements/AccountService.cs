@@ -381,6 +381,26 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("Email không được trùng với tên người dùng.", nameof(username));
         }
 
+        private async Task ValidateFullName(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentException("Họ và tên là bắt buộc.", nameof(fullName));
+
+            // Only letters (including Vietnamese), spaces, each word starts with uppercase
+            // Regex: ^([A-Z][a-zA-ZÀ-ỹ]*)+( [A-Z][a-zA-ZÀ-ỹ]*)*$
+            // - Each word: starts with uppercase, followed by lowercase letters (including Vietnamese)
+            // - Words separated by a single space
+            try
+            {
+                if (!Regex.IsMatch(fullName.Trim(), @"^([A-Z][a-zA-ZÀ-ỹ]*)+( [A-Z][a-zA-ZÀ-ỹ]*)*$", RegexOptions.None, RegexTimeout))
+                    throw new ArgumentException("Họ và tên chỉ được chứa chữ cái và khoảng cách, mỗi từ phải bắt đầu bằng chữ in hoa.", nameof(fullName));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                throw new ArgumentException("Việc xác thực họ và tên đã hết thời gian do độ phức tạp quá cao.", nameof(fullName));
+            }
+        }
+
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
         {
             if (account == null)
@@ -509,6 +529,7 @@ namespace HIV_System_API_Services.Implements
             await ValidateUsernameAsync(patient.AccUsername, patient.Email);
             ValidatePassword(patient.AccPassword, patient.AccUsername);
             await ValidateEmailAsync(patient.Email, patient.AccUsername);
+            await ValidateFullName(patient.Fullname);
 
             // Validate Date of Birth - Fixed to use consistent DateTime handling
             ValidateDateOfBirth(patient.Dob.Value, nameof(patient.Dob));
