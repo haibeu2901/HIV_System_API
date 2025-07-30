@@ -102,6 +102,17 @@ namespace HIV_System_API_Services.Implements
             return medications.Sum(m => m.Quantity * (double?)m.Amd?.Price ?? 0);
         }
 
+        private async Task ValidateTestResult(int pmrId)
+        {
+            // Check if the patient has a valid test result
+            var hasValidTestResult = await _context.TestResults
+                .AnyAsync(ptr => ptr.PmrId == pmrId);
+            if (!hasValidTestResult)
+            {
+                throw new InvalidOperationException($"Bệnh nhân với ID {pmrId} không có kết quả xét nghiệm hợp lệ. Cân có kết quả xét nghiệm mới có thể tạo phác đồ ARV dành cho bệnh nhân.");
+            }
+        }
+
         private PatientArvRegimen MapToEntity(PatientArvRegimenRequestDTO requestDTO)
         {
             return new PatientArvRegimen
@@ -596,6 +607,7 @@ namespace HIV_System_API_Services.Implements
             await ValidatePatientMedicalRecordExists(regimenRequest.PatientMedRecordId);
             await ValidateRegimenLevel(regimenRequest.RegimenLevel);
             await ValidateRegimenStatus(regimenRequest.RegimenStatus);
+            await ValidateTestResult(regimenRequest.PatientMedRecordId);
             if (regimenRequest.StartDate.HasValue && regimenRequest.EndDate.HasValue
                 && regimenRequest.StartDate > regimenRequest.EndDate)
                 throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");

@@ -252,11 +252,11 @@ namespace HIV_System_API_Services.Implements
             var localPart = parts[0];
             var domainPart = parts[1];
 
-            if (localPart.Length == 0 || localPart.Length > 64)
-                throw new ArgumentException("Phần cục bộ của email phải có từ 1 đến 64 ký tự.", nameof(email));
+            if (localPart.Length == 0 || localPart.Length > 32)
+                throw new ArgumentException("Phần cục bộ của email phải có từ 1 đến 32 ký tự.", nameof(email));
 
-            if (domainPart.Length == 0 || domainPart.Length > 255)
-                throw new ArgumentException("Tên miền của email phải có từ 1 đến 255 ký tự.", nameof(email));
+            if (domainPart.Length == 0 || domainPart.Length > 63)
+                throw new ArgumentException("Tên miền của email phải có từ 1 đến 63 ký tự.", nameof(email));
 
             if (localPart.Contains("..") || domainPart.Contains(".."))
                 throw new ArgumentException("Email không được chứa các dấu chấm liên tiếp.", nameof(email));
