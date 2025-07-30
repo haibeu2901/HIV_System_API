@@ -353,7 +353,8 @@
     padding: 2rem 2.5rem;
     border-radius: 12px;
     width: 100%;
-    max-width: 700px;
+    max-width: 900px !important;
+    min-width: 350px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     position: relative;
     max-height: 90vh;
@@ -833,3 +834,23 @@ select.medication-name-select {
     height: auto !important;
     appearance: auto !important;
   }
+  /* Increase width for regimen modals */
+#regimenModal .modal-content,
+#updateRegimenStatusModal .modal-content {
+    max-width: 900px;
+    width: 95%;
+}
+/* Make "Cách sử dụng" column wider */
+#medicationsTable th:nth-child(5),
+#medicationsTable td:nth-child(5) {
+    min-width: 220px;
+    width: 25%;
+}
+
+#medicationsTable td:nth-child(5) input,
+#medicationsTable td:nth-child(5) select,
+#medicationsTable td:nth-child(5) textarea {
+    width: 100%;
+    min-width: 180px;
+    box-sizing: border-box;
+}

@@ -79,7 +79,7 @@ function showCreatePmrModal(ptnId) {
         body: JSON.stringify({ ptnId })
       });
       if (!res.ok) throw new Error('Không thể tạo hồ sơ bệnh án.');
-      modal.style.display = 'none';
+modal.style.display = 'none';
       // Reload the page to reflect the new record
       window.location.reload();
       // setMessage('Tạo hồ sơ bệnh án thành công!', true); // This will not show after reload
@@ -162,7 +162,7 @@ async function fetchPatientPayments(pmrId) {
         return await response.json();
     } catch (error) {
         console.error('Error fetching patient payments:', error);
-        return [];
+return [];
     }
 }
 
@@ -240,7 +240,7 @@ function renderPaymentHistory(payments) {
                         <p><strong>Phương thức:</strong> ${payment.paymentMethod}</p>
                         <p><strong>Mô tả:</strong> ${payment.description}</p>
                         ${payment.serviceName ? `<p><strong>Dịch vụ:</strong> ${payment.serviceName}</p>` : ''}
-                        ${payment.servicePrice ? `<p><strong>Giá dịch vụ:</strong> ${formatCurrency(payment.servicePrice)} VND</p>` : ''}
+${payment.servicePrice ? `<p><strong>Giá dịch vụ:</strong> ${formatCurrency(payment.servicePrice)} VND</p>` : ''}
                     </div>
                     <div class="payment-metadata">
                         <small><strong>Tạo lúc:</strong> ${formatDateTime(payment.createdAt)}</small>
@@ -318,15 +318,13 @@ function renderAppointments(appointments) {
     appointments.forEach(appt => {
         const statusLabel = appointmentStatusMap[appt.apmStatus] || 'Unknown';
         const statusClass = `status-${appt.apmStatus}`;
-        // Use the same logic as appointment list for date and time
-        const displayDate = appt.apmtDate || appt.requestDate || '-';
-        const displayTime = (appt.apmTime || appt.requestTime || '-').slice(0, 5);
+        
         html += `
             <tr>
-                <td>${displayDate}</td>
-                <td>${displayTime}</td>
+                <td>${appt.apmtDate}</td>
+                <td>${appt.apmTime ? appt.apmTime.slice(0, 5) : '-'}</td>
                 <td>${appt.doctorName || '-'}</td>
-                <td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
+<td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
                 <td>${appt.notes || '-'}</td>
                     </tr>
         `;
@@ -402,7 +400,7 @@ function renderTestResults(testResults) {
       // Component test result update listeners
       section.querySelectorAll('.clickable-component-result').forEach(el => {
         el.addEventListener('click', async function() {
-          const compId = this.getAttribute('data-id');
+const compId = this.getAttribute('data-id');
           if (!compId) return;
           // Fetch component test result data
           try {
@@ -462,7 +460,7 @@ function renderARVRegimens(regimens, medications) {
     
     if (!regimens || regimens.length === 0) {
         section.innerHTML = `
-            <div class="empty-state">
+<div class="empty-state">
                 <i class="fas fa-pills"></i>
                 <p>No ARV regimens found for this patient.</p>
             </div>
@@ -501,24 +499,24 @@ function renderARVRegimens(regimens, medications) {
         html += `
             <div class="regimen-card">
                 <div class="regimen-header">
-                    <span class="regimen-id">Regimen ID: ${regimen.patientArvRegiId}</span>
+                    <span class="regimen-id">ID Phác đồ: ${regimen.patientArvRegiId}</span>
                     <span class="regimen-status ${statusClass}">${statusText}</span>
                 </div>
                 <div class="regimen-details">
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">Start Date</div>
+                        <div class="regimen-detail-label">Ngày bắt đầu</div>
                         <div class="regimen-detail-value">${regimen.startDate}</div>
                     </div>
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">End Date</div>
-                        <div class="regimen-detail-value">${regimen.endDate || 'Ongoing'}</div>
+                        <div class="regimen-detail-label">Ngày kết thúc</div>
+                        <div class="regimen-detail-value">${regimen.endDate || 'Đang áp dụng'}</div>
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Bậc phác đồ</div>
                         <div class="regimen-detail-value">${levelText}</div>
                     </div>
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">Created At</div>
+                        <div class="regimen-detail-label">Ngày tạo</div>
                         <div class="regimen-detail-value">${new Date(regimen.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div class="regimen-detail">
@@ -526,13 +524,13 @@ function renderARVRegimens(regimens, medications) {
                         <div class="regimen-detail-value">${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
                     </div>
                 </div>
-                ${regimen.notes ? `
+${regimen.notes ? `
                     <div class="regimen-notes">
-                        <strong>Notes:</strong> ${regimen.notes}
+                        <strong>Ghi chú:</strong> ${regimen.notes}
                     </div>
                 ` : ''}
                 <div class="regimen-medications">
-                    <h4>Medications</h4>
+                    <h4>Thuốc</h4>
                     ${regimenMeds.length > 0 ? `
                         <table class="medications-table">
                             <thead>
@@ -573,7 +571,7 @@ function renderARVRegimens(regimens, medications) {
     });
     
     section.innerHTML = html;
-    // Add event listeners for update status buttons
+// Add event listeners for update status buttons
     document.querySelectorAll('.update-regimen-status-btn').forEach(btn => {
         btn.onclick = function() {
             const regimenId = this.getAttribute('data-id');
@@ -602,19 +600,25 @@ function renderARVRegimens(regimens, medications) {
         regimenLevel.value = regimen.regimenLevel;
         regimenNotes.value = regimen.notes || '';
         regimenStartDate.value = regimen.startDate;
-        if (document.getElementById('regimenEndDate')) document.getElementById('regimenEndDate').value = regimen.endDate || '';
-        // Pre-fill medications
+        // --- FIX: Pre-fill end date ---
+        if (document.getElementById('regimenEndDate')) {
+          document.getElementById('regimenEndDate').value = regimen.endDate || '';
+        }
+        // --- FIX: Pre-fill medications with usageInstructions ---
         selectedTemplateMedications = (regimen.arvMedications || []).map(med => ({
           arvMedicationName: med.medicationDetail.arvMedicationName,
           arvMedDetailId: med.medicationDetail.arvMedicationId,
           dosage: med.medicationDetail.arvMedicationDosage,
           quantity: med.quantity,
-          manufacturer: med.medicationDetail.arvMedicationManufacturer
+          manufacturer: med.medicationDetail.arvMedicationManufacturer,
+          usageInstructions: (typeof med.usageInstructions === 'string' && med.usageInstructions.length > 0)
+            ? med.usageInstructions
+            : (med.medicationDetail.medicationUsage || '')
         }));
         renderMedicationRows();
         // Set update mode
         regimenForm.setAttribute('data-update-id', regimenId);
-        
+
         // Change button text to "Update Regimen"
         const submitBtn = regimenForm.querySelector('button[type="submit"]');
         if (submitBtn) {
@@ -700,7 +704,7 @@ openRegimenModalBtn.onclick = async function() {
     if (section && section.innerHTML.includes('regimen-active')) {
         alert('Cannot create a new regimen while one is active.');
         return;
-    }
+}
     await loadMedicationDetails();
     regimenModal.style.display = 'block';
     resetRegimenForm();
@@ -775,7 +779,6 @@ regimenLevel.onchange = async function() {
         regimenTemplate.appendChild(opt);
     });
 };
-
 regimenTemplate.onchange = function() {
     if (!this.value) return;
     const selected = this.options[this.selectedIndex].dataset.template;
@@ -841,7 +844,7 @@ function renderMedicationRows() {
             <td>
                 <select class="medication-name-select" data-idx="${idx}">
                     <option value="">Chọn</option>
-                    ${allMedicationDetails.map(m => `<option value="${String(m.arvMedicationId)}" ${String(m.arvMedicationId) === String(selectedId) ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
+${allMedicationDetails.map(m => `<option value="${String(m.arvMedicationId)}" ${String(m.arvMedicationId) === String(selectedId) ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
                 </select>
             </td>
             <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
@@ -895,7 +898,7 @@ medicationsTableBody.onchange = function(e) {
                 usageInstructions: medDetail.medicationUsage || ''
             };
         } else {
-            selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' };
+selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' };
         }
         renderMedicationRows();
     } else if (e.target.classList.contains('medication-qty-input')) {
@@ -957,7 +960,7 @@ regimenForm.onsubmit = async function(e) {
                 usageInstructions: (med.usageInstructions || '').trim()
             };
         });
-        // Build regimenRequest object
+// Build regimenRequest object
         const regimen = (window._lastRegimens || []).find(r => String(r.patientArvRegiId) === String(updateId));
         const regimenRequest = {
             patientMedRecordId: window.pmrId, // Use the global pmrId from the patient's medical record
@@ -1001,7 +1004,7 @@ regimenForm.onsubmit = async function(e) {
     const medications = selectedTemplateMedications.map(med => {
         const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
         return {
-        patientArvRegId: 0,
+            patientArvRegId: 0,
             arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
             quantity: med.quantity,
             usageInstructions: (med.usageInstructions || '').trim()
@@ -1023,7 +1026,7 @@ regimenForm.onsubmit = async function(e) {
     console.log('Submitting create payload:', payload);
     // Call new API
     try {
-        const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
+const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payload)
@@ -1096,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const resultSelect = document.getElementById('testResultSelect');
 
   // --- Component Test Fieldset Logic ---
-  function createComponentTestFieldset(idx) {
+function createComponentTestFieldset(idx) {
     const fieldset = document.createElement('div');
     fieldset.className = 'component-test-fieldset';
     fieldset.style = 'border:1px solid #eee; padding:12px; margin-bottom:12px; border-radius:8px; position:relative;';
@@ -1180,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', function() {
       msgDiv.textContent = 'Vui lòng chọn ngày xét nghiệm.';
       return;
     }
-    const resultVal = resultSelect.value;
+const resultVal = resultSelect.value;
     if (!resultVal) {
       msgDiv.textContent = 'Vui lòng chọn kết quả.';
       return;
@@ -1321,7 +1324,7 @@ function closeUpdateTestResultModal() {
   updateTestResultForm.reset();
   updateTestResultMsg.textContent = '';
   // Clear component tests container
-  const container = document.getElementById('updateComponentTestsContainer');
+const container = document.getElementById('updateComponentTestsContainer');
   if (container) {
     container.innerHTML = '<h3>Thành phần xét nghiệm</h3>';
   }
@@ -1377,7 +1380,7 @@ function loadComponentTestResultsFromData(componentResults) {
         
         // Always add at least one empty component test fieldset if none exist
         if (componentResults.length === 0) {
-            addUpdateComponentTestFieldset();
+addUpdateComponentTestFieldset();
         }
         
     } catch (err) {
@@ -1447,7 +1450,7 @@ if (updateTestResultForm) {
         }
         
         // Collect component test data
-        const componentFieldsets = document.querySelectorAll('#updateComponentTestsContainer .component-test-fieldset');
+const componentFieldsets = document.querySelectorAll('#updateComponentTestsContainer .component-test-fieldset');
         const componentTests = [];
         
         for (const fieldset of componentFieldsets) {
@@ -1518,7 +1521,7 @@ function renderPayments(payments) {
         section.innerHTML = `<div class="empty-state"><i class="fas fa-money-bill-wave"></i><p>Không có giao dịch thanh toán nào.</p></div>`;
         return;
     }
-    let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
+let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
     payments.forEach(pay => {
         html += `<tr>
             <td>${pay.paymentDate ? new Date(pay.paymentDate).toLocaleString() : '-'}</td>
@@ -1570,18 +1573,18 @@ async function loadPatientData() {
                 renderARVRegimens(medicalData.arvRegimens || [], medications);
             renderPayments(medicalData.payments || []);
 
-            } else {
-                renderAppointments([]);
-                renderTestResults([]);
-                renderARVRegimens([], []);
+        } else {
+            renderAppointments([]);
+            renderTestResults([]);
+            renderARVRegimens([], []);
             renderPayments([]);
-            }
+        }
         // After data is loaded, show/hide staff button
         const btnContainer = document.getElementById('createTestResultContainer');
         if (btnContainer) {
             if (window.isStaff && window.pmrId != null) {
                 btnContainer.style.display = '';
-        } else {
+            } else {
                 btnContainer.style.display = 'none';
             }
 
@@ -1591,7 +1594,7 @@ async function loadPatientData() {
         document.body.innerHTML = `
             <div class="error-state">
                 <i class="fas fa-exclamation-triangle"></i>
-                <p>Error loading patient data. Please try again.</p>
+<p>Error loading patient data. Please try again.</p>
             </div>
         `;
     }
@@ -1655,7 +1658,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (selectedOption.dataset.description) {
                     serviceDescription.textContent = selectedOption.dataset.description;
                     serviceDescription.style.display = 'block';
-                } else {
+} else {
                     serviceDescription.style.display = 'none';
                 }
                 // Auto-fill payment description
@@ -1731,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const srvId = parseInt(formData.get('serviceId'));
             const amount = parseFloat(formData.get('amount'));
             const currency = formData.get('currency');
-            const paymentMethod = formData.get('paymentMethod');
+const paymentMethod = formData.get('paymentMethod');
             const description = formData.get('description');
 
             if (!pmrId || !srvId || !amount || !currency || !paymentMethod || !description) {
