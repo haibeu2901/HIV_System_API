@@ -1,4 +1,6 @@
-﻿using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
+﻿using HIV_System_API_Backend.Common;
+using HIV_System_API_DTOs.ARVMedicationTemplateDTO;
+using HIV_System_API_DTOs.ARVRegimenTemplateDTO;
 using HIV_System_API_Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -163,6 +165,60 @@ namespace HIV_System_API_Backend.Controllers
                 if (templates == null || !templates.Any())
                     return NotFound($"No regimen templates found for level {level}.");
                 return Ok(templates);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = ex.InnerException != null
+                    ? $"Internal server error: {ex.Message} | Inner exception: {ex.InnerException.Message}"
+                    : $"Internal server error: {ex.Message}";
+                return StatusCode(500, errorMessage);
+            }
+        }
+
+        [HttpPost("CreateRegimenTemplateWithMedicationsTemplate")]
+        [Authorize(Roles = "1,5")]
+        public async Task<IActionResult> CreateRegimenTemplateWithMedicationsTemplate([FromBody] RegimenTemplateWithMedicationsRequestDTO request)
+        {
+            if (request == null || request.RegimenTemplate == null || request.MedicationTemplates == null || !request.MedicationTemplates.Any())
+                return BadRequest("Regimen template and medication templates are required.");
+
+            try
+            {
+                var createdTemplate = await _regimenTemplateService.CreateRegimenTemplateWithMedicationsTemplate(
+                    request.RegimenTemplate,
+                    request.MedicationTemplates);
+
+                if (createdTemplate == null)
+                    return StatusCode(500, "Failed to create regimen template with medications.");
+
+                return CreatedAtAction(nameof(GetRegimenTemplateById), new { id = createdTemplate.ArtId }, createdTemplate);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = ex.InnerException != null
+                    ? $"Internal server error: {ex.Message} | Inner exception: {ex.InnerException.Message}"
+                    : $"Internal server error: {ex.Message}";
+                return StatusCode(500, errorMessage);
+            }
+        }
+
+        [HttpPut("UpdateRegimenTemplateWithMedicationsTemplate")]
+        [Authorize(Roles = "1,5")]
+        public async Task<IActionResult> UpdateRegimenTemplateWithMedicationsTemplate(int id, [FromBody] RegimenTemplateWithMedicationsRequestDTO request)
+        {
+            // Validate input
+            if (id <= 0 || request == null || request.RegimenTemplate == null || request.MedicationTemplates == null || !request.MedicationTemplates.Any())
+                return BadRequest("Invalid regimen template or medication templates data.");
+
+            try
+            {
+                // Call the service to update the regimen template and its medications
+                var updatedTemplate = await _regimenTemplateService.UpdateRegimenTemplateWithMedicationsTemplate(id, request);
+
+                if (updatedTemplate == null)
+                    return NotFound($"Regimen template with ID {id} not found or could not be updated.");
+
+                return Ok(updatedTemplate);
             }
             catch (Exception ex)
             {

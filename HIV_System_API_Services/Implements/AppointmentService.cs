@@ -510,6 +510,7 @@ namespace HIV_System_API_Services.Implements
                 existingAppointment.RequestTime = appointment.AppointmentTime;
                 existingAppointment.RequestBy = accId;
                 existingAppointment.Notes = appointment.Notes;
+                existingAppointment.ApmStatus = 1;
 
                 var updatedAppointment = await _appointmentRepo.UpdateAppointmentAsync(appointmentId, appointment, accId);
 
@@ -606,7 +607,7 @@ namespace HIV_System_API_Services.Implements
                 if (!string.IsNullOrWhiteSpace(dto.Notes))
                 {
                     appointment.Notes = dto.Notes;
-                    _context.Appointments.Update(appointment);
+                    await _appointmentRepo.UpdateAppointmentByIdAsync(appointmentId, appointment);
                     await _context.SaveChangesAsync();
                 }
 

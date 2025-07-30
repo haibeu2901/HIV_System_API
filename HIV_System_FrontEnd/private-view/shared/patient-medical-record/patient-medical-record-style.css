@@ -254,8 +254,16 @@
 .medications-table th,
 .medications-table td {
     border: 1px solid #e5e7eb;
-    padding: 14px 18px; /* Increased padding for more spacing */
+    padding: 8px 10px;
     text-align: left;
+}
+.medication-usage-input {
+    width: 100%;
+    min-width: 120px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
 }
 
 .medications-table th {
@@ -816,3 +824,12 @@
 .service-description:empty {
     display: none !important;
 }
+select.medication-name-select {
+    color: #222 !important;
+    background: #fff !important;
+    text-indent: 0 !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    appearance: auto !important;
+  }

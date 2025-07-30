@@ -70,6 +70,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<ArvRegimenTemplate?> GetRegimenTemplateByIdAsync(int id)
         {
             return await _context.ArvRegimenTemplates
+                .AsNoTracking()
                 .Include(r => r.ArvMedicationTemplates)
                 .FirstOrDefaultAsync(r => r.ArtId == id);
         }
