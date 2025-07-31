@@ -99,6 +99,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         statusCode: eventStatusCode
       };
       
+      // Debug logging
+      console.log('Setting currentAppointment:', window.currentAppointment);
+      console.log('Event extended props:', info.event.extendedProps);
+      
       // Fill modal fields
       document.getElementById("sticky-title").textContent =
         info.event.title.split("\n")[0];
@@ -394,8 +398,52 @@ function showCancelConfirmation() {
   // Close the appointment details modal
   document.getElementById("sticky-note-modal").classList.add("hidden");
   
+  // Debug: Check current appointment data
+  console.log('Showing cancel confirmation for appointment:', window.currentAppointment);
+  
   // Show the cancel confirmation modal
   document.getElementById("cancel-confirmation-modal").classList.remove("hidden");
+}
+
+// Verify appointment status before cancelling
+async function verifyAppointmentBeforeCancel(appointmentId) {
+  const token = localStorage.getItem("token");
+  
+  try {
+    const response = await fetch(
+      "https://localhost:7009/api/Appointment/GetAllPersonalAppointments",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch appointments");
+    }
+    
+    const appointments = await response.json();
+    const currentAppointment = appointments.find(apt => apt.appointmentId == appointmentId);
+    
+    console.log('Current appointment from API:', currentAppointment);
+    
+    if (!currentAppointment) {
+      throw new Error("Appointment not found");
+    }
+    
+    if (currentAppointment.apmStatus === 4) {
+      throw new Error("Appointment already cancelled");
+    }
+    
+    if (currentAppointment.apmStatus === 5) {
+      throw new Error("Cannot cancel completed appointment");
+    }
+    
+    return currentAppointment;
+    
+  } catch (error) {
+    console.error('Error verifying appointment:', error);
+    throw error;
+  }
 }
 
 // Cancel appointment function
@@ -403,26 +451,108 @@ async function performCancelAppointment() {
   const token = localStorage.getItem("token");
   const appointmentId = window.currentAppointment.id;
   
+  // Debug logging
+  console.log('Attempting to cancel appointment:', {
+    appointmentId,
+    appointmentIdType: typeof appointmentId,
+    appointmentIdParsed: parseInt(appointmentId),
+    currentAppointment: window.currentAppointment
+  });
+  
+  // Ensure appointmentId is valid
+  if (!appointmentId || appointmentId === 'undefined' || appointmentId === 'null') {
+    throw new Error('ID lịch hẹn không hợp lệ. Vui lòng refresh trang và thử lại.');
+  }
+  
   try {
     // Show loading state on the confirmation button
     const confirmButton = document.getElementById("cancel-confirmation-yes");
     confirmButton.disabled = true;
+    confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
+
+    // First, verify the appointment status
+    const verifiedAppointment = await verifyAppointmentBeforeCancel(appointmentId);
+    console.log('Verified appointment before cancel:', verifiedAppointment);
+    
+    // Update button text
     confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang hủy...';
 
-    const response = await fetch(
-      `https://localhost:7009/api/Appointment/ChangeAppointmentStatus?id=${appointmentId}&status=4`,
-      {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // Call the correct API endpoint
+    console.log('Calling ChangePersonalAppointmentStatus API');
+    const url = `https://localhost:7009/api/Appointment/ChangePersonalAppointmentStatus?appointmentId=${appointmentId}&status=4`;
+    console.log('API URL:', url);
+    
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log('Response status:', response.status);
 
     if (!response.ok) {
-      throw new Error(`Failed to cancel appointment: ${response.status}`);
+      const errorData = await response.text();
+      console.log('Error response:', errorData);
+      
+      // Handle specific error cases
+      if (response.status === 409) {
+        let errorMessage;
+        try {
+          const errorObj = JSON.parse(errorData);
+          console.log('Parsed error object:', errorObj);
+          
+          if (errorObj.apmStatus === 4) {
+            errorMessage = "Lịch hẹn này đã được hủy trước đó.";
+          } else if (errorObj.apmStatus === 5) {
+            errorMessage = "Không thể hủy lịch hẹn đã hoàn thành.";
+          } else {
+            errorMessage = `Không thể hủy lịch hẹn do xung đột dữ liệu.\nChi tiết: ${errorObj.error || 'Không rõ'}`;
+          }
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          errorMessage = `Không thể hủy lịch hẹn do xung đột dữ liệu.\nServer response: ${errorData}`;
+        }
+        
+        showNotification(errorMessage, "error");
+        
+        // Reset button state and return early
+        const confirmButton = document.getElementById("cancel-confirmation-yes");
+        confirmButton.disabled = false;
+        confirmButton.innerHTML = '<i class="fas fa-check"></i> Có, hủy lịch';
+        return;
+      }
+      
+      // Handle other HTTP errors
+      let userErrorMessage = 'Không thể hủy lịch hẹn. ';
+      
+      switch (response.status) {
+        case 400:
+          userErrorMessage += `Dữ liệu không hợp lệ.\nChi tiết: ${errorData}`;
+          break;
+        case 401:
+          userErrorMessage += 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+          break;
+        case 403:
+          userErrorMessage += 'Bạn không có quyền hủy lịch hẹn này.';
+          break;
+        case 404:
+          userErrorMessage += 'Không tìm thấy lịch hẹn.';
+          break;
+        case 500:
+          userErrorMessage += 'Lỗi hệ thống. Vui lòng thử lại sau.';
+          break;
+        default:
+          userErrorMessage += `Lỗi HTTP ${response.status}. Chi tiết: ${errorData}`;
+      }
+      
+      throw new Error(userErrorMessage);
     }
+
+    // Get response data for success handling
+    const responseData = await response.json();
+    console.log('Cancel success response:', responseData);
 
     // Success - show success message and reload page
     showNotification("Đã hủy lịch hẹn thành công!", "success");
@@ -434,7 +564,10 @@ async function performCancelAppointment() {
 
   } catch (error) {
     console.error("Error cancelling appointment:", error);
-    showNotification("Không thể hủy lịch hẹn. Vui lòng thử lại.", "error");
+    
+    // Show user-friendly error message
+    const errorMessage = error.message || "Không thể hủy lịch hẹn. Vui lòng thử lại.";
+    showNotification(errorMessage, "error");
     
     // Reset button state
     const confirmButton = document.getElementById("cancel-confirmation-yes");

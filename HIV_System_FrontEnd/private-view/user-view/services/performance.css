@@ -1,0 +1,160 @@
+/* Performance Optimizations for Services Page */
+
+/* Enable hardware acceleration for smooth animations */
+.service-card,
+.service-icon,
+.filter-btn,
+.btn-view-detail,
+.btn-book-service {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Optimize font loading */
+@font-face {
+    font-family: 'Roboto';
+    font-display: swap;
+    src: local('Roboto'), url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
+}
+
+/* Reduce paint operations */
+.service-card::before,
+.service-card::after,
+.service-icon::before,
+.filter-btn::before {
+    will-change: transform, opacity;
+}
+
+/* Optimize image loading - these are HTML attributes, not CSS */
+/* Use in HTML: <img loading="lazy" decoding="async"> */
+
+/* Critical CSS inlining hint */
+.services-grid {
+    contain: layout style paint;
+}
+
+.service-card {
+    contain: layout paint;
+}
+
+/* Optimize animations for 60fps */
+@media (prefers-reduced-motion: no-preference) {
+    .service-icon {
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .service-card:hover {
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* Preload critical resources - these are HTML attributes, not CSS */
+/* Use in HTML: <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> */
+
+/* Optimize modal rendering */
+.modal {
+    contain: layout style paint;
+    transform: translateZ(0);
+}
+
+.modal-content {
+    will-change: transform, opacity;
+}
+
+/* Efficient scrolling */
+.services-container {
+    overflow-anchor: auto;
+}
+
+/* Battery saving mode */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-play-state: paused !important;
+        transition: none !important;
+    }
+}
+
+/* Network-aware loading */
+@media (max-resolution: 150dpi) {
+    .service-icon {
+        font-size: 1.8rem;
+    }
+}
+
+@media (min-resolution: 2dppx) {
+    .service-icon {
+        font-size: 2.2rem;
+    }
+}
+
+/* Connection-based optimization */
+@media (max-width: 480px) and (max-resolution: 150dpi) {
+    .service-card {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .service-card::before {
+        background: #e74c3c;
+    }
+}
+
+/* Intersection Observer optimization hints */
+.service-card {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.service-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.service-card.preload {
+    opacity: 1;
+    transform: translateY(0);
+    transition: none;
+}
+
+/* Memory optimization */
+.hidden {
+    display: none !important;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Optimize for touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .service-card:hover {
+        transform: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    }
+    
+    .filter-btn:hover {
+        transform: none;
+    }
+}
+
+/* Reduce layout thrashing */
+.loading-placeholder {
+    min-height: 300px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}

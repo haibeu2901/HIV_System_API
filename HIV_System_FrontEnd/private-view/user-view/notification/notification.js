@@ -12,9 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
         NAVIGATION: {
             PROFILE: '../profile/profile.html',
             APPOINTMENTS: '../appointment-view/view-appointment.html',
-            MEDICAL_RECORDS: '../medical-record/medical-record.html',
+            MEDICAL_RECORDS: '../medical-record/view-medical-record.html',
             FIND_DOCTOR: '../view-doctor/view-doctor.html',
             ARV_MEDICATIONS: '../ARV/arv-medications.html',
+            ARV_REGIMEN: '../medical-record/view-medical-record.html',
             BOOKING: '../booking/appointment-booking.html'
         },
         MESSAGES: {
@@ -213,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateStats() {
         const totalCount = document.querySelector('.total-count');
         const unreadCount = document.querySelector('.unread-count');
+        const arvCount = document.querySelector('.arv-count');
         
         // Count notifications by category
         const appointmentCount = notifications.filter(n => {
@@ -225,12 +227,26 @@ document.addEventListener('DOMContentLoaded', () => {
             return categoryInfo.category === 'appointment';
         }).length;
         
+        const arvRegimenCount = notifications.filter(n => {
+            const categoryInfo = categorizeNotification(n);
+            return categoryInfo.category === 'arv';
+        }).length;
+        
+        const unreadArvCount = unreadNotifications.filter(n => {
+            const categoryInfo = categorizeNotification(n);
+            return categoryInfo.category === 'arv';
+        }).length;
+        
         if (totalCount) {
-            totalCount.innerHTML = `${appointmentCount} <small>APPOINTMENTS</small>`;
+            totalCount.innerHTML = `${notifications.length} <small>TOTAL</small>`;
         }
         
         if (unreadCount) {
-            unreadCount.innerHTML = `${unreadAppointmentCount} <small>UNREAD</small>`;
+            unreadCount.innerHTML = `${unreadNotifications.length} <small>UNREAD</small>`;
+        }
+        
+        if (arvCount) {
+            arvCount.innerHTML = `${arvRegimenCount} <small>ARV REGIMEN</small>`;
         }
     }
     
@@ -336,6 +352,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <a href="${CONFIG.NAVIGATION.MEDICAL_RECORDS}" class="nav-btn">
                                 <i class="fa-solid fa-file-medical"></i> Medical Records
                             </a>
+                            <a href="${CONFIG.NAVIGATION.MEDICAL_RECORDS}#arvRegimens" class="nav-btn">
+                                <i class="fa-solid fa-pills"></i> ARV Regimen
+                            </a>
                             <a href="${CONFIG.NAVIGATION.FIND_DOCTOR}" class="nav-btn">
                                 <i class="fa-solid fa-user-doctor"></i> Find Doctor
                             </a>
@@ -401,8 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: 'arv',
                 icon: 'fa-pills',
                 displayType: 'ARV REGIMEN',
-                navigationUrl: CONFIG.NAVIGATION.ARV_MEDICATIONS,
-                actionText: 'View ARV Medications'
+                navigationUrl: CONFIG.NAVIGATION.ARV_REGIMEN + '#arvRegimens',
+                actionText: 'View ARV Regimen'
             };
         }
         
@@ -427,6 +446,19 @@ document.addEventListener('DOMContentLoaded', () => {
             message.includes('treatment') || message.includes('điều trị') ||
             message.includes('test result') || message.includes('kết quả xét nghiệm') ||
             message.includes('lab') || message.includes('xét nghiệm')) {
+            
+            // Check if it's specifically a test result
+            if (message.includes('test result') || message.includes('kết quả xét nghiệm') ||
+                message.includes('lab') || message.includes('xét nghiệm')) {
+                return {
+                    category: 'medical',
+                    icon: 'fa-flask',
+                    displayType: 'TEST RESULT',
+                    navigationUrl: CONFIG.NAVIGATION.MEDICAL_RECORDS + '#testResults',
+                    actionText: 'View Test Results'
+                };
+            }
+            
             return {
                 category: 'medical',
                 icon: 'fa-user-doctor',
@@ -479,6 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (filteredNotifications.length === 0) {
             const filterText = currentFilter === 'appointment' ? 'appointment confirmations' : 
+                              currentFilter === 'arv' ? 'ARV regimen notifications' :
+                              currentFilter === 'medication' ? 'medication notifications' :
                               currentFilter === 'medical' ? 'medical notifications' :
                               currentFilter === 'system' ? 'system notifications' :
                               currentFilter === 'unread' ? 'unread notifications' : 'notifications';
