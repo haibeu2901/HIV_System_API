@@ -26,6 +26,9 @@ fetch('../header/header.html')
 
     // Initialize notification system
     initializeNotificationSystem();
+    
+    // Initialize medication alarm system
+    initializeMedicationAlarmSystem();
   });
 
 // Initialize notification system
@@ -760,6 +763,432 @@ function initializeNotificationSystem() {
   setInterval(async () => {
     const count = await fetchUnreadCount();
     updateUnreadCountBadge(count);
+  }, 30000);
+}
+
+// Initialize medication alarm system
+function initializeMedicationAlarmSystem() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.error('No authentication token found');
+    return;
+  }
+
+  const medicationBell = document.getElementById('medicationAlarmBell');
+  const medicationCountBadge = document.getElementById('medication-count');
+  
+  if (!medicationBell) {
+    console.error('Medication alarm bell not found');
+    return;
+  }
+
+  // Add click handler for medication alarm popup
+  medicationBell.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showMedicationAlarmPopup();
+  });
+
+  // Fetch active medication alarms count
+  async function fetchActiveMedicationCount() {
+    try {
+      const response = await fetch('https://localhost:7009/api/MedicationAlarm/GetPersonalMedicationAlarms', {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "accept": "*/*"
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch medication alarms: ${response.status}`);
+      }
+      
+      const alarms = await response.json();
+      const activeAlarms = Array.isArray(alarms) ? alarms.filter(alarm => alarm.isActive) : [];
+      return activeAlarms.length;
+    } catch (error) {
+      console.error('Error fetching medication alarms:', error);
+      return 0;
+    }
+  }
+
+  // Update medication count badge
+  function updateMedicationCountBadge(count) {
+    if (medicationCountBadge) {
+      if (count > 0) {
+        medicationCountBadge.textContent = count > 99 ? '99+' : count;
+        medicationCountBadge.style.display = 'block';
+      } else {
+        medicationCountBadge.style.display = 'none';
+      }
+    }
+  }
+
+  // Show medication alarm popup
+  function showMedicationAlarmPopup() {
+    // Create popup if it doesn't exist
+    let popup = document.getElementById('medication-alarm-popup');
+    if (!popup) {
+      console.error('Medication alarm popup not found');
+      return;
+    }
+
+    // Position popup relative to medication bell
+    if (medicationBell) {
+      const bellRect = medicationBell.getBoundingClientRect();
+      
+      // Position popup below the bell, aligned to the right
+      popup.style.position = 'fixed';
+      popup.style.top = `${bellRect.bottom + 10}px`;
+      popup.style.right = `${window.innerWidth - bellRect.right}px`;
+      popup.style.left = 'auto';
+      
+      // Ensure popup doesn't go off-screen
+      if (bellRect.right < 400) {
+        popup.style.right = '10px';
+      }
+    }
+
+    // Toggle popup visibility
+    popup.classList.toggle('hidden');
+    
+    // Load medication alarms if showing
+    if (!popup.classList.contains('hidden')) {
+      loadMedicationAlarms();
+    }
+  }
+
+  // Load medication alarms
+  async function loadMedicationAlarms() {
+    const popup = document.getElementById('medication-alarm-popup');
+    const content = document.getElementById('popup-medication-alarm-list');
+    
+    if (!content) return;
+    
+    content.innerHTML = '<div class="medication-loading">Đang tải...</div>';
+    
+    try {
+      const response = await fetch('https://localhost:7009/api/MedicationAlarm/GetPersonalMedicationAlarms', {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "accept": "*/*"
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch medication alarms: ${response.status}`);
+      }
+      
+      const alarms = await response.json();
+      
+      if (!alarms || alarms.length === 0) {
+        content.innerHTML = `
+          <div class="medication-empty">
+            <i class="fas fa-pills"></i>
+            <p>Không có lịch nhắc uống thuốc nào</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Sort by alarm time
+      alarms.sort((a, b) => a.alarmTime.localeCompare(b.alarmTime));
+      
+      content.innerHTML = alarms.map(alarm => {
+        const isActive = alarm.isActive;
+        const statusClass = isActive ? 'active' : 'inactive';
+        const statusText = isActive ? 'Đang hoạt động' : 'Tạm dừng';
+        return `
+          <div class="medication-alarm-card ${statusClass}">
+            <div class="medication-header">
+              <div class="medication-info">
+                <i class="fas fa-pills" style="color:${isActive ? '#28a745' : '#6c757d'};"></i>
+                <span class="medication-name">${alarm.medicationName}</span>
+                <span class="medication-time">${alarm.alarmTime.slice(0, 5)}</span>
+              </div>
+              <span class="medication-status ${statusClass}">${statusText}</span>
+            </div>
+            <div class="medication-details">
+              <p><strong>Liều dùng:</strong> ${alarm.dosage}</p>
+              <p><strong>Cách dùng:</strong> ${alarm.usageInstructions || 'Chưa có hướng dẫn'}</p>
+              ${alarm.notes ? `<p><strong>Ghi chú:</strong> ${alarm.notes}</p>` : ''}
+            </div>
+            <div class="medication-actions">
+              <button class="btn-edit-alarm" data-alarm-id="${alarm.alarmId}">
+                <i class="fas fa-edit"></i> Sửa
+              </button>
+              <button class="btn-toggle-alarm" data-alarm-id="${alarm.alarmId}" data-active="${alarm.isActive}">
+                <i class="fas fa-${isActive ? 'pause' : 'play'}"></i> ${isActive ? 'Tắt' : 'Bật'}
+              </button>
+              <button class="btn-delete-alarm" data-alarm-id="${alarm.alarmId}">
+                <i class="fas fa-trash"></i> Xóa
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Add event listeners
+      addMedicationEventListeners();
+      
+    } catch (error) {
+      console.error('Error loading medication alarms:', error);
+      content.innerHTML = `
+        <div class="medication-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Không thể tải lịch nhắc uống thuốc</p>
+        </div>
+      `;
+    }
+  }
+
+  // Add event listeners for medication alarm actions
+  function addMedicationEventListeners() {
+    // Edit alarm buttons
+    document.querySelectorAll('.btn-edit-alarm').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const alarmId = btn.getAttribute('data-alarm-id');
+        openEditMedicationModal(alarmId);
+      });
+    });
+    
+    // Toggle alarm buttons
+    document.querySelectorAll('.btn-toggle-alarm').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const alarmId = btn.getAttribute('data-alarm-id');
+        const isActive = btn.getAttribute('data-active') === 'true';
+        toggleMedicationAlarm(alarmId, !isActive);
+      });
+    });
+    
+    // Delete alarm buttons
+    document.querySelectorAll('.btn-delete-alarm').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const alarmId = btn.getAttribute('data-alarm-id');
+        deleteMedicationAlarm(alarmId);
+      });
+    });
+  }
+
+  // Open edit medication modal
+  function openEditMedicationModal(alarmId) {
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'edit-medication-modal';
+    modal.className = 'medication-modal-overlay';
+    
+    modal.innerHTML = `
+      <div class="medication-modal">
+        <div class="medication-modal-header">
+          <h3>Chỉnh sửa lịch nhắc uống thuốc</h3>
+          <button class="close-modal" aria-label="Đóng">&times;</button>
+        </div>
+        <div class="medication-modal-content">
+          <div class="form-group">
+            <label>Thời gian nhắc:</label>
+            <input type="time" id="edit-alarm-time" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="edit-alarm-active">
+              Kích hoạt nhắc nhở
+            </label>
+          </div>
+          <div class="form-group">
+            <label>Ghi chú:</label>
+            <textarea id="edit-alarm-notes" class="form-control" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="medication-modal-footer">
+          <button class="btn-cancel">Hủy</button>
+          <button class="btn-save" data-alarm-id="${alarmId}">Lưu</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Load current alarm data
+    loadCurrentAlarmData(alarmId);
+    
+    // Add event listeners
+    modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+    modal.querySelector('.btn-cancel').addEventListener('click', () => modal.remove());
+    modal.querySelector('.btn-save').addEventListener('click', () => {
+      saveMedicationAlarm(alarmId);
+      modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+  }
+
+  // Load current alarm data for editing
+  async function loadCurrentAlarmData(alarmId) {
+    try {
+      const response = await fetch('https://localhost:7009/api/MedicationAlarm/GetPersonalMedicationAlarms', {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "accept": "*/*"
+        }
+      });
+      
+      if (response.ok) {
+        const alarms = await response.json();
+        const alarm = alarms.find(a => a.alarmId.toString() === alarmId.toString());
+        if (alarm) {
+          document.getElementById('edit-alarm-time').value = alarm.alarmTime.slice(0, 5);
+          document.getElementById('edit-alarm-active').checked = alarm.isActive;
+          document.getElementById('edit-alarm-notes').value = alarm.notes || '';
+        }
+      }
+    } catch (error) {
+      console.error('Error loading alarm data:', error);
+    }
+  }
+
+  // Save medication alarm changes
+  async function saveMedicationAlarm(alarmId) {
+    const alarmTime = document.getElementById('edit-alarm-time').value + ':00';
+    const isActive = document.getElementById('edit-alarm-active').checked;
+    const notes = document.getElementById('edit-alarm-notes').value;
+    
+    try {
+      const response = await fetch(`https://localhost:7009/api/MedicationAlarm/UpdateMedicationAlarm/${alarmId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'accept': '*/*'
+        },
+        body: JSON.stringify({
+          alarmTime: alarmTime,
+          isActive: isActive,
+          notes: notes
+        })
+      });
+      
+      if (response.ok) {
+        alert('Cập nhật lịch nhắc thành công!');
+        loadMedicationAlarms();
+        const count = await fetchActiveMedicationCount();
+        updateMedicationCountBadge(count);
+      } else {
+        alert('Có lỗi xảy ra khi cập nhật lịch nhắc.');
+      }
+    } catch (error) {
+      console.error('Error updating alarm:', error);
+      alert('Có lỗi xảy ra khi cập nhật lịch nhắc.');
+    }
+  }
+
+  // Toggle medication alarm
+  async function toggleMedicationAlarm(alarmId, newActiveState) {
+    try {
+      // First get current alarm data
+      const response = await fetch('https://localhost:7009/api/MedicationAlarm/GetPersonalMedicationAlarms', {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "accept": "*/*"
+        }
+      });
+      
+      if (response.ok) {
+        const alarms = await response.json();
+        const alarm = alarms.find(a => a.alarmId.toString() === alarmId.toString());
+        if (alarm) {
+          // Update with current data but new active state
+          const updateResponse = await fetch(`https://localhost:7009/api/MedicationAlarm/UpdateMedicationAlarm/${alarmId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'accept': '*/*'
+            },
+            body: JSON.stringify({
+              alarmTime: alarm.alarmTime,
+              isActive: newActiveState,
+              notes: alarm.notes || ''
+            })
+          });
+          
+          if (updateResponse.ok) {
+            loadMedicationAlarms();
+            const count = await fetchActiveMedicationCount();
+            updateMedicationCountBadge(count);
+          } else {
+            alert('Có lỗi xảy ra khi cập nhật trạng thái lịch nhắc.');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling alarm:', error);
+      alert('Có lỗi xảy ra khi cập nhật trạng thái lịch nhắc.');
+    }
+  }
+
+  // Delete medication alarm
+  async function deleteMedicationAlarm(alarmId) {
+    // Show confirmation dialog
+    if (!confirm('Bạn có chắc chắn muốn xóa lịch nhắc uống thuốc này không?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://localhost:7009/api/MedicationAlarm/DeleteMedicationAlarm/${alarmId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'accept': '*/*'
+        }
+      });
+      
+      if (response.ok) {
+        alert('Xóa lịch nhắc thành công!');
+        loadMedicationAlarms();
+        const count = await fetchActiveMedicationCount();
+        updateMedicationCountBadge(count);
+      } else {
+        const errorText = await response.text();
+        console.error('Delete failed:', response.status, errorText);
+        alert('Có lỗi xảy ra khi xóa lịch nhắc.');
+      }
+    } catch (error) {
+      console.error('Error deleting alarm:', error);
+      alert('Có lỗi xảy ra khi xóa lịch nhắc.');
+    }
+  }
+
+  // Close popup when clicking outside
+  document.addEventListener('click', (e) => {
+    const popup = document.getElementById('medication-alarm-popup');
+    if (popup && !popup.contains(e.target) && e.target !== medicationBell && !medicationBell.contains(e.target)) {
+      popup.classList.add('hidden');
+    }
+  });
+
+  // Close popup button
+  const closeBtn = document.getElementById('closeMedicationAlarmPopup');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      document.getElementById('medication-alarm-popup').classList.add('hidden');
+    });
+  }
+
+  // Load initial medication count
+  fetchActiveMedicationCount().then(updateMedicationCountBadge).catch(console.error);
+
+  // Refresh medication count every 30 seconds
+  setInterval(async () => {
+    const count = await fetchActiveMedicationCount();
+    updateMedicationCountBadge(count);
   }, 30000);
 }
 

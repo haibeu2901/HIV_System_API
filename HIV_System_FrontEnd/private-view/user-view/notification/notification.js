@@ -7,21 +7,26 @@ document.addEventListener('DOMContentLoaded', () => {
             GET_PERSONAL_NOTIFICATIONS: '/api/Notification/GetPersonalNotifications',
             GET_UNREAD_NOTIFICATIONS: '/api/Notification/GetUnreadNotifications',
             MARK_AS_READ: '/api/Notification/MarkAsRead',
-            MARK_ALL_AS_READ: '/api/Notification/MarkAllAsRead'
+            MARK_ALL_AS_READ: '/api/Notification/MarkAllAsRead',
+            CHANGE_APPOINTMENT_STATUS: '/api/Appointment/ChangePersonalAppointmentStatus'
         },
         NAVIGATION: {
             PROFILE: '../profile/profile.html',
             APPOINTMENTS: '../appointment-view/view-appointment.html',
-            MEDICAL_RECORDS: '../medical-record/medical-record.html',
+            MEDICAL_RECORDS: '../medical-record/view-medical-record.html',
             FIND_DOCTOR: '../view-doctor/view-doctor.html',
             ARV_MEDICATIONS: '../ARV/arv-medications.html',
+            ARV_REGIMEN: '../medical-record/view-medical-record.html',
             BOOKING: '../booking/appointment-booking.html'
         },
         MESSAGES: {
             LOGIN_REQUIRED: 'You need to be logged in to view notifications. Redirecting to login...',
             SESSION_EXPIRED: 'Your session has expired. Please log in again.',
             MARK_READ_FAILED: 'Failed to mark notification as read. Please try again.',
-            MARK_ALL_READ_FAILED: 'Failed to mark all notifications as read. Please try again.'
+            MARK_ALL_READ_FAILED: 'Failed to mark all notifications as read. Please try again.',
+            APPOINTMENT_ACCEPT_SUCCESS: 'Appointment change accepted successfully!',
+            APPOINTMENT_REJECT_SUCCESS: 'Appointment change rejected successfully!',
+            APPOINTMENT_ACTION_FAILED: 'Failed to process appointment change. Please try again.'
         },
         TIMEOUTS: {
             REQUEST_TIMEOUT: 10000,
@@ -213,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateStats() {
         const totalCount = document.querySelector('.total-count');
         const unreadCount = document.querySelector('.unread-count');
+        const arvCount = document.querySelector('.arv-count');
         
         // Count notifications by category
         const appointmentCount = notifications.filter(n => {
@@ -225,12 +231,26 @@ document.addEventListener('DOMContentLoaded', () => {
             return categoryInfo.category === 'appointment';
         }).length;
         
+        const arvRegimenCount = notifications.filter(n => {
+            const categoryInfo = categorizeNotification(n);
+            return categoryInfo.category === 'arv';
+        }).length;
+        
+        const unreadArvCount = unreadNotifications.filter(n => {
+            const categoryInfo = categorizeNotification(n);
+            return categoryInfo.category === 'arv';
+        }).length;
+        
         if (totalCount) {
-            totalCount.innerHTML = `${appointmentCount} <small>APPOINTMENTS</small>`;
+            totalCount.innerHTML = `${notifications.length} <small>TOTAL</small>`;
         }
         
         if (unreadCount) {
-            unreadCount.innerHTML = `${unreadAppointmentCount} <small>UNREAD</small>`;
+            unreadCount.innerHTML = `${unreadNotifications.length} <small>UNREAD</small>`;
+        }
+        
+        if (arvCount) {
+            arvCount.innerHTML = `${arvRegimenCount} <small>ARV REGIMEN</small>`;
         }
     }
     
@@ -336,6 +356,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <a href="${CONFIG.NAVIGATION.MEDICAL_RECORDS}" class="nav-btn">
                                 <i class="fa-solid fa-file-medical"></i> Medical Records
                             </a>
+                            <a href="${CONFIG.NAVIGATION.MEDICAL_RECORDS}#arvRegimens" class="nav-btn">
+                                <i class="fa-solid fa-pills"></i> ARV Regimen
+                            </a>
                             <a href="${CONFIG.NAVIGATION.FIND_DOCTOR}" class="nav-btn">
                                 <i class="fa-solid fa-user-doctor"></i> Find Doctor
                             </a>
@@ -375,14 +398,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = notification.notiMessage ? notification.notiMessage.toLowerCase() : '';
         const type = notification.notiType ? notification.notiType.toLowerCase() : '';
         
+        // Check for appointment change notifications specifically
+        if (message.includes('thay đổi') || message.includes('change') || 
+            message.includes('đổi lịch') || message.includes('reschedule') ||
+            message.includes('reschedule') || message.includes('modified') ||
+            (message.includes('appointment') && (message.includes('change') || message.includes('thay đổi')))) {
+            
+            const appointmentId = extractAppointmentIdFromMessage(notification.notiMessage);
+            return {
+                category: 'appointment_change',
+                icon: 'fa-calendar-plus',
+                displayType: 'APPOINTMENT CHANGE',
+                navigationUrl: CONFIG.NAVIGATION.APPOINTMENTS,
+                actionText: 'View Appointments',
+                appointmentId: appointmentId,
+                requiresAction: false, // Changed to false to allow direct navigation
+                specialNavigation: 'navigateToAppointmentChange'
+            };
+        }
+        
         // Check for appointment-related notifications
         if (message.includes('appointment') || message.includes('cuộc hẹn') || 
             type.includes('appointment') || type.includes('cuộc hẹn') ||
             message.includes('confirmed') || message.includes('xác nhận') ||
             message.includes('scheduled') || message.includes('lịch hẹn') ||
             message.includes('booking') || message.includes('đặt lịch') ||
-            message.includes('cancel') || message.includes('hủy') ||
-            message.includes('reschedule') || message.includes('đổi lịch')) {
+            message.includes('cancel') || message.includes('hủy')) {
             return {
                 category: 'appointment',
                 icon: 'fa-calendar-check',
@@ -401,8 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: 'arv',
                 icon: 'fa-pills',
                 displayType: 'ARV REGIMEN',
-                navigationUrl: CONFIG.NAVIGATION.ARV_MEDICATIONS,
-                actionText: 'View ARV Medications'
+                navigationUrl: CONFIG.NAVIGATION.ARV_REGIMEN + '#arvRegimens',
+                actionText: 'View ARV Regimen'
             };
         }
         
@@ -427,6 +468,19 @@ document.addEventListener('DOMContentLoaded', () => {
             message.includes('treatment') || message.includes('điều trị') ||
             message.includes('test result') || message.includes('kết quả xét nghiệm') ||
             message.includes('lab') || message.includes('xét nghiệm')) {
+            
+            // Check if it's specifically a test result
+            if (message.includes('test result') || message.includes('kết quả xét nghiệm') ||
+                message.includes('lab') || message.includes('xét nghiệm')) {
+                return {
+                    category: 'medical',
+                    icon: 'fa-flask',
+                    displayType: 'TEST RESULT',
+                    navigationUrl: CONFIG.NAVIGATION.MEDICAL_RECORDS + '#testResults',
+                    actionText: 'View Test Results'
+                };
+            }
+            
             return {
                 category: 'medical',
                 icon: 'fa-user-doctor',
@@ -479,6 +533,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (filteredNotifications.length === 0) {
             const filterText = currentFilter === 'appointment' ? 'appointment confirmations' : 
+                              currentFilter === 'arv' ? 'ARV regimen notifications' :
+                              currentFilter === 'medication' ? 'medication notifications' :
                               currentFilter === 'medical' ? 'medical notifications' :
                               currentFilter === 'system' ? 'system notifications' :
                               currentFilter === 'unread' ? 'unread notifications' : 'notifications';
@@ -498,9 +554,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const isUnread = unreadNotifications.find(u => u.notiId === notification.notiId);
             
             return `
-                <div class="notification-item ${isUnread ? 'unread' : 'read'}" 
+                <div class="notification-item ${isUnread ? 'unread' : 'read'} ${categoryInfo.requiresAction ? 'requires-action' : ''}" 
                      data-id="${notification.notiId}" 
-                     ${categoryInfo.navigationUrl ? `onclick="handleNotificationClick(${notification.notiId}, '${categoryInfo.navigationUrl}')"` : ''}>
+                     ${categoryInfo.specialNavigation ? `onclick="handleSpecialNotificationClick(${notification.notiId}, '${categoryInfo.specialNavigation}')"` :
+                       categoryInfo.navigationUrl && !categoryInfo.requiresAction ? `onclick="handleNotificationClick(${notification.notiId}, '${categoryInfo.navigationUrl}')"` : ''}>
                     <div class="notification-content">
                         <div class="notification-icon ${categoryInfo.category}">
                             <i class="fa-solid ${categoryInfo.icon}"></i>
@@ -518,7 +575,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <i class="fa-solid fa-check"></i> Mark as Read
                                     </button>
                                 ` : ''}
-                                ${categoryInfo.navigationUrl ? `
+                                
+                                ${categoryInfo.requiresAction && categoryInfo.appointmentId ? `
+                                    <div class="appointment-change-actions">
+                                        <button onclick="event.stopPropagation(); changeAppointmentStatus(${categoryInfo.appointmentId}, 2, ${notification.notiId})" class="accept-btn">
+                                            <i class="fa-solid fa-check-circle"></i> Accept Change
+                                        </button>
+                                        <button onclick="event.stopPropagation(); changeAppointmentStatus(${categoryInfo.appointmentId}, 4, ${notification.notiId})" class="reject-btn">
+                                            <i class="fa-solid fa-times-circle"></i> Reject Change
+                                        </button>
+                                    </div>
+                                ` : ''}
+                                
+                                ${categoryInfo.navigationUrl && !categoryInfo.requiresAction && !categoryInfo.specialNavigation ? `
                                     <button onclick="event.stopPropagation(); navigateToSection('${categoryInfo.navigationUrl}')" class="action-btn">
                                         <i class="fa-solid fa-external-link-alt"></i> ${categoryInfo.actionText}
                                     </button>
@@ -526,7 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                     </div>
-                    ${categoryInfo.navigationUrl ? '<div class="notification-click-hint">Click to view details</div>' : ''}
+                    ${(categoryInfo.navigationUrl && !categoryInfo.requiresAction) || categoryInfo.specialNavigation ? '<div class="notification-click-hint">Click to view details</div>' : ''}
+                    ${categoryInfo.requiresAction ? '<div class="notification-action-hint">Please accept or reject this change</div>' : ''}
                 </div>
             `;
         }).join('');
@@ -538,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'appointment':
                 return notifications.filter(n => {
                     const categoryInfo = categorizeNotification(n);
-                    return categoryInfo.category === 'appointment';
+                    return categoryInfo.category === 'appointment' || categoryInfo.category === 'appointment_change';
                 });
             case 'arv':
                 return notifications.filter(n => {
@@ -652,23 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Format date for display
     function formatDate(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diff = now - date;
-        const seconds = Math.floor(diff / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-        
-        if (days > 0) {
-            return `${days} day${days > 1 ? 's' : ''} ago`;
-        } else if (hours > 0) {
-            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-        } else if (minutes > 0) {
-            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-        } else {
-            return 'Just now';
-        }
+        return ``;
     }
     
     // Start periodic checking
@@ -699,6 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadNotifications = loadNotifications;
     window.markAsRead = markAsRead;
     window.markAllAsRead = markAllAsRead;
+    window.changeAppointmentStatus = changeAppointmentStatus;
     
     // Navigation functions
     function handleNotificationClick(notificationId, navigationUrl) {
@@ -710,6 +765,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Navigate to the appropriate section
         navigateToSection(navigationUrl);
+    }
+    
+    // Handle special notification clicks (like appointment changes)
+    function handleSpecialNotificationClick(notificationId, specialNavigation) {
+        // Call the specific navigation function
+        if (specialNavigation === 'navigateToAppointmentChange') {
+            navigateToAppointmentChange(notificationId);
+        } else {
+            // Fallback to regular navigation
+            handleNotificationClick(notificationId, CONFIG.NAVIGATION.APPOINTMENTS);
+        }
     }
     
     function navigateToSection(url) {
@@ -727,6 +793,54 @@ document.addEventListener('DOMContentLoaded', () => {
         return match ? match[1] : null;
     }
     
+    // Extract appointment ID from message text
+    function extractAppointmentIdFromMessage(message) {
+        if (!message) return null;
+        const match = message.match(/appointment[^\d]*(\d+)/i) || 
+                     message.match(/cuộc hẹn[^\d]*(\d+)/i) ||
+                     message.match(/id[^\d]*(\d+)/i) ||
+                     message.match(/appointmentId=(\d+)/i);
+        return match ? match[1] : null;
+    }
+    
+    // Handle appointment status change (accept/reject)
+    async function changeAppointmentStatus(appointmentId, status, notificationId) {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.CHANGE_APPOINTMENT_STATUS}?appointmentId=${appointmentId}&status=${status}`, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    "accept": "*/*"
+                }
+            });
+            
+            if (response.ok) {
+                const statusText = status === 2 ? 'accepted' : 'rejected';
+                const successMessage = status === 2 ? CONFIG.MESSAGES.APPOINTMENT_ACCEPT_SUCCESS : CONFIG.MESSAGES.APPOINTMENT_REJECT_SUCCESS;
+                
+                // Show success message
+                alert(successMessage);
+                
+                // Mark notification as read
+                await markAsRead(notificationId);
+                
+                // Reload notifications to reflect changes
+                await loadNotifications();
+                
+                // Optionally navigate to appointments page
+                // navigateToSection(CONFIG.NAVIGATION.APPOINTMENTS);
+                
+            } else {
+                const errorText = await response.text();
+                throw new Error(`Server responded with ${response.status}: ${errorText}`);
+            }
+        } catch (error) {
+            console.error('Error changing appointment status:', error);
+            alert(CONFIG.MESSAGES.APPOINTMENT_ACTION_FAILED);
+        }
+    }
+    
     // Enhanced navigation for appointments with specific ID
     function navigateToAppointment(notificationId) {
         const notification = notifications.find(n => n.notiId === notificationId);
@@ -740,10 +854,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Enhanced navigation for appointment changes - redirect with appointment ID
+    function navigateToAppointmentChange(notificationId) {
+        const notification = notifications.find(n => n.notiId === notificationId);
+        if (notification) {
+            const appointmentId = extractAppointmentIdFromMessage(notification.notiMessage);
+            if (appointmentId) {
+                // Mark as read first, then navigate
+                markAsRead(notificationId).then(() => {
+                    window.location.href = `${CONFIG.NAVIGATION.APPOINTMENTS}?id=${appointmentId}`;
+                });
+            } else {
+                window.location.href = CONFIG.NAVIGATION.APPOINTMENTS;
+            }
+        }
+    }
+    
     // Expose navigation functions globally
     window.handleNotificationClick = handleNotificationClick;
+    window.handleSpecialNotificationClick = handleSpecialNotificationClick;
     window.navigateToSection = navigateToSection;
     window.navigateToAppointment = navigateToAppointment;
+    window.navigateToAppointmentChange = navigateToAppointmentChange;
     
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {

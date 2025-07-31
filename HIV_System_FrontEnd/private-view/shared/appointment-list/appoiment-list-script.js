@@ -26,7 +26,6 @@ if (!document.getElementById('filterStatus')) {
         <option value="2">Đã lên lịch</option>
         <option value="4">Đã hủy</option>
         <option value="5">Đã hoàn thành</option>
-        <option value="6">Đã từ chối</option>
     </select>
     <label for="filterDate">Ngày:</label>
     <input type="date" id="filterDate">
@@ -49,7 +48,6 @@ const appointmentStatusMap = {
     2: "Đã lên lịch",
     4: "Đã hủy",
     5: "Đã hoàn thành",
-    6: "Đã từ chối"
 };
 
 // Helper to determine display status (virtual rejected for pending->cancelled)
@@ -139,11 +137,14 @@ function applyFilters() {
 
     // Sort by date
     filtered.sort((a, b) => {
-        const dateA = new Date(a.apmtDate || a.requestDate || '1970-01-01');
-        const dateB = new Date(b.apmtDate || b.requestDate || '1970-01-01');
-        if (sortOrder === 'asc') return dateA - dateB;
-        return dateB - dateA;
-    });
+    // Lấy ngày và giờ, nếu thiếu thì dùng mặc định
+    const dateStrA = (a.apmtDate || a.requestDate) + 'T' + (a.apmTime || a.requestTime);
+    const dateStrB = (b.apmtDate || b.requestDate) + 'T' + (b.apmTime || b.requestTime);
+    const dateA = new Date(dateStrA);
+    const dateB = new Date(dateStrB);
+    if (sortOrder === 'asc') return dateA - dateB;
+    return dateB - dateA;
+});
 
     renderAppointments(filtered);
 }
@@ -287,34 +288,38 @@ function showAppointmentDetailsModal(apmt) {
         const date = apmt.apmtDate || apmt.requestDate || '';
         const timeSelect = document.getElementById('modifyTime');
         timeSelect.innerHTML = '<option>Đang tải...</option>';
-        fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetPersonalWorkSchedules?doctorId=${doctorId}`, {
+        fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetPersonalWorkSchedules`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())
             .then(schedules => {
+                // Chỉ lấy các ca làm việc khả dụng cho ngày đã chọn
                 const slots = (schedules || []).filter(s => s.workDate === date && s.isAvailable);
                 let options = [];
                 slots.forEach(s => {
-                    let start = s.startTime.slice(0, 5);
+                    let start = s.startTime.slice(0, 5); // "HH:mm"
                     let end = s.endTime.slice(0, 5);
                     let [sh, sm] = start.split(':').map(Number);
                     let [eh, em] = end.split(':').map(Number);
                     let current = new Date(0, 0, 0, sh, sm);
                     let endTime = new Date(0, 0, 0, eh, em);
-                    while (current < endTime) {
+
+                    // Tạo các slot 1 tiếng, chỉ hiển thị HH:mm
+                    while (current.getTime() + 45 * 60 * 1000 <= endTime.getTime()) {
                         let h = current.getHours().toString().padStart(2, '0');
                         let m = current.getMinutes().toString().padStart(2, '0');
-                        options.push(`${h}:${m}`);
-                        current.setHours(current.getHours() + 1);
+                        let slotStart = `${h}:${m}`;
+                        options.push(slotStart);
+                        // Nhảy sang slot tiếp theo (45 phút + 15 phút nghỉ)
+                        current = new Date(current.getTime() + (45 + 15) * 60 * 1000);
                     }
                 });
-                options = Array.from(new Set(options)).sort();
+                options = Array.from(new Set(options));
                 if (options.length > 0) {
                     timeSelect.innerHTML = options.map(t => `<option value="${t}">${t}</option>`).join('');
+                    // Nếu giờ hiện tại trùng slot thì chọn trước
                     const currentTime = (apmt.apmTime || apmt.requestTime || '').slice(0, 5);
-                    if (options.includes(currentTime)) {
-                        timeSelect.value = currentTime;
-                    }
+                    if (options.includes(currentTime)) timeSelect.value = currentTime;
                 } else {
                     timeSelect.innerHTML = '<option value="">Không có khung giờ khả dụng</option>';
                 }
@@ -469,7 +474,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                                 }
                             }
                         }
-                    } catch (e) {}
+                    } catch (e) { }
                     setMessage(msg, false);
                     return;
                 }
@@ -482,6 +487,48 @@ window.addEventListener('DOMContentLoaded', async () => {
                 setMessage('Lỗi khi cập nhật lịch hẹn.', false);
             }
         };
+
+        const dateInput = document.getElementById('modifyDate');
+        const timeSelect = document.getElementById('modifyTime');
+        if (dateInput) {
+            dateInput.onchange = function () {
+                const date = dateInput.value;
+                timeSelect.innerHTML = '<option>Đang tải...</option>';
+                fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetPersonalWorkSchedules`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                    .then(res => res.json())
+                    .then(schedules => {
+                        const slots = (schedules || []).filter(s => s.workDate === date && s.isAvailable);
+                        let options = [];
+                        slots.forEach(s => {
+                            let start = s.startTime.slice(0, 5);
+                            let end = s.endTime.slice(0, 5);
+                            let [sh, sm] = start.split(':').map(Number);
+                            let [eh, em] = end.split(':').map(Number);
+                            let current = new Date(0, 0, 0, sh, sm);
+                            let endTime = new Date(0, 0, 0, eh, em);
+                            while (current.getTime() + 45 * 60 * 1000 <= endTime.getTime()) {
+                                let h = current.getHours().toString().padStart(2, '0');
+                                let m = current.getMinutes().toString().padStart(2, '0');
+                                let slotStart = `${h}:${m}`;
+                                options.push(slotStart);
+                                // Nhảy sang slot tiếp theo (45 phút + 15 phút nghỉ)
+                                current = new Date(current.getTime() + (45 + 15) * 60 * 1000);
+                            }
+                        });
+                        options = Array.from(new Set(options));
+                        if (options.length > 0) {
+                            timeSelect.innerHTML = options.map(t => `<option value="${t}">${t}</option>`).join('');
+                        } else {
+                            timeSelect.innerHTML = '<option value="">Không có khung giờ khả dụng</option>';
+                        }
+                    })
+                    .catch(() => {
+                        timeSelect.innerHTML = '<option value="">Lỗi tải khung giờ</option>';
+                    });
+            };
+        }
     }
 
     // Modal close logic for message modal

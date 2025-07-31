@@ -517,6 +517,7 @@
 }
 
 .btn-home,
+.btn-services,
 .btn-community {
     background: transparent;
     color: #fff;
@@ -537,6 +538,7 @@
 .btn-view:hover,
 .dropdown:hover .btn-view,
 .btn-home:hover,
+.btn-services:hover,
 .btn-community:hover {
     background: #fff;
     color: #e74c3c;
@@ -647,6 +649,7 @@
     .btn-booking,
     .btn-logout,
     .btn-home,
+    .btn-services,
     .btn-community {
         font-size: 0.95rem;
         padding: 0.4rem 0.9rem;

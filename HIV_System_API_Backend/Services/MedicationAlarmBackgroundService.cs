@@ -9,7 +9,7 @@ namespace HIV_System_API_Backend.Services
     {
         private readonly ILogger<MedicationAlarmBackgroundService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(5); // Check every 5 minutes
+        private readonly TimeSpan _interval = TimeSpan.FromSeconds(1); // Check every seconds
 
         public MedicationAlarmBackgroundService(
             ILogger<MedicationAlarmBackgroundService> logger,
