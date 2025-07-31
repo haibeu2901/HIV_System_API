@@ -924,3 +924,27 @@ a:focus {
         font-size: 1rem;
     }
 }
+.profile-avatar-emoji {
+    font-size: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.2rem auto;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.07);
+}
+.profile-avatar-emoji {
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.2rem auto;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.07);
+}
