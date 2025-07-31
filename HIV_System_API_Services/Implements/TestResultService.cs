@@ -287,6 +287,13 @@ namespace HIV_System_API_Services.Implements
                             throw new ArgumentException("Ghi chú kết quả kiểm tra thành phần quá dài", nameof(component.Notes));
                     }
 
+                    // Validate date and time - the testate must be today
+                    var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                    if (testResult.TestDate > currentDate)
+                        throw new ArgumentException("Ngày xét nghiệm không thể ở tương lai", nameof(testResult.TestDate));
+                    if (testResult.TestDate < currentDate)
+                        throw new ArgumentException("Ngày xét nghiệm quá xa trong quá khứ", nameof(testResult.TestDate));
+
                     // Check for duplicate component test result names (case-insensitive)
                     var componentNames = componentTestResults
                         .Select(c => c.ComponentTestResultName.Trim().ToLower())
