@@ -382,7 +382,7 @@ function renderTestResults(testResults) {
 
         html += `
             <tr class="test-result-row" data-idx="${idx}" style="cursor:pointer;">
-                <td>${testResult.testDate}</td>
+                <td>${new Date(testResult.testDate).toLocaleDateString()}</td>
                 <td><span class="test-result-overall ${resultClass}">${resultText}</span></td>
                 <td>${testResult.notes || ''}</td>
                 <td>
@@ -492,6 +492,7 @@ function renderARVRegimens(regimens, medications) {
                 <tr>
                     <th>Bậc</th>
                     <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
                     <th>Ngày bắt đầu</th>
                     <th>Ngày kết thúc</th>
                     <th>Ghi chú</th>
@@ -510,8 +511,9 @@ function renderARVRegimens(regimens, medications) {
             <tr class="regimen-row" data-idx="${idx}" style="cursor:pointer;">
                 <td>${levelText}</td>
                 <td>${statusText}</td>
-                <td>${regimen.startDate}</td>
-                <td>${regimen.endDate || 'Đang áp dụng'}</td>
+                <td>${new Date(regimen.createdAt).toLocaleDateString()}</td>
+                <td>${new Date(regimen.startDate).toLocaleDateString()}</td>
+                <td>${new Date(regimen.endDate).toLocaleDateString() || 'Đang áp dụng'}</td>
                 <td>${regimen.notes ? regimen.notes : ''}</td>
                 <td>
                     <button class="toggle-details-btn" data-idx="${idx}">▼</button>
@@ -519,7 +521,6 @@ function renderARVRegimens(regimens, medications) {
             </tr>
             <tr class="regimen-details-row" id="regimen-details-${idx}" style="display:none;background:#fafbfc;">
                 <td colspan="6">
-                    <div><strong>Ngày tạo:</strong> ${new Date(regimen.createdAt).toLocaleDateString()}</div>
                     <div><strong>Tổng chi phí:</strong> ${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
                     <h4>Thuốc</h4>
                     ${regimenMeds.length > 0 ? `
