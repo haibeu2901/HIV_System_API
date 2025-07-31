@@ -26,7 +26,6 @@ if (!document.getElementById('filterStatus')) {
         <option value="2">Đã lên lịch</option>
         <option value="4">Đã hủy</option>
         <option value="5">Đã hoàn thành</option>
-        <option value="6">Đã từ chối</option>
     </select>
     <label for="filterDate">Ngày:</label>
     <input type="date" id="filterDate">
@@ -49,7 +48,6 @@ const appointmentStatusMap = {
     2: "Đã lên lịch",
     4: "Đã hủy",
     5: "Đã hoàn thành",
-    6: "Đã từ chối"
 };
 
 // Helper to determine display status (virtual rejected for pending->cancelled)
