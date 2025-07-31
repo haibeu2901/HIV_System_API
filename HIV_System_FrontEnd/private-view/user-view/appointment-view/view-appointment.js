@@ -3,6 +3,7 @@ const selectedId = params.get('id');
 
 document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
+  const currentPersonalId = parseInt(localStorage.getItem("accId")); // Get current user's ID
   const calendarEl = document.getElementById("calendar");
 
   let events = [];
@@ -45,6 +46,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           originalTime: appt.apmTime,
           requestDate: appt.requestDate,
           requestTime: appt.requestTime,
+          requestBy: appt.requestBy,
+          patientId: appt.patientId,
+          doctorId: appt.doctorId
         },
       };
     })
@@ -96,7 +100,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         date: displayDate,
         time: displayTime ? displayTime.slice(0, 5) : info.event.start.toTimeString().slice(0, 5),
         notes: info.event.extendedProps.notes === "None" ? "" : info.event.extendedProps.notes,
-        statusCode: eventStatusCode
+        statusCode: eventStatusCode,
+        requestBy: info.event.extendedProps.requestBy,
+        patientId: info.event.extendedProps.patientId,
+        doctorId: info.event.extendedProps.doctorId
       };
       
       // Debug logging
@@ -124,8 +131,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         info.event.extendedProps.notes;
 
       // Show/hide buttons based on appointment status
+      const acceptButton = document.getElementById("accept-request-btn");
       const updateButton = document.getElementById("update-appointment-btn");
       const cancelButton = document.getElementById("cancel-appointment-btn");
+      
+      // Check if this is a request from someone else (doctor/staff) that needs user approval
+      const isRequestFromOthers = window.currentAppointment.requestBy && 
+                                 window.currentAppointment.requestBy !== currentPersonalId &&
+                                 eventStatusCode === 1; // Only for pending appointments
+      
+      // Show accept button if it's a request from someone else
+      if (acceptButton) {
+        if (isRequestFromOthers) {
+          acceptButton.style.display = "block";
+          acceptButton.onclick = () => acceptAppointmentRequest();
+        } else {
+          acceptButton.style.display = "none";
+        }
+      }
       
       if (eventStatusCode === 1 || eventStatusCode === 2) { // Pending or Confirmed
         if (updateButton) {
@@ -580,6 +603,87 @@ async function performCancelAppointment() {
 async function cancelAppointment(appointmentId, eventObj) {
   // This function is deprecated - redirecting to new confirmation modal
   showCancelConfirmation();
+}
+
+// Accept appointment request function
+async function acceptAppointmentRequest() {
+  const token = localStorage.getItem("token");
+  const appointmentId = window.currentAppointment.id;
+  
+  try {
+    // Show loading state on the accept button
+    const acceptButton = document.getElementById("accept-request-btn");
+    acceptButton.disabled = true;
+    acceptButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
+    console.log('Accepting appointment request:', {
+      appointmentId,
+      currentAppointment: window.currentAppointment
+    });
+
+    // Call the API to accept the appointment request (status = 2)
+    const url = `https://localhost:7009/api/Appointment/ChangePersonalAppointmentStatus?appointmentId=${appointmentId}&status=2`;
+    console.log('API URL:', url);
+    
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log('Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.log('Error response:', errorData);
+      
+      // Handle specific error cases
+      let userErrorMessage = 'Không thể chấp nhận yêu cầu lịch hẹn. ';
+      
+      switch (response.status) {
+        case 400:
+          userErrorMessage += 'Dữ liệu không hợp lệ.';
+          break;
+        case 404:
+          userErrorMessage += 'Không tìm thấy lịch hẹn.';
+          break;
+        case 409:
+          userErrorMessage += 'Lịch hẹn đã được xử lý hoặc có xung đột.';
+          break;
+        default:
+          userErrorMessage += 'Vui lòng thử lại sau.';
+      }
+      
+      throw new Error(userErrorMessage);
+    }
+
+    // Get response data for success handling
+    const responseData = await response.json();
+    console.log('Accept success response:', responseData);
+
+    // Success - close modal and show success message
+    document.getElementById("sticky-note-modal").classList.add("hidden");
+    showNotification("Đã chấp nhận yêu cầu lịch hẹn thành công!", "success");
+    
+    // Reload the page to reflect changes
+    setTimeout(() => {
+      location.reload();
+    }, 1500);
+
+  } catch (error) {
+    console.error("Error accepting appointment request:", error);
+    
+    // Show user-friendly error message
+    const errorMessage = error.message || "Không thể chấp nhận yêu cầu lịch hẹn. Vui lòng thử lại.";
+    showNotification(errorMessage, "error");
+    
+    // Reset button state
+    const acceptButton = document.getElementById("accept-request-btn");
+    acceptButton.disabled = false;
+    acceptButton.innerHTML = '<i class="fas fa-check"></i> Đồng ý';
+  }
 }
 
 // Show notification function
