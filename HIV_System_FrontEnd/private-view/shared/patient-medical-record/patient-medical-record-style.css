@@ -49,7 +49,7 @@
     border-radius: 15px;
     padding: 2rem;
     margin-bottom: 2rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .section h3 {
@@ -95,10 +95,25 @@
     font-weight: 500;
 }
 
-.status-1 { background: #fef3c7; color: #92400e; }
-.status-2 { background: #dbeafe; color: #1e40af; }
-.status-3 { background: #d1fae5; color: #065f46; }
-.status-4 { background: #fee2e2; color: #991b1b; }
+.status-1 {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-2 {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-3 {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-4 {
+    background: #fee2e2;
+    color: #991b1b;
+}
 
 /* Test Results Styling */
 .test-result-card {
@@ -182,15 +197,6 @@
     margin-bottom: 1rem;
 }
 
-.regimen-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
 .regimen-id {
     font-weight: 600;
     color: #333;
@@ -217,7 +223,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 8px;
+    background: #fafbfc;
+    border-radius: 4px;
+    padding: 12px;
 }
 
 .regimen-detail {
@@ -257,6 +266,7 @@
     padding: 8px 10px;
     text-align: left;
 }
+
 .medication-usage-input {
     width: 100%;
     min-width: 120px;
@@ -344,7 +354,7 @@
     width: 100vw;
     height: 100vh;
     overflow: auto;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
@@ -355,7 +365,7 @@
     width: 100%;
     max-width: 900px !important;
     min-width: 350px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     position: relative;
     max-height: 90vh;
     overflow-y: auto;
@@ -371,16 +381,21 @@
     cursor: pointer;
     transition: color 0.2s;
 }
-.close:hover { color: #e74c3c; }
+
+.close:hover {
+    color: #e74c3c;
+}
 
 .form-group {
     margin-bottom: 1.5rem;
 }
+
 .form-group label {
     font-weight: 600;
     display: block;
     margin-bottom: 0.5rem;
 }
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -392,9 +407,11 @@
     margin-top: 0.2rem;
     box-sizing: border-box;
 }
+
 .form-group textarea {
     resize: vertical;
 }
+
 .primary-btn {
     background: #e74c3c;
     color: #fff;
@@ -406,9 +423,11 @@
     cursor: pointer;
     transition: background 0.2s;
 }
+
 .primary-btn:hover {
     background: #c0392b;
 }
+
 .secondary-btn {
     background: #f3f4f6;
     color: #e74c3c;
@@ -421,25 +440,32 @@
     margin-left: 1rem;
     transition: background 0.2s, color 0.2s;
 }
+
 .secondary-btn:hover {
     background: #e74c3c;
     color: #fff;
 }
+
 .form-actions {
     text-align: right;
 }
-#medicationsTable th, #medicationsTable td {
+
+#medicationsTable th,
+#medicationsTable td {
     padding: 12px 16px;
     text-align: left;
 }
+
 #medicationsTable th {
     background: #f3f4f6;
     color: #333;
     font-weight: 600;
 }
+
 #medicationsTable td {
     vertical-align: middle;
 }
+
 #medicationsTable .remove-med-btn {
     background: none;
     border: none;
@@ -449,6 +475,7 @@
     padding: 0 0.5rem;
     transition: color 0.2s;
 }
+
 #medicationsTable .remove-med-btn:hover {
     color: #c0392b;
 }
@@ -462,22 +489,26 @@
     background: #fff;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
+
 .payments-table th,
 .payments-table td {
     border: 1px solid #e5e7eb;
     padding: 12px 16px;
     text-align: left;
 }
+
 .payments-table th {
     background: #f3f4f6;
     color: #e74c3c;
     font-weight: 600;
 }
+
 .payments-table tr:nth-child(even) td {
     background: #f9fafb;
 }
+
 .payment-status {
     padding: 4px 10px;
     border-radius: 6px;
@@ -485,9 +516,25 @@
     font-weight: 500;
     display: inline-block;
 }
-.payment-status-1 { background: #fef3c7; color: #92400e; } /* Chờ xử lý */
-.payment-status-2 { background: #d1fae5; color: #065f46; } /* Thành công */
-.payment-status-3 { background: #fee2e2; color: #991b1b; } /* Thất bại */
+
+.payment-status-1 {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Chờ xử lý */
+.payment-status-2 {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Thành công */
+.payment-status-3 {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Thất bại */
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -496,28 +543,25 @@
         text-align: center;
         gap: 1rem;
     }
-    
+
     .patient-details {
         grid-template-columns: 1fr;
     }
-    
+
     .appointments-table {
         font-size: 0.9rem;
     }
-    
+
     .appointments-table th,
     .appointments-table td {
         padding: 8px;
     }
-    
+
     .component-results {
         grid-template-columns: 1fr;
     }
-    
-    .regimen-details {
-        grid-template-columns: 1fr;
-    }
-    
+
+
     .test-result-header,
     .regimen-header {
         flex-direction: column;
@@ -549,6 +593,7 @@
     padding: 4px 12px;
     font-weight: 600;
 }
+
 .regimen-status.regimen-inactive {
     background: #f9f9f9;
     color: #aaa;
@@ -556,6 +601,7 @@
     padding: 4px 12px;
     font-weight: 600;
 }
+
 .regimen-status.regimen-planned {
     background: #e6f2fb;
     color: #3498db;
@@ -563,6 +609,7 @@
     padding: 4px 12px;
     font-weight: 600;
 }
+
 .regimen-status.regimen-paused {
     background: #f3f3f3;
     color: #888;
@@ -570,6 +617,7 @@
     padding: 4px 12px;
     font-weight: 600;
 }
+
 .regimen-status.regimen-failed {
     background: #fdecea;
     color: #e74c3c;
@@ -577,6 +625,7 @@
     padding: 4px 12px;
     font-weight: 600;
 }
+
 .regimen-status.regimen-completed {
     background: #f0f9eb;
     color: #27ae60;
@@ -721,11 +770,11 @@
         align-items: flex-start;
         gap: 0.5rem;
     }
-    
+
     .payment-amount {
         font-size: 1.1rem;
     }
-    
+
     .payment-info strong {
         min-width: auto;
         display: block;
@@ -825,6 +874,7 @@
 .service-description:empty {
     display: none !important;
 }
+
 select.medication-name-select {
     color: #222 !important;
     background: #fff !important;
@@ -833,13 +883,15 @@ select.medication-name-select {
     width: auto !important;
     height: auto !important;
     appearance: auto !important;
-  }
-  /* Increase width for regimen modals */
+}
+
+/* Increase width for regimen modals */
 #regimenModal .modal-content,
 #updateRegimenStatusModal .modal-content {
     max-width: 900px;
     width: 95%;
 }
+
 /* Make "Cách sử dụng" column wider */
 #medicationsTable th:nth-child(5),
 #medicationsTable td:nth-child(5) {
@@ -861,10 +913,12 @@ select.medication-name-select {
     padding: 0;
     margin: 0;
 }
+
 .regimen-list-item {
     border-bottom: 1px solid #eee;
     padding: 12px 0;
 }
+
 .regimen-header {
     cursor: pointer;
     background: #f3f4f6;
@@ -872,29 +926,24 @@ select.medication-name-select {
     border-radius: 4px;
     display: flex;
     align-items: center;
+    display: flex;
     justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
 }
-.toggle-details-btn {
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-}
-.regimen-details {
-    margin-top: 8px;
-    background: #fafbfc;
-    border-radius: 4px;
-    padding: 12px;
-}
-.regimens-table th, .regimens-table td {
+.regimens-table th,
+.regimens-table td {
     padding: 12px 10px;
     border: 1px solid #e5e7eb;
     text-align: left;
     vertical-align: top;
 }
+
 .regimen-details-row td {
     background: #fafbfc;
 }
+
 .toggle-details-btn {
     background: none;
     border: none;
@@ -902,15 +951,19 @@ select.medication-name-select {
     cursor: pointer;
     margin-left: 8px;
 }
-.test-results-table th, .test-results-table td {
+
+.test-results-table th,
+.test-results-table td {
     padding: 12px 10px;
     border: 1px solid #e5e7eb;
     text-align: left;
     vertical-align: top;
 }
+
 .test-result-details-row td {
     background: #fafbfc;
 }
+
 .toggle-test-details-btn {
     background: none;
     border: none;
@@ -918,24 +971,25 @@ select.medication-name-select {
     cursor: pointer;
     margin-left: 8px;
 }
+
 /* Filter Bar Styling */
 .filter-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 18px;
-    background: #d4d8e4;
+    background: #eff2fb;
     padding: 14px 22px;
     border-radius: 8px;
     margin-bottom: 20px;
     font-family: 'Segoe UI', Arial, 'Roboto', 'Helvetica Neue', sans-serif;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .filter-bar label {
     font-weight: 500;
     margin-right: 4px;
-    color: #c0392b;
+    color: #cc3f2f;
 }
 
 .filter-bar select,
@@ -953,12 +1007,12 @@ select.medication-name-select {
 .filter-bar select:focus,
 .filter-bar input[type="date"]:focus,
 .filter-bar input[type="time"]:focus {
-    border-color: #c0392b;
+    border-color: #e74c3c;
     outline: none;
 }
 
 .filter-bar button {
-    background: #c0392b;
+    background: #e74c3c;
     color: #fff;
     border: none;
     padding: 7px 18px;
@@ -968,6 +1022,7 @@ select.medication-name-select {
     transition: background 0.2s;
     font-weight: 500;
 }
+
 .filter-bar button:hover {
     background: #a02a1c;
 }

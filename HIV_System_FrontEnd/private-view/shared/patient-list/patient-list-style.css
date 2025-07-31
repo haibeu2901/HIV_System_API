@@ -94,7 +94,7 @@
   margin-top: 24px;
 }
 .view-payments-btn {
-    background: #4ee567;
+    background: #3cbd51;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -104,5 +104,5 @@
     transition: background 0.2s;
 }
 .view-payments-btn:hover {
-    background: #17a92f;
+    background: #1b862d;
 }
