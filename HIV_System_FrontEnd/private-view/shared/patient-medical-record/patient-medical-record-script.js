@@ -212,20 +212,47 @@ function convertPaymentMethodToEnglish(vietnameseMethod) {
 // Create new payment
 async function createPayment(paymentData) {
     try {
-        // Convert payment method to English before sending to API
-        if (paymentData.paymentMethod) {
-            paymentData.paymentMethod = convertPaymentMethodToEnglish(paymentData.paymentMethod);
-        }
+        // Determine which API to use based on payment method
+        const originalMethod = paymentData.paymentMethod;
+        const isCashPayment = originalMethod === 'Tiền mặt' || originalMethod === 'cash';
+        
+        // Prepare request body with the new structure
+        const requestBody = {
+            pmrId: paymentData.pmrId,
+            srvId: paymentData.srvId,
+            amount: paymentData.amount,
+            currency: paymentData.currency,
+            description: paymentData.description,
+            notes: paymentData.notes || paymentData.description // Use description as notes if notes not provided
+        };
+        
+        // Choose API endpoint based on payment method
+        const apiEndpoint = isCashPayment 
+            ? 'https://localhost:7009/api/Payment/CreateCashPayment'
+            : 'https://localhost:7009/api/Payment/CreatePayment';
+        
+        console.log('Creating payment:', {
+            method: originalMethod,
+            isCash: isCashPayment,
+            endpoint: apiEndpoint,
+            requestBody: requestBody
+        });
+        
+        const response = await fetch(apiEndpoint, {
 
-        const response = await fetch('https://localhost:7009/api/Payment/CreatePayment', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(paymentData)
+            body: JSON.stringify(requestBody)
         });
-        if (!response.ok) throw new Error('Lỗi tạo thanh toán');
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Payment creation failed:', errorText);
+            throw new Error('Lỗi tạo thanh toán');
+        }
         return await response.json();
     } catch (error) {
         console.error('Error creating payment:', error);
@@ -917,7 +944,7 @@ updateRegimenStatusForm.onsubmit = async function (e) {
     const regimenId = updateRegimenStatusId.value;
     const newStatus = +updateRegimenStatusSelect.value;
     const notes = updateRegimenStatusNotes.value.trim();
-    if (!regimenId || !newStatus || !notes) {
+    if (!regimenId || !newStatus) {
         updateRegimenStatusMsg.textContent = 'Please fill all fields.';
         return;
     }
@@ -1966,7 +1993,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 amount: amount,
                 currency: currency,
                 paymentMethod: paymentMethod,
-                description: description
+                description: description,
+                notes: description // Use description as notes for API compatibility
             };
 
             try {
