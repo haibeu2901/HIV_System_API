@@ -84,7 +84,7 @@ namespace HIV_System_API_Services.Implements
                 AlarmTime = request.AlarmTime,
                 IsActive = request.IsActive,
                 Notes = request.Notes,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
 
             _medicationAlarms.TryAdd(alarmId, alarmData);
@@ -147,7 +147,7 @@ namespace HIV_System_API_Services.Implements
             if (request.Notes != null)
                 alarm.Notes = request.Notes;
 
-            alarm.UpdatedAt = DateTime.UtcNow;
+            alarm.UpdatedAt = DateTime.Now;
 
             return Task.FromResult(MapToResponseDTO(alarm));
         }
@@ -184,14 +184,14 @@ namespace HIV_System_API_Services.Implements
                 throw new UnauthorizedAccessException("Bạn không có quyền thay đổi báo động này.");
 
             alarm.IsActive = isActive;
-            alarm.UpdatedAt = DateTime.UtcNow;
+            alarm.UpdatedAt = DateTime.Now;
 
             return Task.FromResult(true);
         }
 
         public async Task ProcessMedicationAlarmsAsync()
         {
-            var currentTime = DateTime.UtcNow;
+            var currentTime = DateTime.Now;
             var currentTimeOnly = TimeOnly.FromDateTime(currentTime);
             var today = currentTime.Date;
 
@@ -230,7 +230,7 @@ namespace HIV_System_API_Services.Implements
             {
                 NotiType = "Nhắc nhở uống thuốc",
                 NotiMessage = message,
-                SendAt = DateTime.UtcNow
+                SendAt = DateTime.Now
             };
 
             await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, alarm.PatientAccountId);
