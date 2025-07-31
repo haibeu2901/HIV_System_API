@@ -82,16 +82,21 @@ function getAllHourSlots(schedules) {
     schedules.forEach(item => {
         let start = timeToMinutes(item.startTime);
         let end = timeToMinutes(item.endTime);
-        while (start + 90 <= end) {
+        console.log('Tạo slot từ:', minutesToTime(start), 'đến', minutesToTime(end));
+        while (start + 45 <= end) {
             const slotStart = start;
-            const slotEnd = start + 90;
+            const slotEnd = start + 45;
             slotSet.add(`${minutesToTime(slotStart)}-${minutesToTime(slotEnd)}`);
-            start = slotEnd + 15; // move to next slot after 15m gap
+            start = slotEnd + 15;
         }
     });
-    return Array.from(slotSet).sort();
+    return Array.from(slotSet).sort((a, b) => {
+        // Sắp xếp theo thời gian bắt đầu slot
+        const [aStart] = a.split('-');
+        const [bStart] = b.split('-');
+        return timeToMinutes(aStart) - timeToMinutes(bStart);
+    });
 }
-
 // Check if a slot is within a schedule
 function slotInSchedule(slotStart, slotEnd, schedStart, schedEnd) {
     return slotStart >= schedStart && slotEnd <= schedEnd;
