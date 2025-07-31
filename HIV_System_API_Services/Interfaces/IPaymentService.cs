@@ -11,6 +11,7 @@ namespace HIV_System_API_Services.Interfaces
     public interface IPaymentService
     {
         Task<(string ClientSecret, PaymentResponseDTO Payment)> CreatePaymentWithIntentAsync(PaymentRequestDTO dto);
+        Task<PaymentResponseDTO> CreateCashPaymentAsync(CashPaymentRequestDTO dto);
         Task<PaymentResponseDTO?> GetPaymentByIntentIdAsync(string paymentIntentId);
         Task UpdatePaymentStatusByIntentIdAsync(string paymentIntentId, byte status);
         Task<PaymentResponseDTO> UpdatePaymentStatusByIdAsync(int paymentId, byte status); 

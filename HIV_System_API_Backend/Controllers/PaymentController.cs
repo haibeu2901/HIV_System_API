@@ -54,16 +54,83 @@ namespace HIV_System_API_Backend.Controllers
         {
             try
             {
+                // Ensure this endpoint only handles card payments
+                if (request.PaymentMethod != "card")
+                {
+                    return BadRequest(new { 
+                        Error = "This endpoint only supports card payments.", 
+                        Suggestion = "Use 'CreateCashPayment' endpoint for cash payments.",
+                        AvailableEndpoints = new
+                        {
+                            CardPayments = "/api/Payment/CreatePayment",
+                            CashPayments = "/api/Payment/CreateCashPayment"
+                        }
+                    });
+                }
+
                 var (clientSecret, payment) = await _paymentService.CreatePaymentWithIntentAsync(request);
-                return Ok(new { ClientSecret = clientSecret, Payment = payment });
+                return Ok(new { 
+                    ClientSecret = clientSecret, 
+                    Payment = payment,
+                    Message = "Card payment created successfully. Use the client secret to complete payment.",
+                    PaymentMethod = "card"
+                });
             }
             catch (StripeException ex)
+            {
+                return BadRequest(new { Error = ex.Message, Type = "Stripe Error" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Create a cash payment request (bypasses Stripe completely)
+        /// </summary>
+        /// <param name="request">Cash payment details</param>
+        /// <returns>Created cash payment with pending status</returns>
+        /// <response code="201">Returns the created cash payment</response>
+        /// <response code="400">If the request is invalid</response>
+        /// <response code="401">If the user is not authenticated</response>
+        /// <response code="500">If there was an internal server error</response>
+        [HttpPost("CreateCashPayment")]
+        [Authorize(Roles = "1, 2, 4, 5")] 
+        public async Task<IActionResult> CreateCashPayment([FromBody] CashPaymentRequestDTO request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return BadRequest(new { Error = "Request body is required" });
+                }
+
+                var payment = await _paymentService.CreateCashPaymentAsync(request);
+                
+                return CreatedAtAction(nameof(GetPaymentById), new { id = payment.PayId }, new
+                {
+                    Message = "Yêu cầu thanh toán tiền mặt đã được tạo thành công. Vui lòng thanh toán tại quầy lễ tân.",
+                    Payment = payment,
+                    Instructions = new
+                    {
+                        Vi = "Mang mã thanh toán này đến quầy lễ tân để hoàn tất thanh toán.",
+                        En = "Bring this payment code to the reception desk to complete payment.",
+                        PaymentCode = $"#{payment.PayId}"
+                    }
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(new { Error = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = ex.InnerException });
+                return StatusCode(500, new { Error = ex.Message });
             }
         }
 
@@ -392,6 +459,44 @@ namespace HIV_System_API_Backend.Controllers
             {
                 return StatusCode(500, new { Error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Get available payment methods
+        /// </summary>
+        /// <returns>List of available payment methods</returns>
+        [HttpGet("GetPaymentMethods")]
+        [Authorize]
+        public IActionResult GetPaymentMethods()
+        {
+            var paymentMethods = new[]
+            {
+                new { 
+                    Method = "card", 
+                    Name = "Thẻ tín dụng/ghi nợ", 
+                    Description = "Thanh toán trực tuyến qua Stripe", 
+                    Available = true,
+                    Features = new[] { "Instant processing", "Online payment", "Automatic confirmation" }
+                },
+                new { 
+                    Method = "cash", 
+                    Name = "Tiền mặt", 
+                    Description = "Thanh toán tại quầy lễ tân", 
+                    Available = true,
+                    Features = new[] { "Pay at reception", "Staff confirmation required", "No online fees" }
+                }
+            };
+
+            return Ok(new
+            {
+                PaymentMethods = paymentMethods,
+                Message = "Chọn phương thức thanh toán",
+                Instructions = new
+                {
+                    Card = "Thanh toán ngay lập tức qua thẻ tín dụng/ghi nợ",
+                    Cash = "Tạo yêu cầu thanh toán và đến quầy lễ tân để thanh toán tiền mặt"
+                }
+            });
         }
     }
 }
