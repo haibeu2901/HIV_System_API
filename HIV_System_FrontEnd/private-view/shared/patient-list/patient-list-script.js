@@ -174,7 +174,6 @@ function renderPatients(patients) {
                         <td>${p.account.gender ? 'Nam' : 'Nữ'}</td>
                         <td>${p.account.dob}</td>
                         <td><button class="view-details-btn" data-patient-id="${p.patientId}">Xem</button></td>
-                        <td><button class="view-payments-btn" data-pmr-id="${p.pmrId}" data-patient-name="${p.account.fullname}">Xem thanh toán</button></td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -190,16 +189,7 @@ function renderPatients(patients) {
             window.location.href = `../patient-medical-record/patient-medical-record.html?patientId=${patientId}`;
         };
     });
-    
-    // Add event listeners for view payments buttons
-    document.querySelectorAll('.view-payments-btn').forEach(btn => {
-        btn.onclick = async function() {
-            const pmrId = this.getAttribute('data-pmr-id');
-            const patientName = this.getAttribute('data-patient-name');
-            await showPaymentModal(pmrId, patientName);
-        };
-    });
-    
+
     // Modal close logic
     const closeModalBtn = document.getElementById('closePatientModal');
     if (closeModalBtn) {
@@ -207,15 +197,7 @@ function renderPatients(patients) {
             document.getElementById('patientDetailModal').style.display = 'none';
         };
     }
-    
-    // Payment modal close logic
-    const closePaymentModalBtn = document.getElementById('closePaymentModal');
-    if (closePaymentModalBtn) {
-        closePaymentModalBtn.onclick = function() {
-            document.getElementById('paymentModal').style.display = 'none';
-        };
-    }
-    
+        
     window.onclick = function(event) {
         const modal = document.getElementById('patientDetailModal');
         const paymentModal = document.getElementById('paymentModal');
@@ -366,6 +348,7 @@ async function completeCashPayment(paymentIntentId, button) {
     }
 }
 
+
 // Utility functions for formatting
 function formatCurrency(amount) {
     return new Intl.NumberFormat('vi-VN').format(amount);
@@ -400,14 +383,6 @@ const appointmentStatusMap = {
     3: 'Đã xác nhận lại',
     4: 'Đã hủy',
     5: 'Đã hoàn thành'
-};
-
-// Payment status mapping
-const paymentStatusMap = {
-    1: 'Chờ thanh toán',
-    2: 'Đã thanh toán',
-    3: 'Đã hủy',
-    4: 'Đã hoàn tiền'
 };
 
 window.addEventListener('DOMContentLoaded', async () => {
