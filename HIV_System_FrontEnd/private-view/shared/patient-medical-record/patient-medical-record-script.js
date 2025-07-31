@@ -1869,9 +1869,6 @@ function applyTestResultFilters() {
 
     renderTestResults(filtered);
 }
-function updateAddMedicationBtnState() {
-    // No-op: implement logic if needed to enable/disable the add button
-}
 // Handle remove medication button
 medicationsTableBody.onclick = function (e) {
     if (e.target.closest('.remove-med-btn')) {
