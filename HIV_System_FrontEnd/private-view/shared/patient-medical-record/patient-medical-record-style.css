@@ -854,3 +854,67 @@ select.medication-name-select {
     min-width: 180px;
     box-sizing: border-box;
 }
+
+/* Regimen List Styles */
+.regimen-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.regimen-list-item {
+    border-bottom: 1px solid #eee;
+    padding: 12px 0;
+}
+.regimen-header {
+    cursor: pointer;
+    background: #f3f4f6;
+    padding: 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.toggle-details-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+.regimen-details {
+    margin-top: 8px;
+    background: #fafbfc;
+    border-radius: 4px;
+    padding: 12px;
+}
+.regimens-table th, .regimens-table td {
+    padding: 12px 10px;
+    border: 1px solid #e5e7eb;
+    text-align: left;
+    vertical-align: top;
+}
+.regimen-details-row td {
+    background: #fafbfc;
+}
+.toggle-details-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 8px;
+}
+.test-results-table th, .test-results-table td {
+    padding: 12px 10px;
+    border: 1px solid #e5e7eb;
+    text-align: left;
+    vertical-align: top;
+}
+.test-result-details-row td {
+    background: #fafbfc;
+}
+.toggle-test-details-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 8px;
+}
