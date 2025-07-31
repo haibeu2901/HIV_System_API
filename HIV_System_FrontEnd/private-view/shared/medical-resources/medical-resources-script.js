@@ -34,6 +34,7 @@ function renderArvMedicines(medicines) {
                 <th>Liều dùng</th>
                 <th>Giá</th>
                 <th>Nhà sản xuất</th>
+                <th>Loại</th>
             </tr>
         </thead>
         <tbody>
@@ -44,6 +45,7 @@ function renderArvMedicines(medicines) {
                     <td>${med.arvMedicationDosage}</td>
                     <td>${formatPrice(med.arvMedicationPrice)}</td>
                     <td>${med.arvMedicationManufacturer}</td>
+                    <td>${med.arvMedicationType}</td>
                 </tr>
             `).join('')}
         </tbody>

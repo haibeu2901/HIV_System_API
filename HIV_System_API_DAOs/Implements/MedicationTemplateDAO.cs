@@ -12,7 +12,7 @@ namespace HIV_System_API_DAOs.Implements
     public class MedicationTemplateDAO : IMedicationTemplateDAO
     {
         private readonly HivSystemApiContext _context;
-        private static MedicationTemplateDAO _instance;
+        private static MedicationTemplateDAO? _instance;
 
         public MedicationTemplateDAO()
         {
@@ -79,6 +79,7 @@ namespace HIV_System_API_DAOs.Implements
         public async Task<List<ArvMedicationTemplate>> GetMedicationTemplatesByArtIdAsync(int artId)
         {
             return await _context.ArvMedicationTemplates
+                .AsNoTracking()
                 .Include(t => t.Amd)
                 .Include(t => t.Art)
                 .Where(t => t.ArtId == artId)

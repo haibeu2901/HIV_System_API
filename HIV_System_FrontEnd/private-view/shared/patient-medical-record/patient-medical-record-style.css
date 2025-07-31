@@ -254,8 +254,16 @@
 .medications-table th,
 .medications-table td {
     border: 1px solid #e5e7eb;
-    padding: 14px 18px; /* Increased padding for more spacing */
+    padding: 8px 10px;
     text-align: left;
+}
+.medication-usage-input {
+    width: 100%;
+    min-width: 120px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
 }
 
 .medications-table th {
@@ -345,7 +353,8 @@
     padding: 2rem 2.5rem;
     border-radius: 12px;
     width: 100%;
-    max-width: 700px;
+    max-width: 900px !important;
+    min-width: 350px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     position: relative;
     max-height: 90vh;
@@ -815,4 +824,33 @@
 
 .service-description:empty {
     display: none !important;
+}
+select.medication-name-select {
+    color: #222 !important;
+    background: #fff !important;
+    text-indent: 0 !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    appearance: auto !important;
+  }
+  /* Increase width for regimen modals */
+#regimenModal .modal-content,
+#updateRegimenStatusModal .modal-content {
+    max-width: 900px;
+    width: 95%;
+}
+/* Make "Cách sử dụng" column wider */
+#medicationsTable th:nth-child(5),
+#medicationsTable td:nth-child(5) {
+    min-width: 220px;
+    width: 25%;
+}
+
+#medicationsTable td:nth-child(5) input,
+#medicationsTable td:nth-child(5) select,
+#medicationsTable td:nth-child(5) textarea {
+    width: 100%;
+    min-width: 180px;
+    box-sizing: border-box;
 }

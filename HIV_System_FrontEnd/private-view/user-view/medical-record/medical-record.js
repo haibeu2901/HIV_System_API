@@ -274,120 +274,100 @@ function renderPayments(payments) {
         return;
     }
 
+    // Calculate statistics
+    const totalCount = payments.length;
+    const succeededCount = payments.filter(p => p.paymentStatus === 2).length;
+    const failedCount = payments.filter(p => p.paymentStatus === 3).length;
+    const pendingCount = payments.filter(p => p.paymentStatus === 1).length;
+
     let html = `
-        <div class="payments-stats">
-            <div class="stat-card">
-                <div class="stat-number">${payments.length}</div>
-                <div class="stat-label">Total Payments</div>
+        <div class="payment-stats">
+            <div class="stat-item">
+                <span class="stat-label">Total</span>
+                <span class="stat-value">${totalCount}</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">${payments.filter(p => p.paymentStatus === 2).length}</div>
-                <div class="stat-label">Completed</div>
+            <div class="stat-item">
+                <span class="stat-label">Succeeded</span>
+                <span class="stat-value success">${succeededCount}</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">${payments.filter(p => p.paymentStatus === 1).length}</div>
-                <div class="stat-label">Pending</div>
+            <div class="stat-item">
+                <span class="stat-label">Pending</span>
+                <span class="stat-value warning">${pendingCount}</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">${payments.filter(p => p.paymentStatus === 3).length}</div>
-                <div class="stat-label">Failed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${payments.reduce((total, p) => p.paymentStatus === 2 ? total + p.amount : total, 0).toLocaleString()}</div>
-                <div class="stat-label">Total Paid (VND)</div>
+            <div class="stat-item">
+                <span class="stat-label">Failed</span>
+                <span class="stat-value error">${failedCount}</span>
             </div>
         </div>
-        <div class="payments-grid">
+        
+        <div class="payments-list">
     `;
 
     payments.forEach(payment => {
-        const statusClass = `payment-status-${payment.paymentStatus}`;
-        const statusText = paymentStatusMap[payment.paymentStatus] || 'Không xác định';
+        const statusBadge = getPaymentStatusBadge(payment.paymentStatus);
+        const statusClass = payment.paymentStatus === 2 ? 'success' : payment.paymentStatus === 3 ? 'failed' : 'pending';
+        const formattedAmount = formatCurrency(payment.amount, payment.currency);
+        const formattedDate = formatDateTime(payment.paymentDate);
         
         html += `
-            <div class="payment-card">
-                <div class="payment-card-header">
-                    <div class="payment-main-info">
-                        <div class="payment-id">
-                            <span class="payment-label">Mã thanh toán</span>
-                            <span class="payment-value">#${payment.payId}</span>
-                        </div>
-                        <div class="payment-amount">
-                            <span class="amount-value">${payment.amount.toLocaleString()}</span>
-                            <span class="amount-currency">${payment.currency}</span>
-                        </div>
+            <div class="payment-item ${statusClass}">
+                <div class="payment-header">
+                    <div class="payment-id">
+                        <span class="label">Payment ID:</span>
+                        <span class="value">#${payment.payId}</span>
                     </div>
-                    <div class="payment-status-container">
-                        <span class="payment-status ${statusClass}">${statusText}</span>
+                    <div class="payment-status">
+                        ${statusBadge}
                     </div>
                 </div>
                 
-                <div class="payment-card-body">
-                    <div class="payment-info-grid">
-                        <div class="payment-info-item">
-                            <span class="info-label">Bệnh nhân</span>
-                            <span class="info-value">${payment.patientName}</span>
+                <div class="payment-details">
+                    <div class="payment-row">
+                        <div class="payment-info">
+                            <span class="label">Amount:</span>
+                            <span class="amount">${formattedAmount} ${payment.currency}</span>
                         </div>
-                        
-                        <div class="payment-info-item">
-                            <span class="info-label">Email</span>
-                            <span class="info-value">${payment.patientEmail}</span>
+                        <div class="payment-info">
+                            <span class="label">Date:</span>
+                            <span class="value">${formattedDate}</span>
                         </div>
-                        
-                        <div class="payment-info-item">
-                            <span class="info-label">Ngày thanh toán</span>
-                            <span class="info-value">${formatDateTime(payment.paymentDate)}</span>
-                        </div>
-                        
-                        <div class="payment-info-item">
-                            <span class="info-label">Phương thức</span>
-                            <span class="info-value">${payment.paymentMethod}</span>
-                        </div>
-                        
-                        <div class="payment-info-item full-width">
-                            <span class="info-label">Mô tả</span>
-                            <span class="info-value">${payment.description}</span>
-                        </div>
-                        
-                        ${payment.serviceName ? `
-                            <div class="payment-info-item">
-                                <span class="info-label">Dịch vụ</span>
-                                <span class="info-value service-name">${payment.serviceName}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${payment.servicePrice ? `
-                            <div class="payment-info-item">
-                                <span class="info-label">Giá dịch vụ</span>
-                                <span class="info-value service-price">${payment.servicePrice.toLocaleString()} VND</span>
-                            </div>
-                        ` : ''}
                     </div>
                     
-                    <div class="payment-metadata">
-                        <div class="metadata-row">
-                            <span class="metadata-label">Tạo lúc:</span>
-                            <span class="metadata-value">${formatDateTime(payment.createdAt)}</span>
+                    <div class="payment-row">
+                        <div class="payment-info">
+                            <span class="label">Description:</span>
+                            <span class="value">${payment.description || 'No description'}</span>
                         </div>
-                        <div class="metadata-row">
-                            <span class="metadata-label">Cập nhật:</span>
-                            <span class="metadata-value">${formatDateTime(payment.updatedAt)}</span>
+                        <div class="payment-info">
+                            <span class="label">Customer:</span>
+                            <span class="value">${payment.patientEmail}</span>
                         </div>
-                        ${payment.paymentIntentId ? `
-                            <div class="metadata-row">
-                                <span class="metadata-label">Intent ID:</span>
-                                <span class="metadata-value intent-id">${payment.paymentIntentId}</span>
-                            </div>
-                        ` : ''}
                     </div>
                     
+                    <div class="payment-row">
+                        <div class="payment-info">
+                            <span class="label">Payment Method:</span>
+                            <span class="value">${payment.paymentMethod}</span>
+                        </div>
+                        <div class="payment-info">
+                            <span class="label">Intent ID:</span>
+                            <span class="value">${payment.paymentIntentId || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="payment-actions">
                     ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
-                        <div class="payment-actions">
-                            <button class="payment-action-btn confirm-btn" onclick="openCardPaymentModal('${payment.paymentIntentId}')">
-                                <i class="fas fa-check"></i> Xác nhận thanh toán
-                            </button>
-                        </div>
+                        <button class="btn-action btn-confirm" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
+                            <i class="fas fa-check"></i> Confirm Payment
+                        </button>
                     ` : ''}
+                    <button class="btn-action btn-details" onclick="viewPaymentDetails(${payment.payId})">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                    <button class="btn-action btn-copy" onclick="copyPaymentId(${payment.payId})">
+                        <i class="fas fa-copy"></i> Copy ID
+                    </button>
                 </div>
             </div>
         `;
@@ -407,6 +387,144 @@ function formatDateTime(dateString) {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit'
+    });
+}
+
+// Helper functions for billing interface
+function getPaymentStatusBadge(status) {
+    switch (status) {
+        case 1:
+            return '<span class="status-badge pending">Pending</span>';
+        case 2:
+            return '<span class="status-badge succeeded">Succeeded</span>';
+        case 3:
+            return '<span class="status-badge failed">Failed</span>';
+        default:
+            return '<span class="status-badge unknown">Unknown</span>';
+    }
+}
+
+function getPaymentMethodIcon(method) {
+    const methodLower = method.toLowerCase();
+    if (methodLower.includes('visa')) {
+        return '<div class="payment-icon visa"><i class="fab fa-cc-visa"></i></div>';
+    } else if (methodLower.includes('mastercard')) {
+        return '<div class="payment-icon mastercard"><i class="fab fa-cc-mastercard"></i></div>';
+    } else if (methodLower.includes('amex') || methodLower.includes('american express')) {
+        return '<div class="payment-icon amex"><i class="fab fa-cc-amex"></i></div>';
+    } else {
+        return '<div class="payment-icon default"><i class="fas fa-credit-card"></i></div>';
+    }
+}
+
+function formatCurrency(amount, currency) {
+    if (currency === 'VND') {
+        return 'd' + amount.toLocaleString();
+    }
+    return amount.toLocaleString();
+}
+
+function formatPaymentDate(dateString) {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const paymentDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (paymentDate.getTime() === today.getTime()) {
+        return date.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+        });
+    } else {
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+}
+
+function getLastFourDigits(intentId) {
+    if (!intentId) return '****';
+    // Extract last 4 characters or use a default
+    return intentId.slice(-4) || '4444';
+}
+
+// Payment actions function
+function showPaymentActions(paymentId) {
+    // Create a dropdown menu for payment actions
+    const existingMenu = document.querySelector('.payment-actions-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
+
+    const menu = document.createElement('div');
+    menu.className = 'payment-actions-menu';
+    menu.innerHTML = `
+        <div class="action-item" onclick="viewPaymentDetails(${paymentId})">
+            <i class="fas fa-eye"></i> View details
+        </div>
+        <div class="action-item" onclick="downloadReceipt(${paymentId})">
+            <i class="fas fa-download"></i> Download receipt
+        </div>
+        <div class="action-item" onclick="copyPaymentId(${paymentId})">
+            <i class="fas fa-copy"></i> Copy payment ID
+        </div>
+    `;
+
+    // Position the menu near the clicked button
+    const button = event.target.closest('.action-menu-btn');
+    const rect = button.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = (rect.bottom + 5) + 'px';
+    menu.style.left = (rect.left - 150) + 'px';
+    menu.style.zIndex = '1000';
+
+    document.body.appendChild(menu);
+
+    // Close menu when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 100);
+}
+
+// Placeholder functions for payment actions
+function viewPaymentDetails(paymentId) {
+    console.log('View payment details for:', paymentId);
+    // Implement payment details modal
+}
+
+function downloadReceipt(paymentId) {
+    console.log('Download receipt for:', paymentId);
+    // Implement receipt download
+}
+
+function copyPaymentId(paymentId) {
+    navigator.clipboard.writeText(paymentId.toString()).then(() => {
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.textContent = 'Payment ID copied to clipboard';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            z-index: 10001;
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2000);
     });
 }
 
@@ -632,12 +750,11 @@ function renderARVRegimens(regimens) {
 // Main function to load all patient data
 async function loadPatientData() {
     // Show loading state
-    document.body.innerHTML = `
-        <div class="loading-container">
-            <div class="loading-spinner"></div>
-            <p>Đang tải hồ sơ bệnh án của bạn...</p>
-        </div>
-    `;
+    const loadingContainer = document.getElementById('loadingContainer');
+    const mainContent = document.getElementById('mainContent');
+    
+    if (loadingContainer) loadingContainer.style.display = 'flex';
+    if (mainContent) mainContent.style.display = 'none';
 
     try {
         // Fetch medical record data
@@ -649,124 +766,9 @@ async function loadPatientData() {
         // Fetch payment history
         const payments = await fetchPatientPayments();
 
-        // Render the page structure
-        document.body.innerHTML = `
-            <div class="medical-record-container">
-                <div class="page-header">
-                    <h1>My Medical Records</h1>
-                    <button class="btn-back" onclick="window.history.back()">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
-                </div>
-                
-                <!-- Section Navigation -->
-                <div class="section-navigation">
-                    <button class="nav-btn active" onclick="showSection('appointments')" id="appointmentsNav">
-                        <i class="fas fa-calendar-alt"></i> Appointments
-                    </button>
-                    <button class="nav-btn" onclick="showSection('testResults')" id="testResultsNav">
-                        <i class="fas fa-flask"></i> Test Results
-                    </button>
-                    <button class="nav-btn" onclick="showSection('arvRegimens')" id="arvRegimensNav">
-                        <i class="fas fa-pills"></i> ARV Regimens
-                    </button>
-                    <button class="nav-btn" onclick="showSection('payments')" id="paymentsNav">
-                        <i class="fas fa-credit-card"></i> Payments
-                    </button>
-                </div>
-                
-                <div class="medical-record-content">
-                    <!-- Appointments Section -->
-                    <section class="medical-section active" id="appointmentsSection">
-                        <div class="section-header">
-                            <h2><i class="fas fa-calendar-alt"></i> Appointments</h2>
-                            <p class="section-description">View your scheduled and completed appointments</p>
-                        </div>
-                        <div id="appointmentsContent"></div>
-                    </section>
-                    
-                    <!-- Test Results Section -->
-                    <section class="medical-section" id="testResultsSection">
-                        <div class="section-header">
-                            <h2><i class="fas fa-flask"></i> Test Results</h2>
-                            <p class="section-description">View your laboratory test results and reports</p>
-                        </div>
-                        <div id="testResultsContent"></div>
-                    </section>
-                    
-                    <!-- ARV Regimens Section -->
-                    <section class="medical-section" id="arvRegimensSection">
-                        <div class="section-header">
-                            <h2><i class="fas fa-pills"></i> ARV Regimens</h2>
-                            <p class="section-description">View your current and past ARV treatment regimens</p>
-                        </div>
-                        <div id="arvRegimensContent"></div>
-                    </section>
-                    
-                    <!-- Payments Section -->
-                    <section class="medical-section" id="paymentsSection">
-                        <div class="section-header">
-                            <h2><i class="fas fa-credit-card"></i> Payment History</h2>
-                            <p class="section-description">View your payment transactions and billing history</p>
-                        </div>
-                        <div id="paymentsContent"></div>
-                    </section>
-                </div>
-            </div>
-            
-            <!-- Card Payment Modal -->
-            <div id="cardPaymentModal" class="card-payment-modal">
-                <div class="card-payment-modal-content">
-                    <div class="card-payment-modal-header">
-                        <h2 class="card-payment-modal-title">Nhập thông tin thẻ thanh toán</h2>
-                        <button class="card-payment-close" onclick="closeCardPaymentModal()">&times;</button>
-                    </div>
-                    
-                    <div class="card-payment-modal-body">
-                        <!-- Test Cards Section -->
-                        <div id="testCardsSection" class="test-cards-section">
-                            <h3>Test Cards Available</h3>
-                            <div class="loading-test-cards">
-                                <i class="fas fa-spinner fa-spin"></i> Đang tải danh sách thẻ test...
-                            </div>
-                        </div>
-                        
-                        <form id="cardPaymentForm">
-                            <div class="form-group">
-                                <label for="card-number">Số thẻ</label>
-                                <input type="text" id="card-number" placeholder="4242 4242 4242 4242" maxlength="23" required />
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="card-expiry">Ngày hết hạn</label>
-                                    <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" required />
-                                </div>
-                                <div class="form-group">
-                                    <label for="card-cvc">CVC</label>
-                                    <input type="text" id="card-cvc" placeholder="123" maxlength="4" required />
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="card-name">Tên chủ thẻ</label>
-                                <input type="text" id="card-name" placeholder="Nguyen Van A" required />
-                            </div>
-                            
-                            <div class="card-payment-form-actions">
-                                <button type="button" class="card-payment-btn card-payment-btn-cancel" onclick="closeCardPaymentModal()">
-                                    Hủy
-                                </button>
-                                <button type="button" id="cardPaymentSubmit" class="card-payment-btn card-payment-btn-submit" onclick="submitCardPayment()">
-                                    <div class="spinner"></div>
-                                    <span class="btn-text">Thanh toán</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        `;
+        // Hide loading and show main content
+        if (loadingContainer) loadingContainer.style.display = 'none';
+        if (mainContent) mainContent.style.display = 'block';
 
         // Check if we have medical data
         if (medicalData && medicalData.appointments && medicalData.appointments.length > 0) {
@@ -803,25 +805,6 @@ async function loadPatientData() {
         // Render payment history
         renderPayments(payments);
 
-        // Add section navigation functionality
-        window.showSection = function(sectionName) {
-            // Hide all sections
-            document.querySelectorAll('.medical-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Remove active class from all nav buttons
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Show selected section
-            document.getElementById(sectionName + 'Section').classList.add('active');
-            
-            // Activate corresponding nav button
-            document.getElementById(sectionName + 'Nav').classList.add('active');
-        };
-
         // If no data at all, show a comprehensive message in appointments section
         if ((!medicalData || !medicalData.appointments || medicalData.appointments.length === 0) && 
             (!arvRegimens || arvRegimens.length === 0) && 
@@ -851,20 +834,48 @@ async function loadPatientData() {
 
     } catch (error) {
         console.error('Error loading patient data:', error);
-        document.body.innerHTML = `
-            <div class="error-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Error loading medical records. Please try again.</p>
-                <button class="btn-retry" onclick="window.location.reload()">
-                    <i class="fas fa-refresh"></i> Thử Lại
-                </button>
-            </div>
-        `;
+        
+        // Hide loading and show error
+        if (loadingContainer) loadingContainer.style.display = 'none';
+        if (mainContent) {
+            mainContent.style.display = 'block';
+            mainContent.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading medical records. Please try again.</p>
+                    <button class="btn-retry" onclick="window.location.reload()">
+                        <i class="fas fa-refresh"></i> Thử Lại
+                    </button>
+                </div>
+            `;
+        }
     }
+}
+
+// Add section navigation functionality
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.medical-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Remove active class from all nav buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected section
+    document.getElementById(sectionName + 'Section').classList.add('active');
+    
+    // Activate corresponding nav button
+    document.getElementById(sectionName + 'Nav').classList.add('active');
 }
 
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Make showSection function globally available
+    window.showSection = showSection;
+    
     // Load patient data
     loadPatientData();
     

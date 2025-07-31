@@ -252,11 +252,11 @@ namespace HIV_System_API_Services.Implements
             var localPart = parts[0];
             var domainPart = parts[1];
 
-            if (localPart.Length == 0 || localPart.Length > 64)
-                throw new ArgumentException("Phần cục bộ của email phải có từ 1 đến 64 ký tự.", nameof(email));
+            if (localPart.Length == 0 || localPart.Length > 32)
+                throw new ArgumentException("Phần cục bộ của email phải có từ 1 đến 32 ký tự.", nameof(email));
 
-            if (domainPart.Length == 0 || domainPart.Length > 255)
-                throw new ArgumentException("Tên miền của email phải có từ 1 đến 255 ký tự.", nameof(email));
+            if (domainPart.Length == 0 || domainPart.Length > 63)
+                throw new ArgumentException("Tên miền của email phải có từ 1 đến 63 ký tự.", nameof(email));
 
             if (localPart.Contains("..") || domainPart.Contains(".."))
                 throw new ArgumentException("Email không được chứa các dấu chấm liên tiếp.", nameof(email));
@@ -379,6 +379,26 @@ namespace HIV_System_API_Services.Implements
 
             if (!string.IsNullOrEmpty(username) && email.Equals(username, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("Email không được trùng với tên người dùng.", nameof(username));
+        }
+
+        private async Task ValidateFullName(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentException("Họ và tên là bắt buộc.", nameof(fullName));
+
+            // Only letters (including Vietnamese), spaces, each word starts with uppercase
+            // Regex: ^([A-Z][a-zA-ZÀ-ỹ]*)+( [A-Z][a-zA-ZÀ-ỹ]*)*$
+            // - Each word: starts with uppercase, followed by lowercase letters (including Vietnamese)
+            // - Words separated by a single space
+            try
+            {
+                if (!Regex.IsMatch(fullName.Trim(), @"^([A-Z][a-zA-ZÀ-ỹ]*)+( [A-Z][a-zA-ZÀ-ỹ]*)*$", RegexOptions.None, RegexTimeout))
+                    throw new ArgumentException("Họ và tên chỉ được chứa chữ cái và khoảng cách, mỗi từ phải bắt đầu bằng chữ in hoa.", nameof(fullName));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                throw new ArgumentException("Việc xác thực họ và tên đã hết thời gian do độ phức tạp quá cao.", nameof(fullName));
+            }
         }
 
         public async Task<AccountResponseDTO> CreateAccountAsync(AccountRequestDTO account)
@@ -509,6 +529,7 @@ namespace HIV_System_API_Services.Implements
             await ValidateUsernameAsync(patient.AccUsername, patient.Email);
             ValidatePassword(patient.AccPassword, patient.AccUsername);
             await ValidateEmailAsync(patient.Email, patient.AccUsername);
+            await ValidateFullName(patient.Fullname);
 
             // Validate Date of Birth - Fixed to use consistent DateTime handling
             ValidateDateOfBirth(patient.Dob.Value, nameof(patient.Dob));

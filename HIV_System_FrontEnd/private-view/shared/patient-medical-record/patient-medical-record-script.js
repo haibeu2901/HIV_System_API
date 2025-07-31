@@ -44,6 +44,51 @@ if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NA
   window.isDoctor = (roleName === 'doctor');
 }
 
+// Add global modal for creating patient medical record if not found
+if (!document.getElementById('createPmrModal')) {
+  const modalHtml = `
+    <div id="createPmrModal" class="modal">
+      <div class="modal-content" style="max-width:400px; margin:auto; text-align:center;">
+        <span class="close" id="closeCreatePmrModal" style="float:right; font-size:24px; cursor:pointer;">&times;</span>
+        <div id="createPmrModalText" style="margin: 30px 0 10px 0; font-size: 1.1em;">
+          Bệnh nhân không có Hồ sơ bệnh án.<br>Bạn có muốn tạo một hồ sơ bệnh án cho bệnh nhân?
+        </div>
+        <div style="margin: 20px 0 10px 0;">
+          <button id="createPmrYesBtn" style="margin-right: 16px; padding: 6px 18px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer;">Có</button>
+          <button id="createPmrNoBtn" style="padding: 6px 18px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer;">Không</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function showCreatePmrModal(ptnId) {
+  const modal = document.getElementById('createPmrModal');
+  modal.style.display = 'block';
+  document.getElementById('closeCreatePmrModal').onclick = () => { modal.style.display = 'none'; };
+  document.getElementById('createPmrNoBtn').onclick = () => { modal.style.display = 'none'; };
+  document.getElementById('createPmrYesBtn').onclick = async () => {
+    try {
+      const res = await fetch('https://localhost:7009/api/PatientMedicalRecord/CreatePatientMedicalRecord', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ptnId })
+      });
+      if (!res.ok) throw new Error('Không thể tạo hồ sơ bệnh án.');
+modal.style.display = 'none';
+      // Reload the page to reflect the new record
+      window.location.reload();
+      // setMessage('Tạo hồ sơ bệnh án thành công!', true); // This will not show after reload
+    } catch (err) {
+      setMessage('Lỗi khi tạo hồ sơ bệnh án.', false);
+    }
+  };
+}
+
 // Get patient ID from URL parameters
 function getPatientIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -72,8 +117,17 @@ async function fetchPatientMedicalDataByPatientId(patientId) {
         const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordByPatientId?patientId=${patientId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (response.status === 404) {
+            showCreatePmrModal(patientId);
+            return null;
+        }
         if (!response.ok) throw new Error('Lỗi thất bại lấy thông tin bệnh án bệnh nhân');
-        return await response.json();
+        const data = await response.json();
+        if (!data || !data.pmrId) {
+            showCreatePmrModal(patientId);
+            return null;
+        }
+        return data;
     } catch (error) {
         console.error('Error fetching patient medical data:', error);
         return null;
@@ -108,7 +162,7 @@ async function fetchPatientPayments(pmrId) {
         return await response.json();
     } catch (error) {
         console.error('Error fetching patient payments:', error);
-        return [];
+return [];
     }
 }
 
@@ -186,7 +240,7 @@ function renderPaymentHistory(payments) {
                         <p><strong>Phương thức:</strong> ${payment.paymentMethod}</p>
                         <p><strong>Mô tả:</strong> ${payment.description}</p>
                         ${payment.serviceName ? `<p><strong>Dịch vụ:</strong> ${payment.serviceName}</p>` : ''}
-                        ${payment.servicePrice ? `<p><strong>Giá dịch vụ:</strong> ${formatCurrency(payment.servicePrice)} VND</p>` : ''}
+${payment.servicePrice ? `<p><strong>Giá dịch vụ:</strong> ${formatCurrency(payment.servicePrice)} VND</p>` : ''}
                     </div>
                     <div class="payment-metadata">
                         <small><strong>Tạo lúc:</strong> ${formatDateTime(payment.createdAt)}</small>
@@ -270,7 +324,7 @@ function renderAppointments(appointments) {
                 <td>${appt.apmtDate}</td>
                 <td>${appt.apmTime ? appt.apmTime.slice(0, 5) : '-'}</td>
                 <td>${appt.doctorName || '-'}</td>
-                <td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
+<td><span class="appointment-status ${statusClass}">${statusLabel}</span></td>
                 <td>${appt.notes || '-'}</td>
                     </tr>
         `;
@@ -346,7 +400,7 @@ function renderTestResults(testResults) {
       // Component test result update listeners
       section.querySelectorAll('.clickable-component-result').forEach(el => {
         el.addEventListener('click', async function() {
-          const compId = this.getAttribute('data-id');
+const compId = this.getAttribute('data-id');
           if (!compId) return;
           // Fetch component test result data
           try {
@@ -406,7 +460,7 @@ function renderARVRegimens(regimens, medications) {
     
     if (!regimens || regimens.length === 0) {
         section.innerHTML = `
-            <div class="empty-state">
+<div class="empty-state">
                 <i class="fas fa-pills"></i>
                 <p>No ARV regimens found for this patient.</p>
             </div>
@@ -445,24 +499,24 @@ function renderARVRegimens(regimens, medications) {
         html += `
             <div class="regimen-card">
                 <div class="regimen-header">
-                    <span class="regimen-id">Regimen ID: ${regimen.patientArvRegiId}</span>
+                    <span class="regimen-id">ID Phác đồ: ${regimen.patientArvRegiId}</span>
                     <span class="regimen-status ${statusClass}">${statusText}</span>
                 </div>
                 <div class="regimen-details">
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">Start Date</div>
+                        <div class="regimen-detail-label">Ngày bắt đầu</div>
                         <div class="regimen-detail-value">${regimen.startDate}</div>
                     </div>
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">End Date</div>
-                        <div class="regimen-detail-value">${regimen.endDate || 'Ongoing'}</div>
+                        <div class="regimen-detail-label">Ngày kết thúc</div>
+                        <div class="regimen-detail-value">${regimen.endDate || 'Đang áp dụng'}</div>
                     </div>
                     <div class="regimen-detail">
                         <div class="regimen-detail-label">Bậc phác đồ</div>
                         <div class="regimen-detail-value">${levelText}</div>
                     </div>
                     <div class="regimen-detail">
-                        <div class="regimen-detail-label">Created At</div>
+                        <div class="regimen-detail-label">Ngày tạo</div>
                         <div class="regimen-detail-value">${new Date(regimen.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div class="regimen-detail">
@@ -470,33 +524,37 @@ function renderARVRegimens(regimens, medications) {
                         <div class="regimen-detail-value">${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
                     </div>
                 </div>
-                ${regimen.notes ? `
+${regimen.notes ? `
                     <div class="regimen-notes">
-                        <strong>Notes:</strong> ${regimen.notes}
+                        <strong>Ghi chú:</strong> ${regimen.notes}
                     </div>
                 ` : ''}
                 <div class="regimen-medications">
-                    <h4>Medications</h4>
+                    <h4>Thuốc</h4>
                     ${regimenMeds.length > 0 ? `
                         <table class="medications-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Dosage</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Manufacturer</th>
-                                    <th>Description</th>
+                                    <th>Tên thuốc</th>
+                                    <th>Loại thuốc</th>
+                                    <th>Liều lượng</th>
+                                    <th>Số lượng</th>
+                                    <th>Nhà sản xuất</th>
+                                    <th>Cách sử dụng</th>
+                                    <th>Giá</th>
+                                    <th>Mô tả</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${regimenMeds.map(med => `
                                     <tr>
                                         <td>${med.medicationDetail.arvMedicationName}</td>
+                                        <td>${med.medicationDetail.arvMedicationType || med.medicationDetail.medicationType || ''}</td>
                                         <td>${med.medicationDetail.arvMedicationDosage}</td>
                                         <td>${med.quantity}</td>
-                                        <td>${med.medicationDetail.arvMedicationPrice ? med.medicationDetail.arvMedicationPrice.toLocaleString() : 'N/A'}</td>
                                         <td>${med.medicationDetail.arvMedicationManufacturer}</td>
+                                        <td>${med.usageInstructions || med.medicationDetail.medicationUsage || ''}</td>
+                                        <td>${med.medicationDetail.arvMedicationPrice ? med.medicationDetail.arvMedicationPrice.toLocaleString() : 'N/A'}</td>
                                         <td>${med.medicationDetail.arvMedicationDescription}</td>
                                     </tr>
                                 `).join('')}
@@ -513,7 +571,7 @@ function renderARVRegimens(regimens, medications) {
     });
     
     section.innerHTML = html;
-    // Add event listeners for update status buttons
+// Add event listeners for update status buttons
     document.querySelectorAll('.update-regimen-status-btn').forEach(btn => {
         btn.onclick = function() {
             const regimenId = this.getAttribute('data-id');
@@ -542,19 +600,25 @@ function renderARVRegimens(regimens, medications) {
         regimenLevel.value = regimen.regimenLevel;
         regimenNotes.value = regimen.notes || '';
         regimenStartDate.value = regimen.startDate;
-        if (document.getElementById('regimenEndDate')) document.getElementById('regimenEndDate').value = regimen.endDate || '';
-        // Pre-fill medications
+        // --- FIX: Pre-fill end date ---
+        if (document.getElementById('regimenEndDate')) {
+          document.getElementById('regimenEndDate').value = regimen.endDate || '';
+        }
+        // --- FIX: Pre-fill medications with usageInstructions ---
         selectedTemplateMedications = (regimen.arvMedications || []).map(med => ({
           arvMedicationName: med.medicationDetail.arvMedicationName,
           arvMedDetailId: med.medicationDetail.arvMedicationId,
           dosage: med.medicationDetail.arvMedicationDosage,
           quantity: med.quantity,
-          manufacturer: med.medicationDetail.arvMedicationManufacturer
+          manufacturer: med.medicationDetail.arvMedicationManufacturer,
+          usageInstructions: (typeof med.usageInstructions === 'string' && med.usageInstructions.length > 0)
+            ? med.usageInstructions
+            : (med.medicationDetail.medicationUsage || '')
         }));
         renderMedicationRows();
         // Set update mode
         regimenForm.setAttribute('data-update-id', regimenId);
-        
+
         // Change button text to "Update Regimen"
         const submitBtn = regimenForm.querySelector('button[type="submit"]');
         if (submitBtn) {
@@ -640,7 +704,7 @@ openRegimenModalBtn.onclick = async function() {
     if (section && section.innerHTML.includes('regimen-active')) {
         alert('Cannot create a new regimen while one is active.');
         return;
-    }
+}
     await loadMedicationDetails();
     regimenModal.style.display = 'block';
     resetRegimenForm();
@@ -715,7 +779,6 @@ regimenLevel.onchange = async function() {
         regimenTemplate.appendChild(opt);
     });
 };
-
 regimenTemplate.onchange = function() {
     if (!this.value) return;
     const selected = this.options[this.selectedIndex].dataset.template;
@@ -734,12 +797,14 @@ regimenTemplate.onchange = function() {
             document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
         }
     }
-    // Fill medications
-    selectedTemplateMedications = template.medications.map(med => ({
+    // Fill medications: always set usageInstructions from medicationUsage
+    selectedTemplateMedications = (template.medications || []).map(med => ({
         arvMedicationName: med.medicationName,
+        arvMedDetailId: med.arvMedicationDetailId,
         dosage: med.dosage,
         quantity: med.quantity,
-        manufacturer: ''
+        manufacturer: '',
+        usageInstructions: med.medicationUsage || ''
     }));
     renderMedicationRows();
 };
@@ -759,27 +824,49 @@ function resetRegimenForm() {
 function renderMedicationRows() {
     medicationsTableBody.innerHTML = '';
     selectedTemplateMedications.forEach((med, idx) => {
-        const medDetail = allMedicationDetails.find(m => m.arvMedicationName === med.arvMedicationName);
+        // Use arvMedDetailId if available, otherwise try to find by name
+        let medDetail = null;
+        let selectedId = '';
+        if (med.arvMedDetailId) {
+            medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(med.arvMedDetailId));
+            selectedId = med.arvMedDetailId;
+        }
+        if (!medDetail && med.arvMedicationName) {
+            medDetail = allMedicationDetails.find(m => m.arvMedicationName === med.arvMedicationName);
+            selectedId = medDetail ? medDetail.arvMedicationId : '';
+        }
+        // If usageInstructions is not set, use medicationUsage from medDetail
+        let usageValue = (typeof med.usageInstructions === 'string' && med.usageInstructions.length > 0)
+            ? med.usageInstructions
+            : (medDetail && medDetail.medicationUsage ? medDetail.medicationUsage : '');
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
                 <select class="medication-name-select" data-idx="${idx}">
                     <option value="">Chọn</option>
-                    ${allMedicationDetails.map(m => `<option value="${m.arvMedicationId}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
+${allMedicationDetails.map(m => `<option value="${String(m.arvMedicationId)}" ${String(m.arvMedicationId) === String(selectedId) ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
                 </select>
             </td>
             <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
             <td><input type="number" min="1" value="${med.quantity || ''}" class="medication-qty-input" data-idx="${idx}" style="width:70px;"></td>
             <td>${medDetail ? medDetail.arvMedicationManufacturer : med.manufacturer || ''}</td>
+            <td><input type="text" class="medication-usage-input" data-idx="${idx}" value="${usageValue}" placeholder="Nhập cách sử dụng"></td>
             <td><button type="button" class="remove-med-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button></td>
         `;
         medicationsTableBody.appendChild(row);
+        // Explicitly set the dropdown value to ensure it displays the selected medicine
+        const select = row.querySelector('.medication-name-select');
+        if (select) {
+            select.value = String(selectedId);
+        }
     });
     updateAddMedicationBtnState();
 }
 
+// When adding a new medication from a template, set usageInstructions to medicationUsage by default
 addMedicationBtn.onclick = function() {
-    selectedTemplateMedications.push({ arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' });
+    // Default to empty, but if a template is selected, use its medicationUsage
+    selectedTemplateMedications.push({ arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' });
     renderMedicationRows();
 };
 
@@ -795,6 +882,7 @@ medicationsTableBody.onclick = function(e) {
         renderMedicationRows();
     }
 };
+// In the .onchange handler for .medication-name-select, update arvMedDetailId, arvMedicationName, and usageInstructions in selectedTemplateMedications
 medicationsTableBody.onchange = function(e) {
     if (e.target.classList.contains('medication-name-select')) {
         const idx = +e.target.dataset.idx;
@@ -803,17 +891,22 @@ medicationsTableBody.onchange = function(e) {
         if (medDetail) {
             selectedTemplateMedications[idx] = {
                 arvMedicationName: medDetail.arvMedicationName,
+                arvMedDetailId: medDetail.arvMedicationId,
                 dosage: medDetail.arvMedicationDosage,
                 quantity: selectedTemplateMedications[idx].quantity || 1,
-                manufacturer: medDetail.arvMedicationManufacturer
+                manufacturer: medDetail.arvMedicationManufacturer,
+                usageInstructions: medDetail.medicationUsage || ''
             };
         } else {
-            selectedTemplateMedications[idx] = { arvMedicationName: '', dosage: '', quantity: 1, manufacturer: '' };
+selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' };
         }
         renderMedicationRows();
     } else if (e.target.classList.contains('medication-qty-input')) {
         const idx = +e.target.dataset.idx;
         selectedTemplateMedications[idx].quantity = +e.target.value;
+    } else if (e.target.classList.contains('medication-usage-input')) {
+        const idx = +e.target.dataset.idx;
+        selectedTemplateMedications[idx].usageInstructions = e.target.value;
     }
 };
 
@@ -834,6 +927,11 @@ regimenForm.onsubmit = async function(e) {
         alert('Please fill all medication fields.');
         return;
     }
+    // New validation: usageInstructions must not be empty
+    if (selectedTemplateMedications.some(m => !m.usageInstructions || !m.usageInstructions.trim())) {
+        alert('Vui lòng nhập "Cách sử dụng" cho tất cả các thuốc.');
+        return;
+    }
     // Check that every medication selection is valid
     if (selectedTemplateMedications.some(m => {
         const medDetail = allMedicationDetails.find(md => md.arvMedicationName === m.arvMedicationName);
@@ -849,7 +947,6 @@ regimenForm.onsubmit = async function(e) {
         // Build medicationRequests array
         const medicationRequests = selectedTemplateMedications.map(med => {
             const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
-            // Try to find patientArvRegId from the current regimen's medications if available
             let patientArvRegId = 0; // Default to 0 for new medications
             const regimen = (window._lastRegimens || []).find(r => String(r.patientArvRegiId) === String(updateId));
             if (regimen && regimen.arvMedications) {
@@ -859,10 +956,11 @@ regimenForm.onsubmit = async function(e) {
             return {
                 patientArvRegId: patientArvRegId,
                 arvMedDetailId: medDetail ? medDetail.arvMedicationId : med.arvMedDetailId,
-                quantity: med.quantity
+                quantity: med.quantity,
+                usageInstructions: (med.usageInstructions || '').trim()
             };
         });
-        // Build regimenRequest object
+// Build regimenRequest object
         const regimen = (window._lastRegimens || []).find(r => String(r.patientArvRegiId) === String(updateId));
         const regimenRequest = {
             patientMedRecordId: window.pmrId, // Use the global pmrId from the patient's medical record
@@ -906,9 +1004,10 @@ regimenForm.onsubmit = async function(e) {
     const medications = selectedTemplateMedications.map(med => {
         const medDetail = allMedicationDetails.find(md => md.arvMedicationName === med.arvMedicationName);
         return {
-        patientArvRegId: 0,
+            patientArvRegId: 0,
             arvMedDetailId: medDetail.arvMedicationId, // Use arvMedicationId as arvMedDetailId
-        quantity: med.quantity
+            quantity: med.quantity,
+            usageInstructions: (med.usageInstructions || '').trim()
         };
     });
     // Build regimen object
@@ -923,15 +1022,11 @@ regimenForm.onsubmit = async function(e) {
         totalCost: 0
     };
     const payload = { regimen, medications };
-    // Detailed logging of regimen properties
-    console.log('DEBUG: Regimen details:');
-    Object.entries(regimen).forEach(([key, value]) => {
-        console.log(`  ${key}:`, value);
-    });
-    console.log('DEBUG: Submitting ARV regimen payload:', payload);
+    // Log the payload for confirmation
+    console.log('Submitting create payload:', payload);
     // Call new API
     try {
-        const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
+const res = await fetch('https://localhost:7009/api/PatientArvRegimen/CreatePatientArvRegimenWithMedications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payload)
@@ -1004,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const resultSelect = document.getElementById('testResultSelect');
 
   // --- Component Test Fieldset Logic ---
-  function createComponentTestFieldset(idx) {
+function createComponentTestFieldset(idx) {
     const fieldset = document.createElement('div');
     fieldset.className = 'component-test-fieldset';
     fieldset.style = 'border:1px solid #eee; padding:12px; margin-bottom:12px; border-radius:8px; position:relative;';
@@ -1088,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', function() {
       msgDiv.textContent = 'Vui lòng chọn ngày xét nghiệm.';
       return;
     }
-    const resultVal = resultSelect.value;
+const resultVal = resultSelect.value;
     if (!resultVal) {
       msgDiv.textContent = 'Vui lòng chọn kết quả.';
       return;
@@ -1229,7 +1324,7 @@ function closeUpdateTestResultModal() {
   updateTestResultForm.reset();
   updateTestResultMsg.textContent = '';
   // Clear component tests container
-  const container = document.getElementById('updateComponentTestsContainer');
+const container = document.getElementById('updateComponentTestsContainer');
   if (container) {
     container.innerHTML = '<h3>Thành phần xét nghiệm</h3>';
   }
@@ -1285,7 +1380,7 @@ function loadComponentTestResultsFromData(componentResults) {
         
         // Always add at least one empty component test fieldset if none exist
         if (componentResults.length === 0) {
-            addUpdateComponentTestFieldset();
+addUpdateComponentTestFieldset();
         }
         
     } catch (err) {
@@ -1355,7 +1450,7 @@ if (updateTestResultForm) {
         }
         
         // Collect component test data
-        const componentFieldsets = document.querySelectorAll('#updateComponentTestsContainer .component-test-fieldset');
+const componentFieldsets = document.querySelectorAll('#updateComponentTestsContainer .component-test-fieldset');
         const componentTests = [];
         
         for (const fieldset of componentFieldsets) {
@@ -1426,7 +1521,7 @@ function renderPayments(payments) {
         section.innerHTML = `<div class="empty-state"><i class="fas fa-money-bill-wave"></i><p>Không có giao dịch thanh toán nào.</p></div>`;
         return;
     }
-    let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
+let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
     payments.forEach(pay => {
         html += `<tr>
             <td>${pay.paymentDate ? new Date(pay.paymentDate).toLocaleString() : '-'}</td>
@@ -1499,7 +1594,7 @@ async function loadPatientData() {
         document.body.innerHTML = `
             <div class="error-state">
                 <i class="fas fa-exclamation-triangle"></i>
-                <p>Error loading patient data. Please try again.</p>
+<p>Error loading patient data. Please try again.</p>
             </div>
         `;
     }
@@ -1563,7 +1658,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (selectedOption.dataset.description) {
                     serviceDescription.textContent = selectedOption.dataset.description;
                     serviceDescription.style.display = 'block';
-                } else {
+} else {
                     serviceDescription.style.display = 'none';
                 }
                 // Auto-fill payment description
@@ -1639,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const srvId = parseInt(formData.get('serviceId'));
             const amount = parseFloat(formData.get('amount'));
             const currency = formData.get('currency');
-            const paymentMethod = formData.get('paymentMethod');
+const paymentMethod = formData.get('paymentMethod');
             const description = formData.get('description');
 
             if (!pmrId || !srvId || !amount || !currency || !paymentMethod || !description) {

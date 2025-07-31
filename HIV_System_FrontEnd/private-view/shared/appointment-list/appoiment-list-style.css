@@ -118,6 +118,35 @@
     color: #fff;
     cursor: not-allowed;
 }
+.button-view {
+  background-color: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 0 2px;
+}
+.button-view:hover, .button-view:focus {
+  background-color: #1769aa;
+}
+.button-reject, .button-cancel {
+  background-color: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 0 2px;
+}
+.button-reject:hover, .button-reject:focus,
+.button-cancel:hover, .button-cancel:focus {
+  background-color: #b71c1c;
+}
 /* Modal styles */
 .modal {
   display: none;
@@ -130,6 +159,9 @@
   overflow: auto;
   background-color: rgba(0,0,0,0.4);
 }
+.modal.show {
+  display: block;
+}
 .modal-content {
   background-color: #fff;
   margin: 5% auto;
@@ -139,6 +171,12 @@
   border-radius: 10px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.2);
   position: relative;
+}
+.modal-error {
+  color: #c0392b;
+}
+.modal-success {
+  color: #27ae60;
 }
 .close {
   color: #aaa;
@@ -208,4 +246,91 @@
     background: #f8cfa0;
     color: #fff;
     cursor: not-allowed;
+}
+#closeMessageModal {
+  position: absolute;
+  top: 10px;
+  right: 18px;
+  color: #888;
+  font-weight: bold;
+  cursor: pointer;
+}
+#closeMessageModal:hover {
+  color: #c0392b;
+}
+#modifyDate {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+#modifyTime {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+#modifyDateLabel {
+  margin-bottom: 2px;
+  color: #555;
+  font-size: 0.95em;
+}
+/* Filter Bar Styling */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    background: #b3bcd2;
+    padding: 14px 22px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-family: 'Segoe UI', Arial, 'Roboto', 'Helvetica Neue', sans-serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.filter-bar label {
+    font-weight: 500;
+    margin-right: 4px;
+    color: #1976d2;
+}
+
+.filter-bar select,
+.filter-bar input[type="date"],
+.filter-bar input[type="time"] {
+    padding: 6px 12px;
+    border: 1px solid #cfd8dc;
+    border-radius: 4px;
+    font-size: 15px;
+    background: #fff;
+    margin-right: 8px;
+    transition: border-color 0.2s;
+}
+
+.filter-bar select:focus,
+.filter-bar input[type="date"]:focus,
+.filter-bar input[type="time"]:focus {
+    border-color: #1976d2;
+    outline: none;
+}
+
+.filter-bar button {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    padding: 7px 18px;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-weight: 500;
+}
+.filter-bar button:hover {
+    background: #1565c0;
 }

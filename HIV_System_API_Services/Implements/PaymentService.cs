@@ -1,5 +1,6 @@
 ﻿using HIV_System_API_BOs;
 using HIV_System_API_DTOs.PaymentDTO;
+using HIV_System_API_DTOs.NotificationDTO;
 using HIV_System_API_Repositories.Implements;
 using HIV_System_API_Repositories.Interfaces;
 using HIV_System_API_Services.Interfaces;
@@ -15,17 +16,20 @@ namespace HIV_System_API_Services.Implements
     public class PaymentService : IPaymentService
     {
         private readonly IPaymentRepo _paymentRepo;
+        private readonly INotificationService _notificationService;
         private readonly HivSystemApiContext _context;
 
         public PaymentService()
         {
             _paymentRepo = new PaymentRepo();
+            _notificationService = new NotificationService();
             _context = new HivSystemApiContext();
         }
 
-        public PaymentService(IPaymentRepo paymentRepo, HivSystemApiContext context)
+        public PaymentService(IPaymentRepo paymentRepo, INotificationService notificationService, HivSystemApiContext context)
         {
             _paymentRepo = paymentRepo ?? throw new ArgumentNullException(nameof(paymentRepo));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -146,12 +150,53 @@ namespace HIV_System_API_Services.Implements
         public async Task UpdatePaymentStatusByIntentIdAsync(string paymentIntentId, byte status)
         {
             // Query the payment directly by PaymentIntentId
-            var payment = await _context.Payments.FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntentId);
+            var payment = await _context.Payments
+                .Include(p => p.Pmr)
+                    .ThenInclude(pmr => pmr.Ptn)
+                        .ThenInclude(ptn => ptn.Acc)
+                .Include(p => p.Srv)
+                .FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntentId);
+
             if (payment != null)
             {
                 payment.PaymentStatus = status;
                 payment.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+
+                // Send notification after status update
+                await SendPaymentNotificationAsync(payment, status);
+            }
+        }
+
+        private async Task SendPaymentNotificationAsync(Payment payment, byte status)
+        {
+            try
+            {
+                var account = payment.Pmr?.Ptn?.Acc;
+                if (account == null) return;
+
+                var isSuccess = status == 2; // 2 = Success, 3 = Failed
+                var serviceName = payment.Srv?.ServiceName ?? "dịch vụ y tế";
+                
+                // Create notification message
+                var notificationMessage = isSuccess
+                    ? $"💳 Thanh toán thành công! Bạn đã thanh toán {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName}. Mã giao dịch: {payment.PaymentIntentId}"
+                    : $"❌ Thanh toán thất bại! Giao dịch {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName} không thành công. Vui lòng thử lại. Mã giao dịch: {payment.PaymentIntentId}";
+
+                // Send notification
+                var notificationDto = new CreateNotificationRequestDTO
+                {
+                    NotiType = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại",
+                    NotiMessage = notificationMessage,
+                    SendAt = DateTime.UtcNow
+                };
+
+                await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, account.AccId);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't throw to avoid affecting payment processing
+                Console.WriteLine($"Error sending payment notification: {ex.Message}");
             }
         }
 
@@ -220,6 +265,41 @@ namespace HIV_System_API_Services.Implements
             }
             
             return result;
+        }
+
+        public async Task<PaymentResponseDTO> UpdatePaymentStatusByIdAsync(int paymentId, byte status)
+        {
+            // Query the payment directly by PaymentId
+            var payment = await _context.Payments
+                .Include(p => p.Pmr)
+                    .ThenInclude(pmr => pmr.Ptn)
+                        .ThenInclude(ptn => ptn.Acc)
+                .Include(p => p.Srv)
+                .FirstOrDefaultAsync(p => p.PayId == paymentId);
+
+            if (payment == null)
+                throw new KeyNotFoundException($"Payment with ID {paymentId} not found.");
+
+            // Update payment status and method for cash payments
+            var oldStatus = payment.PaymentStatus;
+            payment.PaymentStatus = status;
+            payment.UpdatedAt = DateTime.UtcNow;
+            
+            // If marking as successful and it's not a card payment, set as cash
+            if (status == 2 && (payment.PaymentMethod == null || payment.PaymentMethod == "card"))
+            {
+                payment.PaymentMethod = "cash";
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Send notification only if status actually changed
+            if (oldStatus != status)
+            {
+                await SendPaymentNotificationAsync(payment, status);
+            }
+
+            return await MapToResponseDTOAsync(payment);
         }
     }
 }

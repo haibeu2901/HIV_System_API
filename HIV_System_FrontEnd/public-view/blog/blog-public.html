@@ -358,242 +358,288 @@
         <i class="fa fa-arrow-left"></i> Back to Home
     </a>
 
-    <div class="reddit-container">
-        <!-- Top Bar with Stats -->
-        <div class="top-bar">
-            <div class="community-info">
-                <div class="community-icon">
-                    <i class="fas fa-heartbeat"></i>
+    <div class="blog-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1><i class="fas fa-heartbeat"></i> Community Stories</h1>
+                    <p>A safe space for sharing HIV experiences and supporting one another</p>
                 </div>
-                <div class="community-details">
-                    <h2>r/HIVSupport</h2>
-                    <p>A supportive community for HIV experiences and stories</p>
-                </div>
-            </div>
-            <div class="community-stats">
-                <div class="stat-item">
-                    <span class="stat-number" id="totalBlogs">0</span>
-                    <span class="stat-label">Stories</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="totalAuthors">0</span>
-                    <span class="stat-label">Members</span>
-                </div>
-                <div class="stat-item online">
-                    <span class="stat-number">∞</span>
-                    <span class="stat-label">Online</span>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalBlogs">0</div>
+                        <div class="stat-label">Stories Shared</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalAuthors">0</div>
+                        <div class="stat-label">Community Members</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalLikes">0</div>
+                        <div class="stat-label">Hearts Given</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Sorting and Search -->
-        <div class="content-controls">
-            <div class="sort-tabs">
-                <button class="sort-tab active" data-sort="hot">
-                    <i class="fas fa-fire"></i> Hot
-                </button>
-                <button class="sort-tab" data-sort="new">
-                    <i class="fas fa-clock"></i> New
-                </button>
-                <button class="sort-tab" data-sort="top">
-                    <i class="fas fa-arrow-up"></i> Top
-                </button>
-                <button class="sort-tab" data-sort="anonymous">
-                    <i class="fas fa-user-secret"></i> Anonymous
-                </button>
-            </div>
-            <div class="search-container">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search r/HIVSupport...">
+        <!-- Filter and Search Section -->
+        <div class="filter-section">
+            <div class="filter-container">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-sort="hot">
+                        <i class="fas fa-fire"></i> Popular
+                    </button>
+                    <button class="filter-tab" data-sort="new">
+                        <i class="fas fa-clock"></i> Recent
+                    </button>
+                    <button class="filter-tab" data-sort="top">
+                        <i class="fas fa-heart"></i> Most Loved
+                    </button>
+                    <button class="filter-tab" data-sort="anonymous">
+                        <i class="fas fa-user-secret"></i> Anonymous
+                    </button>
+                </div>
+                <div class="search-wrapper">
+                    <div class="search-input-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search community stories...">
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Main Content Area -->
-        <div class="main-content">
-            <!-- Left Content -->
-            <div class="content-feed">
-                <div class="create-post-prompt">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="post-input-fake" onclick="showCreatePostModal()">
-                        Share your story with the community...
-                    </div>
-                    <div class="post-actions">
-                        <button class="post-action-btn" onclick="showCreatePostModal()">
+        <div class="content-layout">
+            <!-- Stories Feed -->
+            <div class="stories-feed">
+                <!-- Share Story Prompt -->
+                <div class="share-prompt">
+                    <div class="share-prompt-content">
+                        <div class="prompt-icon">
                             <i class="fas fa-pen"></i>
-                        </button>
-                        <button class="post-action-btn" onclick="showCreatePostModal()">
-                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="prompt-text" onclick="showCreatePostModal()">
+                            Share your story with our community...
+                        </div>
+                        <button class="share-btn" onclick="showCreatePostModal()">
+                            <i class="fas fa-heart"></i> Share Story
                         </button>
                     </div>
                 </div>
 
-                <div class="posts-container" id="blogGrid">
+                <!-- Stories Container -->
+                <div class="stories-grid" id="blogGrid">
                     <!-- Blog posts will be loaded here -->
                 </div>
 
-                <div class="loading-container" id="loadingContainer">
-                    <div class="loading-spinner"></div>
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingContainer">
+                    <div class="loading-animation">
+                        <div class="loading-circle"></div>
+                        <div class="loading-circle"></div>
+                        <div class="loading-circle"></div>
+                    </div>
                     <p>Loading community stories...</p>
                 </div>
             </div>
 
-            <!-- Right Sidebar -->
-            <div class="sidebar">
-                <div class="sidebar-card about-card">
-                    <h3>About Community</h3>
-                    <p>A safe space for sharing HIV experiences, stories of hope, and mutual support. Your privacy is our priority.</p>
-                    <div class="community-rules">
-                        <h4>Community Guidelines</h4>
-                        <ul>
-                            <li>Be respectful and supportive</li>
-                            <li>No medical advice</li>
-                            <li>Respect privacy choices</li>
-                            <li>Share hope and encouragement</li>
-                        </ul>
+            <!-- Community Sidebar -->
+            <div class="community-sidebar">
+                <div class="sidebar-section about-section">
+                    <div class="section-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h3>About Our Community</h3>
                     </div>
-                </div>
-
-                <div class="sidebar-card stats-card">
-                    <h3>Community Stats</h3>
-                    <div class="detailed-stats">
-                        <div class="stat-row">
-                            <i class="fas fa-heart"></i>
-                            <span>Total Likes</span>
-                            <span id="totalLikes">0</span>
-                        </div>
-                        <div class="stat-row">
-                            <i class="fas fa-comments"></i>
-                            <span>Total Comments</span>
-                            <span id="totalComments">0</span>
-                        </div>
-                        <div class="stat-row">
-                            <i class="fas fa-shield-alt"></i>
-                            <span>Anonymous Posts</span>
-                            <span id="anonymousPosts">0</span>
+                    <div class="section-content">
+                        <p>A safe and supportive space where individuals affected by HIV can share their experiences, find encouragement, and connect with others who understand their journey.</p>
+                        <div class="community-guidelines">
+                            <h4><i class="fas fa-shield-alt"></i> Community Guidelines</h4>
+                            <ul>
+                                <li><i class="fas fa-check"></i> Be respectful and supportive</li>
+                                <li><i class="fas fa-check"></i> No medical advice - consult professionals</li>
+                                <li><i class="fas fa-check"></i> Respect privacy and anonymity choices</li>
+                                <li><i class="fas fa-check"></i> Share hope and encouragement</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                <div class="sidebar-card resources-card">
-                    <h3>Resources</h3>
-                    <div class="resource-links">
-                        <a href="../landingpage.html#services" class="resource-link">
-                            <i class="fas fa-stethoscope"></i>
-                            <span>Medical Services</span>
-                        </a>
-                        <a href="../arv-medications-public.html" class="resource-link">
-                            <i class="fas fa-pills"></i>
-                            <span>ARV Medications</span>
-                        </a>
-                        <a href="../landingpage.html#contact" class="resource-link">
-                            <i class="fas fa-phone"></i>
-                            <span>Get Support</span>
-                        </a>
+                <div class="sidebar-section stats-section">
+                    <div class="section-header">
+                        <i class="fas fa-chart-bar"></i>
+                        <h3>Community Impact</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="impact-stats">
+                            <div class="impact-item">
+                                <div class="impact-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div class="impact-details">
+                                    <span class="impact-number" id="totalComments">0</span>
+                                    <span class="impact-label">Supportive Comments</span>
+                                </div>
+                            </div>
+                            <div class="impact-item">
+                                <div class="impact-icon">
+                                    <i class="fas fa-user-secret"></i>
+                                </div>
+                                <div class="impact-details">
+                                    <span class="impact-number" id="anonymousPosts">0</span>
+                                    <span class="impact-label">Anonymous Stories</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section resources-section">
+                    <div class="section-header">
+                        <i class="fas fa-hands-helping"></i>
+                        <h3>Support Resources</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="resource-grid">
+                            <a href="../landingpage.html#services" class="resource-card">
+                                <div class="resource-icon">
+                                    <i class="fas fa-stethoscope"></i>
+                                </div>
+                                <div class="resource-info">
+                                    <span class="resource-title">Medical Services</span>
+                                    <span class="resource-desc">Professional care and treatment</span>
+                                </div>
+                            </a>
+                            <a href="../arv-medications-public.html" class="resource-card">
+                                <div class="resource-icon">
+                                    <i class="fas fa-pills"></i>
+                                </div>
+                                <div class="resource-info">
+                                    <span class="resource-title">ARV Medications</span>
+                                    <span class="resource-desc">Treatment information</span>
+                                </div>
+                            </a>
+                            <a href="../landingpage.html#contact" class="resource-card">
+                                <div class="resource-icon">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <div class="resource-info">
+                                    <span class="resource-title">Get Support</span>
+                                    <span class="resource-desc">Contact our team</span>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Community Actions -->
-        <div class="community-actions">
-            <div class="action-cards">
-                <div class="action-card">
+        <!-- Community Actions Section -->
+        <div class="action-section">
+            <div class="action-header">
+                <h2><i class="fas fa-hands-helping"></i> Get Involved</h2>
+                <p>Join our community and make a difference in someone's journey</p>
+            </div>
+            <div class="action-grid">
+                <div class="action-item">
                     <div class="action-icon">
                         <i class="fas fa-pen"></i>
                     </div>
                     <div class="action-content">
                         <h3>Share Your Story</h3>
-                        <p>Your experience can inspire and help others in their journey</p>
-                        <a href="../landingpage.html#contact" class="action-btn">Get Started</a>
+                        <p>Your experience can inspire and help others in their journey. Share anonymously or with your name.</p>
+                        <button class="action-button" onclick="showCreatePostModal()">
+                            <i class="fas fa-heart"></i> Share Now
+                        </button>
                     </div>
                 </div>
-                <div class="action-card">
+                <div class="action-item">
                     <div class="action-icon">
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="action-content">
                         <h3>Join Support Groups</h3>
-                        <p>Connect with others who understand your journey</p>
-                        <a href="../landingpage.html#contact" class="action-btn">Learn More</a>
+                        <p>Connect with others who understand your journey and find strength in community.</p>
+                        <a href="../landingpage.html#contact" class="action-button">
+                            <i class="fas fa-users"></i> Learn More
+                        </a>
                     </div>
                 </div>
-                <div class="action-card">
+                <div class="action-item">
                     <div class="action-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <div class="action-content">
                         <h3>Privacy First</h3>
-                        <p>Share anonymously or with your name - your choice</p>
-                        <a href="../landingpage.html#contact" class="action-btn">Contact Us</a>
+                        <p>Your privacy and safety are our top priorities. Share comfortably with full anonymity options.</p>
+                        <a href="../landingpage.html#contact" class="action-button">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Blog Detail Modal -->
-    <div id="blogModal" class="reddit-modal">
-        <div class="modal-overlay" onclick="closeBlogModal()"></div>
-        <div class="modal-content">
+    <!-- Story Detail Modal -->
+    <div id="blogModal" class="story-modal">
+        <div class="modal-backdrop" onclick="closeBlogModal()"></div>
+        <div class="modal-container">
             <div class="modal-header">
-                <div class="modal-title-area">
+                <div class="modal-title-section">
                     <h2 id="modalTitle"></h2>
-                    <div class="modal-meta">
-                        <span class="modal-author" id="modalAuthor"></span>
-                        <span class="modal-date" id="modalDate"></span>
+                    <div class="story-meta">
+                        <span class="story-author" id="modalAuthor"></span>
+                        <span class="story-date" id="modalDate"></span>
                     </div>
                 </div>
-                <button class="modal-close" onclick="closeBlogModal()">
+                <button class="modal-close-btn" onclick="closeBlogModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="modal-content-text" id="modalContent"></div>
+                <div class="story-content" id="modalContent"></div>
                 
-                <!-- Modal Engagement -->
-                <div class="modal-engagement" id="modalEngagement"></div>
+                <!-- Story Engagement -->
+                <div class="story-engagement" id="modalEngagement"></div>
                 
-                <!-- Modal Comments -->
-                <div class="modal-comments" id="modalComments"></div>
+                <!-- Story Comments -->
+                <div class="story-comments" id="modalComments"></div>
             </div>
             <div class="modal-footer">
-                <div class="modal-actions">
-                    <button class="modal-action-btn upvote" onclick="handleModalLike()">
-                        <i class="fas fa-arrow-up"></i>
-                        <span>Upvote</span>
+                <div class="story-actions">
+                    <button class="story-action-btn like-btn" onclick="handleModalLike()">
+                        <i class="fas fa-heart"></i>
+                        <span>Support</span>
                     </button>
-                    <button class="modal-action-btn comment" onclick="handleModalComment()">
+                    <button class="story-action-btn comment-btn" onclick="handleModalComment()">
                         <i class="fas fa-comment"></i>
                         <span>Comment</span>
                     </button>
-                    <button class="modal-action-btn share" onclick="handleModalShare()">
+                    <button class="story-action-btn share-btn" onclick="handleModalShare()">
                         <i class="fas fa-share"></i>
                         <span>Share</span>
                     </button>
                 </div>
-                <div class="modal-support">
-                    <a href="../landingpage.html#contact" class="support-btn">
-                        <i class="fas fa-heart"></i> Get Support
+                <div class="support-link">
+                    <a href="../landingpage.html#contact" class="get-support-btn">
+                        <i class="fas fa-hands-helping"></i> Need Support?
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Create Post Modal -->
-    <div id="createPostModal" class="reddit-modal">
-        <div class="modal-overlay" onclick="closeCreatePostModal()"></div>
-        <div class="modal-content">
+    <!-- Create Story Modal -->
+    <div id="createPostModal" class="story-modal">
+        <div class="modal-backdrop" onclick="closeCreatePostModal()"></div>
+        <div class="modal-container">
             <div class="modal-header">
-                <div class="modal-title-area">
+                <div class="modal-title-section">
                     <h2>Share Your Story</h2>
-                    <p>Your experience can help others in the community</p>
+                    <p>Your experience can inspire and help others in the community</p>
                 </div>
-                <button class="modal-close" onclick="closeCreatePostModal()">
+                <button class="modal-close-btn" onclick="closeCreatePostModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
