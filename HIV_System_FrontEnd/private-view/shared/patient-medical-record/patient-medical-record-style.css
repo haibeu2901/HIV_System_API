@@ -924,7 +924,7 @@ select.medication-name-select {
     flex-wrap: wrap;
     align-items: center;
     gap: 18px;
-    background: #b3bcd2;
+    background: #d4d8e4;
     padding: 14px 22px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -935,7 +935,7 @@ select.medication-name-select {
 .filter-bar label {
     font-weight: 500;
     margin-right: 4px;
-    color: #1976d2;
+    color: #c0392b;
 }
 
 .filter-bar select,
@@ -953,12 +953,12 @@ select.medication-name-select {
 .filter-bar select:focus,
 .filter-bar input[type="date"]:focus,
 .filter-bar input[type="time"]:focus {
-    border-color: #1976d2;
+    border-color: #c0392b;
     outline: none;
 }
 
 .filter-bar button {
-    background: #1976d2;
+    background: #c0392b;
     color: #fff;
     border: none;
     padding: 7px 18px;
@@ -969,5 +969,5 @@ select.medication-name-select {
     font-weight: 500;
 }
 .filter-bar button:hover {
-    background: #1565c0;
+    background: #a02a1c;
 }
