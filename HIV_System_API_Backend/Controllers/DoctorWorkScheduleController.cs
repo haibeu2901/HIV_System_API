@@ -68,7 +68,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPost("CreateDoctorWorkSchedule")]
-        [Authorize (Roles = "1,2,4,5")]
+        [Authorize (Roles = "1,5")]
         public async Task<IActionResult> CreateDoctorWorkSchedule([FromBody] DoctorWorkScheduleRequestDTO requestDTO)
         {
             if (requestDTO.StartTime == default || requestDTO.EndTime == default)
@@ -94,7 +94,7 @@ namespace HIV_System_API_Backend.Controllers
         }
 
         [HttpPut("UpdateDoctorWorkSchedule/{id}")]
-        [Authorize (Roles = "1,2,4,5")]
+        [Authorize (Roles = "1,5")]
         public async Task<IActionResult> UpdateDoctorWorkSchedule(int id, [FromBody] DoctorWorkScheduleRequestDTO requestDTO)
         {
             if (requestDTO.StartTime == default || requestDTO.EndTime == default)

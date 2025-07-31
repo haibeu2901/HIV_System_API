@@ -38,11 +38,13 @@ namespace HIV_System_API_Services.Implements
             IPatientArvRegimenRepo patientArvRegimenRepo,
             IPatientArvMedicationRepo patientArvMedicationRepo,
             INotificationRepo notificationRepo,
+            INotificationService notificationService,
             HivSystemApiContext context)
         {
             _patientArvRegimenRepo = patientArvRegimenRepo ?? throw new ArgumentNullException(nameof(patientArvRegimenRepo));
             _patientArvMedicationRepo = patientArvMedicationRepo ?? throw new ArgumentNullException(nameof(patientArvMedicationRepo));
             _notificationRepo = notificationRepo ?? throw new ArgumentNullException(nameof(notificationRepo));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService)); 
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -926,7 +928,7 @@ namespace HIV_System_API_Services.Implements
 
                         var notificationRequest = new CreateNotificationRequestDTO
                         {
-                            NotiType = "Nhắc nhở kết thúc phác đồ",
+                            NotiType = "Nhắc nhở tái khám",
                             NotiMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng đặt lịch hẹn để tái khám.",
                             SendAt = DateTime.UtcNow
                         };
