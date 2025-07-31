@@ -221,5 +221,13 @@ namespace HIV_System_API_Services.Implements
             
             return result;
         }
+
+        public async Task<PaymentResponseDTO> ConfirmCashPaymentAsync(int payId)
+        {
+            var payment = await _paymentRepo.ConfirmCashPaymentAsync(payId);
+            if (payment == null)
+                throw new KeyNotFoundException($"Payment with ID {payId} not found.");
+            return await MapToResponseDTOAsync(payment);
+        }
     }
 }

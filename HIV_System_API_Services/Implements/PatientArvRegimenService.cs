@@ -106,7 +106,7 @@ namespace HIV_System_API_Services.Implements
                 .AnyAsync(ptr => ptr.PmrId == pmrId);
             if (!hasValidTestResult)
             {
-                throw new InvalidOperationException($"Bệnh nhân với ID {pmrId} không có kết quả xét nghiệm hợp lệ. Cân có kết quả xét nghiệm mới có thể tạo phác đồ ARV dành cho bệnh nhân.");
+                throw new InvalidOperationException($"Bệnh nhân với ID {pmrId} không có kết quả xét nghiệm hợp lệ. Cần có kết quả xét nghiệm mới có thể tạo phác đồ ARV dành cho bệnh nhân.");
             }
         }
 
