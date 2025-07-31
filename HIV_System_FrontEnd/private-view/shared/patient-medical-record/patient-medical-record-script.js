@@ -813,9 +813,7 @@ regimenTemplate.onchange = function () {
     // Fill form fields
     regimenNotes.value = template.description;
     // Set start date to today in Vietnam timezone
-    const today = new Date();
-    const vietnamToday = new Date(today.getTime() + (7 * 60 * 60 * 1000));
-    regimenStartDate.value = vietnamToday.toISOString().slice(0, 10);
+   regimenStartDate.value = getVietnamToday();
     // Set end date to start date + duration days
     if (template.duration) {
         const endDate = new Date(vietnamToday.getTime() + template.duration * 24 * 60 * 60 * 1000);
@@ -1125,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.reset();
         resetComponentTests();
         // Set today as default date
-        dateInput.value = getToday();
+        dateInput.value = getVietnamToday();
         // Set pmrId from global
         if (window.pmrId != null) pmrIdInput.value = window.pmrId;
         modal.style.display = 'block';
@@ -1882,8 +1880,12 @@ medicationsTableBody.onclick = function (e) {
     }
 };
 
-function getToday() {
-    const today = new Date();
-    // Format as yyyy-mm-dd for input[type="date"]
-    return today.toISOString().slice(0, 10);
+function getVietnamToday() {
+    const now = new Date();
+    // Vietnam is UTC+7
+    const vietnamOffset = 7 * 60; // phút
+    const localOffset = now.getTimezoneOffset(); // phút
+    const diff = vietnamOffset + localOffset;
+    const vietnamDate = new Date(now.getTime() + diff * 60 * 1000);
+    return vietnamDate.toISOString().slice(0, 10);
 }
