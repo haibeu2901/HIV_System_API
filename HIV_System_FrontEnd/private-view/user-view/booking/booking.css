@@ -1,3 +1,107 @@
+/* Selected Service Banner */
+.selected-service-banner {
+    background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    margin: 20px 0;
+    overflow: hidden;
+    animation: slideIn 0.5s ease;
+}
+
+.selected-service-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.service-info h3 {
+    color: #28a745;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.2rem;
+}
+
+.service-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.service-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.service-description {
+    color: #666;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.service-price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.btn-remove-service {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.btn-remove-service:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive for selected service banner */
+@media (max-width: 768px) {
+    .selected-service-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .btn-remove-service {
+        align-self: flex-end;
+    }
+    
+    .service-details {
+        width: 100%;
+    }
+}
+
 /* General Container Styling */
 .booking-container {
     max-width: 1200px;
@@ -730,4 +834,70 @@
 .modal-btn:focus {
     outline: 2px solid #e74c3c;
     outline-offset: 2px;
+}
+
+/* Calendar Navigation Styles */
+.calendar-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.nav-btn {
+    background: var(--primary-color, #e74c3c);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+}
+
+.nav-btn:hover {
+    background: var(--primary-dark, #c0392b);
+    transform: translateY(-2px);
+}
+
+.nav-btn:active {
+    transform: translateY(0);
+}
+
+.month-year-display {
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text-primary, #2c3e50);
+    min-width: 150px;
+    text-align: center;
+}
+
+.calendar-day.past-date {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.calendar-day.past-date .time-slot {
+    background: #bdc3c7;
+    color: #7f8c8d;
+    cursor: not-allowed;
+}
+
+.time-slot.past-slot {
+    background: #ecf0f1 !important;
+    color: #95a5a6 !important;
+    cursor: not-allowed !important;
+}
+
+.time-slot.available:hover:not(.past-slot) {
+    background: var(--primary-color, #e74c3c);
+    color: white;
+    transform: translateY(-1px);
 }

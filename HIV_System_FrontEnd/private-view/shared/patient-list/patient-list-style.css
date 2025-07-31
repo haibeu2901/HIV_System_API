@@ -93,4 +93,16 @@
 #patientDetailContent {
   margin-top: 24px;
 }
-
+.view-payments-btn {
+    background: #3cbd51;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.view-payments-btn:hover {
+    background: #1b862d;
+}
