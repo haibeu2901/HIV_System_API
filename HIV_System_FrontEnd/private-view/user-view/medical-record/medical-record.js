@@ -118,10 +118,6 @@ async function fetchPatientPayments() {
 
 // Render appointments
 function renderAppointments(appointments) {
-    console.log('=== RENDERING APPOINTMENTS ===');
-    console.log('Total appointments:', appointments?.length || 0);
-    console.log('Appointments data:', appointments);
-    
     const section = document.getElementById('appointmentsContent');
     
     if (!appointments || appointments.length === 0) {
@@ -227,15 +223,6 @@ function renderAppointments(appointments) {
     });
 
     sortedAppointments.forEach(appt => {
-        console.log(`Appointment ${appt.appointmentId}:`, {
-            status: appt.apmStatus,
-            apmtDate: appt.apmtDate,
-            apmTime: appt.apmTime,
-            requestDate: appt.requestDate,
-            requestTime: appt.requestTime,
-            requestBy: appt.requestBy
-        });
-        
         const statusLabel = appointmentStatusMap[appt.apmStatus] || 'Unknown';
         const statusClass = `status-${appt.apmStatus}`;
         
@@ -541,7 +528,7 @@ function renderPayments(payments) {
                     </div>
                     
                     <div class="payment-method-compact" data-label="Method">
-                        <span class="method-value">${payment.paymentMethod}</span>
+                        <span class="method-value">${formatPaymentMethod(payment.paymentMethod)}</span>
                     </div>
                     
                     <div class="payment-status-compact" data-label="Status">
@@ -550,9 +537,23 @@ function renderPayments(payments) {
                     
                     <div class="payment-actions-compact" data-label="Actions">
                         ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
-                            <button class="btn-action-compact btn-confirm" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
-                                <i class="fas fa-check"></i>
-                            </button>
+                            ${(() => {
+                                // Check if payment method is cash - patients cannot complete cash payments
+                                const paymentMethod = (payment.paymentMethod || '').toLowerCase();
+                                const isCashPayment = paymentMethod.includes('cash') || 
+                                                     paymentMethod.includes('tiền mặt') || 
+                                                     paymentMethod.includes('tien mat') ||
+                                                     paymentMethod.includes('tiền m?t') ||
+                                                     paymentMethod === 'string'; // Sometimes 'string' is used for cash in the database
+                                
+                                if (isCashPayment) {
+                                    return `<span class="cash-payment-notice" style="color: #6c757d; font-size: 12px;">Thanh toán tiền mặt - Liên hệ nhân viên</span>`;
+                                } else {
+                                    return `<button class="btn-action-compact btn-confirm" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
+                                                <i class="fas fa-check"></i>
+                                            </button>`;
+                                }
+                            })()}
                         ` : ''}
                         <button class="btn-action-compact btn-details" onclick="viewPaymentDetails(${payment.payId})" title="View Details">
                             <i class="fas fa-eye"></i>
@@ -568,6 +569,124 @@ function renderPayments(payments) {
 
     html += `</div>`;
     section.innerHTML = html;
+}
+
+// Function to format payment method display text
+function formatPaymentMethod(method) {
+    if (!method) return '-';
+    
+    // Clean the method string first - more aggressive cleaning
+    let cleanMethod = method.toLowerCase().trim();
+    
+    // Replace common encoding issues and special characters more aggressively
+    cleanMethod = cleanMethod
+        .replace(/\?/g, '') // Remove question marks
+        .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, '') // Keep only word chars, spaces, and Vietnamese chars
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+    
+    // More aggressive pattern matching for Vietnamese terms
+    // Handle "tiền mặt" variations
+    if (cleanMethod.match(/ti[e\u00EA\u1EBF]n\s*m[a\u0103\u00E2\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5]t/i) || 
+        cleanMethod.includes('tien') && cleanMethod.includes('mat') ||
+        cleanMethod.includes('tien') && cleanMethod.includes('m') ||
+        cleanMethod.includes('cash')) {
+        return 'Tiền mặt';
+    }
+    
+    // Handle "chuyển khoản" variations  
+    if (cleanMethod.match(/chuy[e\u00EA\u1EBF]n\s*kho[a\u0103\u00E2\u1EA3\u1EA5]n/i) ||
+        cleanMethod.includes('chuyen') && cleanMethod.includes('khoan') ||
+        cleanMethod.includes('transfer')) {
+        return 'Chuyển khoản';
+    }
+    
+    // Handle "thẻ tín dụng" variations
+    if (cleanMethod.match(/th[e\u00EA\u1EBF]\s*t[i\u00ED]n\s*d[u\u00F9\u00FA\u0169\u1EE5]ng/i) ||
+        cleanMethod.includes('the') && cleanMethod.includes('tin') ||
+        cleanMethod.includes('card') ||
+        cleanMethod.includes('credit')) {
+        return 'Thẻ tín dụng';
+    }
+    
+    if (cleanMethod === 'string') {
+        return 'Tiền mặt'; // Assuming 'string' means cash
+    }
+    
+    // Check for online payment
+    if (cleanMethod.includes('stripe')) {
+        return 'Thanh toán trực tuyến (Stripe)';
+    }
+    if (cleanMethod.includes('paypal')) {
+        return 'PayPal';
+    }
+    if (cleanMethod.includes('momo')) {
+        return 'MoMo';
+    }
+    if (cleanMethod.includes('zalo')) {
+        return 'ZaloPay';
+    }
+    if (cleanMethod.includes('vnpay')) {
+        return 'VNPay';
+    }
+    
+    // Enhanced mapping as fallback with more variations
+    const paymentMethodMap = {
+        // Cash variations - including encoding issues
+        'tiền mặt': 'Tiền mặt',
+        'tien mat': 'Tiền mặt',
+        'tien mt': 'Tiền mặt',
+        'tien m': 'Tiền mặt',
+        'tienmat': 'Tiền mặt',
+        'tien': 'Tiền mặt',
+        'cash': 'Tiền mặt',
+        
+        // Bank transfer variations - including encoding issues  
+        'chuyển khoản': 'Chuyển khoản',
+        'chuyen khoan': 'Chuyển khoản',
+        'chuyen kho': 'Chuyển khoản',
+        'chuyen khn': 'Chuyển khoản',
+        'chuyenkhoan': 'Chuyển khoản',
+        'transfer': 'Chuyển khoản',
+        'bank transfer': 'Chuyển khoản',
+        
+        // Credit card variations - including encoding issues
+        'thẻ tín dụng': 'Thẻ tín dụng',
+        'the tin dung': 'Thẻ tín dụng',
+        'the tin d': 'Thẻ tín dụng',
+        'the tin dng': 'Thẻ tín dụng',
+        'thetindung': 'Thẻ tín dụng',
+        'credit card': 'Thẻ tín dụng',
+        'coin card': 'Thẻ tín dụng',
+        'card': 'Thẻ tín dụng',
+        
+        // Online payment variations
+        'stripe': 'Thanh toán trực tuyến (Stripe)',
+        'paypal': 'PayPal',
+        'momo': 'MoMo',
+        'zalopay': 'ZaloPay',
+        'vnpay': 'VNPay',
+        
+        // Other variations
+        'string': 'Tiền mặt',
+        'khác': 'Khác',
+        'other': 'Khác'
+    };
+    
+    // Check if we have a mapping for this method
+    if (paymentMethodMap[cleanMethod]) {
+        return paymentMethodMap[cleanMethod];
+    }
+    
+    // Additional fallback for special characters
+    for (const [key, value] of Object.entries(paymentMethodMap)) {
+        if (cleanMethod.includes(key) || key.includes(cleanMethod)) {
+            return value;
+        }
+    }
+    
+    // If no mapping found, return the original method with proper capitalization
+    return method.charAt(0).toUpperCase() + method.slice(1);
 }
 
 // Utility function for formatting date time
@@ -692,12 +811,10 @@ function showPaymentActions(paymentId) {
 
 // Placeholder functions for payment actions
 function viewPaymentDetails(paymentId) {
-    console.log('View payment details for:', paymentId);
     // Implement payment details modal
 }
 
 function downloadReceipt(paymentId) {
-    console.log('Download receipt for:', paymentId);
     // Implement receipt download
 }
 
@@ -819,9 +936,6 @@ async function loadPaymentData() {
 
 // Render ARV regimens with embedded medications
 function renderARVRegimens(regimens) {
-    console.log('=== RENDERING ARV REGIMENS ===');
-    console.log('Raw regimens data:', regimens);
-    
     const section = document.getElementById('arvRegimensContent');
     
     if (!regimens || regimens.length === 0) {
@@ -854,10 +968,6 @@ function renderARVRegimens(regimens) {
     `;
     
     regimens.forEach((regimen, index) => {
-        console.log(`=== REGIMEN ${index} ===`);
-        console.log('Full regimen object:', regimen);
-        console.log('regimen.arvMedications:', regimen.arvMedications);
-        
         let statusClass = '';
         switch (regimen.regimenStatus) {
             case 1: statusClass = 'regimen-planned'; break;
@@ -873,8 +983,6 @@ function renderARVRegimens(regimens) {
         
         // Use embedded medications from the regimen
         const regimenMeds = regimen.arvMedications || [];
-        console.log(`Regimen ${index} medications:`, regimenMeds);
-        console.log(`Number of medications: ${regimenMeds.length}`);
         
         html += `
             <div class="regimen-horizontal-card">
@@ -929,12 +1037,8 @@ function renderARVRegimens(regimens) {
                             ${regimenMeds.length > 0 ? `
                                 <div class="medications-horizontal-list">
                                     ${regimenMeds.map(med => {
-                                        console.log('Rendering medication:', med);
-                                        console.log('med.patientArvMedId:', med.patientArvMedId, 'type:', typeof med.patientArvMedId);
-                                        
                                         // Ensure we have a valid patientArvMedId
                                         const medId = med.patientArvMedId || med.patientARVMedId || med.id || 0;
-                                        console.log('Using medId:', medId, 'from patientArvMedId:', med.patientArvMedId);
                                         
                                         if (!medId || medId <= 0) {
                                             console.error('Invalid medication ID for:', med);
@@ -970,7 +1074,7 @@ function renderARVRegimens(regimens) {
                                                 </div>
                                             </div>
                                             <div class="medication-alarm-actions">
-                                                <button class="btn-set-alarm" onclick="console.log('Button clicked with data:', {regimenId: ${regimen.patientArvRegiId}, patientArvMedId: ${medId}, medicationName: '${med.medicationDetail.arvMedicationName}', dosage: '${med.medicationDetail.arvMedicationDosage}'}); openMedicationAlarmModal(${regimen.patientArvRegiId}, ${medId}, '${med.medicationDetail.arvMedicationName}', '${med.medicationDetail.arvMedicationDosage}')">
+                                                <button class="btn-set-alarm" onclick="openMedicationAlarmModal(${regimen.patientArvRegiId}, ${medId}, '${med.medicationDetail.arvMedicationName}', '${med.medicationDetail.arvMedicationDosage}')">
                                                     <i class="fas fa-bell"></i> Đặt nhắc nhở
                                                 </button>
                                             </div>
@@ -1174,7 +1278,6 @@ async function fetchTestCardNumbers() {
         
         const data = await response.json();
         testCardData = data;
-        console.log('Test card data fetched:', testCardData);
         return data;
     } catch (error) {
         console.error('Error fetching test card numbers:', error);
@@ -1195,7 +1298,6 @@ async function fetchTestCardNumbers() {
 // Function to open card payment modal
 async function openCardPaymentModal(paymentIntentId) {
     currentPaymentIntentId = paymentIntentId;
-    console.log('Opening card payment modal for payment intent:', paymentIntentId);
     
     const modal = document.getElementById('cardPaymentModal');
     if (modal) {
@@ -1216,7 +1318,6 @@ async function openCardPaymentModal(paymentIntentId) {
             const cardNumberInput = document.getElementById('card-number');
             if (cardNumberInput) {
                 cardNumberInput.focus();
-                console.log('Card number input focused');
             }
         }, 100);
         
@@ -1316,8 +1417,6 @@ function formatCardNumberDisplay(cardNumber) {
 
 // Function to select a test card and fill the form
 function selectTestCard(cardNumber) {
-    console.log('Selected test card:', cardNumber);
-    
     const cardNumberInput = document.getElementById('card-number');
     const expiryInput = document.getElementById('card-expiry');
     const cvcInput = document.getElementById('card-cvc');
@@ -1374,6 +1473,9 @@ function selectTestCard(cardNumber) {
         }
     }, 3000);
 }
+
+// Function to close card payment modal
+function closeCardPaymentModal() {
     const modal = document.getElementById('cardPaymentModal');
     if (modal) {
         modal.classList.remove('show');
@@ -1381,7 +1483,7 @@ function selectTestCard(cardNumber) {
         resetCardPaymentForm();
     }
     currentPaymentIntentId = null;
-
+}
 
 // Function to reset card payment form
 function resetCardPaymentForm() {
@@ -1499,8 +1601,6 @@ function showFieldSuccess(field) {
 
 // Function to format card number input
 function formatCardNumber(input) {
-    console.log('Formatting card number:', input.value);
-    
     // Remove all non-digits
     let value = input.value.replace(/\D/g, '');
     
@@ -1519,13 +1619,10 @@ function formatCardNumber(input) {
     }
     
     input.value = formattedValue;
-    console.log('Formatted to:', formattedValue);
 }
 
 // Function to format expiry date input
 function formatExpiryDate(input) {
-    console.log('Formatting expiry date:', input.value);
-    
     // Remove all non-digits
     let value = input.value.replace(/\D/g, '');
     
@@ -1540,7 +1637,6 @@ function formatExpiryDate(input) {
     }
     
     input.value = value;
-    console.log('Formatted to:', value);
 }
 
 // Function to handle card payment submission
@@ -1568,8 +1664,6 @@ async function submitCardPayment() {
         const cvc = document.getElementById('card-cvc').value;
         const name = document.getElementById('card-name').value;
         
-        console.log('Processing payment with card:', cardNumber);
-        
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -1590,7 +1684,6 @@ async function submitCardPayment() {
             cardInfo = testCardData.successScenarios.find(card => card.cardNumber === cardNumber);
             
             // Call confirm payment API for success cards
-            console.log('Calling confirm payment API with card:', cardInfo);
             try {
                 const response = await fetch(`https://localhost:7009/api/Payment/confirm-payment/${currentPaymentIntentId}`, {
                     method: 'POST',
@@ -1631,7 +1724,6 @@ async function submitCardPayment() {
             cardInfo = testCardData.failureScenarios.find(card => card.cardNumber === cardNumber);
             
             // Call fail payment API for failure cards
-            console.log('Calling fail payment API with card:', cardInfo);
             try {
                 const response = await fetch(`https://localhost:7009/api/Payment/fail-payment/${currentPaymentIntentId}`, {
                     method: 'POST',
@@ -1701,16 +1793,11 @@ async function submitCardPayment() {
 
 // Event listener setup for modal inputs
 function setupCardModalEventListeners() {
-    console.log('Setting up card modal event listeners...');
-    
     // Check if modal exists in DOM
     const modal = document.getElementById('cardPaymentModal');
     if (!modal) {
-        console.log('Card payment modal not found in DOM yet');
         return;
     }
-    
-    console.log('Card payment modal found, setting up event listeners');
     
     // Remove existing event listeners to prevent duplicates
     const cardNumberInput = document.getElementById('card-number');
@@ -1724,7 +1811,6 @@ function setupCardModalEventListeners() {
         
         // Add new event listener
         newCardNumberInput.addEventListener('input', function(e) {
-            console.log('Card number input event triggered');
             formatCardNumber(this);
         });
         
@@ -1745,7 +1831,6 @@ function setupCardModalEventListeners() {
         
         // Add new event listener
         newExpiryInput.addEventListener('input', function(e) {
-            console.log('Expiry input event triggered');
             formatExpiryDate(this);
         });
         
@@ -1765,7 +1850,6 @@ function setupCardModalEventListeners() {
         
         // Add new event listener
         newCvcInput.addEventListener('input', function(e) {
-            console.log('CVC input event triggered');
             this.value = this.value.replace(/\D/g, '').substring(0, 4);
         });
         
@@ -1805,9 +1889,6 @@ let currentMedicationAlarm = null;
 
 // Function to open medication alarm modal
 function openMedicationAlarmModal(regimenId, patientArvMedId, medicationName, dosage) {
-    console.log('Opening medication alarm modal for:', { regimenId, patientArvMedId, medicationName, dosage });
-    console.log('patientArvMedId type:', typeof patientArvMedId, 'value:', patientArvMedId);
-    
     // Ensure patientArvMedId is a number and not undefined
     const medId = parseInt(patientArvMedId);
     if (isNaN(medId) || medId <= 0) {
@@ -1988,16 +2069,11 @@ function resetMedicationAlarmForm() {
 
 // Function to save medication alarm
 async function saveMedicationAlarm() {
-    console.log('=== SAVE MEDICATION ALARM START ===');
-    console.log('currentMedicationAlarm at start:', currentMedicationAlarm);
-    
     if (!currentMedicationAlarm) {
         console.error('No current medication alarm data found');
         showAlarmMessage('Lỗi: Chưa chọn thuốc', 'error');
         return;
     }
-    
-    console.log('Validating currentMedicationAlarm.patientArvMedId:', currentMedicationAlarm.patientArvMedId, 'type:', typeof currentMedicationAlarm.patientArvMedId);
     
     // Double-check the patientArvMedId
     if (!currentMedicationAlarm.patientArvMedId || currentMedicationAlarm.patientArvMedId <= 0) {
@@ -2042,10 +2118,6 @@ async function saveMedicationAlarm() {
             notes: alarmNotes || ""
         };
         
-        console.log('Creating medication alarm with data:', requestData);
-        console.log('currentMedicationAlarm:', currentMedicationAlarm);
-        console.log('patientArvMedId value:', currentMedicationAlarm.patientArvMedId, 'type:', typeof currentMedicationAlarm.patientArvMedId);
-        
         // Call API to create medication alarm (nếu API không tồn tại sẽ simulate thành công)
         try {
             const response = await fetch('https://localhost:7009/api/MedicationAlarm/CreateMedicationAlarm', {
@@ -2061,19 +2133,17 @@ async function saveMedicationAlarm() {
                 const errorData = await response.text();
                 // Nếu API không tồn tại (404 hoặc endpoint not found), simulate thành công
                 if (response.status === 404 || errorData.includes('not found') || errorData.includes('NotFound')) {
-                    console.log('API CreateMedicationAlarm không tồn tại - simulate thành công');
                     // Simulate success response
                 } else {
                     throw new Error(`API Error: ${response.status} - ${errorData}`);
                 }
             } else {
                 const result = await response.json();
-                console.log('Medication alarm created successfully:', result);
             }
         } catch (fetchError) {
             // Nếu không thể kết nối đến API, simulate thành công
             if (fetchError.name === 'TypeError' || fetchError.message.includes('Failed to fetch')) {
-                console.log('Không thể kết nối đến API CreateMedicationAlarm - simulate thành công');
+                // Network error - simulate success
             } else {
                 throw fetchError;
             }
@@ -2178,7 +2248,6 @@ async function fetchPatientMedicationAlarms() {
         
         if (!response.ok) {
             if (response.status === 404) {
-                console.log('No medication alarms found for patient (404 - expected for new users)');
                 return []; // No alarms found - this is normal for new users
             }
             throw new Error('Failed to fetch medication alarms');
@@ -2187,8 +2256,7 @@ async function fetchPatientMedicationAlarms() {
         return await response.json();
     } catch (error) {
         if (error.message.includes('404')) {
-            console.log('No medication alarms found for patient');
-            return [];
+            return []; // No alarms found
         }
         console.error('Error fetching medication alarms:', error);
         return [];
@@ -2199,7 +2267,6 @@ async function fetchPatientMedicationAlarms() {
 async function loadMedicationAlarmStates() {
     try {
         const alarms = await fetchPatientMedicationAlarms();
-        console.log('Loaded medication alarms:', alarms);
         
         // Create a set of patientArvMedicationId values that have active alarms
         const medicationsWithAlarms = new Set();
@@ -2208,8 +2275,6 @@ async function loadMedicationAlarmStates() {
                 medicationsWithAlarms.add(alarm.patientArvMedicationId);
             }
         });
-        
-        console.log('Medications with active alarms:', medicationsWithAlarms);
         
         // Update button states and hide alarm buttons for medications that already have alarms
         medicationsWithAlarms.forEach(medId => {
