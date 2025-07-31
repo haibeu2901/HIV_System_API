@@ -5,8 +5,17 @@
     <title>Hồ Sơ Y Tế Bệnh Nhân</title>
     <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
     <link rel="stylesheet" href="patient-medical-record-style.css">
+    <link rel="stylesheet" href="js/modular-styles.css">
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div style="text-align: center;">
+            <i class="fas fa-spinner fa-spin fa-3x" style="color: #667eea; margin-bottom: 1rem;"></i>
+            <p style="color: #6c757d; font-size: 1.1rem; margin: 0;">Đang tải hồ sơ y tế...</p>
+        </div>
+    </div>
+
     <div id="header-placeholder"></div>
 
     <div class="dashboard-container" style="padding-top: 5px;">
@@ -282,7 +291,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
     <script src="/private-view/shared/role-config.js"></script>
     <script src="/private-view/shared/header/header-script.js"></script>
-    <script src="patient-medical-record-script.js"></script>
+    
+    <!-- Medical Record Modular Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api-services.js"></script>
+    <script src="js/appointments-renderer.js"></script>
+    <script src="js/arv-renderer.js"></script>
+    <script src="js/payment-renderer.js"></script>
+    <script src="js/modals.js"></script>
+    <script src="js/medication-alarm.js"></script>
+    <script src="js/main-app.js"></script>
     
     <footer class="footer">
         <div class="container">
