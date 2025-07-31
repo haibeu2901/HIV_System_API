@@ -817,7 +817,7 @@ regimenTemplate.onchange = function () {
    regimenStartDate.value = getVietnamToday();
     // Set end date to start date + duration days
     if (template.duration) {
-        const endDate = new Date(vietnamToday.getTime() + template.duration * 24 * 60 * 60 * 1000);
+        const endDate = new Date(getVietnamToday() + template.duration * 24 * 60 * 60 * 1000);
         if (document.getElementById('regimenEndDate')) {
             document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
         }

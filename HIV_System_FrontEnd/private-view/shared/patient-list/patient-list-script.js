@@ -57,7 +57,6 @@ function renderPatients(patients) {
                         <td>${p.account.gender ? 'Nam' : 'Nữ'}</td>
                         <td>${p.account.dob}</td>
                         <td><button class="view-details-btn" data-patient-id="${p.patientId}">Xem</button></td>
-                        <td><button class="view-payments-btn" data-pmr-id="${p.pmrId}" data-patient-name="${p.account.fullname}">Xem thanh toán</button></td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -73,16 +72,7 @@ function renderPatients(patients) {
             window.location.href = `../patient-medical-record/patient-medical-record.html?patientId=${patientId}`;
         };
     });
-    
-    // Add event listeners for view payments buttons
-    document.querySelectorAll('.view-payments-btn').forEach(btn => {
-        btn.onclick = async function() {
-            const pmrId = this.getAttribute('data-pmr-id');
-            const patientName = this.getAttribute('data-patient-name');
-            await showPaymentModal(pmrId, patientName);
-        };
-    });
-    
+
     // Modal close logic
     const closeModalBtn = document.getElementById('closePatientModal');
     if (closeModalBtn) {
@@ -90,15 +80,7 @@ function renderPatients(patients) {
             document.getElementById('patientDetailModal').style.display = 'none';
         };
     }
-    
-    // Payment modal close logic
-    const closePaymentModalBtn = document.getElementById('closePaymentModal');
-    if (closePaymentModalBtn) {
-        closePaymentModalBtn.onclick = function() {
-            document.getElementById('paymentModal').style.display = 'none';
-        };
-    }
-    
+        
     window.onclick = function(event) {
         const modal = document.getElementById('patientDetailModal');
         const paymentModal = document.getElementById('paymentModal');
@@ -110,96 +92,6 @@ function renderPatients(patients) {
         }
     };
 }
-
-// Show payment modal with patient's payment history
-async function showPaymentModal(pmrId, patientName) {
-    try {
-        // Show loading state
-        createPaymentModal();
-        const modal = document.getElementById('paymentModal');
-        const content = document.getElementById('paymentModalContent');
-        
-        content.innerHTML = `
-            <div class="loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Đang tải thông tin thanh toán...</p>
-            </div>
-        `;
-        modal.style.display = 'block';
-        
-        // Fetch payment data
-        const payments = await fetchPatientPayments(pmrId);
-        
-        // Render payments
-        content.innerHTML = `
-            <h3>Lịch sử thanh toán - ${patientName}</h3>
-            ${payments.length === 0 ? 
-                '<p class="no-payments">Bệnh nhân chưa có giao dịch thanh toán nào.</p>' :
-                `<div class="payments-container">
-                    ${payments.map(payment => `
-                        <div class="payment-card">
-                            <div class="payment-header">
-                                <div class="payment-id">
-                                    <strong>Mã thanh toán:</strong> ${payment.payId}
-                                    <span class="payment-status status-${payment.paymentStatus}">
-                                        ${paymentStatusMap[payment.paymentStatus] || 'Không xác định'}
-                                    </span>
-                                </div>
-                                <div class="payment-amount">
-                                    ${formatCurrency(payment.amount)} ${payment.currency}
-                                </div>
-                            </div>
-                            <div class="payment-details">
-                                <div class="payment-info">
-                                    <p><strong>Ngày thanh toán:</strong> ${formatDate(payment.paymentDate)}</p>
-                                    <p><strong>Phương thức:</strong> ${payment.paymentMethod}</p>
-                                    <p><strong>Mô tả:</strong> ${payment.description}</p>
-                                    ${payment.serviceName ? `<p><strong>Dịch vụ:</strong> ${payment.serviceName}</p>` : ''}
-                                    ${payment.servicePrice ? `<p><strong>Giá dịch vụ:</strong> ${formatCurrency(payment.servicePrice)} VND</p>` : ''}
-                                </div>
-                                <div class="payment-metadata">
-                                    <small><strong>Tạo lúc:</strong> ${formatDate(payment.createdAt)}</small>
-                                    <small><strong>Cập nhật:</strong> ${formatDate(payment.updatedAt)}</small>
-                                    ${payment.paymentIntentId ? `<small><strong>Intent ID:</strong> ${payment.paymentIntentId}</small>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>`
-            }
-        `;
-        
-    } catch (error) {
-        console.error('Error showing payment modal:', error);
-        const content = document.getElementById('paymentModalContent');
-        content.innerHTML = `
-            <div class="error">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Có lỗi khi tải thông tin thanh toán. Vui lòng thử lại.</p>
-                <button onclick="showPaymentModal('${pmrId}', '${patientName}')" class="retry-btn">Thử lại</button>
-            </div>
-        `;
-    }
-}
-
-// Create payment modal if it doesn't exist
-function createPaymentModal() {
-    if (document.getElementById('paymentModal')) return;
-    
-    const modalHTML = `
-        <div id="paymentModal" class="modal" style="display: none;">
-            <div class="modal-content payment-modal-content">
-                <span id="closePaymentModal" class="close">&times;</span>
-                <div id="paymentModalContent">
-                    <!-- Payment content will be loaded here -->
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
 // Utility functions for formatting
 function formatCurrency(amount) {
     return new Intl.NumberFormat('vi-VN').format(amount);
@@ -234,14 +126,6 @@ const appointmentStatusMap = {
     3: 'Đã xác nhận lại',
     4: 'Đã hủy',
     5: 'Đã hoàn thành'
-};
-
-// Payment status mapping
-const paymentStatusMap = {
-    1: 'Chờ thanh toán',
-    2: 'Đã thanh toán',
-    3: 'Đã hủy',
-    4: 'Đã hoàn tiền'
 };
 
 window.addEventListener('DOMContentLoaded', async () => {
