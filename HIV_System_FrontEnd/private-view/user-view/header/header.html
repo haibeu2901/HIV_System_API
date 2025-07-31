@@ -18,6 +18,12 @@
                     </button>
                 </li>
                 <li class="notification-bell-container">
+                    <button class="btn-medication" id="medicationAlarmBell" type="button">
+                        <i class="fas fa-pills"></i>
+                        <span class="medication-count-badge" id="medication-count" style="display: none;">0</span>
+                    </button>
+                </li>
+                <li class="notification-bell-container">
                     <button class="btn-notification" id="notificationBell" type="button">
                         <i class="fas fa-bell"></i>
                         <span class="unread-count-badge" id="unread-count" style="display: none;">0</span>
@@ -51,3 +57,12 @@
         </div>
     </nav>
 </header>
+
+<!-- Medication Alarm Popup -->
+<div id="medication-alarm-popup" class="medication-popup hidden">
+    <div class="medication-popup-header">
+        <span>Nhắc uống thuốc</span>
+        <button id="closeMedicationAlarmPopup" aria-label="Đóng nhắc uống thuốc"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="popup-medication-alarm-list"></div>
+</div>
