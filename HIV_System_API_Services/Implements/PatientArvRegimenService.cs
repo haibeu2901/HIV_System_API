@@ -38,13 +38,15 @@ namespace HIV_System_API_Services.Implements
             IPatientArvRegimenRepo patientArvRegimenRepo,
             IPatientArvMedicationRepo patientArvMedicationRepo,
             INotificationRepo notificationRepo,
-            INotificationService notificationService,
+            INotificationService notificationService, // Add this parameter
+
             HivSystemApiContext context)
         {
             _patientArvRegimenRepo = patientArvRegimenRepo ?? throw new ArgumentNullException(nameof(patientArvRegimenRepo));
             _patientArvMedicationRepo = patientArvMedicationRepo ?? throw new ArgumentNullException(nameof(patientArvMedicationRepo));
             _notificationRepo = notificationRepo ?? throw new ArgumentNullException(nameof(notificationRepo));
-            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService)); 
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService)); // Initialize it
+
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 

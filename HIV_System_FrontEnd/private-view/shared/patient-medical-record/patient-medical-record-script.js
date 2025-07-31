@@ -203,13 +203,7 @@ async function fetchAllServices() {
 function convertPaymentMethodToEnglish(vietnameseMethod) {
     const methodMap = {
         'Tiền mặt': 'cash',
-        'Chuyển khoản': 'transfer', 
-        'Thẻ tín dụng': 'card',
-        'Thanh toán trực tuyến (Stripe)': 'stripe',
-        'PayPal': 'paypal',
-        'MoMo': 'momo',
-        'ZaloPay': 'zalopay',
-        'VNPay': 'vnpay'
+        'Thẻ tín dụng': 'card'
     };
     
     return methodMap[vietnameseMethod] || vietnameseMethod.toLowerCase();
@@ -448,13 +442,7 @@ function formatPaymentMethod(method) {
     // Direct English method mapping (from API)
     const englishMethodMap = {
         'cash': 'Tiền mặt',
-        'transfer': 'Chuyển khoản',
-        'card': 'Thẻ tín dụng',
-        'stripe': 'Thanh toán trực tuyến (Stripe)',
-        'paypal': 'PayPal',
-        'momo': 'MoMo',
-        'zalopay': 'ZaloPay',
-        'vnpay': 'VNPay'
+        'card': 'Thẻ tín dụng'
     };
     
     // Check for direct English mapping first
@@ -466,19 +454,15 @@ function formatPaymentMethod(method) {
     // Handle "tiền mặt" variations
     if (cleanMethod.match(/ti[e\u00EA\u1EBF]n\s*m[a\u0103\u00E2\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5]t/i) || 
         cleanMethod.includes('tien') && cleanMethod.includes('mat') ||
-        cleanMethod.includes('tien') && cleanMethod.includes('m')) {
+        cleanMethod.includes('tien') && cleanMethod.includes('m') ||
+        cleanMethod.includes('cash')) {
         return 'Tiền mặt';
-    }
-    
-    // Handle "chuyển khoản" variations  
-    if (cleanMethod.match(/chuy[e\u00EA\u1EBF]n\s*kho[a\u0103\u00E2\u1EA3\u1EA5]n/i) ||
-        cleanMethod.includes('chuyen') && cleanMethod.includes('khoan')) {
-        return 'Chuyển khoản';
     }
     
     // Handle "thẻ tín dụng" variations
     if (cleanMethod.match(/th[e\u00EA\u1EBF]\s*t[i\u00ED]n\s*d[u\u00F9\u00FA\u0169\u1EE5]ng/i) ||
         cleanMethod.includes('the') && cleanMethod.includes('tin') ||
+        cleanMethod.includes('card') ||
         cleanMethod.includes('credit')) {
         return 'Thẻ tín dụng';
     }
@@ -496,14 +480,7 @@ function formatPaymentMethod(method) {
         'tien m': 'Tiền mặt',
         'tienmat': 'Tiền mặt',
         'tien': 'Tiền mặt',
-        
-        // Bank transfer variations - including encoding issues  
-        'chuyển khoản': 'Chuyển khoản',
-        'chuyen khoan': 'Chuyển khoản',
-        'chuyen kho': 'Chuyển khoản',
-        'chuyen khn': 'Chuyển khoản',
-        'chuyenkhoan': 'Chuyển khoản',
-        'bank transfer': 'Chuyển khoản',
+        'cash': 'Tiền mặt',
         
         // Credit card variations - including encoding issues
         'thẻ tín dụng': 'Thẻ tín dụng',
@@ -513,11 +490,10 @@ function formatPaymentMethod(method) {
         'thetindung': 'Thẻ tín dụng',
         'credit card': 'Thẻ tín dụng',
         'coin card': 'Thẻ tín dụng',
+        'card': 'Thẻ tín dụng',
         
-        // Other variations
-        'string': 'Tiền mặt',
-        'khác': 'Khác',
-        'other': 'Khác'
+        // Fallback for other variations
+        'string': 'Tiền mặt'
     };
     
     // Check if we have a mapping for this method
