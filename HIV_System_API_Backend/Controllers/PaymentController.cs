@@ -160,7 +160,7 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("confirm-payment/{id}")]
         [Authorize]
-        public async Task<IActionResult> ConfirmPayment(string id, [FromBody] TestCardRequest request)
+        public async Task<IActionResult> ConfirmPayment(string id, [FromBody] TestCardRequestDTO request)
         {
             try
             {
@@ -200,7 +200,10 @@ namespace HIV_System_API_Backend.Controllers
                     PaymentIntentId = paymentIntent.Id,
                     CustomerEmail = paymentIntent.Customer?.Email ?? paymentIntent.ReceiptEmail,
                     CardInfo = cardInfo.Description,
-                    TestScenario = cardInfo.IsSuccess ? "Success" : "Failure"
+                    TestScenario = cardInfo.IsSuccess ? "Success" : "Failure",
+                    Message = cardInfo.IsSuccess
+        ? "Thanh toán thành công! Thông báo đã được gửi."
+        : "Thanh toán thất bại! Thông báo đã được gửi."
                 });
             }
             catch (StripeException ex)
@@ -211,7 +214,7 @@ namespace HIV_System_API_Backend.Controllers
 
         [HttpPost("fail-payment/{id}")]
         [Authorize]
-        public async Task<IActionResult> FailPayment(string id, [FromBody] TestCardRequest request)
+        public async Task<IActionResult> FailPayment(string id, [FromBody] TestCardRequestDTO request)
         {
             try
             {
@@ -303,10 +306,92 @@ namespace HIV_System_API_Backend.Controllers
                 return StatusCode(500, new { Error = ex.Message });
             }
         }
-    }
 
-    public class TestCardRequest
-    {
-        public string CardNumber { get; set; } = string.Empty;
+        /// <summary>
+        /// Manually update payment status (for cash payments by doctors/staff)
+        /// </summary>
+        /// <param name="id">Payment ID</param>
+        /// <param name="request">Status update request</param>
+        /// <returns>Updated payment information</returns>
+        /// <response code="200">Returns the updated payment</response>
+        /// <response code="400">If the request is invalid</response>
+        /// <response code="401">If the user is not authenticated</response>
+        /// <response code="403">If the user doesn't have permission</response>
+        /// <response code="404">If the payment was not found</response>
+        /// <response code="500">If there was an internal server error</response>
+        [HttpPatch("UpdatePaymentStatus/{id}")]
+        [Authorize(Roles = "1, 2, 4, 5")] // Admin, Doctor, Staff, Manager
+        public async Task<ActionResult<PaymentResponseDTO>> UpdatePaymentStatus(int id, [FromBody] PaymentStatusUpdateRequestDTO request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return BadRequest(new { Error = "Request body is required" });
+                }
+
+                // Validate status (1=Pending, 2=Success, 3=Failed)
+                if (request.Status < 1 || request.Status > 3)
+                {
+                    return BadRequest(new { Error = "Invalid payment status. Status must be 1 (Pending), 2 (Success), or 3 (Failed)" });
+                }
+
+                var result = await _paymentService.UpdatePaymentStatusByIdAsync(id, request.Status);
+
+                var statusText = request.Status switch
+                {
+                    1 => "pending",
+                    2 => "success",
+                    3 => "failed",
+                    _ => "unknown"
+                };
+
+                return Ok(new
+                {
+                    Message = $"Payment status updated to {statusText} successfully. Notification sent to patient.",
+                    Payment = result
+                });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { Error = $"Payment with ID {id} not found" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Mark payment as successful for cash payments (quick action for doctors/staff)
+        /// </summary>
+        /// <param name="id">Payment ID</param>
+        /// <returns>Updated payment information</returns>
+        /// <response code="200">Returns the updated payment</response>
+        /// <response code="404">If the payment was not found</response>
+        /// <response code="500">If there was an internal server error</response>
+        [HttpPost("MarkCashPaymentSuccess/{id}")]
+        [Authorize(Roles = "1, 2, 4, 5")] // Admin, Doctor, Staff, Manager
+        public async Task<ActionResult<PaymentResponseDTO>> MarkCashPaymentSuccess(int id)
+        {
+            try
+            {
+                var result = await _paymentService.UpdatePaymentStatusByIdAsync(id, 2); // 2 = Success
+
+                return Ok(new
+                {
+                    Message = "Cash payment marked as successful. Notification sent to patient.",
+                    Payment = result
+                });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { Error = $"Payment with ID {id} not found" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
+        }
     }
 }

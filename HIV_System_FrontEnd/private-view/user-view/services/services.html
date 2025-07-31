@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dịch vụ Y tế - HIV CareFirst</title>
+    <link rel="stylesheet" href="../../shared/doctor-staff-style.css">
+    <link rel="stylesheet" href="../userStyle.css">
+    <link rel="stylesheet" href="services-style.css">
+    <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <!-- Header placeholder -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <div class="header-content">
+                <h1><i class="fas fa-stethoscope"></i> Dịch vụ Y tế</h1>
+                <p>Khám phá các dịch vụ chăm sóc HIV toàn diện của chúng tôi</p>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <!-- Services Filter -->
+            <div class="services-filter">
+                <h3><i class="fas fa-filter"></i> Lọc dịch vụ</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-list"></i> Tất cả
+                    </button>
+                    <button class="filter-btn" data-filter="testing">
+                        <i class="fas fa-vial"></i> Xét nghiệm
+                    </button>
+                    <button class="filter-btn" data-filter="consultation">
+                        <i class="fas fa-comments"></i> Tư vấn
+                    </button>
+                    <button class="filter-btn" data-filter="treatment">
+                        <i class="fas fa-pills"></i> Điều trị
+                    </button>
+                </div>
+            </div>
+
+            <!-- Services Grid -->
+            <div class="services-section">
+                <div class="services-grid" id="servicesGrid">
+                    <!-- Services will be loaded dynamically -->
+                    <div class="services-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Đang tải dịch vụ...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Detail Modal -->
+            <div id="serviceModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="modalServiceName">Chi tiết dịch vụ</h2>
+                        <button class="modal-close" onclick="closeServiceModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="service-detail-content">
+                            <div class="service-icon-large" id="modalServiceIcon">
+                                <i class="fas fa-stethoscope"></i>
+                            </div>
+                            <div class="service-info">
+                                <p class="service-description" id="modalServiceDescription"></p>
+                                <div class="service-price-large" id="modalServicePrice"></div>
+                                <div class="service-availability" id="modalServiceAvailability">
+                                    <i class="fas fa-check-circle"></i> Có sẵn
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick="closeServiceModal()">
+                            <i class="fas fa-times"></i> Đóng
+                        </button>
+                        <button class="btn-primary" id="bookServiceBtn">
+                            <i class="fas fa-calendar-plus"></i> Đặt lịch khám
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 HIV CareFirst. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../header/header.js"></script>
+    <script src="services-script.js"></script>
+</body>
+</html>

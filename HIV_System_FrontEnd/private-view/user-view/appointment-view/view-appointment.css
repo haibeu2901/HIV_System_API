@@ -86,7 +86,7 @@
             justify-content: center;
         }
 
-        .cancel-btn, .update-btn {
+        .cancel-btn, .update-btn, .accept-btn {
             border: none;
             padding: 10px 20px;
             border-radius: 8px;
@@ -109,6 +109,11 @@
             color: white;
         }
 
+        .accept-btn {
+            background: #27ae60;
+            color: white;
+        }
+
         .cancel-btn:hover {
             background: #c0392b;
             transform: translateY(-1px);
@@ -121,18 +126,24 @@
             box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
         }
 
-        .cancel-btn:active, .update-btn:active {
+        .accept-btn:hover {
+            background: #229954;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        .cancel-btn:active, .update-btn:active, .accept-btn:active {
             transform: translateY(0);
         }
 
-        .cancel-btn:disabled, .update-btn:disabled {
+        .cancel-btn:disabled, .update-btn:disabled, .accept-btn:disabled {
             background: #95a5a6;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        .cancel-btn i, .update-btn i {
+        .cancel-btn i, .update-btn i, .accept-btn i {
             font-size: 12px;
         }
 

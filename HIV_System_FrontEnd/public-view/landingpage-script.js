@@ -20,6 +20,158 @@ function hidePageLoader() {
   }
 }
 
+// Medical Services Functions
+async function fetchMedicalServices() {
+  try {
+    console.log('Fetching medical services from API...');
+    
+    const response = await fetch('https://localhost:7009/api/MedicalService/GetAllMedicalServices', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const services = await response.json();
+    console.log('Medical services fetched successfully:', services);
+    
+    return services.filter(service => service.isAvailable);
+  } catch (error) {
+    console.error('Error fetching medical services:', error);
+    // Return fallback services if API fails
+    return [
+      {
+        serviceId: 1,
+        serviceName: "Xét nghiệm HIV Combo",
+        serviceDescription: "Sàng lọc HIV thế hệ 4, phát hiện kháng thể và kháng nguyên p24.",
+        price: 250000,
+        isAvailable: true
+      },
+      {
+        serviceId: 2,
+        serviceName: "Tư vấn PrEP",
+        serviceDescription: "Tư vấn và cung cấp thuốc dự phòng trước phơi nhiễm.",
+        price: 500000,
+        isAvailable: true
+      },
+      {
+        serviceId: 3,
+        serviceName: "Điều trị ARV",
+        serviceDescription: "Đánh giá lâm sàng và liệu pháp ARV cá nhân hóa.",
+        price: 300000,
+        isAvailable: true
+      }
+    ];
+  }
+}
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(price);
+}
+
+function getServiceIcon(serviceName) {
+  const iconMap = {
+    'Xét nghiệm HIV Combo': 'fas fa-vial',
+    'Tư vấn PrEP': 'fas fa-shield-alt',
+    'Điều trị ARV': 'fas fa-pills',
+    'Xét nghiệm tải lượng HIV': 'fas fa-microscope',
+    'Đếm CD4': 'fas fa-dna',
+    'Tư vấn HIV': 'fas fa-comments',
+    'Tư vấn PEP': 'fas fa-first-aid'
+  };
+  
+  return iconMap[serviceName] || 'fas fa-stethoscope';
+}
+
+async function renderMedicalServices() {
+  const servicesGrid = document.querySelector('.services-grid');
+  if (!servicesGrid) {
+    console.error('Services grid not found');
+    return;
+  }
+
+  // Show loading state
+  servicesGrid.innerHTML = `
+    <div class="services-loading">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Đang tải dịch vụ...</p>
+    </div>
+  `;
+
+  try {
+    const services = await fetchMedicalServices();
+    
+    // Clear loading and render services
+    servicesGrid.innerHTML = '';
+    
+    services.forEach(service => {
+      const serviceCard = document.createElement('div');
+      serviceCard.className = 'service-card medical-service-card';
+      serviceCard.innerHTML = `
+        <i class="${getServiceIcon(service.serviceName)}"></i>
+        <h3>${service.serviceName}</h3>
+        <p>${service.serviceDescription}</p>
+        <div class="service-price">${formatPrice(service.price)}</div>
+        <button class="service-book-btn" onclick="openModal('loginModal')">
+          <i class="fas fa-calendar-plus"></i> Đặt lịch
+        </button>
+      `;
+      servicesGrid.appendChild(serviceCard);
+    });
+
+    // Add the additional service cards (ARV medications and Community Blog)
+    addAdditionalServiceCards(servicesGrid);
+
+  } catch (error) {
+    console.error('Error rendering medical services:', error);
+    servicesGrid.innerHTML = `
+      <div class="services-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Không thể tải dịch vụ. Vui lòng thử lại sau.</p>
+        <button onclick="renderMedicalServices()" class="retry-btn">
+          <i class="fas fa-redo"></i> Thử lại
+        </button>
+      </div>
+    `;
+  }
+}
+
+function addAdditionalServiceCards(servicesGrid) {
+  // ARV Medications card
+  const arvCard = document.createElement('div');
+  arvCard.className = 'service-card medication-info-card';
+  arvCard.innerHTML = `
+    <i class="fas fa-pills"></i>
+    <h3>Thuốc ARV</h3>
+    <p>Tìm hiểu về các loại thuốc kháng vi-rút hiện có và công dụng của chúng trong điều trị HIV.</p>
+    <a href="arv-medications-public.html" class="service-link">
+      <i class="fas fa-arrow-right"></i> Xem Thuốc
+    </a>
+  `;
+  servicesGrid.appendChild(arvCard);
+
+  // Community Blog card
+  const blogCard = document.createElement('div');
+  blogCard.className = 'service-card';
+  blogCard.innerHTML = `
+    <i class="fas fa-blog"></i>
+    <h3>Câu chuyện cộng đồng</h3>
+    <p>Đọc những câu chuyện và trải nghiệm đầy cảm hứng từ cộng đồng hỗ trợ HIV của chúng tôi.</p>
+    <a href="./blog/blog-public.html" class="service-link">
+      <i class="fas fa-arrow-right"></i> Đọc Blog
+    </a>
+  `;
+  servicesGrid.appendChild(blogCard);
+}
+
 function showButtonLoader(button, text = 'Loading...') {
   button.disabled = true;
   button.classList.add('btn-loading');
@@ -832,6 +984,9 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener('DOMContentLoaded', function() {
   // Show page loader
   const pageLoader = showPageLoader();
+  
+  // Load medical services
+  renderMedicalServices();
   
   // Simulate loading time and hide loader
   setTimeout(() => {
