@@ -2505,4 +2505,5 @@ async function loadMedicationAlarmStates() {
     } catch (error) {
         console.error('Error loading medication alarm states:', error);
     }
+
 }
