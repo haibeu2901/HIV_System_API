@@ -922,7 +922,7 @@ namespace HIV_System_API_Services.Implements
                 try
                 {
                     // Get today's notifications for end date reminders
-                    var todayStart = DateTime.UtcNow.Date;
+                    var todayStart = DateTime.Now.Date;
                     var todayEnd = todayStart.AddDays(1).AddTicks(-1);
 
                     var existingReminders = await _context.Notifications
