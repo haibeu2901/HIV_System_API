@@ -490,15 +490,6 @@ function renderPayments(payments) {
         </div>
         
         <div class="payments-list">
-            <div class="payment-header-single-line">
-                <div>ID</div>
-                <div>Amount</div>
-                <div>Date</div>
-                <div>Description</div>
-                <div>Method</div>
-                <div>Status</div>
-                <div>Actions</div>
-            </div>
     `;
 
     payments.forEach(payment => {
@@ -508,34 +499,24 @@ function renderPayments(payments) {
         const formattedDate = formatDateTime(payment.paymentDate);
         
         html += `
-            <div class="payment-item-single-line ${statusClass}">
-                <div class="payment-single-row">
-                    <div class="payment-id-compact" data-label="ID">
-                        <span class="payment-id-value">#${payment.payId}</span>
+            <div class="payment-card-container">
+                <div class="payment-basic-info">
+                    <div class="payment-id-section">
+                        <span class="payment-id">#${payment.payId}</span>
                     </div>
-                    
-                    <div class="payment-amount-compact" data-label="Amount">
-                        <span class="amount-value">${formattedAmount}</span>
-                        <span class="currency-value">${payment.currency}</span>
+                    <div class="payment-amount-section">
+                        <span class="amount">${formattedAmount}</span>
                     </div>
-                    
-                    <div class="payment-date-compact" data-label="Date">
-                        <span class="date-value">${formattedDate}</span>
+                    <div class="payment-date-section">
+                        <span class="date">${formattedDate}</span>
                     </div>
-                    
-                    <div class="payment-description-compact" data-label="Description">
-                        <span class="description-value">${payment.description || 'No description'}</span>
+                    <div class="payment-method-section">
+                        <span class="method">${formatPaymentMethod(payment.paymentMethod)}</span>
                     </div>
-                    
-                    <div class="payment-method-compact" data-label="Method">
-                        <span class="method-value">${formatPaymentMethod(payment.paymentMethod)}</span>
-                    </div>
-                    
-                    <div class="payment-status-compact" data-label="Status">
+                    <div class="payment-status-section">
                         ${statusBadge}
                     </div>
-                    
-                    <div class="payment-actions-compact" data-label="Actions">
+                    <div class="payment-actions-section">
                         ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
                             ${(() => {
                                 // Check if payment method is cash - patients cannot complete cash payments
@@ -547,20 +528,32 @@ function renderPayments(payments) {
                                                      paymentMethod === 'string'; // Sometimes 'string' is used for cash in the database
                                 
                                 if (isCashPayment) {
-                                    return `<span class="cash-payment-notice" style="color: #6c757d; font-size: 12px;">Thanh toán tiền mặt - Liên hệ nhân viên</span>`;
+                                    return `<div class="cash-payment-notice">Tiền mặt<br>Liên hệ NV</div>`;
                                 } else {
-                                    return `<button class="btn-action-compact btn-confirm" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
-                                                <i class="fas fa-check"></i>
+                                    return `<button class="btn-confirm-payment" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
+                                                <i class="fas fa-check"></i> Xác nhận
                                             </button>`;
                                 }
                             })()}
                         ` : ''}
-                        <button class="btn-action-compact btn-details" onclick="viewPaymentDetails(${payment.payId})" title="View Details">
-                            <i class="fas fa-eye"></i>
+                        <button class="btn-view-details" onclick="togglePaymentDetails('${payment.payId}')">
+                            <i class="fas fa-eye"></i> View Details
                         </button>
-                        <button class="btn-action-compact btn-copy" onclick="copyPaymentId(${payment.payId})" title="Copy ID">
-                            <i class="fas fa-copy"></i>
-                        </button>
+                    </div>
+                </div>
+                
+                <div class="payment-detailed-info" id="paymentDetails${payment.payId}" style="display: none;">
+                    <div class="detail-row">
+                        <span class="detail-label">Service:</span>
+                        <span class="detail-value">${payment.description || 'No description'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Payment Intent ID:</span>
+                        <span class="detail-value">${payment.paymentIntentId || 'N/A'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Created:</span>
+                        <span class="detail-value">${formatDateTime(payment.createdAt || payment.paymentDate)}</span>
                     </div>
                 </div>
             </div>
@@ -569,6 +562,201 @@ function renderPayments(payments) {
 
     html += `</div>`;
     section.innerHTML = html;
+    
+    // Add CSS styling for payment cards
+    if (!document.getElementById('payment-card-styles')) {
+        const style = document.createElement('style');
+        style.id = 'payment-card-styles';
+        style.textContent = `
+            .payment-card-container {
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                margin-bottom: 12px;
+                background: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
+                transition: all 0.2s ease;
+            }
+            
+            .payment-card-container:hover {
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                border-color: #007bff;
+            }
+            
+            .payment-basic-info {
+                display: grid;
+                grid-template-columns: 80px 100px 120px 1fr 120px auto;
+                gap: 12px;
+                padding: 16px;
+                align-items: center;
+                min-height: 60px;
+            }
+            
+            .payment-id-section .payment-id {
+                font-weight: 600;
+                color: #007bff;
+                font-size: 14px;
+            }
+            
+            .payment-amount-section .amount {
+                font-weight: 700;
+                color: #28a745;
+                font-size: 16px;
+            }
+            
+            .payment-date-section .date {
+                color: #6c757d;
+                font-size: 13px;
+            }
+            
+            .payment-method-section .method {
+                background: #f8f9fa;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                color: #495057;
+                border: 1px solid #dee2e6;
+            }
+            
+            .payment-status-section .status-badge {
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            
+            .payment-status-section .status-badge.pending {
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }
+            
+            .payment-status-section .status-badge.succeeded {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            
+            .payment-status-section .status-badge.failed {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            
+            .payment-actions-section {
+                display: flex;
+                gap: 8px;
+                justify-content: flex-end;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            
+            .btn-confirm-payment, .btn-view-details {
+                padding: 6px 12px;
+                border: none;
+                border-radius: 4px;
+                font-size: 12px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            
+            .btn-confirm-payment {
+                background: #28a745;
+                color: white;
+            }
+            
+            .btn-confirm-payment:hover {
+                background: #218838;
+                transform: translateY(-1px);
+            }
+            
+            .btn-view-details {
+                background: #6c757d;
+                color: white;
+            }
+            
+            .btn-view-details:hover {
+                background: #5a6268;
+                transform: translateY(-1px);
+            }
+            
+            .cash-payment-notice {
+                background: #e9ecef;
+                color: #495057;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 11px;
+                text-align: center;
+                border: 1px solid #ced4da;
+                line-height: 1.2;
+                max-width: 80px;
+                word-wrap: break-word;
+                white-space: normal;
+            }
+            
+            .payment-detailed-info {
+                background: #f8f9fa;
+                border-top: 1px solid #e0e0e0;
+                padding: 16px;
+                animation: slideDown 0.3s ease;
+            }
+            
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                padding: 4px 0;
+            }
+            
+            .detail-row:last-child {
+                margin-bottom: 0;
+            }
+            
+            .detail-label {
+                font-weight: 600;
+                color: #495057;
+                min-width: 120px;
+            }
+            
+            .detail-value {
+                color: #6c757d;
+                text-align: right;
+                word-break: break-word;
+            }
+            
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    max-height: 0;
+                }
+                to {
+                    opacity: 1;
+                    max-height: 200px;
+                }
+            }
+            
+            @media (max-width: 768px) {
+                .payment-basic-info {
+                    grid-template-columns: 1fr;
+                    gap: 8px;
+                    text-align: center;
+                }
+                
+                .payment-actions-section {
+                    justify-content: center;
+                }
+                
+                .cash-payment-notice {
+                    max-width: none;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 // Function to format payment method display text
@@ -687,6 +875,32 @@ function formatPaymentMethod(method) {
     
     // If no mapping found, return the original method with proper capitalization
     return method.charAt(0).toUpperCase() + method.slice(1);
+}
+
+// Toggle payment details function
+function togglePaymentDetails(paymentId) {
+    const detailsElement = document.getElementById(`paymentDetails${paymentId}`);
+    const buttonElement = document.querySelector(`[onclick="togglePaymentDetails('${paymentId}')"]`);
+    
+    if (detailsElement) {
+        const isVisible = detailsElement.style.display !== 'none';
+        
+        if (isVisible) {
+            // Hide details
+            detailsElement.style.display = 'none';
+            if (buttonElement) {
+                buttonElement.innerHTML = '<i class="fas fa-eye"></i> View Details';
+                buttonElement.classList.remove('active');
+            }
+        } else {
+            // Show details
+            detailsElement.style.display = 'block';
+            if (buttonElement) {
+                buttonElement.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
+                buttonElement.classList.add('active');
+            }
+        }
+    }
 }
 
 // Utility function for formatting date time
@@ -2133,17 +2347,19 @@ async function saveMedicationAlarm() {
                 const errorData = await response.text();
                 // Nếu API không tồn tại (404 hoặc endpoint not found), simulate thành công
                 if (response.status === 404 || errorData.includes('not found') || errorData.includes('NotFound')) {
+                    console.log('API CreateMedicationAlarm không tồn tại - simulate thành công');
                     // Simulate success response
                 } else {
                     throw new Error(`API Error: ${response.status} - ${errorData}`);
                 }
             } else {
                 const result = await response.json();
+                console.log('Medication alarm created successfully:', result);
             }
         } catch (fetchError) {
             // Nếu không thể kết nối đến API, simulate thành công
             if (fetchError.name === 'TypeError' || fetchError.message.includes('Failed to fetch')) {
-                // Network error - simulate success
+                console.log('Không thể kết nối đến API CreateMedicationAlarm - simulate thành công');
             } else {
                 throw fetchError;
             }
@@ -2248,6 +2464,7 @@ async function fetchPatientMedicationAlarms() {
         
         if (!response.ok) {
             if (response.status === 404) {
+                console.log('No medication alarms found for patient (404 - expected for new users)');
                 return []; // No alarms found - this is normal for new users
             }
             throw new Error('Failed to fetch medication alarms');
@@ -2256,7 +2473,8 @@ async function fetchPatientMedicationAlarms() {
         return await response.json();
     } catch (error) {
         if (error.message.includes('404')) {
-            return []; // No alarms found
+            console.log('No medication alarms found for patient');
+            return [];
         }
         console.error('Error fetching medication alarms:', error);
         return [];
@@ -2267,6 +2485,7 @@ async function fetchPatientMedicationAlarms() {
 async function loadMedicationAlarmStates() {
     try {
         const alarms = await fetchPatientMedicationAlarms();
+        console.log('Loaded medication alarms:', alarms);
         
         // Create a set of patientArvMedicationId values that have active alarms
         const medicationsWithAlarms = new Set();
@@ -2275,6 +2494,8 @@ async function loadMedicationAlarmStates() {
                 medicationsWithAlarms.add(alarm.patientArvMedicationId);
             }
         });
+        
+        console.log('Medications with active alarms:', medicationsWithAlarms);
         
         // Update button states and hide alarm buttons for medications that already have alarms
         medicationsWithAlarms.forEach(medId => {
