@@ -1,661 +1,534 @@
-// Existing mappings
-const regimenStatusMap = {
-    1: "Đã lên kế hoạch",
-    2: "Đang hoạt động",
-    3: "Tạm dừng",
-    4: "Đã hủy",
-    5: "Hoàn thành"
-};
-
-// Assuming regimenLevelMap exists (based on previous context)
-const regimenLevelMap = {
-    1: "Bậc 1",
-    2: "Bậc 2",
-    3: "Bậc 3"
-    // Add other levels as needed
-};
-
-// Utility to format date for display
-function formatDateTime(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+// Ensure role flags are set at the very top
+window.isStaff = false;
+window.isDoctor = false;
+if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+    const roleId = window.roleUtils.getUserRole();
+    const roleName = window.roleUtils.ROLE_NAMES[roleId];
+    window.isStaff = (roleName === 'staff');
+    window.isDoctor = (roleName === 'doctor');
 }
 
-// Utility to normalize date for filtering
-function normalizeDate(dateStr) {
-    if (!dateStr) return '';
-    return dateStr.slice(0, 10); // Assumes YYYY-MM-DD format
-}
+// Get token from localStorage
+const token = localStorage.getItem('token');
 
-// Utility to normalize time for filtering (from appointment-list-script.js)
-function normalizeTime(timeStr) {
-    if (!timeStr) return '';
-    const date = new Date(timeStr);
-    return date.toISOString().slice(11, 16); // Returns HH:MM
-}
+// Define section globally for use in renderAppointments and event delegation
+const section = document.getElementById('appointmentListSection');
 
-// Render Patient Profile (unchanged)
-function renderPatientProfile(patient) {
-    const section = document.getElementById('patientProfileSection');
-    if (!section) return;
-    section.innerHTML = `
-        <div class="patient-profile">
-            <h3>Hồ sơ bệnh nhân</h3>
-            <p><strong>Họ và tên:</strong> ${patient.fullName || 'N/A'}</p>
-            <p><strong>Mã bệnh nhân:</strong> ${patient.patientCode || 'N/A'}</p>
-            <p><strong>Ngày sinh:</strong> ${patient.dob ? new Date(patient.dob).toLocaleDateString('vi-VN') : 'N/A'}</p>
-            <p><strong>Giới tính:</strong> ${patient.gender || 'N/A'}</p>
-            <p><strong>Số điện thoại:</strong> ${patient.phone || 'N/A'}</p>
-            <p><strong>Địa chỉ:</strong> ${patient.address || 'N/A'}</p>
-        </div>
+// Create filter bar only once, outside the section
+if (!document.getElementById('filterStatus')) {
+    const filterBar = document.createElement('div');
+    filterBar.className = 'filter-bar';
+    filterBar.innerHTML = `
+    <label for="filterStatus">Trạng thái:</label>
+    <select id="filterStatus">
+        <option value="">Tất cả</option>
+        <option value="1">Chờ xác nhận</option>
+        <option value="2">Đã lên lịch</option>
+        <option value="4">Đã hủy</option>
+        <option value="5">Đã hoàn thành</option>
+    </select>
+    <label for="filterDate">Ngày:</label>
+    <input type="date" id="filterDate">
+    <label for="filterTime">Giờ:</label>
+    <input type="time" id="filterTime">
+    <label for="sortDate">Sắp xếp ngày:</label>
+    <select id="sortDate">
+        <option value="desc">Mới nhất</option>
+        <option value="asc">Cũ nhất</option>
+    </select>
+    <button id="clearFilters">Xóa lọc</button>
     `;
+    // Insert filter bar before the appointment list section
+    section.parentNode.insertBefore(filterBar, section);
 }
 
-// Render Appointments (unchanged)
+// Appointment status mapping (add virtual status for frontend display)
+const appointmentStatusMap = {
+    1: "Chờ xác nhận",
+    2: "Đã lên lịch",
+    4: "Đã hủy",
+    5: "Đã hoàn thành",
+};
+
+// Helper to determine display status (virtual rejected for pending->cancelled)
+function getDisplayStatus(apmt) {
+    // If appointment was pending and then rejected (cancelled), mark as rejected in UI
+    if (apmt.apmStatus === 4 && apmt._wasPending) {
+        return { label: appointmentStatusMap[6], class: 'status-rejected' };
+    }
+    return { label: appointmentStatusMap[apmt.apmStatus] || 'Không rõ', class: `status-${apmt.apmStatus}` };
+}
+
+async function fetchAppointments() {
+    try {
+        let url = '';
+        if (window.isDoctor) {
+            url = 'https://localhost:7009/api/Appointment/GetAllPersonalAppointments';
+        } else if (window.isStaff) {
+            url = 'https://localhost:7009/api/Appointment/GetAllAppointments';
+        } else {
+            throw new Error('Không xác định vai trò người dùng.');
+        }
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) throw new Error('Lỗi không thể lấy lịch hẹn');
+        return await response.json();
+    } catch (error) {
+        console.error('Lỗi không thể lấy lịch hẹn:', error);
+        return [];
+    }
+}
+
 function renderAppointments(appointments) {
-    const section = document.getElementById('appointmentsSection');
-    if (!section) return;
-    if (!appointments || !appointments.length) {
-        section.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-calendar-times"></i>
-                <p>Không tìm thấy lịch hẹn nào.</p>
-            </div>
-        `;
+    if (!section) return; // Ensure section is available
+    if (!appointments.length) {
+        section.innerHTML = '<p>Không có lịch hẹn nào.</p>';
         return;
     }
-    let html = `
-        <table class="appointments-table" style="width:100%;border-collapse:collapse;">
-            <thead>
-                <tr>
-                    <th>Ngày hẹn</th>
-                    <th>Giờ hẹn</th>
-                    <th>Trạng thái</th>
-                    <th>Ghi chú</th>
-                    <th>Ngày tạo</th>
-                    <th>Chi tiết</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    appointments.forEach((appointment, idx) => {
-        html += `
-            <tr class="appointment-row" data-idx="${idx}">
-                <td>${appointment.apmtDate || 'N/A'}</td>
-                <td>${appointment.apmTime || 'N/A'}</td>
-                <td><span class="appointment-status status-${appointment.apmStatus}">${appointment.apmStatus === 1 ? 'Chờ xác nhận' : appointment.apmStatus === 2 ? 'Đã xác nhận' : appointment.apmStatus === 3 ? 'Đã hủy' : appointment.apmStatus === 4 ? 'Hoàn thành' : 'Không xác định'}</span></td>
-                <td>${appointment.notes || ''}</td>
-                <td>${formatDateTime(appointment.createdAt)}</td>
-                <td>
-                    <button class="toggle-details-btn" data-idx="${idx}">▼</button>
-                </td>
+    let html = `<table class="appointment-table">
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Bệnh nhân</th>
+                <th>Ngày</th>
+                <th>Giờ</th>
+                <th>Ghi chú</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
             </tr>
-            <tr class="appointment-details-row" id="appointment-details-${idx}" style="display:none;">
-                <td colspan="6">
-                    <div><strong>Ngày tạo:</strong> ${formatDateTime(appointment.createdAt)}</div>
-                    <div><strong>Ghi chú chi tiết:</strong> ${appointment.notes || 'Không có'}</div>
-                    ${window.isStaff ? `
-                        <div style="margin-top:1rem;text-align:right;">
-                            <button class="secondary-btn update-appointment-btn" data-id="${appointment.appointmentId}">Cập nhật</button>
-                        </div>
-                    ` : ''}
-                </td>
-            </tr>
-        `;
-    });
-    html += `</tbody></table>`;
+        </thead>
+        <tbody>
+            ${appointments.map((apmt, idx) => {
+        return `<tr data-apmt-id="${apmt.appointmentId}">
+                    <td>${idx + 1}</td>
+                    <td>${apmt.patientName}</td>
+                    <td>${apmt.apmtDate || apmt.requestDate || ''}</td>
+                    <td>${apmt.apmTime || apmt.requestTime || ''}</td>
+                    <td>${apmt.notes || ''}</td>
+                    <td>${getDisplayStatus(apmt).label}</td>
+                    <td><button class="button-view" data-view-id="${apmt.appointmentId}">Xem</button></td>
+                </tr>`;
+    }).join('')}
+        </tbody>
+    </table>`;
     section.innerHTML = html;
+}
 
-    document.querySelectorAll('.toggle-details-btn').forEach(btn => {
-        btn.onclick = function(e) {
-            e.stopPropagation();
-            const idx = this.getAttribute('data-idx');
-            const detailsRow = document.getElementById(`appointment-details-${idx}`);
-            if (detailsRow.style.display === 'none') {
-                detailsRow.style.display = '';
-                this.textContent = '▲';
-            } else {
-                detailsRow.style.display = 'none';
-                this.textContent = '▼';
-            }
-        };
+// Store all appointments for filtering
+let allAppointments = [];
+
+// Filtering logic
+function applyFilters() {
+    const status = document.getElementById('filterStatus').value;
+    const date = document.getElementById('filterDate').value;
+    const time = document.getElementById('filterTime').value;
+    const sortOrder = document.getElementById('sortDate') ? document.getElementById('sortDate').value : 'desc';
+
+    let filtered = allAppointments.filter(apmt => {
+        let match = true;
+        if (status && String(apmt.apmStatus) !== status) match = false;
+        if (date && (apmt.apmtDate !== date && apmt.requestDate !== date)) match = false;
+        if (time && ((apmt.apmTime && !apmt.apmTime.startsWith(time)) && (apmt.requestTime && !apmt.requestTime.startsWith(time)))) match = false;
+        return match;
     });
 
-    if (window.isStaff) {
-        section.querySelectorAll('.update-appointment-btn').forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const appointmentId = this.getAttribute('data-id');
-                if (!appointmentId) return;
-                const appointment = appointments.find(apm => String(apm.appointmentId) === String(appointmentId));
-                if (!appointment) {
-                    alert('Không tìm thấy dữ liệu lịch hẹn.');
+    // Sort by date
+    filtered.sort((a, b) => {
+        const dateA = new Date(a.apmtDate || a.requestDate || '1970-01-01');
+        const dateB = new Date(b.apmtDate || b.requestDate || '1970-01-01');
+        if (sortOrder === 'asc') return dateA - dateB;
+        return dateB - dateA;
+    });
+
+    renderAppointments(filtered);
+}
+
+// Event delegation for view button
+section.addEventListener('click', async function (e) {
+    const btn = e.target.closest('.button-view');
+    if (btn) {
+        const apmtId = btn.getAttribute('data-view-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/GetAppointmentById/${apmtId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Không thể lấy chi tiết lịch hẹn');
+            const apmt = await res.json();
+            showAppointmentDetailsModal(apmt);
+        } catch (err) {
+            setMessage('Lỗi khi lấy chi tiết lịch hẹn.', false);
+        }
+    }
+});
+
+function showAppointmentDetailsModal(apmt) {
+    const modal = document.getElementById('appointmentDetailsModal');
+    const content = document.getElementById('appointmentDetailsContent');
+    const actions = document.getElementById('appointmentDetailsActions');
+    // Render appointment info
+    content.innerHTML = `
+      <p><b>Bệnh nhân:</b> ${apmt.patientName}</p>
+      <p><b>Bác sĩ:</b> ${apmt.doctorName}</p>
+      <p><b>Ngày hẹn:</b> ${apmt.apmtDate || apmt.requestDate || ''}</p>
+      <p><b>Giờ hẹn:</b> ${apmt.apmTime || apmt.requestTime || ''}</p>
+      <p><b>Ghi chú:</b> ${apmt.notes || ''}</p>
+      <p><b>Trạng thái:</b> ${getDisplayStatus(apmt).label}</p>
+    `;
+    // Render action buttons
+    let btns = '';
+    if (window.isDoctor) { // Only doctors can see these buttons
+        if (apmt.apmStatus === 1) {
+            btns += `<button class="button-accept" data-accept-id="${apmt.appointmentId}">Chấp nhận</button>`;
+            btns += `<button class="button-reject" data-reject-id="${apmt.appointmentId}" data-apmt-status="${apmt.apmStatus}">Từ chối</button>`;
+            btns += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Chỉnh sửa</button>`;
+        }
+        if (apmt.apmStatus === 2 || apmt.apmStatus === 3) {
+            btns += `<button class="button-cancel" data-cancel-id="${apmt.appointmentId}">Hủy lịch</button>`;
+            btns += `<button class="button-modify" data-modify-id="${apmt.appointmentId}">Chỉnh sửa</button>`;
+            btns += `<button class="button-complete" data-complete-id="${apmt.appointmentId}">Hoàn thành</button>`;
+        }
+    }
+    actions.innerHTML = btns;
+    modal.style.display = 'block';
+
+    // Accept button
+    actions.querySelector('.button-accept')?.addEventListener('click', async function () {
+        const apmtId = this.getAttribute('data-accept-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=2`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setMessage('Lịch hẹn đã được chấp nhận!', true);
+            modal.style.display = 'none';
+            allAppointments = await fetchAppointments();
+            applyFilters();
+        } catch (err) {
+            let msg = err.message;
+            // Try to extract error message if it's a JSON string with an 'error' property
+            try {
+                const parsed = JSON.parse(msg);
+                if (parsed && parsed.error) msg = parsed.error;
+            } catch (e) { }
+            setMessage('Lỗi khi chấp nhận lịch hẹn: ' + msg, false);
+        }
+    });
+    // Reject button
+    actions.querySelector('.button-reject')?.addEventListener('click', async function () {
+        const apmtId = this.getAttribute('data-reject-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=4`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setMessage('Lịch hẹn đã bị từ chối!', true);
+            modal.style.display = 'none';
+            allAppointments = await fetchAppointments();
+            applyFilters();
+        } catch (err) {
+            let msg = err.message;
+            try {
+                const parsed = JSON.parse(msg);
+                if (parsed && parsed.error) msg = parsed.error;
+            } catch (e) { }
+            setMessage('Lỗi khi từ chối lịch hẹn: ' + msg, false);
+        }
+    });
+    // Cancel button
+    actions.querySelector('.button-cancel')?.addEventListener('click', async function () {
+        const apmtId = this.getAttribute('data-cancel-id');
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/ChangeAppointmentStatus?appointmentId=${apmtId}&status=4`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setMessage('Lịch hẹn đã được hủy!', true);
+            modal.style.display = 'none';
+            allAppointments = await fetchAppointments();
+            applyFilters();
+        } catch (err) {
+            let msg = err.message;
+            try {
+                const parsed = JSON.parse(msg);
+                if (parsed && parsed.error) msg = parsed.error;
+            } catch (e) { }
+            setMessage('Lỗi khi hủy lịch hẹn: ' + msg, false);
+        }
+    });
+    // Complete button
+    actions.querySelector('.button-complete')?.addEventListener('click', function () {
+        const apmtId = this.getAttribute('data-complete-id');
+        // Open complete modal and set appointment ID
+        const completeModal = document.getElementById('completeAppointmentModal');
+        const completeForm = document.getElementById('completeAppointmentForm');
+        if (completeForm) completeForm.setAttribute('data-apmt-id', apmtId);
+        if (completeModal) completeModal.style.display = 'block';
+        // Hide the appointment details modal so the complete modal is upfront
+        modal.style.display = 'none';
+    });
+
+    // Modify button
+    actions.querySelector('.button-modify')?.addEventListener('click', function () {
+        document.getElementById('modifyDate').value = apmt.apmtDate || apmt.requestDate || '';
+        document.getElementById('modifyNotes').value = apmt.notes || '';
+        document.getElementById('modifyAppointmentModal').style.display = 'block';
+        document.getElementById('modifyAppointmentForm').setAttribute('data-apmt-id', apmt.appointmentId);
+        modal.style.display = 'none';
+        // Fetch and populate available time slots from work schedule
+        const doctorId = apmt.doctorId;
+        const date = apmt.apmtDate || apmt.requestDate || '';
+        const timeSelect = document.getElementById('modifyTime');
+        timeSelect.innerHTML = '<option>Đang tải...</option>';
+        fetch(`https://localhost:7009/api/DoctorWorkSchedule/GetPersonalWorkSchedules?doctorId=${doctorId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(schedules => {
+                const slots = (schedules || []).filter(s => s.workDate === date && s.isAvailable);
+                let options = [];
+                slots.forEach(s => {
+                    let start = s.startTime.slice(0, 5);
+                    let end = s.endTime.slice(0, 5);
+                    let [sh, sm] = start.split(':').map(Number);
+                    let [eh, em] = end.split(':').map(Number);
+                    let current = new Date(0, 0, 0, sh, sm);
+                    let endTime = new Date(0, 0, 0, eh, em);
+                    while (current < endTime) {
+                        let h = current.getHours().toString().padStart(2, '0');
+                        let m = current.getMinutes().toString().padStart(2, '0');
+                        options.push(`${h}:${m}`);
+                        current.setHours(current.getHours() + 1);
+                    }
+                });
+                options = Array.from(new Set(options)).sort();
+                if (options.length > 0) {
+                    timeSelect.innerHTML = options.map(t => `<option value="${t}">${t}</option>`).join('');
+                    const currentTime = (apmt.apmTime || apmt.requestTime || '').slice(0, 5);
+                    if (options.includes(currentTime)) {
+                        timeSelect.value = currentTime;
+                    }
+                } else {
+                    timeSelect.innerHTML = '<option value="">Không có khung giờ khả dụng</option>';
+                }
+            })
+            .catch(() => {
+                timeSelect.innerHTML = '<option value="">Lỗi tải khung giờ</option>';
+            });
+    });
+}
+
+document.getElementById('closeAppointmentDetailsModal').onclick = function () {
+    document.getElementById('appointmentDetailsModal').style.display = 'none';
+};
+
+// Main startup logic
+window.addEventListener('DOMContentLoaded', async () => {
+    // Fetch and render appointments
+    allAppointments = await fetchAppointments();
+    applyFilters();
+
+    // Filter event listeners
+    document.getElementById('filterStatus').addEventListener('change', applyFilters);
+    document.getElementById('filterDate').addEventListener('change', applyFilters);
+    document.getElementById('filterTime').addEventListener('change', applyFilters);
+    document.getElementById('sortDate').addEventListener('change', applyFilters);
+    document.getElementById('clearFilters').addEventListener('click', function () {
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterDate').value = '';
+        document.getElementById('filterTime').value = '';
+        applyFilters();
+    });
+
+    // Modal close/cancel for complete
+    const closeCompleteModalBtn = document.getElementById('closeCompleteModal');
+    if (closeCompleteModalBtn) closeCompleteModalBtn.onclick = closeCompleteModal;
+    const cancelCompleteBtn = document.getElementById('cancelCompleteBtn');
+    if (cancelCompleteBtn) cancelCompleteBtn.onclick = closeCompleteModal;
+    function closeCompleteModal() {
+        const completeModal = document.getElementById('completeAppointmentModal');
+        const completeForm = document.getElementById('completeAppointmentForm');
+        if (completeModal && completeForm) {
+            completeModal.style.display = 'none';
+            completeForm.reset();
+        }
+    }
+    // Complete appointment form
+    const completeAppointmentForm = document.getElementById('completeAppointmentForm');
+    if (completeAppointmentForm) {
+        completeAppointmentForm.onsubmit = async function (e) {
+            e.preventDefault();
+            const apmtId = this.getAttribute('data-apmt-id');
+            const notes = document.getElementById('completeNotes') ? document.getElementById('completeNotes').value : '';
+            const submitBtn = document.getElementById('submitCompleteBtn');
+            if (submitBtn) submitBtn.disabled = true;
+            setMessage('Đang xử lý...', false);
+            try {
+                const res = await fetch(`https://localhost:7009/api/Appointment/CompleteAppointment?appointmentId=${apmtId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes })
+                });
+                if (!res.ok) {
+                    let msg = 'Không thể hoàn thành lịch hẹn.';
+                    try {
+                        const data = await res.json();
+                        if (data && data.error) msg = data.error;
+                        else if (typeof data === 'string') msg = data;
+                    } catch (e) {
+                        try {
+                            const text = await res.text();
+                            if (text) msg = text;
+                        } catch (e2) { }
+                    }
+                    setMessage(msg, false);
+                    if (submitBtn) submitBtn.disabled = false;
                     return;
                 }
-                document.getElementById('updateAppointmentId').value = appointment.appointmentId;
-                document.getElementById('updateAppointmentDate').value = appointment.apmtDate || '';
-                document.getElementById('updateAppointmentTime').value = appointment.apmTime || '';
-                document.getElementById('updateAppointmentStatus').value = appointment.apmStatus || '';
-                document.getElementById('updateAppointmentNotes').value = appointment.notes || '';
-                document.getElementById('updateAppointmentModal').style.display = 'block';
-            });
-        });
-    }
-}
-
-// Render ARV Regimens with Filter Bar
-function renderARVRegimens(regimens, medications) {
-    const section = document.getElementById('arvRegimensSection');
-    if (!section) return;
-
-    let allRegimens = regimens || [];
-
-    // Add filter bar
-    if (!document.getElementById('regimenFilterStatus')) {
-        const filterBar = document.createElement('div');
-        filterBar.className = 'filter-bar';
-        filterBar.innerHTML = `
-            <label for="regimenFilterStatus">Trạng thái:</label>
-            <select id="regimenFilterStatus">
-                <option value="">Tất cả</option>
-                <option value="1">Đã lên kế hoạch</option>
-                <option value="2">Đang hoạt động</option>
-                <option value="3">Tạm dừng</option>
-                <option value="4">Đã hủy</option>
-                <option value="5">Hoàn thành</option>
-            </select>
-            <label for="regimenFilterDate">Ngày tạo:</label>
-            <input type="date" id="regimenFilterDate">
-            <label for="regimenFilterTime">Giờ:</label>
-            <input type="time" id="regimenFilterTime">
-            <label for="regimenSortDate">Sắp xếp ngày tạo:</label>
-            <select id="regimenSortDate">
-                <option value="desc">Mới nhất</option>
-                <option value="asc">Cũ nhất</option>
-            </select>
-            <button id="regimenClearFilters">Xóa lọc</button>
-        `;
-        section.parentNode.insertBefore(filterBar, section);
+                setMessage('Lịch hẹn đã được đánh dấu hoàn thành!', true);
+                document.getElementById('completeAppointmentModal').style.display = 'none';
+                document.getElementById('appointmentDetailsModal').style.display = 'none';
+                allAppointments = await fetchAppointments();
+                applyFilters();
+            } catch (err) {
+                setMessage('Lỗi khi hoàn thành lịch hẹn.', false);
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        };
     }
 
-    function applyRegimenFilters() {
-        const status = document.getElementById('regimenFilterStatus').value;
-        const date = document.getElementById('regimenFilterDate').value;
-        const time = document.getElementById('regimenFilterTime').value;
-        const sortOrder = document.getElementById('regimenSortDate').value;
-
-        let filtered = allRegimens.filter(regimen => {
-            let match = true;
-            if (status && String(regimen.regimenStatus) !== status) match = false;
-            if (date && normalizeDate(regimen.createdAt) !== date) match = false;
-            if (time && normalizeTime(regimen.createdAt) !== time) match = false;
-            return match;
-        });
-
-        filtered.sort((a, b) => {
-            const dateA = new Date(a.createdAt || '1970-01-01');
-            const dateB = new Date(b.createdAt || '1970-01-01');
-            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-        });
-
-        renderFilteredRegimens(filtered);
-    }
-
-    function renderFilteredRegimens(regimens) {
-        if (!regimens.length) {
-            section.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-pills"></i>
-                    <p>Không tìm thấy phác đồ ARV nào.</p>
-                </div>
-            `;
-            return;
+    // Only doctors can modify appointments
+    if (window.isDoctor) {
+        document.getElementById('closeModifyModal').onclick = closeModifyModal;
+        document.getElementById('cancelModifyBtn').onclick = closeModifyModal;
+        function closeModifyModal() {
+            document.getElementById('modifyAppointmentModal').style.display = 'none';
+            document.getElementById('modifyAppointmentForm').reset();
+            document.getElementById('modifyTime').innerHTML = '';
         }
-
-        let html = `
-            <table class="regimens-table" style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr>
-                        <th>Bậc</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày bắt đầu</th>
-                        <th>Ngày kết thúc</th>
-                        <th>Ghi chú</th>
-                        <th>Ngày tạo</th>
-                        <th>Mở rộng/Đóng</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        regimens.forEach((regimen, idx) => {
-            const statusText = regimenStatusMap[regimen.regimenStatus] || regimen.regimenStatus;
-            const levelText = regimenLevelMap[regimen.regimenLevel] || regimen.regimenLevel;
-            const regimenMeds = (medications || []).filter(med => med.patientArvRegiId === regimen.patientArvRegiId);
-            html += `
-                <tr class="regimen-row" data-idx="${idx}">
-                    <td>${levelText}</td>
-                    <td><span class="regimen-status status-${regimen.regimenStatus}">${statusText}</span></td>
-                    <td>${regimen.startDate}</td>
-                    <td>${regimen.endDate || 'Đang áp dụng'}</td>
-                    <td>${regimen.notes || ''}</td>
-                    <td>${formatDateTime(regimen.createdAt)}</td>
-                    <td>
-                        <button class="toggle-details-btn" data-idx="${idx}">▼</button>
-                    </td>
-                </tr>
-                <tr class="regimen-details-row" id="regimen-details-${idx}" style="display:none;">
-                    <td colspan="7">
-                        <div><strong>Ngày tạo:</strong> ${formatDateTime(regimen.createdAt)}</div>
-                        <div><strong>Tổng chi phí:</strong> ${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
-                        <h4>Thuốc</h4>
-                        ${regimenMeds.length > 0 ? `
-                            <table class="medications-table" style="width:100%;margin-top:10px;">
-                                <thead>
-                                    <tr>
-                                        <th>Tên thuốc</th>
-                                        <th>Loại thuốc</th>
-                                        <th>Liều lượng</th>
-                                        <th>Số lượng</th>
-                                        <th>Nhà sản xuất</th>
-                                        <th>Cách sử dụng</th>
-                                        <th>Giá</th>
-                                        <th>Mô tả</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${regimenMeds.map(med => `
-                                        <tr>
-                                            <td>${med.medicationDetail.arvMedicationName}</td>
-                                            <td>${med.medicationDetail.arvMedicationType || med.medicationDetail.medicationType || ''}</td>
-                                            <td>${med.medicationDetail.arvMedicationDosage}</td>
-                                            <td>${med.quantity}</td>
-                                            <td>${med.medicationDetail.arvMedicationManufacturer}</td>
-                                            <td>${med.usageInstructions || med.medicationDetail.medicationUsage || ''}</td>
-                                            <td>${med.medicationDetail.arvMedicationPrice ? med.medicationDetail.arvMedicationPrice.toLocaleString() : 'N/A'}</td>
-                                            <td>${med.medicationDetail.arvMedicationDescription}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        ` : `<div class='empty-state'><i class='fas fa-capsules'></i> Không có thuốc cho phác đồ này.</div>`}
-                        <div style="margin-top:1rem;text-align:right;">
-                            ${(!window.isStaff && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Cập nhật trạng thái</button>` : ''}
-                            ${(window.isDoctor && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>` : ''}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-        html += `</tbody></table>`;
-        section.innerHTML = html;
-
-        document.querySelectorAll('.toggle-details-btn').forEach(btn => {
-            btn.onclick = function(e) {
-                e.stopPropagation();
-                const idx = this.getAttribute('data-idx');
-                const detailsRow = document.getElementById(`regimen-details-${idx}`);
-                if (detailsRow.style.display === 'none') {
-                    detailsRow.style.display = '';
-                    this.textContent = '▲';
-                } else {
-                    detailsRow.style.display = 'none';
-                    this.textContent = '▼';
+        document.getElementById('modifyAppointmentForm').onsubmit = async function (e) {
+            e.preventDefault();
+            const apmtId = this.getAttribute('data-apmt-id');
+            const date = document.getElementById('modifyDate').value;
+            let time = document.getElementById('modifyTime').value;
+            const notes = document.getElementById('modifyNotes').value;
+            const today = new Date();
+            const selDate = new Date(date);
+            today.setHours(0, 0, 0, 0);
+            selDate.setHours(0, 0, 0, 0);
+            if (selDate < today) {
+                alert('Ngày lịch hẹn không thể trong quá khứ.');
+                return;
+            }
+            if (!time) {
+                alert('Vui lòng chọn một thời gian hợp lệ.');
+                return;
+            }
+            if (time.length === 5) time += ':00';
+            try {
+                const res = await fetch(`https://localhost:7009/api/Appointment/UpdateAppointmentRequest?id=${apmtId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appointmentDate: date,
+                        appointmentTime: time,
+                        notes
+                    })
+                });
+                if (!res.ok) {
+                    let msg = 'Không thể cập nhật lịch hẹn.';
+                    try {
+                        const text = await res.text();
+                        if (text && text.trim().length > 0) {
+                            msg = text;
+                        } else {
+                            const data = JSON.parse(text);
+                            if (data) {
+                                if (data.error) msg = data.error;
+                                else if (data.message) msg = data.message;
+                                else if (data.title) msg = data.title;
+                                else if (data.detail) msg = data.detail;
+                                else if (data.errors && typeof data.errors === 'object') {
+                                    const firstKey = Object.keys(data.errors)[0];
+                                    if (firstKey && Array.isArray(data.errors[firstKey]) && data.errors[firstKey][0]) {
+                                        msg = data.errors[firstKey][0];
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                    setMessage(msg, false);
+                    return;
                 }
-            };
-        });
-
-        if (window.isStaff) {
-            section.querySelectorAll('.update-regimen-btn').forEach(btn => {
-                btn.addEventListener('click', async function () {
-                    const regimenId = this.getAttribute('data-id');
-                    if (!regimenId) return;
-                    const regimen = regimens.find(tr => String(tr.patientArvRegiId) === String(regimenId));
-                    if (!regimen) {
-                        alert('Không tìm thấy dữ liệu phác đồ.');
-                        return;
-                    }
-                    await loadMedicationDetails();
-                    regimenModal.style.display = 'block';
-                    const modalTitle = regimenModal.querySelector('h2');
-                    if (modalTitle) modalTitle.textContent = 'Cập nhật phác đồ ARV';
-                    const updateRegimenTemplate = document.getElementById('regimenTemplate');
-                    if (updateRegimenTemplate && updateRegimenTemplate.parentElement) {
-                        updateRegimenTemplate.parentElement.style.display = 'none';
-                        updateRegimenTemplate.removeAttribute('required');
-                        updateRegimenTemplate.value = '';
-                    }
-                    regimenLevel.value = regimen.regimenLevel;
-                    regimenNotes.value = regimen.notes || '';
-                    regimenStartDate.value = regimen.startDate;
-                    if (document.getElementById('regimenEndDate')) {
-                        document.getElementById('regimenEndDate').value = regimen.endDate || '';
-                    }
-                    selectedTemplateMedications = (regimen.arvMedications || []).map(med => ({
-                        arvMedicationName: med.medicationDetail.arvMedicationName,
-                        arvMedDetailId: med.medicationDetail.arvMedicationId,
-                        dosage: med.medicationDetail.arvMedicationDosage,
-                        quantity: med.quantity,
-                        manufacturer: med.medicationDetail.arvMedicationManufacturer,
-                        usageInstructions: (typeof med.usageInstructions === 'string' && med.usageInstructions.length > 0) ? med.usageInstructions : (med.medicationDetail.medicationUsage || '')
-                    }));
-                    renderMedicationRows();
-                    regimenForm.setAttribute('data-update-id', regimenId);
-                    const submitBtn = regimenForm.querySelector('button[type="submit"]');
-                    if (submitBtn) submitBtn.textContent = 'Cập nhật';
-                });
-            });
-            section.querySelectorAll('.update-regimen-status-btn').forEach(btn => {
-                btn.addEventListener('click', async function () {
-                    const regimenId = this.getAttribute('data-id');
-                    const regimen = regimens.find(tr => String(tr.patientArvRegiId) === String(regimenId));
-                    if (!regimen) {
-                        alert('Không tìm thấy dữ liệu phác đồ.');
-                        return;
-                    }
-                    const modal = document.getElementById('updateRegimenStatusModal');
-                    const select = document.getElementById('updateRegimenStatusSelect');
-                    const idInput = document.getElementById('updateRegimenStatusId');
-                    const msg = document.getElementById('updateRegimenStatusMsg');
-                    select.innerHTML = `
-                        <option value="">Chọn trạng thái</option>
-                        <option value="2" ${regimen.regimenStatus === 2 ? 'selected' : ''}>Đang hoạt động</option>
-                        <option value="3" ${regimen.regimenStatus === 3 ? 'selected' : ''}>Tạm dừng</option>
-                        <option value="4" ${regimen.regimenStatus === 4 ? 'selected' : ''}>Đã hủy</option>
-                        <option value="5" ${regimen.regimenStatus === 5 ? 'selected' : ''}>Hoàn thành</option>
-                    `;
-                    idInput.value = regimenId;
-                    msg.textContent = '';
-                    modal.style.display = 'block';
-                });
-            });
-        }
-        window._lastRegimens = regimens;
+                setMessage('Lịch hẹn đã được cập nhật thành công!', true);
+                document.getElementById('modifyAppointmentModal').style.display = 'none';
+                document.getElementById('appointmentDetailsModal').style.display = 'none';
+                allAppointments = await fetchAppointments();
+                applyFilters();
+            } catch (err) {
+                setMessage('Lỗi khi cập nhật lịch hẹn.', false);
+            }
+        };
     }
 
-    applyRegimenFilters();
+    // Modal close logic for message modal
+    const modal = document.getElementById('messageModal');
+    const closeBtn = document.getElementById('closeMessageModal');
+    if (closeBtn && modal) {
+        closeBtn.onclick = function () {
+            modal.classList.remove('show');
+        };
+        window.onclick = function (event) {
+            if (event.target === modal) {
+                modal.classList.remove('show');
+            }
+        };
+    }
+});
 
-    document.getElementById('regimenFilterStatus').addEventListener('change', applyRegimenFilters);
-    document.getElementById('regimenFilterDate').addEventListener('change', applyRegimenFilters);
-    document.getElementById('regimenFilterTime').addEventListener('change', applyRegimenFilters);
-    document.getElementById('regimenSortDate').addEventListener('change', applyRegimenFilters);
-    document.getElementById('regimenClearFilters').addEventListener('click', function () {
-        document.getElementById('regimenFilterStatus').value = '';
-        document.getElementById('regimenFilterDate').value = '';
-        document.getElementById('regimenFilterTime').value = '';
-        document.getElementById('regimenSortDate').value = 'desc';
-        applyRegimenFilters();
-    });
+// setMessage modal
+function setMessage(msg, success) {
+    const modal = document.getElementById('messageModal');
+    const modalText = document.getElementById('messageModalText');
+    if (!modal || !modalText) return;
+    modalText.textContent = msg;
+    modalText.className = success ? 'modal-success' : 'modal-error';
+    modal.classList.add('show');
 }
 
-// Render Test Results with Filter Bar
-function renderTestResults(testResults) {
-    const section = document.getElementById('testResultsSection');
-    if (!section) return;
-
-    let allTestResults = testResults || [];
-
-    // Add filter bar
-    if (!document.getElementById('testResultFilterResult')) {
-        const filterBar = document.createElement('div');
-        filterBar.className = 'filter-bar';
-        filterBar.innerHTML = `
-            <label for="testResultFilterResult">Kết quả:</label>
-            <select id="testResultFilterResult">
-                <option value="">Tất cả</option>
-                <option value="true">Dương tính</option>
-                <option value="false">Âm tính</option>
-            </select>
-            <label for="testResultFilterDate">Ngày xét nghiệm:</label>
-            <input type="date" id="testResultFilterDate">
-            <label for="testResultFilterTime">Giờ:</label>
-            <input type="time" id="testResultFilterTime">
-            <label for="testResultSortDate">Sắp xếp ngày tạo:</label>
-            <select id="testResultSortDate">
-                <option value="desc">Mới nhất</option>
-                <option value="asc">Cũ nhất</option>
-            </select>
-            <button id="testResultClearFilters">Xóa lọc</button>
-        `;
-        section.parentNode.insertBefore(filterBar, section);
+// Helper to convert date to mm/dd/yyyy for display
+function toDisplayDateFormat(dateStr) {
+    if (!dateStr) return '';
+    // yyyy-mm-dd to mm/dd/yyyy
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [y, m, d] = dateStr.split('-');
+        return `${m}/${d}/${y}`;
     }
-
-    function applyTestResultFilters() {
-        const result = document.getElementById('testResultFilterResult').value;
-        const date = document.getElementById('testResultFilterDate').value;
-        const time = document.getElementById('testResultFilterTime').value;
-        const sortOrder = document.getElementById('testResultSortDate').value;
-
-        let filtered = allTestResults.filter(testResult => {
-            let match = true;
-            if (result && String(testResult.result) !== result) match = false;
-            if (date && normalizeDate(testResult.testDate) !== date) match = false;
-            if (time && normalizeTime(testResult.testDate) !== time) match = false;
-            return match;
-        });
-
-        filtered.sort((a, b) => {
-            const dateA = new Date(a.createdAt || '1970-01-01');
-            const dateB = new Date(b.createdAt || '1970-01-01');
-            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-        });
-
-        renderFilteredTestResults(filtered);
+    // dd/mm/yyyy to mm/dd/yyyy
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+        const [d, m, y] = dateStr.split('/');
+        return `${m}/${d}/${y}`;
     }
-
-    function renderFilteredTestResults(testResults) {
-        if (!testResults.length) {
-            section.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-flask"></i>
-                    <p>Không tìm thấy kết quả xét nghiệm nào.</p>
-                </div>
-            `;
-            return;
-        }
-        let html = `
-            <table class="test-results-table" style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr>
-                        <th>Ngày xét nghiệm</th>
-                        <th>Kết quả</th>
-                        <th>Ghi chú</th>
-                        <th>Ngày tạo</th>
-                        <th>Mở rộng/Đóng</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        testResults.forEach((testResult, idx) => {
-            const resultClass = testResult.result ? 'test-result-positive' : 'test-result-negative';
-            const resultText = testResult.result ? 'Dương tính' : 'Âm tính';
-            html += `
-                <tr class="test-result-row" data-idx="${idx}">
-                    <td>${testResult.testDate}</td>
-                    <td><span class="test-result-overall ${resultClass}">${resultText}</span></td>
-                    <td>${testResult.notes || ''}</td>
-                    <td>${formatDateTime(testResult.createdAt)}</td>
-                    <td>
-                        <button class="toggle-test-details-btn" data-idx="${idx}">▼</button>
-                    </td>
-                </tr>
-                <tr class="test-result-details-row" id="test-result-details-${idx}" style="display:none;">
-                    <td colspan="5">
-                        <div><strong>Ngày tạo:</strong> ${formatDateTime(testResult.createdAt)}</div>
-                        <div><strong>Thành phần xét nghiệm:</strong></div>
-                        ${testResult.componentTestResults && testResult.componentTestResults.length > 0 ? `
-                            <table class="medications-table" style="width:100%;margin-top:10px;">
-                                <thead>
-                                    <tr>
-                                        <th>Tên thành phần</th>
-                                        <th>Mô tả</th>
-                                        <th>Giá trị</th>
-                                        <th>Ghi chú</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${testResult.componentTestResults.map(comp => `
-                                        <tr>
-                                            <td>${comp.componentTestResultName || ''}</td>
-                                            <td>${comp.ctrDescription || ''}</td>
-                                            <td>${comp.resultValue || ''}</td>
-                                            <td>${comp.notes || ''}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        ` : `<div class='empty-state'><i class='fas fa-capsules'></i> Không có thành phần xét nghiệm.</div>`}
-                        <div style="margin-top:1rem;text-align:right;">
-                            ${window.isStaff ? `<button class="secondary-btn update-test-result-btn" data-id="${testResult.testResultId}">Cập nhật kết quả</button>` : ''}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-        html += `</tbody></table>`;
-        section.innerHTML = html;
-
-        document.querySelectorAll('.toggle-test-details-btn').forEach(btn => {
-            btn.onclick = function(e) {
-                e.stopPropagation();
-                const idx = this.getAttribute('data-idx');
-                const detailsRow = document.getElementById(`test-result-details-${idx}`);
-                if (detailsRow.style.display === 'none') {
-                    detailsRow.style.display = '';
-                    this.textContent = '▲';
-                } else {
-                    detailsRow.style.display = 'none';
-                    this.textContent = '▼';
-                }
-            };
-        });
-
-        if (window.isStaff) {
-            section.querySelectorAll('.update-test-result-btn').forEach(btn => {
-                btn.addEventListener('click', async function () {
-                    const testResultId = this.getAttribute('data-id');
-                    if (!testResultId) return;
-                    const testResult = testResults.find(tr => String(tr.testResultId) === String(testResultId));
-                    if (!testResult) {
-                        alert('Không tìm thấy dữ liệu kết quả xét nghiệm.');
-                        return;
-                    }
-                    document.getElementById('updateTestResultId').value = testResult.testResultId;
-                    document.getElementById('updateTestResultDate').value = testResult.testDate || '';
-                    document.getElementById('updateTestResultSelect').value = testResult.result ? 'true' : 'false';
-                    document.getElementById('updateTestResultNotes').value = testResult.notes || '';
-                    loadComponentTestResultsFromData(testResult.componentTestResults || []);
-                    document.getElementById('updateTestResultModal').style.display = 'block';
-                });
-            });
-        }
-    }
-
-    applyTestResultFilters();
-
-    document.getElementById('testResultFilterResult').addEventListener('change', applyTestResultFilters);
-    document.getElementById('testResultFilterDate').addEventListener('change', applyTestResultFilters);
-    document.getElementById('testResultFilterTime').addEventListener('change', applyTestResultFilters);
-    document.getElementById('testResultSortDate').addEventListener('change', applyTestResultFilters);
-    document.getElementById('testResultClearFilters').addEventListener('click', function () {
-        document.getElementById('testResultFilterResult').value = '';
-        document.getElementById('testResultFilterDate').value = '';
-        document.getElementById('testResultFilterTime').value = '';
-        document.getElementById('testResultSortDate').value = 'desc';
-        applyTestResultFilters();
-    });
+    return dateStr;
 }
-
-// Render Payments (unchanged)
-function renderPayments(payments) {
-    const section = document.getElementById('paymentsSection');
-    if (!section) return;
-    if (!payments || !payments.length) {
-        section.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-money-bill-wave"></i>
-                <p>Không tìm thấy thanh toán nào.</p>
-            </div>
-        `;
-        return;
+// Helper to convert to yyyy-mm-dd for input value
+function toInputDateFormat(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+        const [d, m, y] = dateStr.split('/');
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
     }
-    let html = `
-        <table class="payments-table" style="width:100%;border-collapse:collapse;">
-            <thead>
-                <tr>
-                    <th>Ngày thanh toán</th>
-                    <th>Số tiền</th>
-                    <th>Phương thức</th>
-                    <th>Ghi chú</th>
-                    <th>Ngày tạo</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    payments.forEach(payment => {
-        html += `
-            <tr>
-                <td>${payment.paymentDate || 'N/A'}</td>
-                <td>${payment.amount ? payment.amount.toLocaleString('vi-VN') + ' VND' : 'N/A'}</td>
-                <td>${payment.paymentMethod || 'N/A'}</td>
-                <td>${payment.notes || ''}</td>
-                <td>${formatDateTime(payment.createdAt)}</td>
-            </tr>
-        `;
-    });
-    html += `</tbody></table>`;
-    section.innerHTML = html;
-}
-
-// Load Patient Data (unchanged)
-async function loadPatientData() {
-    const patientId = getPatientIdFromUrl();
-    if (!patientId) {
-        document.body.innerHTML = `
-            <div class="error-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>No patient ID provided in URL.</p>
-            </div>
-        `;
-        return;
-    }
-
-    try {
-        const patient = await fetchPatientDetails(patientId);
-        renderPatientProfile(patient);
-        const medicalData = await fetchPatientMedicalDataByPatientId(patientId);
-        if (medicalData && medicalData.pmrId != null) {
-            window.pmrId = medicalData.pmrId;
-        } else {
-            window.pmrId = null;
-        }
-        let medications = medicalData?.arvRegimens?.flatMap(r => r.arvMedications || []) || [];
-        renderAppointments(medicalData?.appointments || []);
-        renderTestResults(medicalData?.testResults || []);
-        renderARVRegimens(medicalData?.arvRegimens || [], medications);
-        renderPayments(medicalData?.payments || []);
-        const btnContainer = document.getElementById('createTestResultContainer');
-        if (btnContainer) {
-            btnContainer.style.display = window.isStaff && window.pmrId != null ? '' : 'none';
-        }
-    } catch (error) {
-        console.error('Error loading patient data:', error);
-        document.body.innerHTML = `
-            <div class="error-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Error loading patient data. Please try again.</p>
-            </div>
-        `;
-    }
-}
-
-// Utility to get patient ID from URL (assumed)
-function getPatientIdFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('patientId');
+    return '';
 }

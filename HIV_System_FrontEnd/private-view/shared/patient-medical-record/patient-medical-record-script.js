@@ -1,6 +1,9 @@
 // Get token from localStorage
 const token = localStorage.getItem('token');
 
+let allRegimens = [];
+let allRegimenMedications = [];
+let allTestResults = [];
 // Appointment status mapping
 const appointmentStatusMap = {
     1: 'Chờ xác nhận',
@@ -34,6 +37,14 @@ const paymentStatusMap = {
     3: 'Thất bại'
 };
 
+function getVietnamDateTime() {
+    const now = new Date();
+    // Vietnam is UTC+7
+    const vietnamOffset = 7 * 60; // in minutes
+    const localOffset = now.getTimezoneOffset(); // in minutes
+    const diff = vietnamOffset + localOffset;
+    return new Date(now.getTime() + diff * 60 * 1000).toISOString();
+}
 // Set window.isStaff and window.isDoctor globally
 window.isStaff = false;
 window.isDoctor = false;
@@ -380,7 +391,6 @@ function renderTestResults(testResults) {
             </tr>
             <tr class="test-result-details-row" id="test-result-details-${idx}" style="display:none;background:#fafbfc;">
                 <td colspan="4">
-                    <div><strong>Ngày tạo:</strong> ${testResult.createdAt ? new Date(testResult.createdAt).toLocaleDateString() : ''}</div>
                     <div><strong>Thành phần xét nghiệm:</strong></div>
                     ${testResult.componentTestResults && testResult.componentTestResults.length > 0 ? `
                         <table class="medications-table" style="width:100%;margin-top:10px;">
@@ -452,6 +462,20 @@ function renderTestResults(testResults) {
             });
         });
     }
+
+    // After rendering the test results table
+    section.querySelectorAll('.component-row').forEach(row => {
+        row.addEventListener('click', function () {
+            // Get data from row attributes
+            document.getElementById('updateComponentTestId').value = row.getAttribute('data-id');
+            document.getElementById('updateComponentTestName').value = decodeURIComponent(row.getAttribute('data-name'));
+            document.getElementById('updateComponentTestDesc').value = decodeURIComponent(row.getAttribute('data-desc'));
+            document.getElementById('updateComponentTestValue').value = decodeURIComponent(row.getAttribute('data-value'));
+            document.getElementById('updateComponentTestNotes').value = decodeURIComponent(row.getAttribute('data-notes'));
+            document.getElementById('updateComponentTestMsg').textContent = '';
+            document.getElementById('updateComponentTestModal').style.display = 'block';
+        });
+    });
 }
 
 // Render ARV regimens (array) with medications
@@ -751,6 +775,22 @@ const regimenNotes = document.getElementById('regimenNotes');
 const regimenStartDate = document.getElementById('regimenStartDate');
 const medicationsTableBody = document.querySelector('#medicationsTable tbody');
 const addMedicationBtn = document.getElementById('addMedicationBtn');
+if (addMedicationBtn) {
+    addMedicationBtn.onclick = function () {
+        selectedTemplateMedications.push({
+            arvMedicationName: '',
+            arvMedDetailId: '',
+            dosage: '',
+            quantity: 1,
+            manufacturer: '',
+            usageInstructions: ''
+        });
+        renderMedicationRows();
+    };
+}
+function updateAddMedicationBtnState() {
+    if (addMedicationBtn) addMedicationBtn.disabled = false;
+}
 const regimenForm = document.getElementById('regimenForm');
 
 regimenLevel.onchange = async function () {
@@ -810,78 +850,52 @@ function resetRegimenForm() {
 function renderMedicationRows() {
     medicationsTableBody.innerHTML = '';
     selectedTemplateMedications.forEach((med, idx) => {
-        // Use arvMedDetailId if available, otherwise try to find by name
+        // Find medication detail by name
         let medDetail = null;
-        let selectedId = '';
-        if (med.arvMedDetailId) {
-            medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(med.arvMedDetailId));
-            selectedId = med.arvMedDetailId;
-        }
-        if (!medDetail && med.arvMedicationName) {
+        if (med.arvMedicationName) {
             medDetail = allMedicationDetails.find(m => m.arvMedicationName === med.arvMedicationName);
-            selectedId = medDetail ? medDetail.arvMedicationId : '';
         }
-        // If usageInstructions is not set, use medicationUsage from medDetail
+        // Use existing usageInstructions and quantity, or default
         let usageValue = (typeof med.usageInstructions === 'string' && med.usageInstructions.length > 0)
             ? med.usageInstructions
-            : (medDetail && medDetail.medicationUsage ? medDetail.medicationUsage : '');
+            : '';
+        let quantityValue = med.quantity || 1;
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
                 <select class="medication-name-select" data-idx="${idx}">
                     <option value="">Chọn</option>
-${allMedicationDetails.map(m => `<option value="${String(m.arvMedicationId)}" ${String(m.arvMedicationId) === String(selectedId) ? 'selected' : ''}>${m.arvMedicationName}</option>`).join('')}
+                    ${allMedicationDetails.map(m =>
+                        `<option value="${m.arvMedicationName}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`
+                    ).join('')}
                 </select>
             </td>
-            <td>${medDetail ? medDetail.arvMedicationDosage : med.dosage || ''}</td>
-            <td><input type="number" min="1" value="${med.quantity || ''}" class="medication-qty-input" data-idx="${idx}" style="width:70px;"></td>
-            <td>${medDetail ? medDetail.arvMedicationManufacturer : med.manufacturer || ''}</td>
+            <td>${medDetail ? medDetail.arvMedicationDosage : ''}</td>
+            <td><input type="number" min="1" value="${quantityValue}" class="medication-qty-input" data-idx="${idx}" style="width:70px;"></td>
+            <td>${medDetail ? medDetail.arvMedicationManufacturer : ''}</td>
             <td><input type="text" class="medication-usage-input" data-idx="${idx}" value="${usageValue}" placeholder="Nhập cách sử dụng"></td>
             <td><button type="button" class="remove-med-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button></td>
         `;
         medicationsTableBody.appendChild(row);
-        // Explicitly set the dropdown value to ensure it displays the selected medicine
-        const select = row.querySelector('.medication-name-select');
-        if (select) {
-            select.value = String(selectedId);
-        }
     });
     updateAddMedicationBtnState();
 }
 
-// When adding a new medication from a template, set usageInstructions to medicationUsage by default
-addMedicationBtn.onclick = function () {
-    // Default to empty, but if a template is selected, use its medicationUsage
-    selectedTemplateMedications.push({ arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' });
-    renderMedicationRows();
-};
-
-function updateAddMedicationBtnState() {
-    addMedicationBtn.disabled = false;
-}
-
-// Handle medication name/quantity changes and remove
-medicationsTableBody.onclick = function (e) {
-    if (e.target.closest('.remove-med-btn')) {
-        const idx = +e.target.closest('.remove-med-btn').dataset.idx;
-        selectedTemplateMedications.splice(idx, 1);
-        renderMedicationRows();
-    }
-};
-// In the .onchange handler for .medication-name-select, update arvMedDetailId, arvMedicationName, and usageInstructions in selectedTemplateMedications
+// Handle medication name/quantity/usage changes and remove
 medicationsTableBody.onchange = function (e) {
     if (e.target.classList.contains('medication-name-select')) {
         const idx = +e.target.dataset.idx;
-        const medId = e.target.value;
-        const medDetail = allMedicationDetails.find(m => String(m.arvMedicationId) === String(medId));
+        const medName = e.target.value;
+        const medDetail = allMedicationDetails.find(m => m.arvMedicationName === medName);
         if (medDetail) {
             selectedTemplateMedications[idx] = {
                 arvMedicationName: medDetail.arvMedicationName,
                 arvMedDetailId: medDetail.arvMedicationId,
                 dosage: medDetail.arvMedicationDosage,
                 quantity: selectedTemplateMedications[idx].quantity || 1,
-                manufacturer: med.medicationDetail.arvMedicationManufacturer,
-                usageInstructions: medDetail.medicationUsage || ''
+                manufacturer: medDetail.arvMedicationManufacturer,
+                usageInstructions: selectedTemplateMedications[idx].usageInstructions || ''
             };
         } else {
             selectedTemplateMedications[idx] = { arvMedicationName: '', arvMedDetailId: '', dosage: '', quantity: 1, manufacturer: '', usageInstructions: '' };
@@ -1045,29 +1059,6 @@ regimenForm.onsubmit = async function (e) {
         console.error('Error creating regimen:', err);
     }
 };
-
-// Global timezone helper functions for Vietnam (GMT+7)
-function getToday() {
-    const d = new Date();
-    // Convert to Vietnam timezone (GMT+7)
-    const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
-    return vietnamTime.toISOString().slice(0, 10);
-}
-
-function getVietnamDateTime() {
-    const d = new Date();
-    // Convert to Vietnam timezone (GMT+7)
-    const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
-    return vietnamTime.toISOString();
-}
-
-function toVietnamDate(date) {
-    if (!date) return null;
-    const d = new Date(date);
-    // Convert to Vietnam timezone (GMT+7)
-    const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
-    return vietnamTime.toISOString().slice(0, 10);
-}
 
 // --- Create Test Result Modal Logic ---
 document.addEventListener('DOMContentLoaded', function () {
@@ -1559,6 +1550,12 @@ async function loadPatientData() {
             renderARVRegimens(medicalData.arvRegimens || [], medications);
             renderPayments(medicalData.payments || []);
 
+            allRegimens = medicalData.arvRegimens || [];
+allRegimenMedications = medications;
+applyRegimenFilters();
+
+allTestResults = medicalData.testResults || [];
+applyTestResultFilters();
         } else {
             renderAppointments([]);
             renderTestResults([]);
@@ -1671,12 +1668,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.getElementById('paymentCurrency').value = 'VND';
 
         // Set pmrId from global window.pmrId (set when page loads)
-        const pmrIdInput = document.getElementById('paymentPmrId');
-        if (window.pmrId != null) {
-            pmrIdInput.value = window.pmrId;
-        } else {
-            // If window.pmrId is not available, try to fetch it
-            const patientId = getPatientIdFromUrl();
             if (patientId) {
                 fetchPatientMedicalDataByPatientId(patientId).then(medicalData => {
                     if (medicalData && medicalData.pmrId) {
@@ -1685,7 +1676,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                     }
                 });
             }
-        }
 
         paymentModal.style.display = 'block';
     }
@@ -1750,3 +1740,150 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 });
+
+// Filter bars
+function insertRegimenFilterBar() {
+    const section = document.getElementById('arvRegimensSection');
+    if (section && !document.getElementById('arvRegimenFilterBar')) {
+        const filterDiv = document.createElement('div');
+        filterDiv.id = 'arvRegimenFilterBar';
+        filterDiv.className = 'filter-bar';
+        filterDiv.innerHTML = `
+            <label for="filterRegimenStatus">Trạng thái:</label>
+            <select id="filterRegimenStatus">
+                <option value="">Tất cả</option>
+                <option value="1">Đã lên kế hoạch</option>
+                <option value="2">Đang hoạt động</option>
+                <option value="3">Tạm dừng</option>
+                <option value="4">Đã hủy</option>
+                <option value="5">Hoàn thành</option>
+            </select>
+            <label for="filterRegimenDate">Ngày tạo:</label>
+            <input type="date" id="filterRegimenDate">
+            <label for="sortRegimenDate">Sắp xếp ngày:</label>
+            <select id="sortRegimenDate">
+                <option value="desc">Mới nhất</option>
+                <option value="asc">Cũ nhất</option>
+            </select>
+            <button id="clearRegimenFilters">Xóa lọc</button>
+        `;
+        section.parentNode.insertBefore(filterDiv, section);
+    }
+}
+
+function insertTestResultFilterBar() {
+    const section = document.getElementById('testResultsSection');
+    if (section && !document.getElementById('testResultFilterBar')) {
+        const filterDiv = document.createElement('div');
+        filterDiv.id = 'testResultFilterBar';
+        filterDiv.className = 'filter-bar';
+        filterDiv.innerHTML = `
+            <label for="filterTestResult">Kết quả:</label>
+            <select id="filterTestResult">
+                <option value="">Tất cả</option>
+                <option value="true">Dương tính</option>
+                <option value="false">Âm tính</option>
+            </select>
+            <label for="filterTestDate">Ngày xét nghiệm:</label>
+            <input type="date" id="filterTestDate">
+            <label for="sortTestDate">Sắp xếp ngày:</label>
+            <select id="sortTestDate">
+                <option value="desc">Mới nhất</option>
+                <option value="asc">Cũ nhất</option>
+            </select>
+            <button id="clearTestFilters">Xóa lọc</button>
+        `;
+        section.parentNode.insertBefore(filterDiv, section);
+    }
+}
+
+// Insert filter bars FIRST
+insertRegimenFilterBar();
+insertTestResultFilterBar();
+
+// THEN set event listeners and call filter functions
+const clearRegimenBtn = document.getElementById('clearRegimenFilters');
+if (clearRegimenBtn) {
+    clearRegimenBtn.onclick = function () {
+        document.getElementById('filterRegimenStatus').value = '';
+        document.getElementById('filterRegimenDate').value = '';
+        document.getElementById('sortRegimenDate').value = 'desc';
+        applyRegimenFilters();
+    };
+}
+document.getElementById('sortRegimenDate').addEventListener('change', applyRegimenFilters);
+
+document.getElementById('clearTestFilters').onclick = function () {
+    document.getElementById('filterTestResult').value = '';
+    document.getElementById('filterTestDate').value = '';
+    document.getElementById('sortTestDate').value = 'desc';
+    applyTestResultFilters();
+};
+
+// --- Filter event listeners ---
+document.getElementById('filterRegimenStatus').addEventListener('change', applyRegimenFilters);
+document.getElementById('filterRegimenDate').addEventListener('change', applyRegimenFilters);
+document.getElementById('sortRegimenDate').addEventListener('change', applyRegimenFilters);
+
+document.getElementById('filterTestResult').addEventListener('change', applyTestResultFilters);
+document.getElementById('filterTestDate').addEventListener('change', applyTestResultFilters);
+document.getElementById('sortTestDate').addEventListener('change', applyTestResultFilters);
+
+applyRegimenFilters();
+applyTestResultFilters();
+
+// Filter functions
+function applyRegimenFilters() {
+    const status = document.getElementById('filterRegimenStatus')?.value;
+    const date = document.getElementById('filterRegimenDate')?.value;
+    const sortOrder = document.getElementById('sortRegimenDate')?.value;
+
+    let filtered = allRegimens.filter(r =>
+        (!status || String(r.regimenStatus) === status) &&
+        (!date || (r.createdAt && r.createdAt.slice(0, 10) === date))
+    );
+
+    filtered.sort((a, b) => {
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    renderARVRegimens(filtered, allRegimenMedications);
+}
+
+function applyTestResultFilters() {
+    const result = document.getElementById('filterTestResult')?.value;
+    const date = document.getElementById('filterTestDate')?.value;
+    const sortOrder = document.getElementById('sortTestDate')?.value;
+
+    let filtered = allTestResults.filter(tr =>
+        (!result || String(tr.result) === result) &&
+        (!date || (tr.testDate && tr.testDate.slice(0, 10) === date))
+    );
+
+    filtered.sort((a, b) => {
+        const dateA = new Date(a.testDate);
+        const dateB = new Date(b.testDate);
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    renderTestResults(filtered);
+}
+function updateAddMedicationBtnState() {
+    // No-op: implement logic if needed to enable/disable the add button
+}
+// Handle remove medication button
+medicationsTableBody.onclick = function (e) {
+    if (e.target.closest('.remove-med-btn')) {
+        const idx = +e.target.closest('.remove-med-btn').dataset.idx;
+        selectedTemplateMedications.splice(idx, 1);
+        renderMedicationRows();
+    }
+};
+
+function getToday() {
+    const today = new Date();
+    // Format as yyyy-mm-dd for input[type="date"]
+    return today.toISOString().slice(0, 10);
+}
