@@ -1363,8 +1363,8 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="text" name="resultValue" required />
       </div>
       <div class="form-group">
-        <label>Ghi chú <span style="color:red">*</span></label>
-        <textarea name="notes" rows="2" required></textarea>
+        <label>Ghi chú</label>
+        <textarea name="notes" rows="2" ></textarea>
       </div>
       <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
     `;
@@ -1433,11 +1433,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!resultVal) {
             msgDiv.textContent = 'Vui lòng chọn kết quả.';
             return;
-        }
-        if (!form.testResultNotes.value.trim()) {
-            msgDiv.textContent = 'Vui lòng nhập ghi chú cho kết quả xét nghiệm.';
-            return;
-        }
+        }        
         // Component tests
         const componentFieldsets = componentTestsContainer.querySelectorAll('.component-test-fieldset');
         if (componentFieldsets.length === 0) {
@@ -1457,11 +1453,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!value) {
                 msgDiv.textContent = 'Vui lòng nhập giá trị kết quả cho tất cả thành phần.';
                 return;
-            }
-            if (!notes) {
-                msgDiv.textContent = 'Vui lòng nhập ghi chú cho tất cả thành phần.';
-                return;
-            }
+            }            
             componentTests.push({
                 testResultId: 0, // Will be set by backend
                 staffId: 0, // Optionally set if available
@@ -1609,8 +1601,8 @@ function loadComponentTestResultsFromData(componentResults) {
                     <input type="text" name="resultValue" value="${comp.resultValue || ''}" required />
                 </div>
                 <div class="form-group">
-                    <label>Ghi chú <span style="color:red">*</span></label>
-                    <textarea name="notes" rows="2" required>${comp.notes || ''}</textarea>
+                    <label>Ghi chú</label>
+                    <textarea name="notes" rows="2" >${comp.notes || ''}</textarea>
                 </div>
                 <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
 `;
@@ -1660,8 +1652,8 @@ function addUpdateComponentTestFieldset() {
             <input type="text" name="resultValue" required />
         </div>
         <div class="form-group">
-            <label>Ghi chú <span style="color:red">*</span></label>
-            <textarea name="notes" rows="2" required></textarea>
+            <label>Ghi chú</label>
+            <textarea name="notes" rows="2" ></textarea>
         </div>
         <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
     `;
@@ -1690,7 +1682,7 @@ if (updateTestResultForm) {
         const result = document.getElementById('updateTestResultSelect').value;
         const notes = document.getElementById('updateTestResultNotes').value.trim();
 
-        if (!testResultId || !testDate || !result || !notes) {
+        if (!testResultId || !testDate || !result) {
             updateTestResultMsg.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc.';
             return;
         }
@@ -1705,7 +1697,7 @@ if (updateTestResultForm) {
             const value = fieldset.querySelector('input[name="resultValue"]')?.value.trim();
             const compNotes = fieldset.querySelector('textarea[name="notes"]')?.value.trim();
 
-            if (!name || !value || !compNotes) {
+            if (!name || !value) {
                 updateTestResultMsg.textContent = 'Vui lòng điền đầy đủ thông tin thành phần xét nghiệm.';
                 return;
             }

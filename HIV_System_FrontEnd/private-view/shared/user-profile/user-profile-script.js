@@ -1,33 +1,35 @@
 // Role-based user profile script
 async function getUserProfile(accId, role) {
     const token = localStorage.getItem('token');
-    if (role === 'doctor') {
-        // Doctor API
-        try {
-            const response = await fetch(`https://localhost:7009/api/Doctor/ViewDoctorProfile?id=${accId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch doctor profile');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching doctor profile:', error);
-            return null;
-        }
-    } else if (role === 'staff') {
-        // Staff API
-        try {
-            const response = await fetch(`https://localhost:7009/api/Staff/GetStaffById/${accId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch staff profile');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching staff profile:', error);
-            return null;
-        }
-    }
-    // Add more roles as needed
-    return null;
+   if (role === 'doctor') {
+    // Choose emoji based on gender
+    let avatarEmoji = profile.gender ? "🧑‍⚕️" : "👩‍⚕️";
+    container.innerHTML = `
+        <div class="profile-header">
+            <div class="profile-avatar-emoji">${avatarEmoji}</div>
+            <h2>${profile.fullname}</h2>
+            <p><strong>Email:</strong> ${profile.email}</p>
+            <p><strong>Ngày sinh:</strong> ${profile.dob}</p>
+            <p><strong>Giới tính:</strong> ${profile.gender ? "Nam" : "Nữ"}</p>
+            <p><strong>Bằng cấp:</strong> ${profile.degree}</p>
+            <p><strong>Giới thiệu:</strong> ${profile.bio}</p>
+        </div>
+    `;
+} else if (role === 'staff') {
+    // Choose emoji based on gender
+    let avatarEmoji = profile.account.gender ? "🧑‍⚕️" : "👩‍⚕️";
+    container.innerHTML = `
+        <div class="profile-header">
+            <div class="profile-avatar-emoji">${avatarEmoji}</div>
+            <h2>${profile.account.fullname}</h2>
+            <p><strong>Email:</strong> ${profile.account.email}</p>
+            <p><strong>Ngày sinh:</strong> ${profile.account.dob}</p>
+            <p><strong>Giới tính:</strong> ${profile.account.gender ? "Nam" : "Nữ"}</p>
+            <p><strong>Bằng cấp:</strong> ${profile.degree}</p>
+            <p><strong>Giới thiệu:</strong> ${profile.bio}</p>
+        </div>
+    `;
+}
 }
 
 async function renderUserProfile(accId, role, containerId) {
