@@ -392,7 +392,7 @@ namespace HIV_System_API_Services.Implements
             // - Words separated by a single space
             try
             {
-                if (!Regex.IsMatch(fullName.Trim(), @"^([A-Z][a-zA-ZÀ-ỹ]*)+( [A-Z][a-zA-ZÀ-ỹ]*)*$", RegexOptions.None, RegexTimeout))
+                if (!Regex.IsMatch(fullName.Trim(), @"^([A-ZÀ-ỹ][a-zA-ZÀ-ỹ]*)+( [A-ZÀ-ỹ][a-zA-ZÀ-ỹ]*)*$", RegexOptions.None, RegexTimeout))
                     throw new ArgumentException("Họ và tên chỉ được chứa chữ cái và khoảng cách, mỗi từ phải bắt đầu bằng chữ in hoa.", nameof(fullName));
             }
             catch (RegexMatchTimeoutException)
