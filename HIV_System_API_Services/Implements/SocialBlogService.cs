@@ -19,6 +19,7 @@ namespace HIV_System_API_Services.Implements
         private readonly HivSystemApiContext _context;
         private readonly IBlogReactionRepo _blogReactionRepo;
         private readonly IAccountRepo _accountRepo;
+        private readonly IBlogImageRepo _blogImageRepo = new BlogImageRepo();
 
         public SocialBlogService()
         {
@@ -27,6 +28,7 @@ namespace HIV_System_API_Services.Implements
             _context = new HivSystemApiContext();
             _blogReactionRepo = new BlogReactionRepo();
             _accountRepo = new AccountRepo();
+            _blogImageRepo = new BlogImageRepo();
         }
 
         // --- Mapping and Validation ---
@@ -59,6 +61,7 @@ namespace HIV_System_API_Services.Implements
             var like = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId,true).Result;
             var dislike = _blogReactionRepo.GetReactionCountByBlogIdAsync(blog.SblId, false).Result;
             var authorName = _accountRepo.GetAccountByIdAsync(blog.AccId).Result?.Fullname ?? "Unknown Author";
+            var image = _blogImageRepo.GetByBlogIdAsync(blog.SblId).Result.Select(i => i.ImageUrl).ToList();
             return new BlogResponseDTO
             {
                 Id = blog.SblId,
@@ -73,7 +76,8 @@ namespace HIV_System_API_Services.Implements
                 BlogReaction = blogReaction,
                 LikesCount = like,
                 DislikesCount = dislike,
-                AuthorName = authorName
+                AuthorName = authorName,
+                ImageUrl = image
             };
         }
 
