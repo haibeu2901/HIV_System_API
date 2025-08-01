@@ -69,10 +69,10 @@ namespace HIV_System_API_DAOs.Implements
             {
                 DctId = doctor.DctId,
                 PtnId = patient.PtnId,
-                ApmtDate = null, // Now nullable, set to null initially
-                ApmTime = null,  // Now nullable, set to null initially
+                ApmtDate = createDto.AppointmentDate,
+                ApmTime = createDto.AppointmentTime,
                 Notes = createDto.Notes,
-                ApmStatus = 1, // Default status, adjust as needed
+                ApmStatus = 2, // No longer pending, set to 2 (Confirmed)
                 RequestDate = createDto.AppointmentDate, // From DTO
                 RequestTime = createDto.AppointmentTime, // From DTO
                 RequestBy = accId // Set to the account ID

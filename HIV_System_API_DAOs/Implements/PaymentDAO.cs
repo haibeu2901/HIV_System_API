@@ -183,5 +183,21 @@ namespace HIV_System_API_DAOs.Implements
                 throw;
             }
         }
+        public async Task<Payment> ConfirmCashPaymentAsync(int payId)
+        {
+            try
+            {
+                var payment = await _context.Payments.FindAsync(payId)
+                    ?? throw new InvalidOperationException($"Payment with ID {payId} not found.");
+                payment.PaymentStatus = 2;
+                await _context.SaveChangesAsync();
+                return payment;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error confirming cash payment: {ex.Message}");
+                throw;
+            }
+        }
     }
 }
