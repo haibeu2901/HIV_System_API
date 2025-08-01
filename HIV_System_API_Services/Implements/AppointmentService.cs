@@ -113,8 +113,8 @@ namespace HIV_System_API_Services.Implements
             if (request.ApmtDate != default(DateOnly) && request.ApmTime != default(TimeOnly))
             {
                 // Validate ApmtDate and ApmTime
-                var todayDate = DateOnly.FromDateTime(DateTime.UtcNow);
-                var nowTime = TimeOnly.FromDateTime(DateTime.UtcNow);
+                var todayDate = DateOnly.FromDateTime(DateTime.Now);
+                var nowTime = TimeOnly.FromDateTime(DateTime.Now);
 
                 if (request.ApmtDate < todayDate)
                     throw new ArgumentException("Ngày hẹn không được ở trong quá khứ.");
@@ -179,14 +179,14 @@ namespace HIV_System_API_Services.Implements
                 var apmTime = request.ApmTime;
                 var apmEnd = apmTime.Add(appointmentDuration);
 
-                // Fetch all appointments for the doctor on the date (not cancelled)
+                // Fetch all appointments for the doctor on the date (not cancelled or completed)
                 // Only check appointments that have actual scheduled dates/times (not null)
                 var appointmentsOnDate = await _context.Appointments
                     .Where(a => a.DctId == request.DoctorId
                         && a.ApmtDate == request.ApmtDate
                         && a.ApmtDate.HasValue
                         && a.ApmTime.HasValue
-                        && a.ApmStatus != 4) // 4 = Cancelled
+                        && (a.ApmStatus != 4 || a.ApmStatus != 5)) // 4 = Cancelled, 5 = Completed
                     .ToListAsync();
 
                 // Check for overlapping appointments (not cancelled)
@@ -373,7 +373,7 @@ namespace HIV_System_API_Services.Implements
                 ApmtDate = request.AppointmentDate,
                 ApmTime = request.AppointmentTime,
                 Notes = request.Notes,
-                ApmStatus = 1
+                ApmStatus = 2 // Default to confirmed status
             };
             await ValidateAppointmentAsync(appointmentRequestDto, validateStatus: false);
 
