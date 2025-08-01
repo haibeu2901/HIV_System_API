@@ -21,6 +21,5 @@ namespace HIV_System_API_Services.Interfaces
         Task<List<PaymentResponseDTO>> GetAllPersonalPaymentsAsync(int accId);
         Task<PaymentResponseDTO> UpdatePaymentAsync(int payId, PaymentRequestDTO dto);
         Task<bool> DeletePaymentAsync(int payId);
-        Task<PaymentResponseDTO> ConfirmCashPaymentAsync(int payId);
     }
 }
