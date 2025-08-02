@@ -206,6 +206,29 @@ namespace HIV_System_API_Services.Implements
                         $"Bác sĩ có một cuộc hẹn trùng lặp vào thời điểm này."
                     );
                 }
+
+                if (request.ApmtDate != default(DateOnly) && request.ApmTime != default(TimeOnly))
+                {
+                    var requestedDate = request.ApmtDate;
+                    int diff = (dayOfWeek == 0 ? 7 : dayOfWeek) - 1;
+                    var weekStart = requestedDate.AddDays(-diff);
+                    var weekEnd = weekStart.AddDays(6);
+
+                    // Count patient's appointments in the same week (excluding cancelled/completed and the current appointment if updating)
+                    var patientAppointmentsThisWeek = await _context.Appointments
+                        .Where(a => a.PtnId == request.PatientId
+                            && a.ApmtDate.HasValue
+                            && a.ApmtDate.Value >= weekStart
+                            && a.ApmtDate.Value <= weekEnd
+                            && a.ApmStatus != 4 && a.ApmStatus != 5 // 4 = Cancelled, 5 = Completed
+                            && (!apmId.HasValue || a.ApmId != apmId.Value))
+                        .CountAsync();
+
+                    if (patientAppointmentsThisWeek >= 2)
+                    {
+                        throw new InvalidOperationException("Bệnh nhân không được đặt quá 2 cuộc hẹn trong cùng một tuần.");
+                    }
+                }
             }
         }
 
