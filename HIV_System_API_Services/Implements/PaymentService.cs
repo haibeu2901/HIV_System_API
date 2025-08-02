@@ -18,12 +18,14 @@ namespace HIV_System_API_Services.Implements
         private readonly IPaymentRepo _paymentRepo;
         private readonly INotificationService _notificationService;
         private readonly HivSystemApiContext _context;
+        private readonly INotificationRepo _notiRepo;
 
         public PaymentService()
         {
             _paymentRepo = new PaymentRepo();
             _notificationService = new NotificationService();
             _context = new HivSystemApiContext();
+            _notiRepo = new NotificationRepo();
         }
 
         public PaymentService(IPaymentRepo paymentRepo, INotificationService notificationService, HivSystemApiContext context)
@@ -44,9 +46,9 @@ namespace HIV_System_API_Services.Implements
                 PaymentMethod = dto.PaymentMethod ?? "card",
                 Notes = dto.Description,
                 PaymentStatus = 1, // Pending
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                PaymentDate = DateTime.Now,
                 PaymentIntentId = paymentIntentId
             };
         }
@@ -160,8 +162,8 @@ namespace HIV_System_API_Services.Implements
             if (payment != null)
             {
                 payment.PaymentStatus = status;
-                payment.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
+                payment.UpdatedAt = DateTime.Now;
+                _paymentRepo.UpdatePaymentStatusAsync(payment.PayId, status);
 
                 // Send notification after status update
                 await SendPaymentNotificationAsync(payment, status);
@@ -175,9 +177,9 @@ namespace HIV_System_API_Services.Implements
                 var account = payment.Pmr?.Ptn?.Acc;
                 if (account == null) return;
 
-                var isSuccess = status == 2; // 2 = Success, 3 = Failed
-                var serviceName = payment.Srv?.ServiceName ?? "dịch vụ y tế";
-                var isCashPayment = payment.PaymentMethod == "cash";
+                bool isSuccess = (status == 2); // 2 = Success, 3 = Failed
+                string serviceName = payment.Srv?.ServiceName ?? "dịch vụ y tế";
+                bool isCashPayment = (payment.PaymentMethod == "cash");
                 
                 // Create notification message based on payment method
                 string notificationMessage;
@@ -190,7 +192,7 @@ namespace HIV_System_API_Services.Implements
                         ? $"💰 Thanh toán tiền mặt thành công! Bạn đã thanh toán {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName}. Mã thanh toán: #{payment.PayId}"
                         : $"❌ Thanh toán tiền mặt thất bại! Giao dịch {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName} không thành công. Mã thanh toán: #{payment.PayId}";
                     
-                    notiType = isSuccess ? "Thanh toán tiền mặt thành công" : "Thanh toán tiền mặt thất bại";
+                    notiType = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại";
                 }
                 else
                 {
@@ -199,17 +201,18 @@ namespace HIV_System_API_Services.Implements
                         ? $"💳 Thanh toán thẻ thành công! Bạn đã thanh toán {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName}. Mã giao dịch: {payment.PaymentIntentId}"
                         : $"❌ Thanh toán thẻ thất bại! Giao dịch {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName} không thành công. Vui lòng thử lại. Mã giao dịch: {payment.PaymentIntentId}";
                     
-                    notiType = isSuccess ? "Thanh toán thẻ thành công" : "Thanh toán thẻ thất bại";
+                    notiType = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại";
                 }
 
-                var notificationDto = new CreateNotificationRequestDTO
+                Notification noti = new Notification
                 {
                     NotiType = notiType,
                     NotiMessage = notificationMessage,
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
 
-                await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, account.AccId);
+                Notification newPaymentNoti = await _notiRepo.CreateNotificationAsync(noti);
+                await _notiRepo.SendNotificationToAccIdAsync(newPaymentNoti.NtfId, account.AccId);
             }
             catch (Exception ex)
             {
@@ -300,7 +303,7 @@ namespace HIV_System_API_Services.Implements
             // Update payment status and method for cash payments
             var oldStatus = payment.PaymentStatus;
             payment.PaymentStatus = status;
-            payment.UpdatedAt = DateTime.UtcNow;
+            payment.UpdatedAt = DateTime.Now;
             
             // If marking as successful and it's not a card payment, set as cash
             if (status == 2 && (payment.PaymentMethod == null || payment.PaymentMethod == "card"))
@@ -357,9 +360,9 @@ namespace HIV_System_API_Services.Implements
                 PaymentMethod = "cash",
                 Notes = !string.IsNullOrEmpty(dto.Notes) ? dto.Notes : dto.Description,
                 PaymentStatus = 1, // Pending - waiting for staff confirmation
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                PaymentDate = DateTime.Now,
                 PaymentIntentId = null // NO Stripe PaymentIntent for cash payments
             };
 
@@ -387,7 +390,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Yêu cầu thanh toán tiền mặt",
                     NotiMessage = notificationMessage,
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
 
                 await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, account.AccId);

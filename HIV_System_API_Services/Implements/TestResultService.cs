@@ -288,7 +288,7 @@ namespace HIV_System_API_Services.Implements
                     }
 
                     // Validate date and time - the testate must be today
-                    var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                    var currentDate = DateOnly.FromDateTime(DateTime.Now);
                     if (testResult.TestDate > currentDate)
                         throw new ArgumentException("Ngày xét nghiệm không thể ở tương lai", nameof(testResult.TestDate));
                     if (testResult.TestDate < currentDate)
@@ -338,7 +338,7 @@ namespace HIV_System_API_Services.Implements
                         {
                             NotiType = "Kết quả xét nghiệm",
                             NotiMessage = $"Một kết quả xét nghiệm mới với {componentTestResultEntities.Count} thành phần xét nghiệm đã được tạo.",
-                            SendAt = DateTime.UtcNow
+                            SendAt = DateTime.Now
                         };
                         var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
 
@@ -513,7 +513,7 @@ namespace HIV_System_API_Services.Implements
                     {
                         NotiType = "Cập nhật KQ XN",
                         NotiMessage = $"Kết quả xét nghiệm ID {testResultId} đã được cập nhật với {updatedComponents.Count} thành phần.",
-                        SendAt = DateTime.UtcNow
+                        SendAt = DateTime.Now
                     };
                     var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
 

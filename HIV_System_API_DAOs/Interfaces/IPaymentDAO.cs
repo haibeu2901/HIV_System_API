@@ -17,5 +17,6 @@ namespace HIV_System_API_DAOs.Interfaces
         Task<Payment> UpdatePaymentAsync(int payId, Payment payment);
         Task<bool> DeletePaymentAsync(int payId);
         Task<Payment> UpdatePaymentStatusAsync(int payId, byte status);
+        Task<Payment> ConfirmCashPaymentAsync(int payId);
     }
 }

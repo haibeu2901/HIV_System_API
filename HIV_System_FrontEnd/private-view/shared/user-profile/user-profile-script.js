@@ -1,33 +1,17 @@
 // Role-based user profile script
-async function getUserProfile(accId, role) {
+async function getUserProfile(accId, userRole) {
     const token = localStorage.getItem('token');
-    if (role === 'doctor') {
-        // Doctor API
-        try {
-            const response = await fetch(`https://localhost:7009/api/Doctor/ViewDoctorProfile?id=${accId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch doctor profile');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching doctor profile:', error);
-            return null;
-        }
-    } else if (role === 'staff') {
-        // Staff API
-        try {
-            const response = await fetch(`https://localhost:7009/api/Staff/GetStaffById/${accId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Failed to fetch staff profile');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching staff profile:', error);
-            return null;
-        }
+    let url = '';
+    if (userRole === 'doctor') {
+        url = `https://localhost:7009/api/Doctor/ViewDoctorProfile?id=${accId}`;
+    } else if (userRole === 'staff') {
+        url = `https://localhost:7009/api/Staff/GetStaffById/${accId}`;
+    } else {
+        return null;
     }
-    // Add more roles as needed
-    return null;
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) return null;
+    return await res.json();
 }
 
 async function renderUserProfile(accId, role, containerId) {
@@ -36,8 +20,11 @@ async function renderUserProfile(accId, role, containerId) {
     const profile = await getUserProfile(accId, role);
     if (profile) {
         if (role === 'doctor') {
+            // true is male, false is female
+            let avatarEmoji = profile.gender ? "🧑‍⚕️" : "👩‍⚕️";
             container.innerHTML = `
                 <div class="profile-header">
+                    <div class="profile-avatar-emoji">${avatarEmoji}</div>
                     <h2>${profile.fullname}</h2>
                     <p><strong>Email:</strong> ${profile.email}</p>
                     <p><strong>Ngày sinh:</strong> ${profile.dob}</p>
@@ -47,9 +34,10 @@ async function renderUserProfile(accId, role, containerId) {
                 </div>
             `;
         } else if (role === 'staff') {
-            // Use account sub-object for staff
+            let avatarEmoji = profile.account.gender ? "🧑‍⚕️" : "👩‍⚕️";
             container.innerHTML = `
                 <div class="profile-header">
+                    <div class="profile-avatar-emoji">${avatarEmoji}</div>
                     <h2>${profile.account.fullname}</h2>
                     <p><strong>Email:</strong> ${profile.account.email}</p>
                     <p><strong>Ngày sinh:</strong> ${profile.account.dob}</p>

@@ -38,13 +38,15 @@ namespace HIV_System_API_Services.Implements
             IPatientArvRegimenRepo patientArvRegimenRepo,
             IPatientArvMedicationRepo patientArvMedicationRepo,
             INotificationRepo notificationRepo,
-            INotificationService notificationService,
+            INotificationService notificationService, // Add this parameter
+
             HivSystemApiContext context)
         {
             _patientArvRegimenRepo = patientArvRegimenRepo ?? throw new ArgumentNullException(nameof(patientArvRegimenRepo));
             _patientArvMedicationRepo = patientArvMedicationRepo ?? throw new ArgumentNullException(nameof(patientArvMedicationRepo));
             _notificationRepo = notificationRepo ?? throw new ArgumentNullException(nameof(notificationRepo));
-            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService)); 
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService)); // Initialize it
+
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -111,7 +113,7 @@ namespace HIV_System_API_Services.Implements
                 .AnyAsync(ptr => ptr.PmrId == pmrId);
             if (!hasValidTestResult)
             {
-                throw new InvalidOperationException($"Bệnh nhân với ID {pmrId} không có kết quả xét nghiệm hợp lệ. Cân có kết quả xét nghiệm mới có thể tạo phác đồ ARV dành cho bệnh nhân.");
+                throw new InvalidOperationException($"Bệnh nhân với ID {pmrId} không có kết quả xét nghiệm hợp lệ. Cần có kết quả xét nghiệm mới có thể tạo phác đồ ARV dành cho bệnh nhân.");
             }
         }
 
@@ -766,6 +768,9 @@ namespace HIV_System_API_Services.Implements
             if (regimenRequest.StartDate.HasValue && regimenRequest.EndDate.HasValue
                 && regimenRequest.StartDate > regimenRequest.EndDate)
                 throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");
+
+            if (regimenRequest.RegimenStatus == 2 || regimenRequest.RegimenStatus == 4 || regimenRequest.RegimenStatus == 2)
+                throw new ArgumentException("Không thể cập nhật phác đồ ARV với trạng thái đang hoạt động, thất bại hoặc hoàn thành.");
 
             // Validate medication inputs
             foreach (var med in medicationRequests)

@@ -1,4 +1,5 @@
-﻿using HIV_System_API_DTOs.PaymentDTO;
+﻿using HIV_System_API_BOs;
+using HIV_System_API_DTOs.PaymentDTO;
 using Stripe;
 using System;
 using System.Collections.Generic;

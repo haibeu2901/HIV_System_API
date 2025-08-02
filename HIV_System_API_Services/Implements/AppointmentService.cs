@@ -83,7 +83,7 @@ namespace HIV_System_API_Services.Implements
             {
                 return $"vào {appointment.RequestDate.Value:yyyy-MM-dd} lúc {appointment.RequestTime.Value:HH:mm}";
             }
-            else 
+            else
             {
                 return "(chưa có lịch cụ thể)";
             }
@@ -113,8 +113,8 @@ namespace HIV_System_API_Services.Implements
             if (request.ApmtDate != default(DateOnly) && request.ApmTime != default(TimeOnly))
             {
                 // Validate ApmtDate and ApmTime
-                var todayDate = DateOnly.FromDateTime(DateTime.UtcNow);
-                var nowTime = TimeOnly.FromDateTime(DateTime.UtcNow);
+                var todayDate = DateOnly.FromDateTime(DateTime.Now);
+                var nowTime = TimeOnly.FromDateTime(DateTime.Now);
 
                 if (request.ApmtDate < todayDate)
                     throw new ArgumentException("Ngày hẹn không được ở trong quá khứ.");
@@ -179,14 +179,14 @@ namespace HIV_System_API_Services.Implements
                 var apmTime = request.ApmTime;
                 var apmEnd = apmTime.Add(appointmentDuration);
 
-                // Fetch all appointments for the doctor on the date (not cancelled)
+                // Fetch all appointments for the doctor on the date (not cancelled or completed)
                 // Only check appointments that have actual scheduled dates/times (not null)
                 var appointmentsOnDate = await _context.Appointments
                     .Where(a => a.DctId == request.DoctorId
                         && a.ApmtDate == request.ApmtDate
                         && a.ApmtDate.HasValue
                         && a.ApmTime.HasValue
-                        && a.ApmStatus != 4) // 4 = Cancelled
+                        && (a.ApmStatus != 4 || a.ApmStatus != 5)) // 4 = Cancelled, 5 = Completed
                     .ToListAsync();
 
                 // Check for overlapping appointments (not cancelled)
@@ -212,7 +212,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<AppointmentResponseDTO> ChangeAppointmentStatusAsync(int id, byte status, int accId)
         {
             Debug.WriteLine($"Changing status of appointment with ApmId: {id} to {status}");
-            
+
             if (status < 1 || status > 5)
                 throw new ArgumentException("Trạng thái cuộc hẹn không hợp lệ. Phải nằm trong khoảng từ 1 đến 5.");
 
@@ -235,7 +235,7 @@ namespace HIV_System_API_Services.Implements
                 if (status == 4 && appointment.ApmtDate.HasValue && appointment.ApmTime.HasValue)
                 {
                     var appointmentDateTime = appointment.ApmtDate.Value.ToDateTime(appointment.ApmTime.Value);
-                    if ((appointmentDateTime - DateTime.UtcNow).TotalHours < 12)
+                    if ((appointmentDateTime - DateTime.Now).TotalHours < 12)
                         throw new InvalidOperationException("Không thể thay đổi trạng thái cuộc hẹn vì thời gian hẹn nhỏ hơn 12 giờ từ bây giờ.");
                 }
 
@@ -262,7 +262,7 @@ namespace HIV_System_API_Services.Implements
                     };
 
                     await ValidateAppointmentAsync(requestDto, validateStatus: true, apmId: id);
-                    
+
                     updatedAppointment.ApmtDate = updatedAppointment.RequestDate;
                     updatedAppointment.ApmTime = updatedAppointment.RequestTime;
                 }
@@ -277,7 +277,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = GetNotificationTypeForStatus(status),
                     NotiMessage = CreateNotificationMessage(appointment, status),
-                    SendAt = DateTime.UtcNow,
+                    SendAt = DateTime.Now,
                     NotificationAccounts = new List<NotificationAccount>
                     {
                         new NotificationAccount { AccId = appointment.PtnId },
@@ -287,7 +287,7 @@ namespace HIV_System_API_Services.Implements
 
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
-                
+
                 await transaction.CommitAsync();
 
                 // Load updated appointment data for response
@@ -373,7 +373,7 @@ namespace HIV_System_API_Services.Implements
                 ApmtDate = request.AppointmentDate,
                 ApmTime = request.AppointmentTime,
                 Notes = request.Notes,
-                ApmStatus = 1
+                ApmStatus = 2 // Default to confirmed status
             };
             await ValidateAppointmentAsync(appointmentRequestDto, validateStatus: false);
 
@@ -389,7 +389,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Yêu cầu lịch hẹn",
                     NotiMessage = $"Cuộc hẹn của bạn vào {createdAppointment.RequestDate:yyyy-MM-dd} lúc {createdAppointment.RequestTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã được yêu cầu.",
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
                 await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, createdAppointment.PtnId);
@@ -525,7 +525,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Yêu cầu đổi lịch",
                     NotiMessage = notificationMessage,
-                    SendAt = DateTime.UtcNow,
+                    SendAt = DateTime.Now,
                 };
 
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
@@ -592,7 +592,7 @@ namespace HIV_System_API_Services.Implements
                 var account = await _context.Accounts.FindAsync(accId);
                 if (account == null)
                     throw new ArgumentException($"Không tìm thấy tài khoản với ID {accId}.");
-                    
+
                 var isDoctor = await _context.Doctors.AnyAsync(d => d.AccId == accId && d.DctId == appointment.DctId);
                 if (!isDoctor)
                     throw new UnauthorizedAccessException("Chỉ bác sĩ của cuộc hẹn này mới có thể hoàn thành nó.");
@@ -702,6 +702,51 @@ namespace HIV_System_API_Services.Implements
 
             // Delegate to ChangeAppointmentStatusAsync for the rest of the logic
             return await ChangeAppointmentStatusAsync(appointmentId, status, accId);
+        }
+
+        public async Task<AppointmentResponseDTO> CancelPastDateAppointmentsAsync()
+        {
+            Debug.WriteLine("Cancelling past date appointments");
+            // Get all appointments that are in the past and not cancelled or completed
+            var pastAppointments = await _context.Appointments
+                .Where(a => a.ApmtDate < DateOnly.FromDateTime(DateTime.Now) && (a.ApmStatus != 4 && a.ApmStatus != 5))
+                .ToListAsync();
+            if (pastAppointments.Count == 0)
+            {
+                Debug.WriteLine("No past appointments to cancel.");
+                return null; // No past appointments to cancel
+            }
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var appointment in pastAppointments)
+                {
+                    appointment.ApmStatus = 4; // Set status to Cancelled
+                    await _appointmentRepo.UpdateAppointmentByIdAsync(appointment.ApmId, appointment);
+                    // Create notification for cancellation
+                    var notification = new Notification
+                    {
+                        NotiType = "Hủy lịch hẹn",
+                        NotiMessage = $"Cuộc hẹn vào {appointment.ApmtDate:yyyy-MM-dd} lúc {appointment.ApmTime:HH:mm} đã bị hủy do quá hạn.",
+                        SendAt = DateTime.Now,
+                        NotificationAccounts = new List<NotificationAccount>
+                        {
+                            new NotificationAccount { AccId = appointment.PtnId },
+                            new NotificationAccount { AccId = appointment.DctId }
+                        }
+                    };
+                    _context.Notifications.Add(notification);
+                }
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return MapToResponseDTO(pastAppointments.First()); // Return the first cancelled appointment as an example
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to cancel past date appointments: {ex.Message}");
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

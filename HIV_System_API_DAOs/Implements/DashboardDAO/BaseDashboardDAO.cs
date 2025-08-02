@@ -64,6 +64,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
         public async Task<decimal> GetTotalRevenueAsync()
         {
             return await _context.Payments
+                .Where(p => p.PaymentStatus == 2)
                 .SumAsync(p => p.Amount);
         }
 
@@ -71,6 +72,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
         {
             return await _context.Payments
                 .Where(p => p.PaymentDate>= startOfMonth && p.PaymentDate <= endOfMonth)
+                .Where(p => p.PaymentStatus == 2)
                 .SumAsync(p => p.Amount);
         }
 

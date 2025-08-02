@@ -58,8 +58,8 @@ namespace HIV_System_API_Services.Implements
                 NotiId = notification.NtfId,
                 NotiType = notification.NotiType,
                 NotiMessage = notification.NotiMessage,
-                SendAt = notification.SendAt ?? DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                SendAt = notification.SendAt ?? DateTime.Now,
+                CreatedAt = DateTime.Now
             };
         }
 
@@ -70,8 +70,8 @@ namespace HIV_System_API_Services.Implements
                 NotiId = notification.NtfId,
                 NotiType = notification.NotiType,
                 NotiMessage = notification.NotiMessage,
-                SendAt = notification.SendAt ?? DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
+                SendAt = notification.SendAt ?? DateTime.Now,
+                CreatedAt = DateTime.Now,
                 Recipients = recipients.Select(r => new NotificationRecipientDTO
                 {
                     AccId = r.AccId,
