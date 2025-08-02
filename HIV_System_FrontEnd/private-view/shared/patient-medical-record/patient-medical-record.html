@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="patient-medical-record-style.css">
 </head>
 <body>
-   
+
 
     <div id="header-placeholder"></div>
 
@@ -193,8 +193,8 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="testResultNotes">Ghi chú <span style="color:red">*</span></label>
-            <textarea id="testResultNotes" name="notes" rows="2" required></textarea>
+            <label for="testResultNotes">Ghi chú</label>
+            <textarea id="testResultNotes" name="notes" rows="2"></textarea>
           </div>
           <hr>
           <div id="componentTestsContainer">
@@ -263,8 +263,8 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="updateTestResultNotes">Ghi chú <span style="color:red">*</span></label>
-            <textarea id="updateTestResultNotes" name="notes" rows="2" required></textarea>
+            <label for="updateTestResultNotes">Ghi chú</label>
+            <textarea id="updateTestResultNotes" name="notes" rows="2"></textarea>
           </div>
           <hr>
           <div id="updateComponentTestsContainer">
@@ -285,6 +285,8 @@
     <script src="/private-view/shared/role-config.js"></script>
     <script src="/private-view/shared/header/header-script.js"></script>
     <script src="patient-medical-record-script.js"></script>
+    
+   
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -374,9 +376,7 @@
                     <select id="paymentMethod" name="paymentMethod" required>
                         <option value="">Chọn phương thức...</option>
                         <option value="Tiền mặt">Tiền mặt</option>
-                        <option value="Chuyển khoản">Chuyển khoản</option>
                         <option value="Thẻ tín dụng">Thẻ tín dụng</option>
-                        <option value="Ví điện tử">Ví điện tử</option>
                     </select>
                 </div>
                 <div class="form-group">

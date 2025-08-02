@@ -118,10 +118,6 @@ async function fetchPatientPayments() {
 
 // Render appointments
 function renderAppointments(appointments) {
-    console.log('=== RENDERING APPOINTMENTS ===');
-    console.log('Total appointments:', appointments?.length || 0);
-    console.log('Appointments data:', appointments);
-    
     const section = document.getElementById('appointmentsContent');
     
     if (!appointments || appointments.length === 0) {
@@ -227,15 +223,6 @@ function renderAppointments(appointments) {
     });
 
     sortedAppointments.forEach(appt => {
-        console.log(`Appointment ${appt.appointmentId}:`, {
-            status: appt.apmStatus,
-            apmtDate: appt.apmtDate,
-            apmTime: appt.apmTime,
-            requestDate: appt.requestDate,
-            requestTime: appt.requestTime,
-            requestBy: appt.requestBy
-        });
-        
         const statusLabel = appointmentStatusMap[appt.apmStatus] || 'Unknown';
         const statusClass = `status-${appt.apmStatus}`;
         
@@ -503,15 +490,6 @@ function renderPayments(payments) {
         </div>
         
         <div class="payments-list">
-            <div class="payment-header-single-line">
-                <div>ID</div>
-                <div>Amount</div>
-                <div>Date</div>
-                <div>Description</div>
-                <div>Method</div>
-                <div>Status</div>
-                <div>Actions</div>
-            </div>
     `;
 
     payments.forEach(payment => {
@@ -521,45 +499,61 @@ function renderPayments(payments) {
         const formattedDate = formatDateTime(payment.paymentDate);
         
         html += `
-            <div class="payment-item-single-line ${statusClass}">
-                <div class="payment-single-row">
-                    <div class="payment-id-compact" data-label="ID">
-                        <span class="payment-id-value">#${payment.payId}</span>
+            <div class="payment-card-container">
+                <div class="payment-basic-info">
+                    <div class="payment-id-section">
+                        <span class="payment-id">#${payment.payId}</span>
                     </div>
-                    
-                    <div class="payment-amount-compact" data-label="Amount">
-                        <span class="amount-value">${formattedAmount}</span>
-                        <span class="currency-value">${payment.currency}</span>
+                    <div class="payment-amount-section">
+                        <span class="amount">${formattedAmount}</span>
                     </div>
-                    
-                    <div class="payment-date-compact" data-label="Date">
-                        <span class="date-value">${formattedDate}</span>
+                    <div class="payment-date-section">
+                        <span class="date">${formattedDate}</span>
                     </div>
-                    
-                    <div class="payment-description-compact" data-label="Description">
-                        <span class="description-value">${payment.description || 'No description'}</span>
+                    <div class="payment-method-section">
+                        <span class="method">${formatPaymentMethod(payment.paymentMethod)}</span>
                     </div>
-                    
-                    <div class="payment-method-compact" data-label="Method">
-                        <span class="method-value">${payment.paymentMethod}</span>
-                    </div>
-                    
-                    <div class="payment-status-compact" data-label="Status">
+                    <div class="payment-status-section">
                         ${statusBadge}
                     </div>
-                    
-                    <div class="payment-actions-compact" data-label="Actions">
+                    <div class="payment-actions-section">
                         ${payment.paymentIntentId && payment.paymentStatus === 1 ? `
-                            <button class="btn-action-compact btn-confirm" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
-                                <i class="fas fa-check"></i>
-                            </button>
+                            ${(() => {
+                                // Check if payment method is cash - patients cannot complete cash payments
+                                const paymentMethod = (payment.paymentMethod || '').toLowerCase();
+                                const isCashPayment = paymentMethod.includes('cash') || 
+                                                     paymentMethod.includes('tiền mặt') || 
+                                                     paymentMethod.includes('tien mat') ||
+                                                     paymentMethod.includes('tiền m?t') ||
+                                                     paymentMethod === 'string'; // Sometimes 'string' is used for cash in the database
+                                
+                                if (isCashPayment) {
+                                    return `<div class="cash-payment-notice">Tiền mặt<br>Liên hệ NV</div>`;
+                                } else {
+                                    return `<button class="btn-confirm-payment" onclick="openCardPaymentModal('${payment.paymentIntentId}')" title="Confirm Payment">
+                                                <i class="fas fa-check"></i> Xác nhận
+                                            </button>`;
+                                }
+                            })()}
                         ` : ''}
-                        <button class="btn-action-compact btn-details" onclick="viewPaymentDetails(${payment.payId})" title="View Details">
-                            <i class="fas fa-eye"></i>
+                        <button class="btn-view-details" onclick="togglePaymentDetails('${payment.payId}')">
+                            <i class="fas fa-eye"></i> View Details
                         </button>
-                        <button class="btn-action-compact btn-copy" onclick="copyPaymentId(${payment.payId})" title="Copy ID">
-                            <i class="fas fa-copy"></i>
-                        </button>
+                    </div>
+                </div>
+                
+                <div class="payment-detailed-info" id="paymentDetails${payment.payId}" style="display: none;">
+                    <div class="detail-row">
+                        <span class="detail-label">Service:</span>
+                        <span class="detail-value">${payment.description || 'No description'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Payment Intent ID:</span>
+                        <span class="detail-value">${payment.paymentIntentId || 'N/A'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Created:</span>
+                        <span class="detail-value">${formatDateTime(payment.createdAt || payment.paymentDate)}</span>
                     </div>
                 </div>
             </div>
@@ -568,6 +562,345 @@ function renderPayments(payments) {
 
     html += `</div>`;
     section.innerHTML = html;
+    
+    // Add CSS styling for payment cards
+    if (!document.getElementById('payment-card-styles')) {
+        const style = document.createElement('style');
+        style.id = 'payment-card-styles';
+        style.textContent = `
+            .payment-card-container {
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                margin-bottom: 12px;
+                background: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
+                transition: all 0.2s ease;
+            }
+            
+            .payment-card-container:hover {
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                border-color: #007bff;
+            }
+            
+            .payment-basic-info {
+                display: grid;
+                grid-template-columns: 80px 100px 120px 1fr 120px auto;
+                gap: 12px;
+                padding: 16px;
+                align-items: center;
+                min-height: 60px;
+            }
+            
+            .payment-id-section .payment-id {
+                font-weight: 600;
+                color: #007bff;
+                font-size: 14px;
+            }
+            
+            .payment-amount-section .amount {
+                font-weight: 700;
+                color: #28a745;
+                font-size: 16px;
+            }
+            
+            .payment-date-section .date {
+                color: #6c757d;
+                font-size: 13px;
+            }
+            
+            .payment-method-section .method {
+                background: #f8f9fa;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                color: #495057;
+                border: 1px solid #dee2e6;
+            }
+            
+            .payment-status-section .status-badge {
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            
+            .payment-status-section .status-badge.pending {
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }
+            
+            .payment-status-section .status-badge.succeeded {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            
+            .payment-status-section .status-badge.failed {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            
+            .payment-actions-section {
+                display: flex;
+                gap: 8px;
+                justify-content: flex-end;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            
+            .btn-confirm-payment, .btn-view-details {
+                padding: 6px 12px;
+                border: none;
+                border-radius: 4px;
+                font-size: 12px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            
+            .btn-confirm-payment {
+                background: #28a745;
+                color: white;
+            }
+            
+            .btn-confirm-payment:hover {
+                background: #218838;
+                transform: translateY(-1px);
+            }
+            
+            .btn-view-details {
+                background: #6c757d;
+                color: white;
+            }
+            
+            .btn-view-details:hover {
+                background: #5a6268;
+                transform: translateY(-1px);
+            }
+            
+            .cash-payment-notice {
+                background: #e9ecef;
+                color: #495057;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 11px;
+                text-align: center;
+                border: 1px solid #ced4da;
+                line-height: 1.2;
+                max-width: 80px;
+                word-wrap: break-word;
+                white-space: normal;
+            }
+            
+            .payment-detailed-info {
+                background: #f8f9fa;
+                border-top: 1px solid #e0e0e0;
+                padding: 16px;
+                animation: slideDown 0.3s ease;
+            }
+            
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                padding: 4px 0;
+            }
+            
+            .detail-row:last-child {
+                margin-bottom: 0;
+            }
+            
+            .detail-label {
+                font-weight: 600;
+                color: #495057;
+                min-width: 120px;
+            }
+            
+            .detail-value {
+                color: #6c757d;
+                text-align: right;
+                word-break: break-word;
+            }
+            
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    max-height: 0;
+                }
+                to {
+                    opacity: 1;
+                    max-height: 200px;
+                }
+            }
+            
+            @media (max-width: 768px) {
+                .payment-basic-info {
+                    grid-template-columns: 1fr;
+                    gap: 8px;
+                    text-align: center;
+                }
+                
+                .payment-actions-section {
+                    justify-content: center;
+                }
+                
+                .cash-payment-notice {
+                    max-width: none;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Function to format payment method display text
+function formatPaymentMethod(method) {
+    if (!method) return '-';
+    
+    // Clean the method string first - more aggressive cleaning
+    let cleanMethod = method.toLowerCase().trim();
+    
+    // Replace common encoding issues and special characters more aggressively
+    cleanMethod = cleanMethod
+        .replace(/\?/g, '') // Remove question marks
+        .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, '') // Keep only word chars, spaces, and Vietnamese chars
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+    
+    // More aggressive pattern matching for Vietnamese terms
+    // Handle "tiền mặt" variations
+    if (cleanMethod.match(/ti[e\u00EA\u1EBF]n\s*m[a\u0103\u00E2\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5]t/i) || 
+        cleanMethod.includes('tien') && cleanMethod.includes('mat') ||
+        cleanMethod.includes('tien') && cleanMethod.includes('m') ||
+        cleanMethod.includes('cash')) {
+        return 'Tiền mặt';
+    }
+    
+    // Handle "chuyển khoản" variations  
+    if (cleanMethod.match(/chuy[e\u00EA\u1EBF]n\s*kho[a\u0103\u00E2\u1EA3\u1EA5]n/i) ||
+        cleanMethod.includes('chuyen') && cleanMethod.includes('khoan') ||
+        cleanMethod.includes('transfer')) {
+        return 'Chuyển khoản';
+    }
+    
+    // Handle "thẻ tín dụng" variations
+    if (cleanMethod.match(/th[e\u00EA\u1EBF]\s*t[i\u00ED]n\s*d[u\u00F9\u00FA\u0169\u1EE5]ng/i) ||
+        cleanMethod.includes('the') && cleanMethod.includes('tin') ||
+        cleanMethod.includes('card') ||
+        cleanMethod.includes('credit')) {
+        return 'Thẻ tín dụng';
+    }
+    
+    if (cleanMethod === 'string') {
+        return 'Tiền mặt'; // Assuming 'string' means cash
+    }
+    
+    // Check for online payment
+    if (cleanMethod.includes('stripe')) {
+        return 'Thanh toán trực tuyến (Stripe)';
+    }
+    if (cleanMethod.includes('paypal')) {
+        return 'PayPal';
+    }
+    if (cleanMethod.includes('momo')) {
+        return 'MoMo';
+    }
+    if (cleanMethod.includes('zalo')) {
+        return 'ZaloPay';
+    }
+    if (cleanMethod.includes('vnpay')) {
+        return 'VNPay';
+    }
+    
+    // Enhanced mapping as fallback with more variations
+    const paymentMethodMap = {
+        // Cash variations - including encoding issues
+        'tiền mặt': 'Tiền mặt',
+        'tien mat': 'Tiền mặt',
+        'tien mt': 'Tiền mặt',
+        'tien m': 'Tiền mặt',
+        'tienmat': 'Tiền mặt',
+        'tien': 'Tiền mặt',
+        'cash': 'Tiền mặt',
+        
+        // Bank transfer variations - including encoding issues  
+        'chuyển khoản': 'Chuyển khoản',
+        'chuyen khoan': 'Chuyển khoản',
+        'chuyen kho': 'Chuyển khoản',
+        'chuyen khn': 'Chuyển khoản',
+        'chuyenkhoan': 'Chuyển khoản',
+        'transfer': 'Chuyển khoản',
+        'bank transfer': 'Chuyển khoản',
+        
+        // Credit card variations - including encoding issues
+        'thẻ tín dụng': 'Thẻ tín dụng',
+        'the tin dung': 'Thẻ tín dụng',
+        'the tin d': 'Thẻ tín dụng',
+        'the tin dng': 'Thẻ tín dụng',
+        'thetindung': 'Thẻ tín dụng',
+        'credit card': 'Thẻ tín dụng',
+        'coin card': 'Thẻ tín dụng',
+        'card': 'Thẻ tín dụng',
+        
+        // Online payment variations
+        'stripe': 'Thanh toán trực tuyến (Stripe)',
+        'paypal': 'PayPal',
+        'momo': 'MoMo',
+        'zalopay': 'ZaloPay',
+        'vnpay': 'VNPay',
+        
+        // Other variations
+        'string': 'Tiền mặt',
+        'khác': 'Khác',
+        'other': 'Khác'
+    };
+    
+    // Check if we have a mapping for this method
+    if (paymentMethodMap[cleanMethod]) {
+        return paymentMethodMap[cleanMethod];
+    }
+    
+    // Additional fallback for special characters
+    for (const [key, value] of Object.entries(paymentMethodMap)) {
+        if (cleanMethod.includes(key) || key.includes(cleanMethod)) {
+            return value;
+        }
+    }
+    
+    // If no mapping found, return the original method with proper capitalization
+    return method.charAt(0).toUpperCase() + method.slice(1);
+}
+
+// Toggle payment details function
+function togglePaymentDetails(paymentId) {
+    const detailsElement = document.getElementById(`paymentDetails${paymentId}`);
+    const buttonElement = document.querySelector(`[onclick="togglePaymentDetails('${paymentId}')"]`);
+    
+    if (detailsElement) {
+        const isVisible = detailsElement.style.display !== 'none';
+        
+        if (isVisible) {
+            // Hide details
+            detailsElement.style.display = 'none';
+            if (buttonElement) {
+                buttonElement.innerHTML = '<i class="fas fa-eye"></i> View Details';
+                buttonElement.classList.remove('active');
+            }
+        } else {
+            // Show details
+            detailsElement.style.display = 'block';
+            if (buttonElement) {
+                buttonElement.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
+                buttonElement.classList.add('active');
+            }
+        }
+    }
 }
 
 // Utility function for formatting date time
@@ -692,12 +1025,10 @@ function showPaymentActions(paymentId) {
 
 // Placeholder functions for payment actions
 function viewPaymentDetails(paymentId) {
-    console.log('View payment details for:', paymentId);
     // Implement payment details modal
 }
 
 function downloadReceipt(paymentId) {
-    console.log('Download receipt for:', paymentId);
     // Implement receipt download
 }
 
@@ -819,9 +1150,6 @@ async function loadPaymentData() {
 
 // Render ARV regimens with embedded medications
 function renderARVRegimens(regimens) {
-    console.log('=== RENDERING ARV REGIMENS ===');
-    console.log('Raw regimens data:', regimens);
-    
     const section = document.getElementById('arvRegimensContent');
     
     if (!regimens || regimens.length === 0) {
@@ -854,10 +1182,6 @@ function renderARVRegimens(regimens) {
     `;
     
     regimens.forEach((regimen, index) => {
-        console.log(`=== REGIMEN ${index} ===`);
-        console.log('Full regimen object:', regimen);
-        console.log('regimen.arvMedications:', regimen.arvMedications);
-        
         let statusClass = '';
         switch (regimen.regimenStatus) {
             case 1: statusClass = 'regimen-planned'; break;
@@ -873,8 +1197,6 @@ function renderARVRegimens(regimens) {
         
         // Use embedded medications from the regimen
         const regimenMeds = regimen.arvMedications || [];
-        console.log(`Regimen ${index} medications:`, regimenMeds);
-        console.log(`Number of medications: ${regimenMeds.length}`);
         
         html += `
             <div class="regimen-horizontal-card">
@@ -929,12 +1251,8 @@ function renderARVRegimens(regimens) {
                             ${regimenMeds.length > 0 ? `
                                 <div class="medications-horizontal-list">
                                     ${regimenMeds.map(med => {
-                                        console.log('Rendering medication:', med);
-                                        console.log('med.patientArvMedId:', med.patientArvMedId, 'type:', typeof med.patientArvMedId);
-                                        
                                         // Ensure we have a valid patientArvMedId
                                         const medId = med.patientArvMedId || med.patientARVMedId || med.id || 0;
-                                        console.log('Using medId:', medId, 'from patientArvMedId:', med.patientArvMedId);
                                         
                                         if (!medId || medId <= 0) {
                                             console.error('Invalid medication ID for:', med);
@@ -970,7 +1288,7 @@ function renderARVRegimens(regimens) {
                                                 </div>
                                             </div>
                                             <div class="medication-alarm-actions">
-                                                <button class="btn-set-alarm" onclick="console.log('Button clicked with data:', {regimenId: ${regimen.patientArvRegiId}, patientArvMedId: ${medId}, medicationName: '${med.medicationDetail.arvMedicationName}', dosage: '${med.medicationDetail.arvMedicationDosage}'}); openMedicationAlarmModal(${regimen.patientArvRegiId}, ${medId}, '${med.medicationDetail.arvMedicationName}', '${med.medicationDetail.arvMedicationDosage}')">
+                                                <button class="btn-set-alarm" onclick="openMedicationAlarmModal(${regimen.patientArvRegiId}, ${medId}, '${med.medicationDetail.arvMedicationName}', '${med.medicationDetail.arvMedicationDosage}')">
                                                     <i class="fas fa-bell"></i> Đặt nhắc nhở
                                                 </button>
                                             </div>
@@ -1174,7 +1492,6 @@ async function fetchTestCardNumbers() {
         
         const data = await response.json();
         testCardData = data;
-        console.log('Test card data fetched:', testCardData);
         return data;
     } catch (error) {
         console.error('Error fetching test card numbers:', error);
@@ -1195,7 +1512,6 @@ async function fetchTestCardNumbers() {
 // Function to open card payment modal
 async function openCardPaymentModal(paymentIntentId) {
     currentPaymentIntentId = paymentIntentId;
-    console.log('Opening card payment modal for payment intent:', paymentIntentId);
     
     const modal = document.getElementById('cardPaymentModal');
     if (modal) {
@@ -1216,7 +1532,6 @@ async function openCardPaymentModal(paymentIntentId) {
             const cardNumberInput = document.getElementById('card-number');
             if (cardNumberInput) {
                 cardNumberInput.focus();
-                console.log('Card number input focused');
             }
         }, 100);
         
@@ -1316,8 +1631,6 @@ function formatCardNumberDisplay(cardNumber) {
 
 // Function to select a test card and fill the form
 function selectTestCard(cardNumber) {
-    console.log('Selected test card:', cardNumber);
-    
     const cardNumberInput = document.getElementById('card-number');
     const expiryInput = document.getElementById('card-expiry');
     const cvcInput = document.getElementById('card-cvc');
@@ -1374,6 +1687,9 @@ function selectTestCard(cardNumber) {
         }
     }, 3000);
 }
+
+// Function to close card payment modal
+function closeCardPaymentModal() {
     const modal = document.getElementById('cardPaymentModal');
     if (modal) {
         modal.classList.remove('show');
@@ -1381,7 +1697,7 @@ function selectTestCard(cardNumber) {
         resetCardPaymentForm();
     }
     currentPaymentIntentId = null;
-
+}
 
 // Function to reset card payment form
 function resetCardPaymentForm() {
@@ -1499,8 +1815,6 @@ function showFieldSuccess(field) {
 
 // Function to format card number input
 function formatCardNumber(input) {
-    console.log('Formatting card number:', input.value);
-    
     // Remove all non-digits
     let value = input.value.replace(/\D/g, '');
     
@@ -1519,13 +1833,10 @@ function formatCardNumber(input) {
     }
     
     input.value = formattedValue;
-    console.log('Formatted to:', formattedValue);
 }
 
 // Function to format expiry date input
 function formatExpiryDate(input) {
-    console.log('Formatting expiry date:', input.value);
-    
     // Remove all non-digits
     let value = input.value.replace(/\D/g, '');
     
@@ -1540,7 +1851,6 @@ function formatExpiryDate(input) {
     }
     
     input.value = value;
-    console.log('Formatted to:', value);
 }
 
 // Function to handle card payment submission
@@ -1568,8 +1878,6 @@ async function submitCardPayment() {
         const cvc = document.getElementById('card-cvc').value;
         const name = document.getElementById('card-name').value;
         
-        console.log('Processing payment with card:', cardNumber);
-        
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -1590,7 +1898,6 @@ async function submitCardPayment() {
             cardInfo = testCardData.successScenarios.find(card => card.cardNumber === cardNumber);
             
             // Call confirm payment API for success cards
-            console.log('Calling confirm payment API with card:', cardInfo);
             try {
                 const response = await fetch(`https://localhost:7009/api/Payment/confirm-payment/${currentPaymentIntentId}`, {
                     method: 'POST',
@@ -1631,7 +1938,6 @@ async function submitCardPayment() {
             cardInfo = testCardData.failureScenarios.find(card => card.cardNumber === cardNumber);
             
             // Call fail payment API for failure cards
-            console.log('Calling fail payment API with card:', cardInfo);
             try {
                 const response = await fetch(`https://localhost:7009/api/Payment/fail-payment/${currentPaymentIntentId}`, {
                     method: 'POST',
@@ -1701,16 +2007,11 @@ async function submitCardPayment() {
 
 // Event listener setup for modal inputs
 function setupCardModalEventListeners() {
-    console.log('Setting up card modal event listeners...');
-    
     // Check if modal exists in DOM
     const modal = document.getElementById('cardPaymentModal');
     if (!modal) {
-        console.log('Card payment modal not found in DOM yet');
         return;
     }
-    
-    console.log('Card payment modal found, setting up event listeners');
     
     // Remove existing event listeners to prevent duplicates
     const cardNumberInput = document.getElementById('card-number');
@@ -1724,7 +2025,6 @@ function setupCardModalEventListeners() {
         
         // Add new event listener
         newCardNumberInput.addEventListener('input', function(e) {
-            console.log('Card number input event triggered');
             formatCardNumber(this);
         });
         
@@ -1745,7 +2045,6 @@ function setupCardModalEventListeners() {
         
         // Add new event listener
         newExpiryInput.addEventListener('input', function(e) {
-            console.log('Expiry input event triggered');
             formatExpiryDate(this);
         });
         
@@ -1765,7 +2064,6 @@ function setupCardModalEventListeners() {
         
         // Add new event listener
         newCvcInput.addEventListener('input', function(e) {
-            console.log('CVC input event triggered');
             this.value = this.value.replace(/\D/g, '').substring(0, 4);
         });
         
@@ -1805,9 +2103,6 @@ let currentMedicationAlarm = null;
 
 // Function to open medication alarm modal
 function openMedicationAlarmModal(regimenId, patientArvMedId, medicationName, dosage) {
-    console.log('Opening medication alarm modal for:', { regimenId, patientArvMedId, medicationName, dosage });
-    console.log('patientArvMedId type:', typeof patientArvMedId, 'value:', patientArvMedId);
-    
     // Ensure patientArvMedId is a number and not undefined
     const medId = parseInt(patientArvMedId);
     if (isNaN(medId) || medId <= 0) {
@@ -1988,16 +2283,11 @@ function resetMedicationAlarmForm() {
 
 // Function to save medication alarm
 async function saveMedicationAlarm() {
-    console.log('=== SAVE MEDICATION ALARM START ===');
-    console.log('currentMedicationAlarm at start:', currentMedicationAlarm);
-    
     if (!currentMedicationAlarm) {
         console.error('No current medication alarm data found');
         showAlarmMessage('Lỗi: Chưa chọn thuốc', 'error');
         return;
     }
-    
-    console.log('Validating currentMedicationAlarm.patientArvMedId:', currentMedicationAlarm.patientArvMedId, 'type:', typeof currentMedicationAlarm.patientArvMedId);
     
     // Double-check the patientArvMedId
     if (!currentMedicationAlarm.patientArvMedId || currentMedicationAlarm.patientArvMedId <= 0) {
@@ -2041,10 +2331,6 @@ async function saveMedicationAlarm() {
             isActive: isActive,
             notes: alarmNotes || ""
         };
-        
-        console.log('Creating medication alarm with data:', requestData);
-        console.log('currentMedicationAlarm:', currentMedicationAlarm);
-        console.log('patientArvMedId value:', currentMedicationAlarm.patientArvMedId, 'type:', typeof currentMedicationAlarm.patientArvMedId);
         
         // Call API to create medication alarm (nếu API không tồn tại sẽ simulate thành công)
         try {
@@ -2219,4 +2505,5 @@ async function loadMedicationAlarmStates() {
     } catch (error) {
         console.error('Error loading medication alarm states:', error);
     }
+
 }

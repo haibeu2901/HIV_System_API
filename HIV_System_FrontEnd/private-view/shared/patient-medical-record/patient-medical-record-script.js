@@ -125,6 +125,12 @@ async function fetchPatientDetails(patientId) {
 // Add new fetchPatientMedicalDataByPatientId
 async function fetchPatientMedicalDataByPatientId(patientId) {
     try {
+        // Validate patientId before making the API call
+        if (!patientId || typeof patientId !== 'string' && typeof patientId !== 'number') {
+            console.error('Invalid patientId provided:', patientId);
+            return null;
+        }
+
         const response = await fetch(`https://localhost:7009/api/PatientMedicalRecord/GetPatientMedicalRecordByPatientId?patientId=${patientId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -193,18 +199,64 @@ async function fetchAllServices() {
     }
 }
 
+// Helper function to convert Vietnamese payment method to English for API
+function convertPaymentMethodToEnglish(vietnameseMethod) {
+    const methodMap = {
+        'Tiền mặt': 'cash',
+        'Thẻ tín dụng': 'card'
+    };
+    
+    return methodMap[vietnameseMethod] || vietnameseMethod.toLowerCase();
+}
+
 // Create new payment
 async function createPayment(paymentData) {
     try {
-        const response = await fetch('https://localhost:7009/api/Payment/CreatePayment', {
+        // Determine which API to use based on payment method
+        const originalMethod = paymentData.paymentMethod;
+        const isCashPayment = originalMethod === 'Tiền mặt' || originalMethod === 'cash';
+        
+        // Prepare request body with the new structure
+        let requestBody = {
+            pmrId: paymentData.pmrId,
+            srvId: paymentData.srvId,
+            amount: paymentData.amount,
+            currency: paymentData.currency,
+            description: paymentData.description,
+            notes: paymentData.notes || paymentData.description // Use description as notes if notes not provided
+        };
+        
+        // Choose API endpoint based on payment method
+        const apiEndpoint = isCashPayment 
+            ? 'https://localhost:7009/api/Payment/CreateCashPayment'
+            : 'https://localhost:7009/api/Payment/CreatePayment';
+        
+        // Add paymentMethod field for non-cash payments (CreatePayment API still requires it)
+        if (!isCashPayment) {
+            requestBody.paymentMethod = convertPaymentMethodToEnglish(originalMethod);
+        }
+        
+        console.log('Creating payment:', {
+            method: originalMethod,
+            isCash: isCashPayment,
+            endpoint: apiEndpoint,
+            requestBody: requestBody
+        });
+        
+        const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(paymentData)
+            body: JSON.stringify(requestBody)
         });
-        if (!response.ok) throw new Error('Lỗi tạo thanh toán');
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Payment creation failed:', errorText);
+            throw new Error('Lỗi tạo thanh toán');
+        }
         return await response.json();
     } catch (error) {
         console.error('Error creating payment:', error);
@@ -214,12 +266,12 @@ async function createPayment(paymentData) {
 
 // Render payment history
 function renderPaymentHistory(payments) {
-    const section = document.getElementById('paymentHistorySection');
+    const section = document.getElementById('paymentsSection');
 
     if (!payments || payments.length === 0) {
         section.innerHTML = `
             <div class="empty-state">
-                <i class="fas fa-credit-card"></i>
+<i class="fas fa-credit-card"></i>
                 <p>Không tìm thấy lịch sử giao dịch cho bệnh nhân này.</p>
             </div>
         `;
@@ -227,44 +279,271 @@ function renderPaymentHistory(payments) {
     }
 
     let html = `
-        <div class="payments-container">
+        <style>
+            .payment-status-1 {
+                background-color: #ffc107;
+                color: #212529;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 0.85em;
+                font-weight: 500;
+            }
+            .payment-status-2 {
+                background-color: #28a745;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 0.85em;
+                font-weight: 500;
+            }
+            .payment-status-3 {
+                background-color: #dc3545;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 0.85em;
+                font-weight: 500;
+            }
+            .payments-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+            .payments-table th,
+            .payments-table td {
+                padding: 12px 8px;
+                text-align: left;
+                border-bottom: 1px solid #dee2e6;
+                vertical-align: middle;
+            }
+            .payments-table th {
+                background-color: #f8f9fa;
+                font-weight: 600;
+                color: #495057;
+                border-top: 1px solid #dee2e6;
+            }
+            .payments-table tr:hover {
+                background-color: #f8f9fa;
+            }
+            .payment-amount-cell {
+                font-weight: 600;
+                color: #28a745;
+            }
+            .payment-actions-cell {
+                text-align: center;
+            }
+            .btn-complete-cash-payment {
+                background: #28a745;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.85em;
+            }
+            .btn-complete-cash-payment:hover {
+                background: #218838;
+            }
+            .btn-complete-cash-payment:disabled {
+                background: #6c757d;
+                cursor: not-allowed;
+            }
+        </style>
+        <table class="payments-table">
+            <thead>
+                <tr>
+                    <th>Mã thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Số tiền</th>
+                    <th>Phương thức</th>
+                    <th>Dịch vụ</th>
+                    <th>Ngày thanh toán</th>
+                    <th>Mô tả</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
     `;
 
     payments.forEach(payment => {
         const statusClass = `payment-status-${payment.paymentStatus}`;
         const statusText = paymentStatusMap[payment.paymentStatus] || 'Không xác định';
 
+        // Check if payment method is cash and status is pending for action button
+        const isCash = formatPaymentMethod(payment.paymentMethod) === 'Tiền mặt';
+        const isPending = payment.paymentStatus === 1;
+        const showActionButton = isCash && isPending;
+
         html += `
-            <div class="payment-card">
-                <div class="payment-header">
-                    <div class="payment-id-info">
-                        <span class="payment-id">Mã thanh toán: ${payment.payId}</span>
-                        <span class="payment-status ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="payment-amount">
-                        ${formatCurrency(payment.amount)} ${payment.currency}
-                    </div>
-                </div>
-                <div class="payment-details">
-                    <div class="payment-info">
-                        <p><strong>Ngày thanh toán:</strong> ${formatDateTime(payment.paymentDate)}</p>
-                        <p><strong>Phương thức:</strong> ${payment.paymentMethod}</p>
-                        <p><strong>Mô tả:</strong> ${payment.description}</p>
-                        ${payment.serviceName ? `<p><strong>Dịch vụ:</strong> ${payment.serviceName}</p>` : ''}
-${payment.servicePrice ? `<p><strong>Giá dịch vụ:</strong> ${formatCurrency(payment.servicePrice)} VND</p>` : ''}
-                    </div>
-                    <div class="payment-metadata">
-                        <small><strong>Tạo lúc:</strong> ${formatDateTime(payment.createdAt)}</small>
-                        <small><strong>Cập nhật:</strong> ${formatDateTime(payment.updatedAt)}</small>
-                        ${payment.paymentIntentId ? `<small><strong>Intent ID:</strong> ${payment.paymentIntentId}</small>` : ''}
-                    </div>
-                </div>
-            </div>
+            <tr>
+                <td><strong>${payment.payId}</strong></td>
+                <td><span class="payment-status ${statusClass}">${statusText}</span></td>
+                <td class="payment-amount-cell">${formatCurrency(payment.amount)} ${payment.currency}</td>
+                <td>${formatPaymentMethod(payment.paymentMethod)}</td>
+                <td>${payment.serviceName || '-'}</td>
+                <td>${formatDateTime(payment.paymentDate)}</td>
+                <td>${payment.description || '-'}</td>
+                <td class="payment-actions-cell">
+                    ${showActionButton ? `
+                        <button class="btn-complete-cash-payment" 
+                                onclick="completeCashPayment('${payment.payId}', this)"
+                                title="Hoàn thành thanh toán tiền mặt">
+                            <i class="fas fa-check"></i> Hoàn thành
+                        </button>
+                    ` : '-'}
+                </td>
+            </tr>
         `;
     });
 
-    html += `</div>`;
+    html += `
+            </tbody>
+        </table>
+    `;
     section.innerHTML = html;
+}
+
+// Function to complete cash payment
+async function completeCashPayment(paymentId, button) {
+    if (!paymentId) {
+        alert('Không tìm thấy mã thanh toán');
+        return;
+    }
+
+    // Show confirmation dialog
+    if (!confirm('Bạn có chắc chắn muốn đánh dấu thanh toán tiền mặt này là đã hoàn thành?')) {
+        return;
+    }
+
+    try {
+        // Show loading state
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        button.disabled = true;
+
+        const response = await fetch(`https://localhost:7009/api/Payment/MarkCashPaymentSuccess/${paymentId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            alert('Thanh toán tiền mặt đã được đánh dấu hoàn thành thành công!');
+
+            // Reload the patient data to refresh payment history
+            await loadPatientData();
+        } else {
+            const errorResult = await response.json();
+            alert(`Lỗi khi hoàn thành thanh toán: ${errorResult.message || 'Không xác định'}`);
+
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error completing cash payment:', error);
+        alert('Có lỗi xảy ra khi hoàn thành thanh toán. Vui lòng thử lại.');
+
+        // Restore button state
+        button.innerHTML = '<i class="fas fa-check"></i> Hoàn thành thanh toán tiền mặt';
+        button.disabled = false;
+    }
+}
+
+// Make function globally available
+window.completeCashPayment = completeCashPayment;
+
+// Function to format payment method display text
+function formatPaymentMethod(method) {
+    if (!method) return '-';
+
+    // Clean the method string first - more aggressive cleaning
+    let cleanMethod = method.toLowerCase().trim();
+
+    // Replace common encoding issues and special characters more aggressively
+    cleanMethod = cleanMethod
+        .replace(/\?/g, '') // Remove question marks
+        .replace(/[\u00BF\u003F\uFFFD]/g, '') // Remove various question mark variants and replacement chars
+        .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, '') // Keep only word chars, spaces, and Vietnamese chars
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+
+    // Direct English method mapping (from API)
+    const englishMethodMap = {
+        'cash': 'Tiền mặt',
+        'card': 'Thẻ tín dụng'
+    };
+
+    // Check for direct English mapping first
+    if (englishMethodMap[cleanMethod]) {
+        return englishMethodMap[cleanMethod];
+    }
+
+    // Handle Vietnamese variations (for legacy data or manual input)
+    // Handle "tiền mặt" variations
+    if (cleanMethod.match(/ti[e\u00EA\u1EBF]n\s*m[a\u0103\u00E2\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5]t/i) ||
+        cleanMethod.includes('tien') && cleanMethod.includes('mat') ||
+        cleanMethod.includes('tien') && cleanMethod.includes('m') ||
+        cleanMethod.includes('cash')) {
+        return 'Tiền mặt';
+    }
+
+    
+    // Handle "thẻ tín dụng" variations
+    if (cleanMethod.match(/th[e\u00EA\u1EBF]\s*t[i\u00ED]n\s*d[u\u00F9\u00FA\u0169\u1EE5]ng/i) ||
+        cleanMethod.includes('the') && cleanMethod.includes('tin') ||
+        cleanMethod.includes('card') ||
+        cleanMethod.includes('credit')) {
+        return 'Thẻ tín dụng';
+    }
+
+    if (cleanMethod === 'string') {
+        return 'Tiền mặt'; // Assuming 'string' means cash
+    }
+
+    // Enhanced mapping as fallback with more variations
+    const paymentMethodMap = {
+        // Cash variations - including encoding issues
+        'tiền mặt': 'Tiền mặt',
+        'tien mat': 'Tiền mặt',
+        'tien mt': 'Tiền mặt',
+        'tien m': 'Tiền mặt',
+        'tienmat': 'Tiền mặt',
+        'tien': 'Tiền mặt',
+
+        'cash': 'Tiền mặt',
+        
+        // Credit card variations - including encoding issues
+        'thẻ tín dụng': 'Thẻ tín dụng',
+        'the tin dung': 'Thẻ tín dụng',
+        'the tin d': 'Thẻ tín dụng',
+        'the tin dng': 'Thẻ tín dụng',
+        'thetindung': 'Thẻ tín dụng',
+        'credit card': 'Thẻ tín dụng',
+        'coin card': 'Thẻ tín dụng',
+
+        'card': 'Thẻ tín dụng',
+        
+        // Fallback for other variations
+        'string': 'Tiền mặt'
+    };
+
+    // Check if we have a mapping for this method
+    if (paymentMethodMap[cleanMethod]) {
+        return paymentMethodMap[cleanMethod];
+    }
+
+    // Additional fallback for special characters
+    for (const [key, value] of Object.entries(paymentMethodMap)) {
+        if (cleanMethod.includes(key) || key.includes(cleanMethod)) {
+            return value;
+        }
+    }
+
+    // If no mapping found, return the original method with proper capitalization
+    return method.charAt(0).toUpperCase() + method.slice(1);
 }
 
 // Utility functions for formatting
@@ -317,7 +596,7 @@ function renderAppointments(appointments) {
             <thead>
                 <tr>
                     <th>Ngày</th>
-                    <th>Thời gian</th>
+<th>Thời gian</th>
                     <th>Bác sĩ</th>
                     <th>Trạng thái</th>
                     <th>Ghi chú</th>
@@ -398,7 +677,7 @@ function renderTestResults(testResults) {
                                 <tr>
                                     <th>Tên thành phần</th>
                                     <th>Mô tả</th>
-                                    <th>Giá trị</th>
+<th>Giá trị</th>
                                     <th>Ghi chú</th>
                                 </tr>
                             </thead>
@@ -427,7 +706,7 @@ function renderTestResults(testResults) {
 
     // Toggle details on click
     document.querySelectorAll('.toggle-test-details-btn').forEach(btn => {
-        btn.onclick = function(e) {
+        btn.onclick = function (e) {
             e.stopPropagation();
             const idx = this.getAttribute('data-idx');
             const detailsRow = document.getElementById(`test-result-details-${idx}`);
@@ -516,11 +795,11 @@ function renderARVRegimens(regimens, medications) {
                 <td>${new Date(regimen.endDate).toLocaleDateString() || 'Đang áp dụng'}</td>
                 <td>${regimen.notes ? regimen.notes : ''}</td>
                 <td>
-                    <button class="toggle-details-btn" data-idx="${idx}">▼</button>
+<button class="toggle-details-btn" data-idx="${idx}">▼</button>
                 </td>
             </tr>
             <tr class="regimen-details-row" id="regimen-details-${idx}" style="display:none;background:#fafbfc;">
-                <td colspan="6">
+                <td colspan="7">
                     <div><strong>Tổng chi phí:</strong> ${regimen.totalCost ? regimen.totalCost.toLocaleString('vi-VN') + ' VND' : 'Không xác định'}</div>
                     <h4>Thuốc</h4>
                     ${regimenMeds.length > 0 ? `
@@ -555,7 +834,7 @@ function renderARVRegimens(regimens, medications) {
                     ` : `<div class='empty-state'><i class='fas fa-capsules'></i> No medications for this regimen.</div>`}
                     <div style="margin-top:1rem;text-align:right;">
                         ${(!window.isStaff && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Cập nhật trạng thái</button>` : ''}
-                        ${(window.isDoctor && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>` : ''}
+${(window.isDoctor && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -567,7 +846,7 @@ function renderARVRegimens(regimens, medications) {
 
     // Toggle details on click
     document.querySelectorAll('.toggle-details-btn').forEach(btn => {
-        btn.onclick = function(e) {
+        btn.onclick = function (e) {
             e.stopPropagation();
             const idx = this.getAttribute('data-idx');
             const detailsRow = document.getElementById(`regimen-details-${idx}`);
@@ -669,7 +948,7 @@ updateRegimenStatusForm.onsubmit = async function (e) {
     const regimenId = updateRegimenStatusId.value;
     const newStatus = +updateRegimenStatusSelect.value;
     const notes = updateRegimenStatusNotes.value.trim();
-    if (!regimenId || !newStatus || !notes) {
+    if (!regimenId || !newStatus) {
         updateRegimenStatusMsg.textContent = 'Please fill all fields.';
         return;
     }
@@ -814,10 +1093,11 @@ regimenTemplate.onchange = function () {
     // Fill form fields
     regimenNotes.value = template.description;
     // Set start date to today in Vietnam timezone
-   regimenStartDate.value = getVietnamToday();
+    regimenStartDate.value = getVietnamToday();
     // Set end date to start date + duration days
     if (template.duration) {
-        const endDate = new Date(vietnamToday.getTime() + template.duration * 24 * 60 * 60 * 1000);
+        const startDate = new Date(regimenStartDate.value);
+        const endDate = new Date(startDate.getTime() + template.duration * 24 * 60 * 60 * 1000);
         if (document.getElementById('regimenEndDate')) {
             document.getElementById('regimenEndDate').value = endDate.toISOString().slice(0, 10);
         }
@@ -866,8 +1146,8 @@ function renderMedicationRows() {
                 <select class="medication-name-select" data-idx="${idx}">
                     <option value="">Chọn</option>
                     ${allMedicationDetails.map(m =>
-                        `<option value="${m.arvMedicationName}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`
-                    ).join('')}
+            `<option value="${m.arvMedicationName}" ${m.arvMedicationName === med.arvMedicationName ? 'selected' : ''}>${m.arvMedicationName}</option>`
+        ).join('')}
                 </select>
             </td>
             <td>${medDetail ? medDetail.arvMedicationDosage : ''}</td>
@@ -1031,22 +1311,22 @@ regimenForm.onsubmit = async function (e) {
             body: JSON.stringify(payload)
         });
         if (!res.ok) {
-            let errorMsg = 'Failed to create regimen.';
-            let errorText = '';
-            try {
-                // Try to read as JSON
-                const errorData = await res.json();
-                console.error('Backend error:', errorData);
-                if (errorData && errorData.message) errorMsg += '\n' + errorData.message;
-                else errorText = JSON.stringify(errorData);
-            } catch (e) {
-                // If not JSON, try as text (but only once)
+            let errorMsg = '';
+            if (res.status === 400) {
+                // Lấy lỗi dạng text nếu là 400 Bad Request
+                errorMsg = await res.text();
+            } else {
                 try {
-                    errorText = await res.text();
-                } catch { }
+                    const errorData = await res.json();
+                    if (errorData && errorData.message) errorMsg = errorData.message;
+                    else errorMsg = JSON.stringify(errorData);
+                } catch (e) {
+                    try {
+                        errorMsg = await res.text();
+                    } catch { }
+                }
             }
-            if (errorText) errorMsg += '\n' + errorText;
-            alert(errorMsg);
+            alert(errorMsg || 'Tạo phác đồ thất bại.');
             return;
         }
         alert('Tạo phác đồ và thuốc thành công!');
@@ -1093,8 +1373,8 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="text" name="resultValue" required />
       </div>
       <div class="form-group">
-        <label>Ghi chú <span style="color:red">*</span></label>
-        <textarea name="notes" rows="2" required></textarea>
+        <label>Ghi chú</label>
+        <textarea name="notes" rows="2" ></textarea>
       </div>
       <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
     `;
@@ -1163,11 +1443,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!resultVal) {
             msgDiv.textContent = 'Vui lòng chọn kết quả.';
             return;
-        }
-        if (!form.testResultNotes.value.trim()) {
-            msgDiv.textContent = 'Vui lòng nhập ghi chú cho kết quả xét nghiệm.';
-            return;
-        }
+        }        
         // Component tests
         const componentFieldsets = componentTestsContainer.querySelectorAll('.component-test-fieldset');
         if (componentFieldsets.length === 0) {
@@ -1187,11 +1463,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!value) {
                 msgDiv.textContent = 'Vui lòng nhập giá trị kết quả cho tất cả thành phần.';
                 return;
-            }
-            if (!notes) {
-                msgDiv.textContent = 'Vui lòng nhập ghi chú cho tất cả thành phần.';
-                return;
-            }
+            }            
             componentTests.push({
                 testResultId: 0, // Will be set by backend
                 staffId: 0, // Optionally set if available
@@ -1339,11 +1611,11 @@ function loadComponentTestResultsFromData(componentResults) {
                     <input type="text" name="resultValue" value="${comp.resultValue || ''}" required />
                 </div>
                 <div class="form-group">
-                    <label>Ghi chú <span style="color:red">*</span></label>
-                    <textarea name="notes" rows="2" required>${comp.notes || ''}</textarea>
+                    <label>Ghi chú</label>
+                    <textarea name="notes" rows="2" >${comp.notes || ''}</textarea>
                 </div>
                 <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
-            `;
+`;
             container.appendChild(fieldset);
 
             // Add remove button functionality
@@ -1390,8 +1662,8 @@ function addUpdateComponentTestFieldset() {
             <input type="text" name="resultValue" required />
         </div>
         <div class="form-group">
-            <label>Ghi chú <span style="color:red">*</span></label>
-            <textarea name="notes" rows="2" required></textarea>
+            <label>Ghi chú</label>
+            <textarea name="notes" rows="2" ></textarea>
         </div>
         <button type="button" class="removeComponentBtn secondary-btn" style="position:absolute;top:8px;right:8px;">- Xóa</button>
     `;
@@ -1420,7 +1692,7 @@ if (updateTestResultForm) {
         const result = document.getElementById('updateTestResultSelect').value;
         const notes = document.getElementById('updateTestResultNotes').value.trim();
 
-        if (!testResultId || !testDate || !result || !notes) {
+        if (!testResultId || !testDate || !result) {
             updateTestResultMsg.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc.';
             return;
         }
@@ -1435,7 +1707,7 @@ if (updateTestResultForm) {
             const value = fieldset.querySelector('input[name="resultValue"]')?.value.trim();
             const compNotes = fieldset.querySelector('textarea[name="notes"]')?.value.trim();
 
-            if (!name || !value || !compNotes) {
+            if (!name || !value) {
                 updateTestResultMsg.textContent = 'Vui lòng điền đầy đủ thông tin thành phần xét nghiệm.';
                 return;
             }
@@ -1489,28 +1761,6 @@ if (updateTestResultForm) {
     };
 }
 
-// Render payments
-function renderPayments(payments) {
-    const section = document.getElementById('paymentsSection');
-    if (!section) return;
-    if (!payments || payments.length === 0) {
-        section.innerHTML = `<div class="empty-state"><i class="fas fa-money-bill-wave"></i><p>Không có giao dịch thanh toán nào.</p></div>`;
-        return;
-    }
-    let html = `<table class="payments-table"><thead><tr><th>Ngày thanh toán</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Mô tả</th></tr></thead><tbody>`;
-    payments.forEach(pay => {
-        html += `<tr>
-            <td>${pay.paymentDate ? new Date(pay.paymentDate).toLocaleString() : '-'}</td>
-            <td>${pay.amount ? pay.amount.toLocaleString() + ' ₫' : '-'}</td>
-            <td>${pay.paymentMethod || '-'}</td>
-            <td><span class="payment-status payment-status-${pay.paymentStatus}">${paymentStatusMap[pay.paymentStatus] || pay.paymentStatus}</span></td>
-            <td>${pay.description || '-'}</td>
-        </tr>`;
-    });
-    html += `</tbody></table>`;
-    section.innerHTML = html;
-}
-
 // Main function to load all patient data
 async function loadPatientData() {
     const patientId = getPatientIdFromUrl();
@@ -1547,19 +1797,19 @@ async function loadPatientData() {
             renderAppointments(medicalData.appointments || []);
             renderTestResults(medicalData.testResults || []);
             renderARVRegimens(medicalData.arvRegimens || [], medications);
-            renderPayments(medicalData.payments || []);
+            renderPaymentHistory(medicalData.payments || []);
 
             allRegimens = medicalData.arvRegimens || [];
-allRegimenMedications = medications;
-applyRegimenFilters();
+            allRegimenMedications = medications;
+            applyRegimenFilters();
 
-allTestResults = medicalData.testResults || [];
-applyTestResultFilters();
+            allTestResults = medicalData.testResults || [];
+            applyTestResultFilters();
         } else {
             renderAppointments([]);
             renderTestResults([]);
             renderARVRegimens([], []);
-            renderPayments([]);
+            renderPaymentHistory([]);
         }
         // After data is loaded, show/hide staff button
         const btnContainer = document.getElementById('createTestResultContainer');
@@ -1667,14 +1917,29 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.getElementById('paymentCurrency').value = 'VND';
 
         // Set pmrId from global window.pmrId (set when page loads)
+        if (window.pmrId) {
+            pmrIdInput.value = window.pmrId;
+        } else {
+            // Try to fetch patient medical data if pmrId is not available
+            const patientId = getPatientIdFromUrl();
             if (patientId) {
                 fetchPatientMedicalDataByPatientId(patientId).then(medicalData => {
                     if (medicalData && medicalData.pmrId) {
                         pmrIdInput.value = medicalData.pmrId;
                         window.pmrId = medicalData.pmrId; // Store globally for future use
+                    } else {
+                        console.error('Unable to fetch patient medical record');
+                        paymentFormMsg.textContent = 'Không thể tải thông tin bệnh án. Vui lòng thử lại.';
                     }
+                }).catch(error => {
+                    console.error('Error fetching patient medical data:', error);
+                    paymentFormMsg.textContent = 'Có lỗi khi tải thông tin bệnh án. Vui lòng thử lại.';
                 });
+            } else {
+                console.error('No patient ID found in URL');
+                paymentFormMsg.textContent = 'Không tìm thấy ID bệnh nhân trong URL.';
             }
+        }
 
         paymentModal.style.display = 'block';
     }
@@ -1724,7 +1989,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 amount: amount,
                 currency: currency,
                 paymentMethod: paymentMethod,
-                description: description
+                description: description,
+                notes: description // Use description as notes for API compatibility
             };
 
             try {
@@ -1781,7 +2047,7 @@ function insertTestResultFilterBar() {
             <select id="filterTestResult">
                 <option value="">Tất cả</option>
                 <option value="true">Dương tính</option>
-                <option value="false">Âm tính</option>
+<option value="false">Âm tính</option>
             </select>
             <label for="filterTestDate">Ngày xét nghiệm:</label>
             <input type="date" id="filterTestDate">

@@ -235,7 +235,7 @@ namespace HIV_System_API_Services.Implements
                 if (status == 4 && appointment.ApmtDate.HasValue && appointment.ApmTime.HasValue)
                 {
                     var appointmentDateTime = appointment.ApmtDate.Value.ToDateTime(appointment.ApmTime.Value);
-                    if ((appointmentDateTime - DateTime.UtcNow).TotalHours < 12)
+                    if ((appointmentDateTime - DateTime.Now).TotalHours < 12)
                         throw new InvalidOperationException("Không thể thay đổi trạng thái cuộc hẹn vì thời gian hẹn nhỏ hơn 12 giờ từ bây giờ.");
                 }
 
@@ -277,7 +277,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = GetNotificationTypeForStatus(status),
                     NotiMessage = CreateNotificationMessage(appointment, status),
-                    SendAt = DateTime.UtcNow,
+                    SendAt = DateTime.Now,
                     NotificationAccounts = new List<NotificationAccount>
                     {
                         new NotificationAccount { AccId = appointment.PtnId },
@@ -389,7 +389,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Yêu cầu lịch hẹn",
                     NotiMessage = $"Cuộc hẹn của bạn vào {createdAppointment.RequestDate:yyyy-MM-dd} lúc {createdAppointment.RequestTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã được yêu cầu.",
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
                 await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, createdAppointment.PtnId);
@@ -525,7 +525,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Yêu cầu đổi lịch",
                     NotiMessage = notificationMessage,
-                    SendAt = DateTime.UtcNow,
+                    SendAt = DateTime.Now,
                 };
 
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);

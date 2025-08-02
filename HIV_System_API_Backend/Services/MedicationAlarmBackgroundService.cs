@@ -9,7 +9,7 @@ namespace HIV_System_API_Backend.Services
     {
         private readonly ILogger<MedicationAlarmBackgroundService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(5); // Check every 5 minutes
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // Check every minutes
 
         public MedicationAlarmBackgroundService(
             ILogger<MedicationAlarmBackgroundService> logger,
@@ -27,7 +27,7 @@ namespace HIV_System_API_Backend.Services
             {
                 try
                 {
-                    _logger.LogInformation("Processing medication alarms at: {time}", DateTimeOffset.Now);
+                    _logger.LogInformation("Processing medication alarms at: {time}", DateTime.Now);
 
                     using (var scope = _serviceProvider.CreateScope())
                     {
@@ -35,11 +35,11 @@ namespace HIV_System_API_Backend.Services
                         await medicationAlarmService.ProcessMedicationAlarmsAsync();
                     }
 
-                    _logger.LogInformation("Medication alarms processed successfully at: {time}", DateTimeOffset.Now);
+                    _logger.LogInformation("Medication alarms processed successfully at: {time}", DateTime.Now);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "An error occurred while processing medication alarms at: {time}", DateTimeOffset.Now);
+                    _logger.LogError(ex, "An error occurred while processing medication alarms at: {time}", DateTime.Now);
                 }
 
                 // Wait for the next interval
