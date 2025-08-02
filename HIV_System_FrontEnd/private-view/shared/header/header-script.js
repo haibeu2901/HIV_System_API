@@ -47,7 +47,8 @@ function setActiveSharedNav() {
         { id: 'nav-medical-resources', path: '/private-view/shared/medical-resources/medical-resources.html' },
         { id: 'nav-blog', path: '/blog' }, // Dynamic based on role
         { id: 'nav-notifications', path: '/private-view/shared/notifications/notifications.html' },
-        { id: 'nav-profile', path: '/private-view/shared/user-profile/user-profile.html' }
+        { id: 'nav-profile', path: '/private-view/shared/user-profile/user-profile.html' },
+        { id: 'nav-view-payment', path: '/private-view/shared/view-payment/view-payment.html' }
     ];
     navLinks.forEach(link => {
         const el = document.getElementById(link.id);
