@@ -44,9 +44,9 @@ namespace HIV_System_API_Services.Implements
                 PaymentMethod = dto.PaymentMethod ?? "card",
                 Notes = dto.Description,
                 PaymentStatus = 1, // Pending
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                PaymentDate = DateTime.Now,
                 PaymentIntentId = paymentIntentId
             };
         }
@@ -160,7 +160,7 @@ namespace HIV_System_API_Services.Implements
             if (payment != null)
             {
                 payment.PaymentStatus = status;
-                payment.UpdatedAt = DateTime.UtcNow;
+                payment.UpdatedAt = DateTime.Now;
                 await _context.SaveChangesAsync();
 
                 // Send notification after status update
@@ -206,7 +206,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = notiType,
                     NotiMessage = notificationMessage,
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
 
                 await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, account.AccId);
@@ -300,7 +300,7 @@ namespace HIV_System_API_Services.Implements
             // Update payment status and method for cash payments
             var oldStatus = payment.PaymentStatus;
             payment.PaymentStatus = status;
-            payment.UpdatedAt = DateTime.UtcNow;
+            payment.UpdatedAt = DateTime.Now;
             
             // If marking as successful and it's not a card payment, set as cash
             if (status == 2 && (payment.PaymentMethod == null || payment.PaymentMethod == "card"))
@@ -357,9 +357,9 @@ namespace HIV_System_API_Services.Implements
                 PaymentMethod = "cash",
                 Notes = !string.IsNullOrEmpty(dto.Notes) ? dto.Notes : dto.Description,
                 PaymentStatus = 1, // Pending - waiting for staff confirmation
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                PaymentDate = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                PaymentDate = DateTime.Now,
                 PaymentIntentId = null // NO Stripe PaymentIntent for cash payments
             };
 
@@ -387,7 +387,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Yêu cầu thanh toán tiền mặt",
                     NotiMessage = notificationMessage,
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
 
                 await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, account.AccId);
