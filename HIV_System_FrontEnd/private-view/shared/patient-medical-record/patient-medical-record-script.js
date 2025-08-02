@@ -203,9 +203,9 @@ async function fetchAllServices() {
 function convertPaymentMethodToEnglish(vietnameseMethod) {
     const methodMap = {
         'Tiền mặt': 'cash',
-
+        'Thẻ tín dụng': 'card'
     };
-
+    
     return methodMap[vietnameseMethod] || vietnameseMethod.toLowerCase();
 }
 
@@ -217,7 +217,7 @@ async function createPayment(paymentData) {
         const isCashPayment = originalMethod === 'Tiền mặt' || originalMethod === 'cash';
         
         // Prepare request body with the new structure
-        const requestBody = {
+        let requestBody = {
             pmrId: paymentData.pmrId,
             srvId: paymentData.srvId,
             amount: paymentData.amount,
@@ -231,6 +231,11 @@ async function createPayment(paymentData) {
             ? 'https://localhost:7009/api/Payment/CreateCashPayment'
             : 'https://localhost:7009/api/Payment/CreatePayment';
         
+        // Add paymentMethod field for non-cash payments (CreatePayment API still requires it)
+        if (!isCashPayment) {
+            requestBody.paymentMethod = convertPaymentMethodToEnglish(originalMethod);
+        }
+        
         console.log('Creating payment:', {
             method: originalMethod,
             isCash: isCashPayment,
@@ -239,7 +244,6 @@ async function createPayment(paymentData) {
         });
         
         const response = await fetch(apiEndpoint, {
-
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,

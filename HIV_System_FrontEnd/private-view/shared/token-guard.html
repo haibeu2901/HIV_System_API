@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!-- Token Validation Guard - Include this in all private pages -->
+<script>
+(function() {
+    // Immediate token check - runs before page loads
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        window.location.href = '/public-view/landingpage.html';
+        return;
+    }
+    
+    // Validate token with API call
+    async function validateTokenAndRedirect() {
+        try {
+            const response = await fetch('https://localhost:7009/api/Account/View-profile', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    // Token invalid or expired
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('accId');
+                    localStorage.removeItem('userId');
+                    localStorage.removeItem('fullName');
+                    
+                    alert('Your session has expired. Please log in again.');
+                    window.location.href = '/public-view/landingpage.html';
+                }
+            }
+        } catch (error) {
+            console.error('Token validation error:', error);
+            // On network error, we'll be more lenient and not redirect
+        }
+    }
+    
+    // Run validation when page loads
+    document.addEventListener('DOMContentLoaded', validateTokenAndRedirect);
+    
+    // Also run immediately if DOM is already loaded
+    if (document.readyState === 'loading') {
+        // Document still loading, wait for DOMContentLoaded
+    } else {
+        // Document already loaded
+        validateTokenAndRedirect();
+    }
+})();
+</script>
