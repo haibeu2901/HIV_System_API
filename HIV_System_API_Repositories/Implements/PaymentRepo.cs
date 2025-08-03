@@ -50,5 +50,10 @@ namespace HIV_System_API_Repositories.Implements
         {
             return await PaymentDAO.Instance.UpdatePaymentStatusAsync(payId, status);
         }
+
+        public async Task<Payment> ConfirmCashPaymentAsync(int payId)
+        {
+            return await PaymentDAO.Instance.ConfirmCashPaymentAsync(payId);
+        }
     }
 }

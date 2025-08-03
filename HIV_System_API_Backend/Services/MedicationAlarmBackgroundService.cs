@@ -10,7 +10,6 @@ namespace HIV_System_API_Backend.Services
         private readonly ILogger<MedicationAlarmBackgroundService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // Check every minutes
-        private static readonly TimeZoneInfo VietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public MedicationAlarmBackgroundService(
             ILogger<MedicationAlarmBackgroundService> logger,
@@ -28,8 +27,7 @@ namespace HIV_System_API_Backend.Services
             {
                 try
                 {
-                    var vietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
-                    _logger.LogInformation("Processing medication alarms at: {time} (Vietnam time)", vietnamTime);
+                    _logger.LogInformation("Processing medication alarms at: {time}", DateTime.Now);
 
                     using (var scope = _serviceProvider.CreateScope())
                     {
@@ -37,12 +35,11 @@ namespace HIV_System_API_Backend.Services
                         await medicationAlarmService.ProcessMedicationAlarmsAsync();
                     }
 
-                    _logger.LogInformation("Medication alarms processed successfully at: {time} (Vietnam time)", vietnamTime);
+                    _logger.LogInformation("Medication alarms processed successfully at: {time}", DateTime.Now);
                 }
                 catch (Exception ex)
                 {
-                    var vietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
-                    _logger.LogError(ex, "An error occurred while processing medication alarms at: {time} (Vietnam time)", vietnamTime);
+                    _logger.LogError(ex, "An error occurred while processing medication alarms at: {time}", DateTime.Now);
                 }
 
                 // Wait for the next interval
