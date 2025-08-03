@@ -229,7 +229,7 @@ class ManagerDashboardManager {
         this.updateStatElement('total-appointments', data.monthlyAppointments);
         this.updateStatElement('pending-appointments', data.todayAppointments);
         this.updateStatElement('total-services', data.serviceUtilization ? data.serviceUtilization.length : 0);
-        this.updateStatElement('total-revenue', this.formatCurrency(data.monthlyRevenue));
+        this.updateStatElement('total-revenue', this.formatCurrency(data.totalRevenue));
         this.updateStatElement('monthly-revenue', this.formatCurrency(data.monthlyRevenue));
         
         // Update recent activity

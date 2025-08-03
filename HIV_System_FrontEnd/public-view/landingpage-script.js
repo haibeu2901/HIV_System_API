@@ -980,8 +980,71 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+// Authentication and Token Validation
+async function checkTokenAndRedirect() {
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+  
+  if (token) {
+    try {
+      // Validate token by making a test API call
+      const response = await fetch('https://localhost:7009/api/Account/View-profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Token is valid, redirect to appropriate dashboard
+        const roleInt = parseInt(userRole);
+        
+        switch (roleInt) {
+          case 1: // Admin
+            window.location.href = "../private-view/admin-view/admin-home/admin-home.html";
+            return;
+          case 2: // Doctor
+            window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
+            return;
+          case 3: // Patient
+            window.location.href = "../private-view/user-view/booking/appointment-booking.html";
+            return;
+          case 4: // Staff
+            window.location.href = "../private-view/staff-view/staff-dashboard/staff-dashboard.html";
+            return;
+          case 5: // Manager
+            window.location.href = "../private-view/manager-view/manager-home/manager-home.html";
+            return;
+          default:
+            console.warn('Unknown role:', userRole);
+            clearInvalidToken();
+        }
+      } else if (response.status === 401 || response.status === 403) {
+        // Token is invalid or expired
+        clearInvalidToken();
+      }
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      // If there's a network error, we'll clear the token to be safe
+      clearInvalidToken();
+    }
+  }
+}
+
+function clearInvalidToken() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('accId');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('fullName');
+}
+
 // Page Load Animation
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check token validity first
+  await checkTokenAndRedirect();
+  
   // Show page loader
   const pageLoader = showPageLoader();
   
@@ -1028,3 +1091,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1600); // Show after page loader
   }
 });
+
+// Add window focus event to check token validity when user returns to page
+window.addEventListener('focus', async function() {
+  await checkTokenAndRedirect();
+});
+
+// Add periodic token validation (every 5 minutes)
+setInterval(async function() {
+  await checkTokenAndRedirect();
+}, 5 * 60 * 1000); // 5 minutes
