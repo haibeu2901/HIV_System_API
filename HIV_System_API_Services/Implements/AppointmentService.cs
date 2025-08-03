@@ -876,18 +876,37 @@ namespace HIV_System_API_Services.Implements
                     appointment.ApmStatus = 4; // Set status to Cancelled
                     await _appointmentRepo.UpdateAppointmentByIdAsync(appointment.ApmId, appointment);
                     // Create notification for cancellation
-                    var notification = new Notification
+                    if (appointment.ApmStatus == 3)
                     {
-                        NotiType = "Hủy lịch hẹn",
-                        NotiMessage = $"Cuộc hẹn vào {appointment.ApmtDate:yyyy-MM-dd} lúc {appointment.ApmTime:HH:mm} đã bị hủy do quá hạn.",
-                        SendAt = DateTime.Now,
-                        NotificationAccounts = new List<NotificationAccount>
+                        var notification = new Notification
+                        {
+                            NotiType = "Hủy tái khám",
+                            NotiMessage = $"Lịch tái khám vào {appointment.ApmtDate:yyyy-MM-dd} lúc {appointment.ApmTime:HH:mm} đã bị hủy do quá hạn, vui lòng đặt lại lịch tái khám vào thời gian gần nhất.",
+                            SendAt = DateTime.Now,
+                            NotificationAccounts = new List<NotificationAccount>
                         {
                             new NotificationAccount { AccId = appointment.PtnId },
                             new NotificationAccount { AccId = appointment.DctId }
                         }
-                    };
-                    _context.Notifications.Add(notification);
+                        };
+                        _context.Notifications.Add(notification);
+                    }
+                    else
+                    {
+                        var notification = new Notification
+                        {
+                            NotiType = "Hủy lịch hẹn",
+                            NotiMessage = $"Cuộc hẹn vào {appointment.ApmtDate:yyyy-MM-dd} lúc {appointment.ApmTime:HH:mm} đã bị hủy do quá hạn.",
+                            SendAt = DateTime.Now,
+                            NotificationAccounts = new List<NotificationAccount>
+                        {
+                            new NotificationAccount { AccId = appointment.PtnId },
+                            new NotificationAccount { AccId = appointment.DctId }
+                        }
+                        };
+                        _context.Notifications.Add(notification);
+                    }
+
                 }
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
