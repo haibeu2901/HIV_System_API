@@ -335,3 +335,9 @@
 .filter-bar button:hover {
     background: #a02a1c;
 }
+.button-accept,
+.button-modify,
+.button-reject,
+.button-cancel {
+    display: none !important;
+}
