@@ -982,7 +982,7 @@ document.addEventListener('DOMContentLoaded', function() {
             appointmentDate: calendarDate.value,
             appointmentTime: selectedTimeSlot,
             degree: selectedDoctor.degree,
-            notes: `Appointment with Dr. ${selectedDoctor.fullname} (${selectedDoctor.degree})`
+            notes: `Cuộc hẹn với Bác sĩ ${selectedDoctor.fullname} (${selectedDoctor.degree})`
         };
         
         showConfirmationModal(bookingData);
