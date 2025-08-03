@@ -42,10 +42,8 @@ namespace HIV_System_API_DAOs.Implements
                 .Include(a => a.Ptn)
                     .ThenInclude(p => p.Acc)
                 .OrderByDescending(p => p.ApmId)
-                .OrderByDescending(a => a.RequestTime)
-                .ThenByDescending(a => a.RequestDate)
-                .ThenByDescending(a => a.ApmTime)
                 .ThenByDescending(a => a.ApmtDate)
+                .ThenByDescending(a => a.ApmTime)
                 .ToListAsync();
         }
 
@@ -73,6 +71,57 @@ namespace HIV_System_API_DAOs.Implements
                 ApmTime = createDto.AppointmentTime,
                 Notes = createDto.Notes,
                 ApmStatus = 2, // No longer pending, set to 2 (Confirmed)
+                RequestDate = createDto.AppointmentDate, // From DTO
+                RequestTime = createDto.AppointmentTime, // From DTO
+                RequestBy = accId // Set to the account ID
+            };
+
+            try
+            {
+                await _context.Appointments.AddAsync(appointment);
+                await _context.SaveChangesAsync();
+
+                // Return appointment with related entities loaded
+                var created = await _context.Appointments
+                    .Include(a => a.Dct)
+                        .ThenInclude(d => d.Acc)
+                    .Include(a => a.Ptn)
+                        .ThenInclude(p => p.Acc)
+                    .FirstOrDefaultAsync(a => a.ApmId == appointment.ApmId);
+
+                return created ?? throw new InvalidOperationException("Failed to retrieve created appointment.");
+            }
+            catch (DbUpdateException ex)
+            {
+                Debug.WriteLine($"Failed to create appointment: {ex.Message}, InnerException: {ex.InnerException?.Message}");
+                throw new InvalidOperationException("Failed to create appointment due to database error.", ex);
+            }
+        }
+
+        public async Task<Appointment> CreateRescheduleAppointmentAsync(CreateRescheduleAppointmentRequestDTO createDto, int accId)
+        {
+            if (createDto == null)
+                throw new ArgumentNullException(nameof(createDto), "Appointment cannot be null.");
+
+            // Ensure doctor exists
+            var doctor = await _context.Doctors.FindAsync(accId);
+            if (doctor == null)
+                throw new InvalidOperationException($"Doctor with ID {accId} not found.");
+
+            // Ensure patient exists (by account)
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.AccId == createDto.PatientId);
+            if (patient == null)
+                throw new InvalidOperationException($"Patient not found for account ID {createDto.PatientId}.");
+
+            // Create Appointment entity
+            var appointment = new Appointment
+            {
+                DctId = doctor.DctId,
+                PtnId = patient.PtnId,
+                ApmtDate = createDto.AppointmentDate,
+                ApmTime = createDto.AppointmentTime,
+                Notes = createDto.Notes,
+                ApmStatus = 3, // set to 3 (Rescheduled)
                 RequestDate = createDto.AppointmentDate, // From DTO
                 RequestTime = createDto.AppointmentTime, // From DTO
                 RequestBy = accId // Set to the account ID
@@ -258,10 +307,8 @@ namespace HIV_System_API_DAOs.Implements
 
                 return await query
                     .OrderByDescending(p => p.ApmId)
-                    .OrderByDescending(a => a.RequestTime)
-                    .ThenByDescending(a => a.RequestDate)
-                    .ThenByDescending(a => a.ApmTime)
                     .ThenByDescending(a => a.ApmtDate)
+                    .ThenByDescending(a => a.ApmTime)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -331,10 +378,8 @@ namespace HIV_System_API_DAOs.Implements
                     .ThenInclude(p => p.Acc)
                 .Where(a => a.Ptn.AccId == accId || a.Dct.AccId == accId)
                 .OrderByDescending(p => p.ApmId)
-                .OrderByDescending(a => a.RequestTime)
-                .ThenByDescending(a => a.RequestDate)
-                .ThenByDescending(a => a.ApmTime)
                 .ThenByDescending(a => a.ApmtDate)
+                .ThenByDescending(a => a.ApmTime)
                 .ToListAsync();
         }
     }

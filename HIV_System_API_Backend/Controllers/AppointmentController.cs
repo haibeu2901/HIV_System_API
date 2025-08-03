@@ -76,6 +76,45 @@ namespace HIV_System_API_Backend.Controllers
             }
         }
 
+        [HttpPost("CreateRescheduledAppointment")]
+        [Authorize]
+        public async Task<ActionResult> CreateRescheduledAppointment([FromBody] CreateRescheduleAppointmentRequestDTO dto)
+        {
+            if (dto == null)
+                return BadRequest("Appointment data is required.");
+
+            var accountId = ClaimsHelper.ExtractAccountIdFromClaims(User);
+            if (!accountId.HasValue)
+                return Unauthorized("Invalid user session.");
+
+            try
+            {
+                // Map AppointmentRequestDTO to CreateAppointmentDTO
+                var createDto = new CreateRescheduleAppointmentRequestDTO
+                {
+                    PatientId = dto.PatientId,
+                    AppointmentDate = dto.AppointmentDate,
+                    AppointmentTime = dto.AppointmentTime,
+                    Notes = dto.Notes
+                };
+
+                var createdAppointment = await _appointmentService.RescheduleAppointmentAsync(createDto, accountId.Value);
+                return CreatedAtAction(nameof(GetAppointmentById), new { id = createdAppointment.AppointmentId }, createdAppointment);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.InnerException}");
+            }
+        }
+
         [HttpDelete("DeleteAppointment/{id}")]
         [Authorize(Roles = "1")]
         public async Task<IActionResult> DeleteAppointmentByIdAsync(int id)
