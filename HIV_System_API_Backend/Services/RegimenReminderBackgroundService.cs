@@ -12,8 +12,10 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
-        private Timer _timer;
-        private readonly TimeSpan _dailyExecutionTime = new TimeSpan(0, 0, 0); // Midnight (00:00){
+        private Timer _reminderTimer;
+        private Timer _cancelAppointmentTimer;
+        private readonly TimeSpan _dailyExecutionTime = new TimeSpan(0, 0, 0); // Midnight (00:00)
+
         public RegimenReminderBackgroundService(
         IServiceProvider serviceProvider,
         ILogger<RegimenReminderBackgroundService> logger)
@@ -24,12 +26,12 @@ namespace HIV_System_API_Services.Implements
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Regimen Reminder Background Service is starting.");
-            ScheduleDailyTask(stoppingToken);
+            _logger.LogInformation("Background Services are starting.");
+            ScheduleDailyTasks(stoppingToken);
             return Task.CompletedTask;
         }
 
-        private void ScheduleDailyTask(CancellationToken stoppingToken)
+        private void ScheduleDailyTasks(CancellationToken stoppingToken)
         {
             var now = DateTime.Now;
             var nextRun = DateTime.Today.AddDays(1).Add(_dailyExecutionTime);
@@ -40,12 +42,44 @@ namespace HIV_System_API_Services.Implements
             }
 
             var timeToNextRun = nextRun - now;
-            _logger.LogInformation($"Next regimen reminder scheduled for {nextRun:yyyy-MM-dd HH:mm:ss}.");
-            _timer = new Timer(
+            _logger.LogInformation($"Next tasks scheduled for {nextRun:yyyy-MM-dd HH:mm:ss}.");
+
+            // Timer cho reminder phác đồ
+            _reminderTimer = new Timer(
                 async state => await ExecuteReminderTaskAsync(stoppingToken),
                 null,
                 timeToNextRun,
                 Timeout.InfiniteTimeSpan);
+
+            // Timer cho hủy cuộc hẹn
+            _cancelAppointmentTimer = new Timer(
+                async state => await ExecuteDailyTasksAsync(stoppingToken),
+                null,
+                timeToNextRun,
+                Timeout.InfiniteTimeSpan);
+        }
+
+        private async Task ExecuteDailyTasksAsync(CancellationToken stoppingToken)
+        {
+            try
+            {
+                // Thực hiện cả hai tác vụ
+                await Task.WhenAll(
+                    ExecuteReminderTaskAsync(stoppingToken),
+                    CancelPastDateAppointmentsAsync(stoppingToken)
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing daily tasks.");
+            }
+            finally
+            {
+                if (!stoppingToken.IsCancellationRequested)
+                {
+                    ScheduleDailyTasks(stoppingToken);
+                }
+            }
         }
 
         private async Task ExecuteReminderTaskAsync(CancellationToken stoppingToken)
@@ -64,19 +98,31 @@ namespace HIV_System_API_Services.Implements
             {
                 _logger.LogError(ex, "Error executing regimen reminder task.");
             }
-            finally
+        }
+
+        private async Task CancelPastDateAppointmentsAsync(CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Executing cancel past date appointments task at {Time}.", DateTime.Now);
+            try
             {
-                if (!stoppingToken.IsCancellationRequested)
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    ScheduleDailyTask(stoppingToken);
+                    var appointmentService = scope.ServiceProvider.GetRequiredService<IAppointmentService>();
+                    await appointmentService.CancelPastDateAppointmentsAsync();
+                    _logger.LogInformation("Successfully cancelled past date appointments.");
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing cancel past date appointments task.");
             }
         }
 
         public override void Dispose()
         {
-            _logger.LogInformation("Regimen Reminder Background Service is disposing.");
-            _timer?.Dispose();
+            _logger.LogInformation("Background Services are disposing.");
+            _reminderTimer?.Dispose();
+            _cancelAppointmentTimer?.Dispose();
             base.Dispose();
         }
     }
