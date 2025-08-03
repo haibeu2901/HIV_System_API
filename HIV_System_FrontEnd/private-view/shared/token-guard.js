@@ -2,6 +2,15 @@
 (function() {
     'use strict';
     
+    // IMMEDIATE SECURITY CHECK - Run before anything else
+    const immediateToken = localStorage.getItem('token');
+    if (!immediateToken) {
+        console.log('SECURITY: No token found, immediate redirect to login');
+        alert('You need to be logged in to access this page.');
+        window.location.href = '/public-view/landingpage.html';
+        return; // Stop execution
+    }
+    
     // Configuration
     const CONFIG = {
         API_BASE_URL: 'https://localhost:7009',
@@ -13,7 +22,7 @@
         const token = localStorage.getItem('token');
         if (!token) {
             console.log('No token found, redirecting to login...');
-            window.location.href = CONFIG.LOGIN_PAGE;
+            redirectToLogin('You need to be logged in to access this page.');
             return false;
         }
         return true;
@@ -24,6 +33,8 @@
         const token = localStorage.getItem('token');
         
         if (!token) {
+            console.log('No token found during validation, redirecting to login...');
+            redirectToLogin('You need to be logged in to access this page.');
             return false;
         }
         
@@ -38,15 +49,22 @@
             
             if (response.status === 401 || response.status === 403) {
                 console.log('Token invalid or expired, clearing auth data...');
-                clearAuthData();
+                redirectToLogin('Your session has expired. Please log in again.');
                 return false;
             }
             
-            return response.ok;
+            if (!response.ok) {
+                console.log('Token validation failed with status:', response.status);
+                redirectToLogin('Authentication failed. Please log in again.');
+                return false;
+            }
+            
+            return true;
         } catch (error) {
             console.error('Token validation failed:', error);
-            // On network error, assume token is valid to avoid unnecessary redirects
-            return true;
+            // On network error, redirect to be safe - no access without valid token
+            redirectToLogin('Unable to verify your session. Please log in again.');
+            return false;
         }
     }
     
@@ -68,16 +86,14 @@
     
     // Main validation function
     async function performTokenValidation() {
-        // First check if token exists
+        // First check if token exists - if not, immediate redirect
         if (!checkTokenExistence()) {
-            return;
+            return; // Already redirected
         }
         
-        // Then validate token with API
+        // If token exists, validate it with API
         const isValid = await validateToken();
-        if (!isValid) {
-            redirectToLogin();
-        }
+        // validateToken now handles its own redirects, so we don't need additional logic here
     }
     
     // Run validation immediately if DOM is already loaded
@@ -94,11 +110,25 @@
         }
     });
     
+    // Periodic token validation (every 2 minutes)
+    setInterval(function() {
+        performTokenValidation();
+    }, 2 * 60 * 1000); // 2 minutes
+    
+    // Also check when user interacts with the page
+    document.addEventListener('click', function() {
+        // Only check occasionally to avoid too many API calls
+        if (Math.random() < 0.1) { // 10% chance on each click
+            performTokenValidation();
+        }
+    });
+    
     // Export functions for external use
     window.TokenGuard = {
         validateToken: validateToken,
         redirectToLogin: redirectToLogin,
-        clearAuthData: clearAuthData
+        clearAuthData: clearAuthData,
+        performTokenValidation: performTokenValidation
     };
     
 })();
