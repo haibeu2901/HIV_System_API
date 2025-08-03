@@ -539,38 +539,45 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Fetched schedules:', schedules);
             console.log('Looking for schedule on date:', date); // Debug log
             
-            // Find the schedule for the selected date
-            const schedule = schedules.find(s => {
+            // Find ALL schedules for the selected date (not just the first one)
+            const daySchedules = schedules.filter(s => {
                 console.log('Comparing:', s.workDate, 'with', date); // Debug log
-                return s.workDate === date;
+                return s.workDate === date && s.isAvailable;
             });
             
-            console.log('Found schedule:', schedule); // Debug log
+            console.log('Found schedules for the day:', daySchedules); // Debug log
             
             doctorTimeSlotGrid.innerHTML = '';
             
-            if (!schedule) {
+            if (!daySchedules || daySchedules.length === 0) {
                 doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Không có lịch làm việc cho ngày này.</div>';
                 confirmDoctorBookingBtn.style.display = 'none';
                 return;
             }
             
-            if (!schedule.isAvailable) {
-                doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Bác sĩ không làm việc vào ngày này.</div>';
-                confirmDoctorBookingBtn.style.display = 'none';
-                return;
-            }
+            // Combine all time slots from all schedules for this day
+            let allDayTimeSlots = [];
             
-            // Generate time slots
-            const startTime = schedule.startTime.substring(0, 5);
-            const endTime = schedule.endTime.substring(0, 5);
-            const allTimeSlots = generateTimeSlotsBetween(startTime, endTime);
+            daySchedules.forEach(schedule => {
+                console.log(`Processing schedule: ${schedule.startTime} - ${schedule.endTime}`);
+                const startTime = schedule.startTime.substring(0, 5);
+                const endTime = schedule.endTime.substring(0, 5);
+                const scheduleTimeSlots = generateTimeSlotsBetween(startTime, endTime);
+                allDayTimeSlots = allDayTimeSlots.concat(scheduleTimeSlots);
+            });
+            
+            console.log('All time slots for the day:', allDayTimeSlots);
+            
+            // Remove duplicates and sort
+            allDayTimeSlots = [...new Set(allDayTimeSlots)].sort();
             
             // ✨ FIX: Use the exact date passed to function, not the input value
-            const timeSlots = filterFutureTimeSlots(allTimeSlots, date);
+            const timeSlots = filterFutureTimeSlots(allDayTimeSlots, date);
+            
+            console.log('Available time slots after filtering:', timeSlots);
             
             if (timeSlots.length === 0) {
-                if (allTimeSlots.length === 0) {
+                if (allDayTimeSlots.length === 0) {
                     doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Không có khung giờ trống cho ngày này.</div>';
                 } else {
                     doctorTimeSlotGrid.innerHTML = '<div class="no-doctors">Không còn khung giờ trống cho hôm nay.</div>';

@@ -1,3 +1,52 @@
+// IMMEDIATE SECURITY CHECK - Debug logging
+console.log('=== PATIENT MEDICAL RECORD SECURITY CHECK ===');
+console.log('Page URL:', window.location.href);
+console.log('Token exists:', !!localStorage.getItem('token'));
+console.log('User role:', localStorage.getItem('userRole'));
+console.log('Current path:', window.location.pathname);
+
+// Additional security check for this specific page
+(function() {
+    'use strict';
+    
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    const currentPath = window.location.pathname;
+    
+    console.log('=== IMMEDIATE SECURITY VALIDATION ===');
+    console.log('Token present:', !!token);
+    console.log('Role present:', !!userRole);
+    
+    if (!token) {
+        console.log('BLOCKING: No token found');
+        alert('Authentication required. Redirecting to login page.');
+        window.location.href = '/public-view/landingpage.html?reason=Authentication%20required';
+        return;
+    }
+    
+    if (!userRole) {
+        console.log('BLOCKING: No role found');
+        alert('Invalid session. Redirecting to login page.');
+        localStorage.clear();
+        window.location.href = '/public-view/landingpage.html?reason=Invalid%20session';
+        return;
+    }
+    
+    // Check role access for shared components
+    const roleInt = parseInt(userRole);
+    const validRoles = [1, 2, 3, 4, 5]; // All roles can access shared components
+    
+    if (!validRoles.includes(roleInt)) {
+        console.log('BLOCKING: Invalid role', roleInt);
+        alert('Invalid user role. Redirecting to login page.');
+        localStorage.clear();
+        window.location.href = '/public-view/landingpage.html?reason=Invalid%20user%20role';
+        return;
+    }
+    
+    console.log('SECURITY CHECK PASSED for role:', roleInt);
+})();
+
 // Get token from localStorage
 const token = localStorage.getItem('token');
 

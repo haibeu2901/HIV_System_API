@@ -2,7 +2,6 @@
 <html lang="vi">
 
 <head>
-    <!-- UNIVERSAL SECURITY PROTECTION -->    <script src="../universal-security.js"></script>
     <meta charset="UTF-8">
     <title>Danh sách thanh toán</title>
     <link rel="stylesheet" href="view-payment-style.css">
