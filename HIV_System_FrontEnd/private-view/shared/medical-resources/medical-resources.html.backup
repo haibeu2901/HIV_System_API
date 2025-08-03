@@ -1,31 +1,25 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <!-- UNIVERSAL SECURITY PROTECTION -->    <script src="../universal-security.js"></script>
     <meta charset="UTF-8">
-    <title>Lịch làm việc của bác sĩ</title>
-    <link rel="stylesheet" href="doctor-work-schedule-style.css">
+    <title>Kho y tế</title>
+    <link rel="stylesheet" href="medical-resources-style.css">
     <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
 </head>
 <body>
     <div id="header-placeholder"></div>
-    <!-- Main Content -->
     <div class="dashboard-container" style="padding-top: 5px;">
         <main class="main-content">
-            <div class="dashboard-header" id="dashboardHeader">Lịch làm việc</div>
-            <div class="dashboard-section" id="dashboardSection">
-                <div style="margin-bottom: 16px;">
-                    <label for="weekSelector"><strong>Chọn tuần:</strong></label>
-                    <select id="weekSelector"></select>
-                </div>
-                <div id="scheduleTableContainer"></div>
+            <div class="dashboard-header">Kho y tế</div>
+            <div class="dashboard-section" id="medicalResourcesSection">
+                <!-- Nội dung tài nguyên y tế sẽ được hiển thị ở đây -->
             </div>
         </main>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
     <script src="/private-view/shared/role-config.js"></script>
     <script src="/private-view/shared/header/header-script.js"></script>
-    <script src="doctor-work-schedule-script.js"></script>
+    <script src="medical-resources-script.js"></script>
     <footer class="footer">
       <div class="container">
         <div class="footer-content">

@@ -1,0 +1,68 @@
+<!-- header.html -->
+<header class="header">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>Phòng khám HIV CareFirst</span>
+            </div>
+            <ul class="nav-menu">
+                <li>
+                    <button class="btn-home" onclick="window.location.href='../services/services.html'">
+                        <i class="fas fa-home"></i> Trang chủ
+                    </button>
+                </li>
+                <li>
+                    <button class="btn-services" onclick="window.location.href='../booking/appointment-booking.html'">
+                        <i class="fas fa-stethoscope"></i> Đặt Lịch
+                    </button>
+                </li>
+                <li class="notification-bell-container">
+                    <button class="btn-medication" id="medicationAlarmBell" type="button">
+                        <i class="fas fa-pills"></i>
+                        <span class="medication-count-badge" id="medication-count" style="display: none;">0</span>
+                    </button>
+                </li>
+                <li class="notification-bell-container">
+                    <button class="btn-notification" id="notificationBell" type="button">
+                        <i class="fas fa-bell"></i>
+                        <span class="unread-count-badge" id="unread-count" style="display: none;">0</span>
+                    </button>
+                </li>
+                <li class="dropdown" id="viewDropdown">
+                    <button class="btn-view" id="viewDropdownBtn" type="button">
+                        <i class="fas fa-user"></i> Xem <i class="fas fa-caret-down"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="../profile/profile.html"><i class="fas fa-id-card"></i> Hồ sơ</a>
+                        <a href="../appointment-view/view-appointment.html"><i class="fas fa-calendar-check"></i> Lịch hẹn</a>
+                        <a href="../view-doctor/allDoctor.html"><i class="fas fa-user-md"></i> Tất cả bác sĩ</a>
+                        <a href="../medical-record/view-medical-record.html"><i class="fas fa-notes-medical"></i> Hồ sơ y tế</a>
+                        <a href="../services/services.html"><i class="fas fa-stethoscope"></i> Dịch vụ y tế</a>
+                        <a href="../notification/notification.html"><i class="fas fa-bell"></i> Thông báo</a>
+                    </div>
+                </li>
+                
+                <li>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </button>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Medication Alarm Popup -->
+<div id="medication-alarm-popup" class="medication-popup hidden">
+    <div class="medication-popup-header">
+        <span>Nhắc uống thuốc</span>
+        <button id="closeMedicationAlarmPopup" aria-label="Đóng nhắc uống thuốc"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="popup-medication-alarm-list"></div>
+</div>

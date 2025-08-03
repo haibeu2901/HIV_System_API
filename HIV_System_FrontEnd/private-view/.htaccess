@@ -1,0 +1,20 @@
+# Security Configuration for Private View
+# This configuration ensures all private pages are protected
+
+# For Apache (.htaccess) - Place this in the private-view directory
+<Files "*.html">
+    # Add security headers
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Force security script inclusion via content modification
+    # This requires mod_substitute to be enabled
+    AddOutputFilter SUBSTITUTE html
+    Substitute "s|<head>|<head><script src=\"/private-view/universal-security.js\"></script>|ni"
+</Files>
+
+# Alternative: Use URL rewriting to inject security
+RewriteEngine On
+RewriteCond %{REQUEST_URI} ^/private-view/.*\.html$
+RewriteRule ^(.*)$ /private-view/security-wrapper.php?page=$1 [L]
