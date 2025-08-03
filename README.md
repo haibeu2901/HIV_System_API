@@ -256,7 +256,7 @@ The system is designed for extensibility, security, and compliance with healthca
 - `dotnet ef database update`
 
 5. **Run the API:**
-- `dotnet run --project HIV_System_API_Backen`
+- `dotnet run --project HIV_System_API_Backend`
 
 ---
 

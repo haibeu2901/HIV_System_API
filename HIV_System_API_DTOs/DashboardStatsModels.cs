@@ -65,6 +65,7 @@ namespace HIV_System_API_DTOs
         public int TodayAppointments { get; set; }
         public int MonthlyAppointments { get; set; }
         public int PendingTests { get; set; }
+        public decimal TotalRevenue { get; set; }
         public decimal MonthlyRevenue { get; set; }
         public List<dynamic> DoctorPerformance { get; set; }
         public List<dynamic> StaffPerformance { get; set; }

@@ -8,7 +8,7 @@ let allTestResults = [];
 const appointmentStatusMap = {
     1: 'Chờ xác nhận',
     2: 'Đã lên lịch',
-    3: 'Đã lên lịch lại',
+    3: 'Tái khám',
     4: 'Đã hủy',
     5: 'Đã hoàn thành'
 };
@@ -271,14 +271,81 @@ function renderPaymentHistory(payments) {
     if (!payments || payments.length === 0) {
         section.innerHTML = `
             <div class="empty-state">
-<i class="fas fa-credit-card"></i>
+                <i class="fas fa-credit-card"></i>
                 <p>Không tìm thấy lịch sử giao dịch cho bệnh nhân này.</p>
+                ${window.isStaff ? `
+                    <button id="createPaymentBtn" class="primary-btn" style="margin-top: 15px;">
+                        <i class="fas fa-plus"></i> Tạo thanh toán mới
+                    </button>
+                ` : ''}
             </div>
         `;
+        
+        // Add event listener for create payment button
+        if (window.isStaff) {
+            const createBtn = document.getElementById('createPaymentBtn');
+            if (createBtn) {
+                createBtn.onclick = openCreatePaymentModal;
+            }
+        }
         return;
     }
 
+    // Calculate total amount for all payments
+    const totalAmount = payments.reduce((sum, payment) => {
+        // Only count successful payments (status = 2)
+        if (payment.paymentStatus === 2) {
+            return sum + (payment.amount || 0);
+        }
+        return sum;
+    }, 0);
+
+    // Calculate total by status
+    const totalPending = payments.filter(p => p.paymentStatus === 1).reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalCompleted = payments.filter(p => p.paymentStatus === 2).reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalFailed = payments.filter(p => p.paymentStatus === 3).reduce((sum, p) => sum + (p.amount || 0), 0);
+
     let html = `
+        ${window.isStaff ? `
+            <div style="margin-bottom: 15px; text-align: right;">
+                <button id="createPaymentBtn" class="primary-btn">
+                    <i class="fas fa-plus"></i> Tạo thanh toán mới
+                </button>
+            </div>
+        ` : ''}
+        
+        <!-- Payment Summary Section -->
+        <div class="payment-summary-container" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-chart-pie"></i> Tổng quan thanh toán
+            </h3>
+            <div class="payment-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="summary-item" style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 6px; text-align: center;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Tổng số giao dịch</div>
+                    <div style="font-size: 1.5em; font-weight: bold;">${payments.length}</div>
+                </div>
+                <div class="summary-item" style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 6px; text-align: center;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Đang chờ</div>
+                    <div style="font-size: 1.2em; font-weight: bold; color: #ffc107;">${formatCurrency(totalPending)} VND</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">(${payments.filter(p => p.paymentStatus === 1).length} giao dịch)</div>
+                </div>
+                <div class="summary-item" style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 6px; text-align: center;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Đã thanh toán</div>
+                    <div style="font-size: 1.2em; font-weight: bold; color: #28a745;">${formatCurrency(totalCompleted)} VND</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">(${payments.filter(p => p.paymentStatus === 2).length} giao dịch)</div>
+                </div>
+                <div class="summary-item" style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 6px; text-align: center;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Thất bại</div>
+                    <div style="font-size: 1.2em; font-weight: bold; color: #dc3545;">${formatCurrency(totalFailed)} VND</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">(${payments.filter(p => p.paymentStatus === 3).length} giao dịch)</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                <div style="font-size: 0.9em; opacity: 0.9;">Tổng tiền đã thu</div>
+                <div style="font-size: 2em; font-weight: bold; color: #fff;">${formatCurrency(totalAmount)} VND</div>
+            </div>
+        </div>
+        
         <style>
             .payment-status-1 {
                 background-color: #ffc107;
@@ -401,6 +468,14 @@ function renderPaymentHistory(payments) {
         </table>
     `;
     section.innerHTML = html;
+    
+    // Add event listener for create payment button
+    if (window.isStaff) {
+        const createBtn = document.getElementById('createPaymentBtn');
+        if (createBtn) {
+            createBtn.onclick = openCreatePaymentModal;
+        }
+    }
 }
 
 // Function to complete cash payment
@@ -454,6 +529,369 @@ async function completeCashPayment(paymentId, button) {
 
 // Make function globally available
 window.completeCashPayment = completeCashPayment;
+
+// Global variable to store available services
+let availableServices = [];
+
+// Open create payment modal
+async function openCreatePaymentModal() {
+    if (!window.pmrId) {
+        alert('Không tìm thấy hồ sơ y tế của bệnh nhân.');
+        return;
+    }
+    
+    // Load services if not already loaded
+    if (availableServices.length === 0) {
+        availableServices = await fetchAllServices();
+    }
+    
+    // Create modal if it doesn't exist
+    createPaymentModalIfNotExists();
+    
+    // Reset form and show modal
+    resetCreatePaymentForm();
+    document.getElementById('createPaymentModal').style.display = 'block';
+}
+
+// Create payment modal HTML
+function createPaymentModalIfNotExists() {
+    if (document.getElementById('createPaymentModal')) return;
+    
+    const modalHtml = `
+    <div id="createPaymentModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-credit-card"></i> Tạo thanh toán mới</h2>
+                <span class="close" id="closeCreatePaymentModal">&times;</span>
+            </div>
+            <form id="createPaymentForm">
+                <div class="form-group">
+                    <label for="paymentService">Dịch vụ <span style="color:red">*</span></label>
+                    <select id="paymentService" required>
+                        <option value="">Chọn dịch vụ</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="paymentAmount">Số tiền (VND) <span style="color:red">*</span></label>
+                    <input type="number" id="paymentAmount" min="1000" step="1000" required readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="paymentMethod">Phương thức thanh toán <span style="color:red">*</span></label>
+                    <select id="paymentMethod" required>
+                        <option value="">Chọn phương thức</option>
+                        <option value="Tiền mặt">Tiền mặt</option>
+                        <option value="Thẻ tín dụng">Thẻ tín dụng</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="paymentDescription">Mô tả</label>
+                    <textarea id="paymentDescription" rows="3" placeholder="Mô tả chi tiết về thanh toán (tùy chọn)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="paymentNotes">Ghi chú</label>
+                    <textarea id="paymentNotes" rows="2" placeholder="Ghi chú thêm (tùy chọn)"></textarea>
+                </div>
+                
+                <div id="createPaymentMessage" class="message"></div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancelCreatePayment" class="secondary-btn">Hủy</button>
+                    <button type="submit" class="primary-btn">
+                        <i class="fas fa-save"></i> Tạo thanh toán
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <style>
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #f1c40f;
+        }
+        
+        .modal-content form {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .primary-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .primary-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .secondary-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .secondary-btn:hover {
+            background: #5a6268;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+    </style>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Add event listeners
+    document.getElementById('closeCreatePaymentModal').onclick = closeCreatePaymentModal;
+    document.getElementById('cancelCreatePayment').onclick = closeCreatePaymentModal;
+    document.getElementById('createPaymentForm').onsubmit = handleCreatePaymentSubmit;
+    
+    // Service selection change handler
+    document.getElementById('paymentService').onchange = function() {
+        const serviceId = this.value;
+        const service = availableServices.find(s => s.srvId == serviceId);
+        const amountField = document.getElementById('paymentAmount');
+        const descriptionField = document.getElementById('paymentDescription');
+        
+        if (service) {
+            amountField.value = service.price;
+            if (!descriptionField.value) {
+                descriptionField.value = `Thanh toán cho dịch vụ: ${service.serviceName}`;
+            }
+        } else {
+            amountField.value = '';
+        }
+    };
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('createPaymentModal');
+        if (event.target === modal) {
+            closeCreatePaymentModal();
+        }
+    };
+}
+
+// Reset create payment form
+function resetCreatePaymentForm() {
+    const form = document.getElementById('createPaymentForm');
+    if (form) {
+        form.reset();
+        
+        // Populate services dropdown
+        const serviceSelect = document.getElementById('paymentService');
+        serviceSelect.innerHTML = '<option value="">Chọn dịch vụ</option>';
+        
+        availableServices.forEach(service => {
+            const option = document.createElement('option');
+            option.value = service.srvId;
+            option.textContent = `${service.serviceName} - ${formatCurrency(service.price)} VND`;
+            serviceSelect.appendChild(option);
+        });
+        
+        // Clear message
+        const messageDiv = document.getElementById('createPaymentMessage');
+        messageDiv.style.display = 'none';
+        messageDiv.className = 'message';
+        messageDiv.textContent = '';
+    }
+}
+
+// Close create payment modal
+function closeCreatePaymentModal() {
+    const modal = document.getElementById('createPaymentModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Handle create payment form submission
+async function handleCreatePaymentSubmit(event) {
+    event.preventDefault();
+    
+    const messageDiv = document.getElementById('createPaymentMessage');
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    try {
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo...';
+        submitBtn.disabled = true;
+        
+        // Collect form data
+        const serviceId = document.getElementById('paymentService').value;
+        const amount = parseInt(document.getElementById('paymentAmount').value);
+        const paymentMethod = document.getElementById('paymentMethod').value;
+        const description = document.getElementById('paymentDescription').value.trim();
+        const notes = document.getElementById('paymentNotes').value.trim();
+        
+        // Validation
+        if (!serviceId || !amount || !paymentMethod) {
+            throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc.');
+        }
+        
+        if (amount < 1000) {
+            throw new Error('Số tiền phải ít nhất 1,000 VND.');
+        }
+        
+        // Prepare payment data
+        const paymentData = {
+            pmrId: window.pmrId,
+            srvId: parseInt(serviceId),
+            amount: amount,
+            currency: 'VND',
+            paymentMethod: paymentMethod,
+            description: description || `Thanh toán cho dịch vụ`,
+            notes: notes || description || `Thanh toán cho dịch vụ`
+        };
+        
+        console.log('Creating payment:', paymentData);
+        
+        // Create payment
+        const result = await createPayment(paymentData);
+        
+        // Show success message
+        messageDiv.className = 'message success';
+        messageDiv.textContent = 'Tạo thanh toán thành công!';
+        messageDiv.style.display = 'block';
+        
+        // Close modal after short delay and reload data
+        setTimeout(async () => {
+            closeCreatePaymentModal();
+            await loadPatientData();
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Error creating payment:', error);
+        
+        // Show error message
+        messageDiv.className = 'message error';
+        messageDiv.textContent = error.message || 'Có lỗi xảy ra khi tạo thanh toán.';
+        messageDiv.style.display = 'block';
+        
+        // Restore button state
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Make functions globally available
+window.openCreatePaymentModal = openCreatePaymentModal;
+window.closeCreatePaymentModal = closeCreatePaymentModal;
 
 // Function to format payment method display text
 function formatPaymentMethod(method) {
@@ -1821,6 +2259,16 @@ async function loadPatientData() {
             }
 
         }
+        
+        // Load services for payment creation if user is staff
+        if (window.isStaff && availableServices.length === 0) {
+            try {
+                availableServices = await fetchAllServices();
+                console.log('Services loaded for payment creation:', availableServices.length);
+            } catch (error) {
+                console.error('Error loading services:', error);
+            }
+        }
     } catch (error) {
         console.error('Error loading patient data:', error);
         document.body.innerHTML = `
@@ -2152,4 +2600,130 @@ function getVietnamToday() {
     const diff = vietnamOffset + localOffset;
     const vietnamDate = new Date(now.getTime() + diff * 60 * 1000);
     return vietnamDate.toISOString().slice(0, 10);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.isDoctor) {
+        const container = document.getElementById('createAppointmentContainer');
+        if (container) container.style.display = '';
+    }
+    const btn = document.getElementById('openCreateAppointmentBtn');
+});
+// ...existing code...
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Hiển thị modal khi bấm nút
+    const openBtn = document.getElementById('openCreateAppointmentBtn');
+    const modal = document.getElementById('createRescheduleAppointmentModal');
+    const closeBtn = document.getElementById('closeCreateRescheduleAppointmentModal');
+    const cancelBtn = document.getElementById('cancelCreateRescheduleAppointmentBtn');
+    const form = document.getElementById('createRescheduleAppointmentForm');
+    const msgDiv = document.getElementById('createRescheduleAppointmentMsg');
+    const dateInput = document.getElementById('rescheduleAppointmentDate');
+
+    // Gọi loadAvailableRescheduleTimes khi mở modal
+    if (openBtn && modal) openBtn.onclick = async () => {
+        msgDiv.textContent = '';
+        form.reset();
+        // Set ngày mặc định là hôm nay
+        dateInput.value = getVietnamToday();
+        // Load khung giờ cho ngày hôm nay
+        await loadAvailableRescheduleTimes(dateInput.value);
+        modal.style.display = 'block';
+    };
+
+    // Gọi lại khi đổi ngày
+    if (dateInput) {
+        dateInput.addEventListener('change', function() {
+            loadAvailableRescheduleTimes(this.value);
+        });
+    }
+
+    if (closeBtn && modal) closeBtn.onclick = () => { modal.style.display = 'none'; };
+    if (cancelBtn && modal) cancelBtn.onclick = () => { modal.style.display = 'none'; };
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    // Xử lý submit
+    if (form) form.onsubmit = async function(e) {
+        e.preventDefault();
+        msgDiv.textContent = '';
+        const date = document.getElementById('rescheduleAppointmentDate').value;
+        const time = document.getElementById('rescheduleAppointmentTime').value;
+        const notes = document.getElementById('rescheduleAppointmentNotes').value.trim();
+        const patientId = getPatientIdFromUrl();
+
+        if (!patientId || !date || !time) {
+            msgDiv.textContent = 'Vui lòng nhập đầy đủ ngày, giờ.';
+            return;
+        }
+
+        try {
+            const res = await fetch('https://localhost:7009/api/Appointment/CreateRescheduledAppointment', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    patientId: Number(patientId),
+                    appointmentDate: date,
+                    appointmentTime: time + ':00',
+                    notes: notes
+                })
+            });
+            if (!res.ok) {
+                let errMsg = 'Tạo lịch tái khám thất bại.';
+                try { errMsg += ' ' + await res.text(); } catch {}
+                msgDiv.textContent = errMsg;
+                return;
+            }
+            modal.style.display = 'none';
+            alert('Tạo lịch tái khám thành công!');
+            if (typeof loadPatientData === 'function') loadPatientData();
+        } catch (err) {
+            msgDiv.textContent = 'Lỗi khi tạo lịch tái khám.';
+        }
+    };
+});
+
+async function loadAvailableRescheduleTimes(date) {
+    const timeSelect = document.getElementById('rescheduleAppointmentTime');
+    timeSelect.innerHTML = '<option value="">Đang tải...</option>';
+    try {
+        const res = await fetch('https://localhost:7009/api/DoctorWorkSchedule/GetPersonalWorkSchedules', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const schedules = await res.json();
+        // Lọc các ca làm việc khả dụng cho ngày đã chọn
+        const slots = (schedules || []).filter(s => s.workDate === date && s.isAvailable);
+        let options = [];
+        slots.forEach(s => {
+            let start = s.startTime.slice(0, 5); // "HH:mm"
+            let end = s.endTime.slice(0, 5);
+            let [sh, sm] = start.split(':').map(Number);
+            let [eh, em] = end.split(':').map(Number);
+            let current = new Date(0, 0, 0, sh, sm);
+            let endTime = new Date(0, 0, 0, eh, em);
+
+            // Tạo các slot 1 tiếng, chỉ hiển thị HH:mm
+            while (current.getTime() + 45 * 60 * 1000 <= endTime.getTime()) {
+                let h = current.getHours().toString().padStart(2, '0');
+                let m = current.getMinutes().toString().padStart(2, '0');
+                let slotStart = `${h}:${m}`;
+                options.push(slotStart);
+                // Nhảy sang slot tiếp theo (45 phút + 15 phút nghỉ)
+                current = new Date(current.getTime() + (45 + 15) * 60 * 1000);
+            }
+        });
+        options = Array.from(new Set(options));
+        if (options.length > 0) {
+            timeSelect.innerHTML = '<option value="">Chọn giờ...</option>' +
+                options.map(t => `<option value="${t}">${t}</option>`).join('');
+        } else {
+            timeSelect.innerHTML = '<option value="">Không có khung giờ khả dụng</option>';
+        }
+    } catch (e) {
+        timeSelect.innerHTML = '<option value="">Lỗi tải khung giờ</option>';
+    }
 }

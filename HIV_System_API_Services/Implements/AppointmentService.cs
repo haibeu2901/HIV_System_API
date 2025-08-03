@@ -206,6 +206,158 @@ namespace HIV_System_API_Services.Implements
                         $"Bác sĩ có một cuộc hẹn trùng lặp vào thời điểm này."
                     );
                 }
+
+                if (request.ApmtDate != default(DateOnly) && request.ApmTime != default(TimeOnly))
+                {
+                    var requestedDate = request.ApmtDate;
+                    int diff = (dayOfWeek == 0 ? 7 : dayOfWeek) - 1;
+                    var weekStart = requestedDate.AddDays(-diff);
+                    var weekEnd = weekStart.AddDays(6);
+
+                    // Count patient's appointments in the same week (excluding cancelled/completed and the current appointment if updating)
+                    var patientAppointmentsThisWeek = await _context.Appointments
+                        .Where(a => a.PtnId == request.PatientId
+                            && a.ApmtDate.HasValue
+                            && a.ApmtDate.Value >= weekStart
+                            && a.ApmtDate.Value <= weekEnd
+                            && a.ApmStatus != 4 && a.ApmStatus != 5 // 4 = Cancelled, 5 = Completed
+                            && (!apmId.HasValue || a.ApmId != apmId.Value))
+                        .CountAsync();
+
+                    if (patientAppointmentsThisWeek >= 3)
+                    {
+                        throw new InvalidOperationException("Bệnh nhân không được đặt quá 3 cuộc hẹn trong cùng một tuần.");
+                    }
+                }
+            }
+        }
+
+        private async Task ValidateRescheduledAppointmentAsync(AppointmentRequestDTO request, bool validateStatus, int? apmId = null)
+        {
+            // Validate PatientId
+            if (!await _context.Patients.AnyAsync(p => p.PtnId == request.PatientId))
+                throw new ArgumentException("Bệnh nhân không tồn tại.");
+
+            // Validate DoctorId
+            if (!await _context.Doctors.AnyAsync(d => d.DctId == request.DoctorId))
+                throw new ArgumentException("Bác sĩ không tồn tại.");
+
+            // Validate ApmStatus (only for updates)
+            if (validateStatus && (request.ApmStatus < 1 || request.ApmStatus > 5))
+                throw new ArgumentException("Trạng thái cuộc hẹn không hợp lệ. Phải nằm trong khoảng từ 1 đến 5.");
+
+            // Only validate date/time constraints if both ApmtDate and ApmTime are provided
+            if (request.ApmtDate != default(DateOnly) && request.ApmTime != default(TimeOnly))
+            {
+                // Validate ApmtDate and ApmTime
+                var todayDate = DateOnly.FromDateTime(DateTime.Now);
+                var nowTime = TimeOnly.FromDateTime(DateTime.Now);
+
+                if (request.ApmtDate < todayDate)
+                    throw new ArgumentException("Ngày hẹn không được ở trong quá khứ.");
+                if (request.ApmtDate == todayDate && request.ApmTime < nowTime)
+                    throw new ArgumentException("Thời gian hẹn không được ở trong quá khứ đối với ngày hôm nay.");
+
+                // Check if the requested reschedule date is within doctor's work schedule range
+                var doctorWorkScheduleRange = await _context.DoctorWorkSchedules
+                    .Where(s => s.DoctorId == request.DoctorId && s.IsAvailable)
+                    .Select(s => s.WorkDate)
+                    .ToListAsync();
+
+                if (doctorWorkScheduleRange.Any())
+                {
+                    var minWorkDate = doctorWorkScheduleRange.Min();
+                    var maxWorkDate = doctorWorkScheduleRange.Max();
+
+                    if (request.ApmtDate < minWorkDate || request.ApmtDate > maxWorkDate)
+                    {
+                        throw new InvalidOperationException("Ngày hẹn tái khám nằm ngoài lịch làm việc hiện tại của bác sĩ, vui lòng ghi chú lại và đặt lại lịch hẹn tái khám sau khi cập nhật mới lịch làm việc.");
+                    }
+                }
+
+                // Get all available schedules for the doctor on the requested day and date
+                var schedules = await _context.DoctorWorkSchedules
+                    .Where(s => s.DoctorId == request.DoctorId && s.IsAvailable && s.WorkDate == request.ApmtDate)
+                    .ToListAsync();
+
+                if (schedules == null || schedules.Count == 0)
+                {
+                    // If no schedule for the requested date, suggest the nearest available date
+                    var today = request.ApmtDate;
+                    var maxSearchDays = 30;
+                    DateOnly? nearestDate = null;
+                    for (int i = 1; i <= maxSearchDays; i++)
+                    {
+                        var nextDate = today.AddDays(i);
+                        var hasSchedule = await _context.DoctorWorkSchedules
+                            .AnyAsync(s => s.DoctorId == request.DoctorId && s.IsAvailable && s.WorkDate == nextDate);
+                        if (hasSchedule)
+                        {
+                            nearestDate = nextDate;
+                            break;
+                        }
+                    }
+                    var message = "Bác sĩ không có lịch làm việc vào ngày này.";
+                    if (nearestDate.HasValue)
+                        message += $" Ngày khả dụng gần nhất: {nearestDate.Value:yyyy-MM-dd}.";
+                    throw new InvalidOperationException(message);
+                }
+
+                // Check if requested time is within any available schedule for the date
+                var isWithinSchedule = schedules.Any(s =>
+                    request.ApmTime >= s.StartTime &&
+                    request.ApmTime < s.EndTime
+                );
+
+                if (!isWithinSchedule)
+                {
+                    // Suggest all available time slots for this date
+                    var availableSlots = schedules
+                        .Select(s => $"{s.StartTime:HH\\:mm} - {s.EndTime:HH\\:mm}")
+                        .ToList();
+
+                    var slotsMessage = availableSlots.Count > 0
+                        ? string.Join(", ", availableSlots)
+                        : "Không có khung giờ khả dụng.";
+
+                    throw new InvalidOperationException(
+                        $"Thời gian hẹn yêu cầu nằm ngoài lịch làm việc khả dụng của bác sĩ. " +
+                        $"Khung giờ làm việc của bác sĩ vào ngày {request.ApmtDate:yyyy-MM-dd}: {slotsMessage}."
+                    );
+                }
+
+                // Assume each appointment is 30 minutes
+                var appointmentDuration = TimeSpan.FromMinutes(30);
+                var apmTime = request.ApmTime;
+                var apmEnd = apmTime.Add(appointmentDuration);
+
+                // Fetch all appointments for the doctor on the date (not cancelled or completed)
+                // Only check appointments that have actual scheduled dates/times (not null)
+                var appointmentsOnDate = await _context.Appointments
+                    .Where(a => a.DctId == request.DoctorId
+                        && a.ApmtDate == request.ApmtDate
+                        && a.ApmtDate.HasValue
+                        && a.ApmTime.HasValue
+                        && (a.ApmStatus != 4 && a.ApmStatus != 5)) // 4 = Cancelled, 5 = Completed
+                    .ToListAsync();
+
+                // Check for overlapping appointments (not cancelled)
+                var hasOverlap = appointmentsOnDate.Any(a =>
+                {
+                    if (!a.ApmTime.HasValue) return false; // Skip appointments without scheduled time
+
+                    var existingStart = a.ApmTime.Value;
+                    var existingEnd = a.ApmTime.Value.Add(appointmentDuration);
+                    return existingStart < apmEnd && existingEnd > apmTime
+                        && (!apmId.HasValue || a.ApmId != apmId.Value);
+                });
+
+                if (hasOverlap)
+                {
+                    throw new InvalidOperationException(
+                        $"Bác sĩ có một cuộc hẹn trùng lặp vào thời điểm này."
+                    );
+                }
             }
         }
 
@@ -603,6 +755,19 @@ namespace HIV_System_API_Services.Implements
                 if (appointment.ApmStatus == 5)
                     throw new InvalidOperationException("Cuộc hẹn đã được hoàn thành.");
 
+                // Can not complete future appointments
+                if (appointment.ApmtDate.HasValue && appointment.ApmTime.HasValue)
+                {
+                    var today = DateOnly.FromDateTime(DateTime.Now);
+                    var now = TimeOnly.FromDateTime(DateTime.Now);
+
+                    // Future date OR (same date but future time)
+                    if (appointment.ApmtDate.Value > today ||
+                        (appointment.ApmtDate.Value == today && appointment.ApmTime.Value > now))
+                    {
+                        throw new InvalidOperationException("Không thể hoàn thành cuộc hẹn trong tương lai.");
+                    }
+                }
                 // Update notes if provided
                 if (!string.IsNullOrWhiteSpace(dto.Notes))
                 {
@@ -724,18 +889,37 @@ namespace HIV_System_API_Services.Implements
                     appointment.ApmStatus = 4; // Set status to Cancelled
                     await _appointmentRepo.UpdateAppointmentByIdAsync(appointment.ApmId, appointment);
                     // Create notification for cancellation
-                    var notification = new Notification
+                    if (appointment.ApmStatus == 3)
                     {
-                        NotiType = "Hủy lịch hẹn",
-                        NotiMessage = $"Cuộc hẹn vào {appointment.ApmtDate:yyyy-MM-dd} lúc {appointment.ApmTime:HH:mm} đã bị hủy do quá hạn.",
-                        SendAt = DateTime.Now,
-                        NotificationAccounts = new List<NotificationAccount>
+                        var notification = new Notification
+                        {
+                            NotiType = "Hủy tái khám",
+                            NotiMessage = $"Lịch tái khám vào {appointment.ApmtDate:yyyy-MM-dd} lúc {appointment.ApmTime:HH:mm} đã bị hủy do quá hạn, vui lòng đặt lại lịch tái khám vào thời gian gần nhất.",
+                            SendAt = DateTime.Now,
+                            NotificationAccounts = new List<NotificationAccount>
                         {
                             new NotificationAccount { AccId = appointment.PtnId },
                             new NotificationAccount { AccId = appointment.DctId }
                         }
-                    };
-                    _context.Notifications.Add(notification);
+                        };
+                        _context.Notifications.Add(notification);
+                    }
+                    else
+                    {
+                        var notification = new Notification
+                        {
+                            NotiType = "Hủy lịch hẹn",
+                            NotiMessage = $"Cuộc hẹn vào {appointment.ApmtDate:yyyy-MM-dd} lúc {appointment.ApmTime:HH:mm} đã bị hủy do quá hạn.",
+                            SendAt = DateTime.Now,
+                            NotificationAccounts = new List<NotificationAccount>
+                        {
+                            new NotificationAccount { AccId = appointment.PtnId },
+                            new NotificationAccount { AccId = appointment.DctId }
+                        }
+                        };
+                        _context.Notifications.Add(notification);
+                    }
+
                 }
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -744,6 +928,64 @@ namespace HIV_System_API_Services.Implements
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to cancel past date appointments: {ex.Message}");
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<AppointmentResponseDTO> RescheduleAppointmentAsync(CreateRescheduleAppointmentRequestDTO appointment, int accId)
+        {
+            Debug.WriteLine($"Creating appointment for PatientId: {appointment.PatientId}, DoctorId: {accId}");
+            if (appointment == null)
+                throw new ArgumentNullException(nameof(appointment), "Yêu cầu DTO là bắt buộc.");
+
+            var patient = await _context.Patients
+                .Include(p => p.Acc)
+                .FirstOrDefaultAsync(p => p.PtnId == appointment.PatientId);
+            if (patient == null)
+                throw new ArgumentException("Bệnh nhân không tồn tại.");
+
+            var doctor = await _context.Doctors
+                .Include(d => d.Acc)
+                .FirstOrDefaultAsync(d => d.DctId == accId);
+            if (doctor == null)
+                throw new ArgumentException("Bác sĩ không tồn tại.");
+
+            var appointmentRequestDto = new AppointmentRequestDTO
+            {
+                PatientId = appointment.PatientId,
+                DoctorId = accId,
+                ApmtDate = appointment.AppointmentDate,
+                ApmTime = appointment.AppointmentTime,
+                Notes = appointment.Notes,
+                ApmStatus = 3 // Default to re-scheduled status
+            };
+            await ValidateRescheduledAppointmentAsync(appointmentRequestDto, validateStatus: false);
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var createdAppointment = await _appointmentRepo.CreateRescheduleAppointmentAsync(appointment, accId);
+                var appointmentDto = MapToResponseDTO(createdAppointment);
+                var doctorName = appointmentDto.DoctorName;
+                var patientName = appointmentDto.PatientName;
+
+                var notification = new Notification
+                {
+                    NotiType = "Lịch hẹn tái khám",
+                    NotiMessage = $"Cuộc hẹn tái khám của bạn vào {createdAppointment.RequestDate:yyyy-MM-dd} lúc {createdAppointment.RequestTime:HH:mm} giữa bệnh nhân {patientName} với bác sĩ {doctorName} đã được tạo.",
+                    SendAt = DateTime.Now
+                };
+                var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, createdAppointment.PtnId);
+                await _notificationRepo.SendNotificationToAccIdAsync(createdNotification.NtfId, createdAppointment.DctId);
+
+                await transaction.CommitAsync();
+                return appointmentDto;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to create appointment: {ex.InnerException?.Message ?? ex.Message}");
                 await transaction.RollbackAsync();
                 throw;
             }
