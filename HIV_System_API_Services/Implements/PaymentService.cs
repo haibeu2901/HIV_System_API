@@ -18,14 +18,12 @@ namespace HIV_System_API_Services.Implements
         private readonly IPaymentRepo _paymentRepo;
         private readonly INotificationService _notificationService;
         private readonly HivSystemApiContext _context;
-        private readonly INotificationRepo _notiRepo;
 
         public PaymentService()
         {
             _paymentRepo = new PaymentRepo();
             _notificationService = new NotificationService();
             _context = new HivSystemApiContext();
-            _notiRepo = new NotificationRepo();
         }
 
         public PaymentService(IPaymentRepo paymentRepo, INotificationService notificationService, HivSystemApiContext context)
@@ -137,7 +135,7 @@ namespace HIV_System_API_Services.Implements
             // 2. Create Payment in DB with status Pending and store PaymentIntentId
             var paymentEntity = MapToEntity(dto, paymentIntent.Id);
             var created = await _paymentRepo.CreatePaymentAsync(paymentEntity);
-
+            await SendCardPaymentCreateNotificationAsync(created);
             var paymentDto = await MapToResponseDTOAsync(created);
             return (paymentIntent.ClientSecret, paymentDto);
         }
@@ -151,22 +149,24 @@ namespace HIV_System_API_Services.Implements
 
         public async Task UpdatePaymentStatusByIntentIdAsync(string paymentIntentId, byte status)
         {
-            // Query the payment directly by PaymentIntentId
-            var payment = await _context.Payments
-                .Include(p => p.Pmr)
-                    .ThenInclude(pmr => pmr.Ptn)
-                        .ThenInclude(ptn => ptn.Acc)
-                .Include(p => p.Srv)
-                .FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntentId);
+            // Get payment by PaymentIntentId using repository
+            var allPayments = await _paymentRepo.GetAllPaymentsAsync();
+            var payment = allPayments.FirstOrDefault(p => p.PaymentIntentId == paymentIntentId);
 
             if (payment != null)
             {
-                payment.PaymentStatus = status;
-                payment.UpdatedAt = DateTime.Now;
-                _paymentRepo.UpdatePaymentStatusAsync(payment.PayId, status);
+                // FIXED: Check if status is already the same to prevent duplicate notifications
+                if (payment.PaymentStatus == status)
+                {
+                    Console.WriteLine($"Payment {payment.PayId} already has status {status}, skipping update and notification");
+                    return;
+                }
+
+                // Update payment status using repository
+                var updatedPayment = await _paymentRepo.UpdatePaymentStatusAsync(payment.PayId, status);
 
                 // Send notification after status update
-                await SendPaymentNotificationAsync(payment, status);
+                await SendPaymentNotificationAsync(updatedPayment, status);
             }
         }
 
@@ -174,12 +174,17 @@ namespace HIV_System_API_Services.Implements
         {
             try
             {
-                var account = payment.Pmr?.Ptn?.Acc;
-                if (account == null) return;
+                // Get fresh payment data with navigation properties using repository
+                var freshPayment = await _paymentRepo.GetPaymentByIdAsync(payment.PayId);
+                if (freshPayment == null) return;
+
+                // For getting account info, we need to use the response DTO mapping
+                var paymentDto = await MapToResponseDTOAsync(freshPayment);
+                if (string.IsNullOrEmpty(paymentDto.PatientEmail)) return;
 
                 bool isSuccess = (status == 2); // 2 = Success, 3 = Failed
-                string serviceName = payment.Srv?.ServiceName ?? "dịch vụ y tế";
-                bool isCashPayment = (payment.PaymentMethod == "cash");
+                string serviceName = paymentDto.ServiceName ?? "dịch vụ y tế";
+                bool isCashPayment = (freshPayment.PaymentMethod == "cash");
                 
                 // Create notification message based on payment method
                 string notificationMessage;
@@ -189,34 +194,47 @@ namespace HIV_System_API_Services.Implements
                 {
                     // Cash payment notifications
                     notificationMessage = isSuccess
-                        ? $"💰 Thanh toán tiền mặt thành công! Bạn đã thanh toán {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName}. Mã thanh toán: #{payment.PayId}"
-                        : $"❌ Thanh toán tiền mặt thất bại! Giao dịch {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName} không thành công. Mã thanh toán: #{payment.PayId}";
+                        ? $"💰 Thanh toán tiền mặt thành công! Bạn đã thanh toán {freshPayment.Amount:N0} {freshPayment.Currency.ToUpper()} cho {serviceName}. Mã thanh toán: #{freshPayment.PayId}"
+                        : $"❌ Thanh toán tiền mặt thất bại! Giao dịch {freshPayment.Amount:N0} {freshPayment.Currency.ToUpper()} cho {serviceName} không thành công. Mã thanh toán: #{freshPayment.PayId}";
                     
-                    notiType = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại";
+                    notiType = isSuccess ? "TT thành công" : "TT thất bại";
                 }
                 else
                 {
                     // Card payment notifications
                     notificationMessage = isSuccess
-                        ? $"💳 Thanh toán thẻ thành công! Bạn đã thanh toán {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName}. Mã giao dịch: {payment.PaymentIntentId}"
-                        : $"❌ Thanh toán thẻ thất bại! Giao dịch {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName} không thành công. Vui lòng thử lại. Mã giao dịch: {payment.PaymentIntentId}";
+                        ? $"💳 Thanh toán thẻ thành công! Bạn đã thanh toán {freshPayment.Amount:N0} {freshPayment.Currency.ToUpper()} cho {serviceName}. Mã giao dịch: {freshPayment.PaymentIntentId}"
+                        : $"❌ Thanh toán thẻ thất bại! Giao dịch {freshPayment.Amount:N0} {freshPayment.Currency.ToUpper()} cho {serviceName} không thành công. Vui lòng thử lại. Mã giao dịch: {freshPayment.PayId}";
                     
-                    notiType = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại";
+                    notiType = isSuccess ? "TT thành công" : "TT thất bại";
                 }
 
-                Notification noti = new Notification
+                // Use NotificationService instead of direct repository calls
+                var notificationDto = new CreateNotificationRequestDTO
                 {
                     NotiType = notiType,
                     NotiMessage = notificationMessage,
                     SendAt = DateTime.Now
                 };
 
-                Notification newPaymentNoti = await _notiRepo.CreateNotificationAsync(noti);
-                await _notiRepo.SendNotificationToAccIdAsync(newPaymentNoti.NtfId, account.AccId);
+                // Get account ID from payment DTO and send notification
+                if (paymentDto.PatientId.HasValue)
+                {
+                    // Find account ID by patient ID
+                    var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PtnId == paymentDto.PatientId.Value);
+                    if (patient != null)
+                    {
+                        await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, patient.AccId);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending payment notification: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
             }
         }
 
@@ -300,8 +318,10 @@ namespace HIV_System_API_Services.Implements
             if (payment == null)
                 throw new KeyNotFoundException($"Payment with ID {paymentId} not found.");
 
-            // Update payment status and method for cash payments
+            // FIXED: Store old status for comparison
             var oldStatus = payment.PaymentStatus;
+            
+            // Update payment status and method for cash payments
             payment.PaymentStatus = status;
             payment.UpdatedAt = DateTime.Now;
             
@@ -313,10 +333,14 @@ namespace HIV_System_API_Services.Implements
 
             await _context.SaveChangesAsync();
 
-            // Send notification only if status actually changed
+            // FIXED: Send notification only if status actually changed
             if (oldStatus != status)
             {
                 await SendPaymentNotificationAsync(payment, status);
+            }
+            else
+            {
+                Console.WriteLine($"Payment {paymentId} status unchanged ({status}), notification not sent");
             }
 
             return await MapToResponseDTOAsync(payment);
@@ -379,25 +403,79 @@ namespace HIV_System_API_Services.Implements
         {
             try
             {
-                var account = payment.Pmr?.Ptn?.Acc;
-                if (account == null) return;
+                // Get payment with full details using the response DTO mapping
+                var paymentDto = await MapToResponseDTOAsync(payment);
+                if (string.IsNullOrEmpty(paymentDto.PatientEmail)) return;
 
-                var serviceName = payment.Srv?.ServiceName ?? "dịch vụ y tế";
+                var serviceName = paymentDto.ServiceName ?? "dịch vụ y tế";
                 
                 var notificationMessage = $"💰 Yêu cầu thanh toán tiền mặt đã được tạo! Số tiền: {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName}. Vui lòng thanh toán tại quầy lễ tân. Mã thanh toán: #{payment.PayId}";
 
                 var notificationDto = new CreateNotificationRequestDTO
                 {
-                    NotiType = "Yêu cầu thanh toán tiền mặt",
+                    NotiType = "TT tiền mặt",
                     NotiMessage = notificationMessage,
                     SendAt = DateTime.Now
                 };
 
-                await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, account.AccId);
+                // Get account ID from payment DTO and send notification
+                if (paymentDto.PatientId.HasValue)
+                {
+                    // Find account ID by patient ID
+                    var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PtnId == paymentDto.PatientId.Value);
+                    if (patient != null)
+                    {
+                        await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, patient.AccId);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending cash payment notification: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+            }
+        }
+
+        private async Task SendCardPaymentCreateNotificationAsync(Payment payment)
+        {
+            try
+            {
+                // Get payment with full details using the response DTO mapping
+                var paymentDto = await MapToResponseDTOAsync(payment);
+                if (string.IsNullOrEmpty(paymentDto.PatientEmail)) return;
+
+                var serviceName = paymentDto.ServiceName ?? "dịch vụ y tế";
+                
+                var notificationMessage = $"💳 Yêu cầu thanh toán thẻ đã được tạo! Số tiền: {payment.Amount:N0} {payment.Currency.ToUpper()} cho {serviceName}. Mã giao dịch: {payment.PayId}";
+                
+                var notificationDto = new CreateNotificationRequestDTO
+                {
+                    NotiType = "TT thẻ",
+                    NotiMessage = notificationMessage,
+                    SendAt = DateTime.Now
+                };
+
+                // Get account ID from payment DTO and send notification
+                if (paymentDto.PatientId.HasValue)
+                {
+                    // Find account ID by patient ID
+                    var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PtnId == paymentDto.PatientId.Value);
+                    if (patient != null)
+                    {
+                        await _notificationService.CreateAndSendToAccountIdAsync(notificationDto, patient.AccId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending card payment notification: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
             }
         }
     }
