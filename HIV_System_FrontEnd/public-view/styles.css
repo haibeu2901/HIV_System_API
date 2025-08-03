@@ -34,9 +34,9 @@ body {
 }
 
 .nav-container {
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1151,5 +1151,9 @@ a:focus {
     .hiv-edu-content th, .hiv-edu-content td {
         font-size: 0.97rem;
         padding: 8px 4px;
+    }
+    .container,
+    .nav-container {
+        padding: 0 10px;
     }
 }
