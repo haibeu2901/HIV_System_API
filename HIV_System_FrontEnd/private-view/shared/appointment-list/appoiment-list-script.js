@@ -369,25 +369,30 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     // Complete appointment form
     const completeAppointmentForm = document.getElementById('completeAppointmentForm');
-    if (completeAppointmentForm) {
-        completeAppointmentForm.onsubmit = async function (e) {
-            e.preventDefault();
-            const apmtId = this.getAttribute('data-apmt-id');
-            const notes = document.getElementById('completeNotes') ? document.getElementById('completeNotes').value : '';
-            const submitBtn = document.getElementById('submitCompleteBtn');
-            if (submitBtn) submitBtn.disabled = true;
-            setMessage('Đang xử lý...', false);
-            try {
-                const res = await fetch(`https://localhost:7009/api/Appointment/CompleteAppointment?appointmentId=${apmtId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ notes })
-                });
-                if (!res.ok) {
-                    let msg = 'Không thể hoàn thành lịch hẹn.';
+if (completeAppointmentForm) {
+    completeAppointmentForm.onsubmit = async function (e) {
+        e.preventDefault();
+        const apmtId = this.getAttribute('data-apmt-id');
+        const notes = document.getElementById('completeNotes') ? document.getElementById('completeNotes').value : '';
+        const submitBtn = document.getElementById('submitCompleteBtn');
+        if (submitBtn) submitBtn.disabled = true;
+        setMessage('Đang xử lý...', false);
+        try {
+            const res = await fetch(`https://localhost:7009/api/Appointment/CompleteAppointment?appointmentId=${apmtId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ notes })
+            });
+            if (!res.ok) {
+                let msg = 'Không thể hoàn thành lịch hẹn.';
+                if (res.status === 409) {
+                    try {
+                        msg = await res.text();
+                    } catch (e) {}
+                } else {
                     try {
                         const data = await res.json();
                         if (data && data.error) msg = data.error;
@@ -398,21 +403,22 @@ window.addEventListener('DOMContentLoaded', async () => {
                             if (text) msg = text;
                         } catch (e2) { }
                     }
-                    setMessage(msg, false);
-                    if (submitBtn) submitBtn.disabled = false;
-                    return;
                 }
-                setMessage('Lịch hẹn đã được đánh dấu hoàn thành!', true);
-                document.getElementById('completeAppointmentModal').style.display = 'none';
-                document.getElementById('appointmentDetailsModal').style.display = 'none';
-                allAppointments = await fetchAppointments();
-                applyFilters();
-            } catch (err) {
-                setMessage('Lỗi khi hoàn thành lịch hẹn.', false);
+                setMessage(msg, false);
                 if (submitBtn) submitBtn.disabled = false;
+                return;
             }
-        };
-    }
+            setMessage('Lịch hẹn đã được đánh dấu hoàn thành!', true);
+            document.getElementById('completeAppointmentModal').style.display = 'none';
+            document.getElementById('appointmentDetailsModal').style.display = 'none';
+            allAppointments = await fetchAppointments();
+            applyFilters();
+        } catch (err) {
+            setMessage('Lỗi khi hoàn thành lịch hẹn.', false);
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    };
+}
 
     // Only doctors can modify appointments
     if (window.isDoctor) {
