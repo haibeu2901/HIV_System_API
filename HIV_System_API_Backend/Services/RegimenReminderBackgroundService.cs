@@ -34,12 +34,9 @@ namespace HIV_System_API_Services.Implements
         private void ScheduleDailyTasks(CancellationToken stoppingToken)
         {
             var now = DateTime.Now;
-            var nextRun = DateTime.Today.AddDays(1).Add(_dailyExecutionTime);
+            var nextRun = now.AddMinutes(1);
 
-            if (now > nextRun)
-            {
-                nextRun = nextRun.AddDays(1);
-            }
+
 
             var timeToNextRun = nextRun - now;
             _logger.LogInformation($"Next tasks scheduled for {nextRun:yyyy-MM-dd HH:mm:ss}.");
@@ -49,14 +46,14 @@ namespace HIV_System_API_Services.Implements
                 async state => await ExecuteReminderTaskAsync(stoppingToken),
                 null,
                 timeToNextRun,
-                Timeout.InfiniteTimeSpan);
+                TimeSpan.FromMinutes(1));
 
             // Timer cho hủy cuộc hẹn
             _cancelAppointmentTimer = new Timer(
                 async state => await ExecuteDailyTasksAsync(stoppingToken),
                 null,
                 timeToNextRun,
-                Timeout.InfiniteTimeSpan);
+                TimeSpan.FromMinutes(1));
         }
 
         private async Task ExecuteDailyTasksAsync(CancellationToken stoppingToken)
