@@ -775,9 +775,6 @@ namespace HIV_System_API_Services.Implements
                 && regimenRequest.StartDate > regimenRequest.EndDate)
                 throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");
 
-            if (regimenRequest.RegimenStatus == 2 || regimenRequest.RegimenStatus == 4 || regimenRequest.RegimenStatus == 5)
-                throw new ArgumentException("Không thể cập nhật phác đồ ARV với trạng thái đang hoạt động, thất bại hoặc hoàn thành.");
-
             // Validate medication inputs
             foreach (var med in medicationRequests)
             {
