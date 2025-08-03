@@ -24,6 +24,7 @@ if (!document.getElementById('filterStatus')) {
         <option value="">Tất cả</option>
         <option value="1">Chờ xác nhận</option>
         <option value="2">Đã lên lịch</option>
+        <option value="3">Tái khám</option>
         <option value="4">Đã hủy</option>
         <option value="5">Đã hoàn thành</option>
     </select>
@@ -46,6 +47,7 @@ if (!document.getElementById('filterStatus')) {
 const appointmentStatusMap = {
     1: "Chờ xác nhận",
     2: "Đã lên lịch",
+    3: "Tái khám",
     4: "Đã hủy",
     5: "Đã hoàn thành",
 };

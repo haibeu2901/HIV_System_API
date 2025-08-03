@@ -8,7 +8,7 @@ let allTestResults = [];
 const appointmentStatusMap = {
     1: 'Chờ xác nhận',
     2: 'Đã lên lịch',
-    3: 'Đã lên lịch lại',
+    3: 'Tái khám',
     4: 'Đã hủy',
     5: 'Đã hoàn thành'
 };
@@ -2152,4 +2152,130 @@ function getVietnamToday() {
     const diff = vietnamOffset + localOffset;
     const vietnamDate = new Date(now.getTime() + diff * 60 * 1000);
     return vietnamDate.toISOString().slice(0, 10);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.isDoctor) {
+        const container = document.getElementById('createAppointmentContainer');
+        if (container) container.style.display = '';
+    }
+    const btn = document.getElementById('openCreateAppointmentBtn');
+});
+// ...existing code...
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Hiển thị modal khi bấm nút
+    const openBtn = document.getElementById('openCreateAppointmentBtn');
+    const modal = document.getElementById('createRescheduleAppointmentModal');
+    const closeBtn = document.getElementById('closeCreateRescheduleAppointmentModal');
+    const cancelBtn = document.getElementById('cancelCreateRescheduleAppointmentBtn');
+    const form = document.getElementById('createRescheduleAppointmentForm');
+    const msgDiv = document.getElementById('createRescheduleAppointmentMsg');
+    const dateInput = document.getElementById('rescheduleAppointmentDate');
+
+    // Gọi loadAvailableRescheduleTimes khi mở modal
+    if (openBtn && modal) openBtn.onclick = async () => {
+        msgDiv.textContent = '';
+        form.reset();
+        // Set ngày mặc định là hôm nay
+        dateInput.value = getVietnamToday();
+        // Load khung giờ cho ngày hôm nay
+        await loadAvailableRescheduleTimes(dateInput.value);
+        modal.style.display = 'block';
+    };
+
+    // Gọi lại khi đổi ngày
+    if (dateInput) {
+        dateInput.addEventListener('change', function() {
+            loadAvailableRescheduleTimes(this.value);
+        });
+    }
+
+    if (closeBtn && modal) closeBtn.onclick = () => { modal.style.display = 'none'; };
+    if (cancelBtn && modal) cancelBtn.onclick = () => { modal.style.display = 'none'; };
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    // Xử lý submit
+    if (form) form.onsubmit = async function(e) {
+        e.preventDefault();
+        msgDiv.textContent = '';
+        const date = document.getElementById('rescheduleAppointmentDate').value;
+        const time = document.getElementById('rescheduleAppointmentTime').value;
+        const notes = document.getElementById('rescheduleAppointmentNotes').value.trim();
+        const patientId = getPatientIdFromUrl();
+
+        if (!patientId || !date || !time) {
+            msgDiv.textContent = 'Vui lòng nhập đầy đủ ngày, giờ.';
+            return;
+        }
+
+        try {
+            const res = await fetch('https://localhost:7009/api/Appointment/CreateRescheduledAppointment', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    patientId: Number(patientId),
+                    appointmentDate: date,
+                    appointmentTime: time + ':00',
+                    notes: notes
+                })
+            });
+            if (!res.ok) {
+                let errMsg = 'Tạo lịch tái khám thất bại.';
+                try { errMsg += ' ' + await res.text(); } catch {}
+                msgDiv.textContent = errMsg;
+                return;
+            }
+            modal.style.display = 'none';
+            alert('Tạo lịch tái khám thành công!');
+            if (typeof loadPatientData === 'function') loadPatientData();
+        } catch (err) {
+            msgDiv.textContent = 'Lỗi khi tạo lịch tái khám.';
+        }
+    };
+});
+
+async function loadAvailableRescheduleTimes(date) {
+    const timeSelect = document.getElementById('rescheduleAppointmentTime');
+    timeSelect.innerHTML = '<option value="">Đang tải...</option>';
+    try {
+        const res = await fetch('https://localhost:7009/api/DoctorWorkSchedule/GetPersonalWorkSchedules', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const schedules = await res.json();
+        // Lọc các ca làm việc khả dụng cho ngày đã chọn
+        const slots = (schedules || []).filter(s => s.workDate === date && s.isAvailable);
+        let options = [];
+        slots.forEach(s => {
+            let start = s.startTime.slice(0, 5); // "HH:mm"
+            let end = s.endTime.slice(0, 5);
+            let [sh, sm] = start.split(':').map(Number);
+            let [eh, em] = end.split(':').map(Number);
+            let current = new Date(0, 0, 0, sh, sm);
+            let endTime = new Date(0, 0, 0, eh, em);
+
+            // Tạo các slot 1 tiếng, chỉ hiển thị HH:mm
+            while (current.getTime() + 45 * 60 * 1000 <= endTime.getTime()) {
+                let h = current.getHours().toString().padStart(2, '0');
+                let m = current.getMinutes().toString().padStart(2, '0');
+                let slotStart = `${h}:${m}`;
+                options.push(slotStart);
+                // Nhảy sang slot tiếp theo (45 phút + 15 phút nghỉ)
+                current = new Date(current.getTime() + (45 + 15) * 60 * 1000);
+            }
+        });
+        options = Array.from(new Set(options));
+        if (options.length > 0) {
+            timeSelect.innerHTML = '<option value="">Chọn giờ...</option>' +
+                options.map(t => `<option value="${t}">${t}</option>`).join('');
+        } else {
+            timeSelect.innerHTML = '<option value="">Không có khung giờ khả dụng</option>';
+        }
+    } catch (e) {
+        timeSelect.innerHTML = '<option value="">Lỗi tải khung giờ</option>';
+    }
 }
