@@ -23,6 +23,11 @@ namespace HIV_System_API_Repositories.Implements
             return await AppointmentDAO.Instance.CreateAppointmentAsync(appointment, accId);
         }
 
+        public async Task<Appointment> CreateRescheduleAppointmentAsync(CreateRescheduleAppointmentRequestDTO createDto, int accId)
+        {
+            return await AppointmentDAO.Instance.CreateRescheduleAppointmentAsync(createDto, accId);
+        }
+
         public async Task<bool> DeleteAppointmentByIdAsync(int id)
         {
             return await AppointmentDAO.Instance.DeleteAppointmentByIdAsync(id);
