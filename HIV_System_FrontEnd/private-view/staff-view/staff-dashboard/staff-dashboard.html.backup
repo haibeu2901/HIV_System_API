@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Bảng điều khiển nhân viên</title>
+    <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
+    <link rel="stylesheet" href="staff-dashboard-style.css">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <main style="padding: 40px 0; min-height: 60vh;">
+        <div class="container">
+            <div id="dashboardSection"></div>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-heartbeat"></i>
+                        <span>Phòng khám HIV CareFirst</span>
+                    </div>
+                    <p>Mang đến sự chăm sóc và hỗ trợ tận tâm cho mọi người trong cộng đồng HIV.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Liên kết nhanh</h3>
+                    <ul>
+                        <li><a href="#home">Trang chủ</a></li>
+                        <li><a href="#services">Dịch vụ</a></li>
+                        <li><a href="#about">Giới thiệu</a></li>
+                        <li><a href="#contact">Liên hệ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Dịch vụ</h3>
+                    <ul>
+                        <li><a href="#">Xét nghiệm HIV</a></li>
+                        <li><a href="#">Điều trị</a></li>
+                        <li><a href="#">Nhóm hỗ trợ</a></li>
+                        <li><a href="#">Phòng ngừa</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Khẩn cấp</h3>
+                    <p>Đường dây nóng 24/7: <strong>(555) 911-HIV1</strong></p>
+                    <p>Luôn sẵn sàng hỗ trợ bạn</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Phòng khám HIV CareFirst. Đã đăng ký bản quyền. | Chính sách bảo mật | Điều khoản sử dụng</p>
+            </div>
+        </div>
+    </footer>
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
+    <script src="/private-view/shared/role-config.js"></script>
+    <script src="/private-view/shared/header/header-script.js"></script>
+    <script src="staff-dashboard-script.js"></script>
+</body>
+</html>

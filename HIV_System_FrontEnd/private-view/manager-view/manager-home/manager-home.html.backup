@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển quản lý - Phòng khám CareFirst HIV</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="../../admin-view/admin-home/admin-home.css">
+    <link rel="stylesheet" href="../../admin-view/admin-home/js/components.css">
+    <link rel="stylesheet" href="manager-home.css">
+</head>
+<body class="manager-dashboard">
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>Phòng khám CareFirst HIV</span>
+            </div>
+            <div class="admin-info">
+                <span class="admin-name">Bảng điều khiển quản lý</span>
+                <button class="logout-btn" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Đăng xuất
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="admin-nav">
+        <div class="nav-container">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Bảng điều khiển
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#notifications" class="nav-link" data-section="notifications">
+                        <i class="fas fa-bell"></i>
+                        Thông báo
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#appointments" class="nav-link" data-section="appointments">
+                        <i class="fas fa-calendar-alt"></i>
+                        Lịch hẹn
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#medical-records" class="nav-link" data-section="medical-records">
+                        <i class="fas fa-file-medical"></i>
+                        Hồ sơ y tế
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="../manager-blog-overview.html" class="nav-link">
+                        <i class="fas fa-blog"></i>
+                        Tổng quan Blog
+                    </a>
+                </li>
+                <!-- Note: No accounts section for manager -->
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="admin-section active">
+            <div class="section-header">
+                <h1><i class="fas fa-tachometer-alt"></i> Tổng quan bảng điều khiển</h1>
+                <p>Chào mừng đến với bảng điều khiển quản lý. Dưới đây là tổng quan về hiệu suất phòng khám của bạn.</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-users">0</h3>
+                        <p>Tổng số người dùng</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-patients">0</h3>
+                        <p>Tổng số bệnh nhân</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-doctors">0</h3>
+                        <p>Tổng số bác sĩ</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-staff">0</h3>
+                        <p>Tổng số nhân viên</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-appointments">0</h3>
+                        <p>Tổng số lịch hẹn</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="pending-appointments">0</h3>
+                        <p>Lịch hẹn đang chờ</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-concierge-bell"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-services">0</h3>
+                        <p>Tổng số dịch vụ</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-revenue">0</h3>
+                        <p>Tổng doanh thu</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="monthly-revenue">0</h3>
+                        <p>Doanh thu hàng tháng</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-charts">
+                <div class="chart-container">
+                    <h3 class="chart-title">Phân bố người dùng</h3>
+                    <div class="chart-canvas">
+                        <canvas id="userDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Doanh thu hàng tháng</h3>
+                    <div class="chart-canvas">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Trạng thái lịch hẹn</h3>
+                    <div class="chart-canvas">
+                        <canvas id="appointmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="dashboard-left">
+                    <div class="chart-container">
+                        <h3>Hiệu suất hệ thống</h3>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-area"></i>
+                            <p>Các chỉ số và phân tích bổ sung sẽ được hiển thị tại đây</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-right">
+                    <div class="recent-activity">
+                        <h3>Hoạt động gần đây</h3>
+                        <div id="recent-activity-list" class="activity-list">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notifications Section -->
+        <section id="notifications" class="admin-section">
+            <div class="section-header">
+                <h1><i class="fas fa-bell"></i> Quản lý thông báo</h1>
+                <button class="btn-primary" id="create-notification-btn">
+                    <i class="fas fa-plus"></i>
+                    Tạo thông báo
+                </button>
+            </div>
+            
+            <div class="notifications-container">
+                <div class="filter-bar">
+                    <select id="notification-filter">
+                        <option value="all">Tất cả thông báo</option>
+                        <option value="system">Hệ thống</option>
+                        <option value="appointment">Lịch hẹn</option>
+                        <option value="reminder">Nhắc nhở</option>
+                    </select>
+                </div>
+                
+                <div id="notifications-list" class="notifications-list">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Appointments Section -->
+        <section id="appointments" class="admin-section">
+            <div class="section-header">
+                <h1><i class="fas fa-calendar-alt"></i> Quản lý lịch hẹn</h1>
+                <div class="header-actions">
+                    <input type="date" id="appointment-date-filter">
+                    <select id="appointment-status-filter">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="pending">Đang chờ</option>
+                        <option value="confirmed">Đã xác nhận</option>
+                        <option value="completed">Đã hoàn thành</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="appointments-container">
+                <div id="appointments-list" class="appointments-list">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Medical Records Section -->
+        <section id="medical-records" class="admin-section">
+            <div class="section-header">
+                <h1><i class="fas fa-file-medical"></i> Hồ sơ y tế bệnh nhân</h1>
+                <div class="search-bar">
+                    <input type="text" id="medical-search" placeholder="Tìm kiếm theo tên hoặc ID bệnh nhân...">
+                    <button id="medical-search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="medical-records-container">
+                <div id="medical-records-list" class="medical-records-list">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="createNotificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tạo thông báo mới</h3>
+                <button class="close-btn" data-modal="createNotificationModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createNotificationForm">
+                    <div class="form-group">
+                        <label>Loại thông báo</label>
+                        <select id="notification-type" required>
+                            <option value="">Chọn loại thông báo</option>
+                            <option value="Appt Confirm">Xác nhận lịch hẹn</option>
+                            <option value="Appointment Update">Cập nhật lịch hẹn</option>
+                            <option value="Appointment Request">Yêu cầu lịch hẹn</option>
+                            <option value="Appointment Reminder">Nhắc nhở lịch hẹn</option>
+                            <option value="System Alert">Cảnh báo hệ thống</option>
+                            <option value="ARV Consultation">Tư vấn ARV</option>
+                            <option value="Test Result">Kết quả xét nghiệm</option>
+                            <option value="Blog Approval">Duyệt bài viết</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Thông điệp</label>
+                        <textarea id="notification-message" required rows="4" placeholder="Nhập thông điệp thông báo..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Gửi đến</label>
+                        <select id="send-to" required>
+                            <option value="">Chọn người nhận</option>
+                            <option value="all">Tất cả người dùng</option>
+                            <option value="account">Tài khoản cụ thể</option>
+                            <option value="1">Bệnh nhân</option>
+                            <option value="2">Bác sĩ</option>
+                            <option value="3">Quản lý</option>
+                            <option value="4">Quản trị viên</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="account-id-group" style="display: none;">
+                        <label>ID tài khoản</label>
+                        <input type="number" id="account-id" placeholder="Nhập ID tài khoản" min="1">
+                        <small class="form-help">Nhập ID tài khoản cụ thể để gửi thông báo</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" data-modal="createNotificationModal">Hủy</button>
+                        <button type="submit"><i class="fas fa-paper-plane"></i> Gửi thông báo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Notification Modal -->
+    <div id="editNotificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chỉnh sửa thông báo</h3>
+                <button class="close-btn" data-modal="editNotificationModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editNotificationForm">
+                    <input type="hidden" id="edit-notification-id">
+                    <div class="form-group">
+                        <label>Loại</label>
+                        <select id="edit-notification-type" required>
+                            <option value="Appt Confirm">Xác nhận lịch hẹn</option>
+                            <option value="Appointment Update">Cập nhật lịch hẹn</option>
+                            <option value="Appointment Request">Yêu cầu lịch hẹn</option>
+                            <option value="Appointment Reminder">Nhắc nhở lịch hẹn</option>
+                            <option value="System Alert">Cảnh báo hệ thống</option>
+                            <option value="ARV Consultation">Tư vấn ARV</option>
+                            <option value="Test Result">Kết quả xét nghiệm</option>
+                            <option value="Blog Approval">Duyệt bài viết</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Thông điệp</label>
+                        <textarea id="edit-notification-message" required rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" data-modal="editNotificationModal">Hủy</button>
+                        <button type="submit"><i class="fas fa-save"></i> Cập nhật thông báo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript modules in order -->
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
+    <script src="../../shared/role-config.js"></script>
+    <script src="../../admin-view/admin-home/js/utils.js"></script>
+    <script src="../../admin-view/admin-home/js/auth.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="../../admin-view/admin-home/js/appointments.js"></script>
+    <script src="../../admin-view/admin-home/js/notifications.js"></script>
+    <script src="../../admin-view/admin-home/js/medical-records.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -5,9 +5,9 @@ const token = localStorage.getItem('token');
 const appointmentStatusMap = {
     1: 'Chờ xác nhận',
     2: 'Đã xác nhận',
-    3: 'Đã xác nhận lại',
+    3: 'Hẹn tái khám',
     4: 'Đã hủy',
-    5: 'Đã hoàn thành'
+    5: 'Hoàn thành'
 };
 
 // ARV Regimen level and status mapping

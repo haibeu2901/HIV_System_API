@@ -41,8 +41,9 @@ class AuthUtils {
 
     static redirectToLogin(message = 'Your session has expired. Please log in again.') {
         this.clearAuthData();
-        alert(message);
-        window.location.href = '/public-view/landingpage.html';
+        console.log('Redirecting to landing page:', message);
+        const encodedMessage = encodeURIComponent(message);
+        window.location.href = `/public-view/landingpage.html?reason=${encodedMessage}`;
     }
 
     static async checkAuthAndRedirect() {
@@ -189,6 +190,13 @@ class AuthUtils {
         }
         
         return true;
+    }
+
+    // Additional method to handle direct URL access attempts
+    static handleUnauthorizedAccess() {
+        console.log('Unauthorized access attempt detected');
+        this.clearAuthData();
+        window.location.href = '/public-view/landingpage.html';
     }
 }
 

@@ -1,376 +1,463 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Phòng khám CareFirst HIV - Chăm sóc HIV Toàn diện & Hỗ trợ</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css" />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <!-- Header -->
-    <header class="header">
-      <nav class="navbar">
-        <div class="nav-container">
-          <div class="nav-logo">
-            <i class="fas fa-heartbeat"></i>
-            <span>HIV CareFirst Clinic</span>
-          </div>
-          <ul class="nav-menu">
-            <li><a href="#home">Home</a></li>
-            <li><a href="#services">Services</a></li>
-            <li><a href="#about">Giới thiệu</a></li>
-            <li><a href="arv-medications-public.html">Thuốc ARV</a></li>
-            <li><a href="./blog/blog-public.html">Social Blog</a></li>
-            <li><a href="#contact">Contact</a></li>
-            <li>
-              <button class="btn-login" onclick="openModal('loginModal')">
-                Đăng nhập
-              </button>
-            </li>
-            <li>
-              <button class="btn-register" onclick="openModal('registerModal')">
-                Đăng ký
-              </button>
-            </li>
-          </ul>
-          <div class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
-      </nav>
-    </header>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-      <div class="hero-content">
-        <h1>Chăm sóc & Hỗ trợ HIV Toàn diện</h1>
-        <p>
-          Cung cấp dịch vụ chăm sóc HIV chu đáo, bảo mật và toàn diện cho mọi người.
-          Sức khỏe của bạn, phẩm giá của bạn, cam kết của chúng tôi.
-        </p>
-        <div class="hero-buttons">
-          <button class="btn-primary" onclick="openModal('registerModal')">
-            Bắt đầu
-          </button>
-          <button class="btn-secondary" onclick="scrollToSection('services')">
-            Dịch vụ của chúng tôi
-          </button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phòng khám CareFirst HIV - Chăm sóc HIV Toàn diện & Hỗ trợ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <i class="fas fa-heartbeat"></i>
+          <span>HIV CareFirst Clinic</span>
+        </div>
+        <ul class="nav-menu">
+          <li><a href="#home">Trang chủ</a></li>
+          <li><a href="#services">Dịch vụ</a></li>
+          <li><a href="#about">Giới thiệu</a></li>
+          <li><a href="arv-medications-public.html">Thuốc ARV</a></li>
+          <li><a href="./blog/blog-public.html">Cộng đồng</a></li>
+          <li><a href="#hiv-education">Thông tin về HIV</a></li>
+          <li><a href="#about">Về chúng tôi</a></li>
+          <li><a href="#contact">Liên hệ</a></li>
+          <li>
+            <button class="btn-login" onclick="openModal('loginModal')">
+              Đăng nhập
+            </button>
+          </li>
+          <li>
+            <button class="btn-register" onclick="openModal('registerModal')">
+              Đăng ký
+            </button>
+          </li>
+        </ul>
+        <div class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
       </div>
-      <div class="hero-image">
-        <i class="fas fa-user-md"></i>
-      </div>
-    </section>
+    </nav>
+  </header>
 
-    <!-- Services Section -->
-    <section id="services" class="services">
-      <div class="container">
-        <h2>Dịch vụ của chúng tôi</h2>
-        <p class="services-description">
-          Phòng khám CareFirst HIV cung cấp các dịch vụ chăm sóc HIV toàn diện với giá cả hợp lý và chất lượng cao.
-        </p>
-        <div class="services-grid">
-          <!-- Services will be loaded dynamically via JavaScript -->
-        </div>
+  <!-- Hero Section -->
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <h1>Chăm sóc & Hỗ trợ HIV Toàn diện</h1>
+      <p>
+        Cung cấp dịch vụ chăm sóc HIV chu đáo, bảo mật và toàn diện cho mọi người.
+        Sức khỏe của bạn, phẩm giá của bạn, cam kết của chúng tôi.
+      </p>
+      <div class="hero-buttons">
+        <button class="btn-primary" onclick="openModal('registerModal')">
+          Bắt đầu
+        </button>
+        <button class="btn-secondary" onclick="scrollToSection('services')">
+          Dịch vụ của chúng tôi
+        </button>
       </div>
-    </section>
+    </div>
+    <div class="hero-image">
+      <i class="fas fa-user-md"></i>
+    </div>
+  </section>
 
-    <!-- About Section -->
-    <section id="about" class="about">
-      <div class="container">
-        <div class="about-content">
-          <div class="about-text">
-            <h2>Về Phòng khám CareFirst HIV</h2>
-            <p>
-              Trong hơn 15 năm qua, Phòng khám CareFirst HIV đã đi đầu trong công tác chăm sóc HIV,
-              cung cấp dịch vụ y tế toàn diện, hỗ trợ và giáo dục cho cộng đồng của chúng tôi.
-              Chúng tôi tin rằng mọi người đều xứng đáng được tiếp cận dịch vụ chăm sóc sức khỏe chất lượng,
-              bất kể hoàn cảnh hay xuất thân của họ.
-            </p>
-            <div class="stats">
-              <div class="stat">
-                <h3>5,000+</h3>
-                <p>Người bệnh đã được phục vụ</p>
-              </div>
-              <div class="stat">
-                <h3>15+</h3>
-                <p>Năm phục vụ</p>
-              </div>
-              <div class="stat">
-                <h3>24/7</h3>
-                <p>Hỗ trợ có sẵn</p>
-              </div>
-            </div>
-          </div>
-          <div class="about-image">
-            <i class="fas fa-hospital"></i>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="contact">
-      <div class="container">
-        <h2>Liên hệ với chúng tôi</h2>
-        <div class="contact-grid">
-          <div class="contact-info">
-            <div class="contact-item">
-              <i class="fas fa-map-marker-alt"></i>
-              <div>
-                <h3>Địa chỉ</h3>
-                <p>Khu CNC<br />Tp Thủ Đức</p>
-              </div>
-            </div>
-            <div class="contact-item">
-              <i class="fas fa-phone"></i>
-              <div>
-                <h3>Điện thoại</h3>
-                <p>0965420205</p>
-              </div>
-            </div>
-            <div class="contact-item">
-              <i class="fas fa-envelope"></i>
-              <div>
-                <h3>Email</h3>
-                <p>ngovanminhtri05@gmail.com</p>
-              </div>
-            </div>
-            <div class="contact-item">
-              <i class="fas fa-clock"></i>
-              <div>
-                <h3>Giờ làm việc</h3>
-                <p>
-                  Thứ 2 - Thứ 6: 8AM-6PM<br />Thứ 7: 9AM-4PM<br />Chủ nhật: Chỉ tiếp nhận trường hợp khẩn cấp
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="contact-form">
-            <form id="contactForm">
-              <input type="text" placeholder="Tên của bạn" required />
-              <input type="email" placeholder="Email của bạn" required />
-              <input type="tel" placeholder="Số điện thoại của bạn" />
-              <textarea placeholder="Tin nhắn của bạn" rows="5" required></textarea>
-              <button type="submit" class="btn-primary">Gửi tin nhắn</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-section">
-            <div class="footer-logo">
-              <i class="fas fa-heartbeat"></i>
-              <span>Phòng khám CareFirst HIV</span>
-            </div>
-            <p>
-              Cung cấp dịch vụ chăm sóc và hỗ trợ HIV tận tâm cho mọi người trong
-cộng đồng của chúng tôi.
-            </p>
-          </div>
-          <div class="footer-section">
-            <h3>Liên kết nhanh</h3>
+  <!-- Thêm vào sau About Section hoặc trước Contact Section -->
+  <section id="hiv-education" class="hiv-education-section">
+    <div class="container">
+      <h2>
+        <i class="fas fa-book-open" style="margin-right:10px;color:#e74c3c;"></i>
+        Kiến thức về HIV
+      </h2>
+      <div class="hiv-edu-content">
+        <h3>1. HIV là gì? Lây như thế nào?</h3>
+        <ul>
+          <li>HIV không lây qua tiếp xúc thông thường như ôm, bắt tay, ăn uống chung, dùng chung nhà vệ sinh.</li>
+          <li>HIV chỉ lây qua 4 con đường chính:
             <ul>
-              <li><a href="#home">Trang chủ</a></li>
-              <li><a href="#services">Dịch vụ</a></li>
-              <li><a href="#about">Về chúng tôi</a></li>
-              <li><a href="#contact">Liên hệ</a></li>
+              <li>-Qua máu (truyền máu, dùng chung kim tiêm)</li>
+              <li>-Quan hệ không an toàn</li>
+              <li>-Từ mẹ sang con (khi mang thai, sinh, hoặc cho con bú)</li>
+              <li>-Qua sữa mẹ (trong thời kỳ cho con bú)</li>
             </ul>
-          </div>
-          <div class="footer-section">
-            <h3>Dịch vụ</h3>
-            <ul>
-              <li><a href="#">Xét nghiệm HIV</a></li>
-              <li><a href="#">Điều trị</a></li>
-              <li><a href="#">Nhóm hỗ trợ</a></li>
-              <li><a href="#">Phòng ngừa</a></li>
-            </ul>
-          </div>
-          <div class="footer-section">
-            <h3>Khẩn cấp</h3>
-            <p>24/7 Đường dây nóng: <strong>(555) 911-HIV1</strong></p>
-            <p>Hỗ trợ khủng hoảng có sẵn</p>
-          </div>
+          </li>
+        </ul>
+        <p style="font-size:0.95em;color:#888;">Nguồn: <a
+            href="https://vaac.gov.vn/chuyen-trang/cap-nhat-cac-thong-tin-khoa-hoc-ve-du-phong-cham-soc-va-dieu-tri-hiv.html"
+            target="_blank">VAAC – Cục Phòng chống HIV/AIDS Việt Nam</a></p>
+        <hr style="margin:2rem 0;">
+        <h3>2. Vì sao cần phổ cập kiến thức và giảm kỳ thị?</h3>
+        <ul>
+          <li>Kỳ thị khiến người nhiễm HIV ngại xét nghiệm, không dám tiết lộ tình trạng, tránh tiếp cận dịch vụ y tế,
+            bị xa lánh trong cộng đồng.</li>
+        </ul>
+        <p style="font-size:0.95em;color:#888;">
+          Nguồn: <a href="https://jppres.com/jppres/pdf/vol11/jppres23.1644_11.4.572.pdf" target="_blank">JPPRes
+            Journal, 2023</a> |
+          <a href="https://www.researchgate.net/publication/372396302_Effects_of_HIV_knowledge_on_accepting_attitudes_toward_people_living_with_HIV_The_case_of_Southern_Vietnam"
+            target="_blank">ResearchGate – Southern Vietnam Study</a>
+        </p>
+        <hr style="margin:2rem 0;">
+        <h3>3. Cách truyền thông nhẹ nhàng để phổ cập HIV</h3>
+        <ul>
+          <li>Dùng thuật ngữ “người sống với HIV” thay vì “bệnh nhân HIV”.</li>
+          <li>Tránh gán HIV với nhóm yếu thế cụ thể.</li>
+          <li>Tập trung vào khả năng điều trị hiệu quả và sống khỏe mạnh.</li>
+        </ul>
+        <p style="font-size:0.95em;color:#888;">
+          Nguồn: <a
+            href="https://www.msdmanuals.com/vi/professional/bệnh-truyền-nhiễm/vi-rút-gây-suy-giảm-miễn-dịch-ở-người-hiv/nhiễm-trùng-hiv-aids-ở-người"
+            target="_blank">MSD Manual</a>
+        </p>
+        <hr style="margin:2rem 0;">
+        <h3>4. Những mô hình hiệu quả tại Việt Nam</h3>
+        <ul>
+          <li>Tự xét nghiệm HIV online giúp kiểm tra tại nhà, bảo mật danh tính (<a
+              href="https://www.who.int/westernpacific/newsroom/feature-stories/item/viet-nam-offers-hiv-self-testing-online-to-boost-equitable-access-to-health-care"
+              target="_blank">WHO Việt Nam</a>).</li>
+          <li>Truyền thông cộng đồng tích cực (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6169661"
+              target="_blank">NIH/PubMed Central</a>).</li>
+        </ul>
+        <hr style="margin:2rem 0;">
+        <h3>5. Hiểu đúng – sống đúng</h3>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;margin-bottom:1rem;">
+            <thead>
+              <tr style="background:#e74c3c;color:#fff;">
+                <th style="padding:8px;border:1px solid #eee;">Nhận thức sai lầm</th>
+                <th style="padding:8px;border:1px solid #eee;">Kiến thức đúng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:8px;border:1px solid #eee;">HIV dễ lây qua tiếp xúc thường ngày</td>
+                <td style="padding:8px;border:1px solid #eee;">HIV không lây qua bắt tay, ôm, ăn uống chung</td>
+              </tr>
+              <tr>
+                <td style="padding:8px;border:1px solid #eee;">Người nhiễm HIV không nên kết hôn hoặc có con</td>
+                <td style="padding:8px;border:1px solid #eee;">Người nhiễm HIV điều trị đúng cách vẫn có thể kết hôn,
+                  sinh con an toàn</td>
+              </tr>
+              <tr>
+                <td style="padding:8px;border:1px solid #eee;">Người nhiễm HIV sống ngắn hơn</td>
+                <td style="padding:8px;border:1px solid #eee;">ARV giúp sống khỏe mạnh và lâu dài</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="footer-bottom">
+        <p style="font-size:0.95em;color:#888;">
+          Nguồn: <a
+            href="https://www.unaids.org/sites/default/files/media_asset/eliminating-discrimination-guidance_en.pdf"
+            target="_blank">UNAIDS – Eliminating Discrimination</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section id="services" class="services">
+    <div class="container">
+      <h2>Dịch vụ của chúng tôi</h2>
+      <p class="services-description">
+        Phòng khám CareFirst HIV cung cấp các dịch vụ chăm sóc HIV toàn diện với giá cả hợp lý và chất lượng cao.
+      </p>
+      <div class="services-grid">
+        <!-- Services will be loaded dynamically via JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="about">
+    <div class="container">
+      <div class="about-content">
+        <div class="about-text">
+          <h2>Về Phòng khám CareFirst HIV</h2>
           <p>
-            &copy; 2025 Phòng khám HIV CareFirst. Bản quyền thuộc về. | Chính sách bảo mật | Điều khoản dịch vụ
+            Trong hơn 15 năm qua, Phòng khám CareFirst HIV đã đi đầu trong công tác chăm sóc HIV,
+            cung cấp dịch vụ y tế toàn diện, hỗ trợ và giáo dục cho cộng đồng của chúng tôi.
+            Chúng tôi tin rằng mọi người đều xứng đáng được tiếp cận dịch vụ chăm sóc sức khỏe chất lượng,
+            bất kể hoàn cảnh hay xuất thân của họ.
+          </p>
+          <div class="stats">
+            <div class="stat">
+              <h3>5,000+</h3>
+              <p>Người bệnh đã được phục vụ</p>
+            </div>
+            <div class="stat">
+              <h3>15+</h3>
+              <p>Năm phục vụ</p>
+            </div>
+            <div class="stat">
+              <h3>24/7</h3>
+              <p>Hỗ trợ có sẵn</p>
+            </div>
+          </div>
+        </div>
+        <div class="about-image">
+          <i class="fas fa-hospital"></i>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="contact">
+    <div class="container">
+      <h2>Liên hệ với chúng tôi</h2>
+      <div class="contact-grid">
+        <div class="contact-info">
+          <div class="contact-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+              <h3>Địa chỉ</h3>
+              <p>Khu CNC<br />Tp Thủ Đức</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-phone"></i>
+            <div>
+              <h3>Điện thoại</h3>
+              <p>0965420205</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-envelope"></i>
+            <div>
+              <h3>Email</h3>
+              <p>ngovanminhtri05@gmail.com</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-clock"></i>
+            <div>
+              <h3>Giờ làm việc</h3>
+              <p>
+                Thứ 2 - Thứ 6: 8AM-6PM<br />Thứ 7: 9AM-4PM<br />Chủ nhật: Chỉ tiếp nhận trường hợp khẩn cấp
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="contact-form">
+          <form id="contactForm">
+            <input type="text" placeholder="Tên của bạn" required />
+            <input type="email" placeholder="Email của bạn" required />
+            <input type="tel" placeholder="Số điện thoại của bạn" />
+            <textarea placeholder="Tin nhắn của bạn" rows="5" required></textarea>
+            <button type="submit" class="btn-primary">Gửi tin nhắn</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <div class="footer-logo">
+            <i class="fas fa-heartbeat"></i>
+            <span>Phòng khám CareFirst HIV</span>
+          </div>
+          <p>
+            Cung cấp dịch vụ chăm sóc và hỗ trợ HIV tận tâm cho mọi người trong
+            cộng đồng của chúng tôi.
           </p>
         </div>
-      </div>
-    </footer>
-
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Đăng nhập vào tài khoản</h2>
-          <span class="close" onclick="closeModal('loginModal')">&times;</span>
+        <div class="footer-section">
+          <h3>Liên kết nhanh</h3>
+          <ul>
+            <li><a href="#home">Trang chủ</a></li>
+            <li><a href="#services">Dịch vụ</a></li>
+            <li><a href="#about">Về chúng tôi</a></li>
+            <li><a href="#contact">Liên hệ</a></li>
+          </ul>
         </div>
-        <form id="loginForm" class="auth-form">
-          <div class="form-group">
-            <label for="loginUserName">Tên đăng nhập</label>
-            <input type="text" id="loginUsername" name="username" required />
-            <span class="error-message" id="loginUsernameError"></span>
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Mật khẩu</label>
-            <input
-              type="password"
-              id="loginPassword"
-              name="password"
-              required
-            />
-            <span class="error-message" id="loginPasswordError"></span>
-          </div>
-          <div class="form-options">
-            <label class="checkbox-container">
-              <input type="checkbox" name="remember" />
-              <span class="checkmark"></span>
-              Ghi nhớ đăng nhập
+        <div class="footer-section">
+          <h3>Dịch vụ</h3>
+          <ul>
+            <li><a href="#">Xét nghiệm HIV</a></li>
+            <li><a href="#">Điều trị</a></li>
+            <li><a href="#">Nhóm hỗ trợ</a></li>
+            <li><a href="#">Phòng ngừa</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Khẩn cấp</h3>
+          <p>24/7 Đường dây nóng: <strong>(555) 911-HIV1</strong></p>
+          <p>Hỗ trợ khủng hoảng có sẵn</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>
+          &copy; 2025 Phòng khám HIV CareFirst. Bản quyền thuộc về. | Chính sách bảo mật | Điều khoản dịch vụ
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Đăng nhập vào tài khoản</h2>
+        <span class="close" onclick="closeModal('loginModal')">&times;</span>
+      </div>
+      <form id="loginForm" class="auth-form">
+        <div class="form-group">
+          <label for="loginUserName">Tên đăng nhập</label>
+          <input type="text" id="loginUsername" name="username" required />
+          <span class="error-message" id="loginUsernameError"></span>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Mật khẩu</label>
+          <input type="password" id="loginPassword" name="password" required />
+          <span class="error-message" id="loginPasswordError"></span>
+        </div>
+        <div class="form-options">
+          <label class="checkbox-container">
+            <input type="checkbox" name="remember" />
+            <span class="checkmark"></span>
+            Ghi nhớ đăng nhập
+          </label>
+          <a href="./forgot-password/forgot-password.html" class="forgot-password">Quên mật khẩu?</a>
+        </div>
+        <button type="submit" class="btn-primary btn-full">Đăng nhập</button>
+        <div class="form-footer">
+          <p>
+            Chưa có tài khoản?
+            <a href="#" onclick="switchModal('loginModal', 'registerModal')">Đăng ký tại đây</a>
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Tạo tài khoản của bạn</h2>
+        <span class="close" onclick="closeModal('registerModal')">&times;</span>
+      </div>
+      <form id="registerForm" class="auth-form">
+        <div class="form-group">
+          <label for="username">Tên đăng nhập</label>
+          <input type="text" id="username" name="username" required>
+          <span class="error-message" id="usernameError"></span>
+        </div>
+        <div class="form-group">
+          <label for="fullName">Họ và tên</label>
+          <input type="text" id="fullName" name="fullName" required>
+          <span class="error-message" id="fullNameError"></span>
+        </div>
+        <div class="form-group">
+          <label for="registerEmail">Địa chỉ Email</label>
+          <input type="email" id="registerEmail" name="email" required>
+          <span class="error-message" id="registerEmailError"></span>
+        </div>
+        <div class="form-group">
+          <label for="dateOfBirth">Ngày sinh</label>
+          <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+          <span class="error-message" id="dateOfBirthError"></span>
+        </div>
+        <div class="form-group">
+          <label>Giới tính</label>
+          <div class="radio-group">
+            <label class="radio-container">
+              <input type="radio" name="gender" value="male" required>
+              <span class="radio-checkmark"></span>
+              Nam
             </label>
-            <a href="./forgot-password/forgot-password.html" class="forgot-password">Quên mật khẩu?</a>
+            <label class="radio-container">
+              <input type="radio" name="gender" value="female">
+              <span class="radio-checkmark"></span>
+              Nữ
+            </label>
+
           </div>
-          <button type="submit" class="btn-primary btn-full">Đăng nhập</button>
-          <div class="form-footer">
-            <p>
-              Chưa có tài khoản?
-              <a href="#" onclick="switchModal('loginModal', 'registerModal')"
-                >Đăng ký tại đây</a
-              >
-            </p>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Register Modal -->
-    <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Tạo tài khoản của bạn</h2>
-                <span class="close" onclick="closeModal('registerModal')">&times;</span>
-            </div>
-            <form id="registerForm" class="auth-form">
-                <div class="form-group">
-                    <label for="username">Tên đăng nhập</label>
-                    <input type="text" id="username" name="username" required>
-                    <span class="error-message" id="usernameError"></span>
-                </div>
-                <div class="form-group">
-                    <label for="fullName">Họ và tên</label>
-                    <input type="text" id="fullName" name="fullName" required>
-                    <span class="error-message" id="fullNameError"></span>
-                </div>
-                <div class="form-group">
-                    <label for="registerEmail">Địa chỉ Email</label>
-                    <input type="email" id="registerEmail" name="email" required>
-                    <span class="error-message" id="registerEmailError"></span>
-                </div>
-                <div class="form-group">
-                    <label for="dateOfBirth">Ngày sinh</label>
-                    <input type="date" id="dateOfBirth" name="dateOfBirth" required>
-                    <span class="error-message" id="dateOfBirthError"></span>
-                </div>
-                <div class="form-group">
-                    <label>Giới tính</label>
-                    <div class="radio-group">
-                        <label class="radio-container">
-                            <input type="radio" name="gender" value="male" required>
-                            <span class="radio-checkmark"></span>
-                            Nam
-                        </label>
-                        <label class="radio-container">
-                            <input type="radio" name="gender" value="female">
-                            <span class="radio-checkmark"></span>
-                            Nữ
-                        </label>
-                      
-                    </div>
-                    <span class="error-message" id="genderError"></span>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="registerPassword">Mật khẩu</label>
-                        <input type="password" id="registerPassword" name="password" required>
-                        <span class="error-message" id="registerPasswordError"></span>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Xác nhận mật khẩu</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" required>
-                        <span class="error-message" id="confirmPasswordError"></span>
-                    </div>
-                </div>
-                <!-- Hidden fields -->
-                <input type="hidden" name="role" value="0">
-                <input type="hidden" name="isActive" value="true">
-                
-                <div class="form-options">
-                    <label class="checkbox-container">
-                        <input type="checkbox" name="terms" required>
-                        <span class="checkmark"></span>
-                        Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật
-                    </label>
-                </div>
-                <button type="submit" class="btn-primary btn-full">Tạo tài khoản</button>
-                <div class="form-footer">
-                    <p>Đã có tài khoản? <a href="#" onclick="switchModal('registerModal', 'loginModal')">Đăng nhập tại đây</a></p>
-                </div>
-            </form>
+          <span class="error-message" id="genderError"></span>
         </div>
-    </div>
-
-    <!-- Success Modal -->
-    <div id="successModal" class="modal">
-        <div class="modal-content success-modal">
-            <div class="success-icon">
-                <i class="fas fa-smile"></i>
-            </div>
-            <h2>Đăng ký thành công!</h2>
-            <p>Tài khoản của bạn đã được tạo thành công.</p>
-            <p>Chào mừng đến với Phòng khám CareFirst HIV!</p>
-            <button class="btn-primary btn-full" onclick="closeModal('successModal')">Tiếp tục</button>
-        </div>
-    </div>
-
-    <!-- Email Verification Modal -->
-    <div id="verifyModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Xác thực Email</h2>
-          <span class="close" onclick="closeModal('verifyModal')">&times;</span>
-        </div>
-        <form id="verifyForm" class="auth-form">
+        <div class="form-row">
           <div class="form-group">
-            <label for="verifyEmail">Email</label>
-            <input type="email" id="verifyEmail" name="verifyEmail" readonly />
+            <label for="registerPassword">Mật khẩu</label>
+            <input type="password" id="registerPassword" name="password" required>
+            <span class="error-message" id="registerPasswordError"></span>
           </div>
           <div class="form-group">
-            <label for="verifyCode">Mã xác thực</label>
-            <input type="text" id="verifyCode" name="verifyCode" maxlength="6" required />
-            <span class="error-message" id="verifyCodeError"></span>
+            <label for="confirmPassword">Xác nhận mật khẩu</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required>
+            <span class="error-message" id="confirmPasswordError"></span>
           </div>
-          <div class="form-options flex items-center justify-between">
-            <span id="countdown" class="text-red-600 font-semibold"></span>
-            <button type="button" id="resendBtn" class="btn-secondary" disabled>Gửi lại mã</button>
-          </div>
-          <button type="submit" class="btn-primary btn-full mt-4">Xác thực</button>
-        </form>
-      </div>
-    </div>
+        </div>
+        <!-- Hidden fields -->
+        <input type="hidden" name="role" value="0">
+        <input type="hidden" name="isActive" value="true">
 
-    <script src="landingpage-script.js"></script>
-  </body>
+        <div class="form-options">
+          <label class="checkbox-container">
+            <input type="checkbox" name="terms" required>
+            <span class="checkmark"></span>
+            Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật
+          </label>
+        </div>
+        <button type="submit" class="btn-primary btn-full">Tạo tài khoản</button>
+        <div class="form-footer">
+          <p>Đã có tài khoản? <a href="#" onclick="switchModal('registerModal', 'loginModal')">Đăng nhập tại đây</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="modal">
+    <div class="modal-content success-modal">
+      <div class="success-icon">
+        <i class="fas fa-smile"></i>
+      </div>
+      <h2>Đăng ký thành công!</h2>
+      <p>Tài khoản của bạn đã được tạo thành công.</p>
+      <p>Chào mừng đến với Phòng khám CareFirst HIV!</p>
+      <button class="btn-primary btn-full" onclick="closeModal('successModal')">Tiếp tục</button>
+    </div>
+  </div>
+
+  <!-- Email Verification Modal -->
+  <div id="verifyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Xác thực Email</h2>
+        <span class="close" onclick="closeModal('verifyModal')">&times;</span>
+      </div>
+      <form id="verifyForm" class="auth-form">
+        <div class="form-group">
+          <label for="verifyEmail">Email</label>
+          <input type="email" id="verifyEmail" name="verifyEmail" readonly />
+        </div>
+        <div class="form-group">
+          <label for="verifyCode">Mã xác thực</label>
+          <input type="text" id="verifyCode" name="verifyCode" maxlength="6" required />
+          <span class="error-message" id="verifyCodeError"></span>
+        </div>
+        <div class="form-options flex items-center justify-between">
+          <span id="countdown" class="text-red-600 font-semibold"></span>
+          <button type="button" id="resendBtn" class="btn-secondary" disabled>Gửi lại mã</button>
+        </div>
+        <button type="submit" class="btn-primary btn-full mt-4">Xác thực</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="landingpage-script.js"></script>
+</body>
+
 </html>

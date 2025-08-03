@@ -1,3 +1,52 @@
+// IMMEDIATE SECURITY CHECK - Debug logging
+console.log('=== PATIENT MEDICAL RECORD SECURITY CHECK ===');
+console.log('Page URL:', window.location.href);
+console.log('Token exists:', !!localStorage.getItem('token'));
+console.log('User role:', localStorage.getItem('userRole'));
+console.log('Current path:', window.location.pathname);
+
+// Additional security check for this specific page
+(function() {
+    'use strict';
+    
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    const currentPath = window.location.pathname;
+    
+    console.log('=== IMMEDIATE SECURITY VALIDATION ===');
+    console.log('Token present:', !!token);
+    console.log('Role present:', !!userRole);
+    
+    if (!token) {
+        console.log('BLOCKING: No token found');
+        alert('Authentication required. Redirecting to login page.');
+        window.location.href = '/public-view/landingpage.html?reason=Authentication%20required';
+        return;
+    }
+    
+    if (!userRole) {
+        console.log('BLOCKING: No role found');
+        alert('Invalid session. Redirecting to login page.');
+        localStorage.clear();
+        window.location.href = '/public-view/landingpage.html?reason=Invalid%20session';
+        return;
+    }
+    
+    // Check role access for shared components
+    const roleInt = parseInt(userRole);
+    const validRoles = [1, 2, 3, 4, 5]; // All roles can access shared components
+    
+    if (!validRoles.includes(roleInt)) {
+        console.log('BLOCKING: Invalid role', roleInt);
+        alert('Invalid user role. Redirecting to login page.');
+        localStorage.clear();
+        window.location.href = '/public-view/landingpage.html?reason=Invalid%20user%20role';
+        return;
+    }
+    
+    console.log('SECURITY CHECK PASSED for role:', roleInt);
+})();
+
 // Get token from localStorage
 const token = localStorage.getItem('token');
 
@@ -205,7 +254,7 @@ function convertPaymentMethodToEnglish(vietnameseMethod) {
         'Tiền mặt': 'cash',
         'Thẻ tín dụng': 'card'
     };
-    
+
     return methodMap[vietnameseMethod] || vietnameseMethod.toLowerCase();
 }
 
@@ -215,7 +264,7 @@ async function createPayment(paymentData) {
         // Determine which API to use based on payment method
         const originalMethod = paymentData.paymentMethod;
         const isCashPayment = originalMethod === 'Tiền mặt' || originalMethod === 'cash';
-        
+
         // Prepare request body with the new structure
         let requestBody = {
             pmrId: paymentData.pmrId,
@@ -225,24 +274,24 @@ async function createPayment(paymentData) {
             description: paymentData.description,
             notes: paymentData.notes || paymentData.description // Use description as notes if notes not provided
         };
-        
+
         // Choose API endpoint based on payment method
-        const apiEndpoint = isCashPayment 
+        const apiEndpoint = isCashPayment
             ? 'https://localhost:7009/api/Payment/CreateCashPayment'
             : 'https://localhost:7009/api/Payment/CreatePayment';
-        
+
         // Add paymentMethod field for non-cash payments (CreatePayment API still requires it)
         if (!isCashPayment) {
             requestBody.paymentMethod = convertPaymentMethodToEnglish(originalMethod);
         }
-        
+
         console.log('Creating payment:', {
             method: originalMethod,
             isCash: isCashPayment,
             endpoint: apiEndpoint,
             requestBody: requestBody
         });
-        
+
         const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
@@ -251,7 +300,7 @@ async function createPayment(paymentData) {
             },
             body: JSON.stringify(requestBody)
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Payment creation failed:', errorText);
@@ -928,7 +977,7 @@ function formatPaymentMethod(method) {
         return 'Tiền mặt';
     }
 
-    
+
     // Handle "thẻ tín dụng" variations
     if (cleanMethod.match(/th[e\u00EA\u1EBF]\s*t[i\u00ED]n\s*d[u\u00F9\u00FA\u0169\u1EE5]ng/i) ||
         cleanMethod.includes('the') && cleanMethod.includes('tin') ||
@@ -952,7 +1001,7 @@ function formatPaymentMethod(method) {
         'tien': 'Tiền mặt',
 
         'cash': 'Tiền mặt',
-        
+
         // Credit card variations - including encoding issues
         'thẻ tín dụng': 'Thẻ tín dụng',
         'the tin dung': 'Thẻ tín dụng',
@@ -963,7 +1012,7 @@ function formatPaymentMethod(method) {
         'coin card': 'Thẻ tín dụng',
 
         'card': 'Thẻ tín dụng',
-        
+
         // Fallback for other variations
         'string': 'Tiền mặt'
     };
@@ -1272,7 +1321,10 @@ function renderARVRegimens(regimens, medications) {
                     ` : `<div class='empty-state'><i class='fas fa-capsules'></i> No medications for this regimen.</div>`}
                     <div style="margin-top:1rem;text-align:right;">
                         ${(!window.isStaff && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Cập nhật trạng thái</button>` : ''}
-${(window.isDoctor && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>` : ''}
+${(window.isDoctor && ![2,4,5].includes(regimen.regimenStatus)) 
+    ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>` 
+    : ''
+}
                     </div>
                 </td>
             </tr>
@@ -1881,7 +1933,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!resultVal) {
             msgDiv.textContent = 'Vui lòng chọn kết quả.';
             return;
-        }        
+        }
         // Component tests
         const componentFieldsets = componentTestsContainer.querySelectorAll('.component-test-fieldset');
         if (componentFieldsets.length === 0) {
@@ -1901,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!value) {
                 msgDiv.textContent = 'Vui lòng nhập giá trị kết quả cho tất cả thành phần.';
                 return;
-            }            
+            }
             componentTests.push({
                 testResultId: 0, // Will be set by backend
                 staffId: 0, // Optionally set if available
@@ -2601,7 +2653,7 @@ function getVietnamToday() {
     const vietnamDate = new Date(now.getTime() + diff * 60 * 1000);
     return vietnamDate.toISOString().slice(0, 10);
 }
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (window.isDoctor) {
         const container = document.getElementById('createAppointmentContainer');
         if (container) container.style.display = '';
@@ -2610,7 +2662,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // ...existing code...
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Hiển thị modal khi bấm nút
     const openBtn = document.getElementById('openCreateAppointmentBtn');
     const modal = document.getElementById('createRescheduleAppointmentModal');
@@ -2633,19 +2685,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Gọi lại khi đổi ngày
     if (dateInput) {
-        dateInput.addEventListener('change', function() {
+        dateInput.addEventListener('change', function () {
             loadAvailableRescheduleTimes(this.value);
         });
     }
 
     if (closeBtn && modal) closeBtn.onclick = () => { modal.style.display = 'none'; };
     if (cancelBtn && modal) cancelBtn.onclick = () => { modal.style.display = 'none'; };
-    window.addEventListener('click', function(e) {
+    window.addEventListener('click', function (e) {
         if (e.target === modal) modal.style.display = 'none';
     });
 
     // Xử lý submit
-    if (form) form.onsubmit = async function(e) {
+    if (form) form.onsubmit = async function (e) {
         e.preventDefault();
         msgDiv.textContent = '';
         const date = document.getElementById('rescheduleAppointmentDate').value;
@@ -2674,7 +2726,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             if (!res.ok) {
                 let errMsg = 'Tạo lịch tái khám thất bại.';
-                try { errMsg += ' ' + await res.text(); } catch {}
+                try { errMsg += ' ' + await res.text(); } catch { }
                 msgDiv.textContent = errMsg;
                 return;
             }
