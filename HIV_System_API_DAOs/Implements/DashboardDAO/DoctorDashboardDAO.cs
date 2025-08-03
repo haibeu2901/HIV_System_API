@@ -35,7 +35,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                     .Distinct()
                     .CountAsync(),
                 UpcomingAppointments = await _context.Appointments
-                    .CountAsync(a => a.DctId == doctorId && a.ApmtDate >= DateOnly.FromDateTime(today) && a.ApmStatus == 1),
+                    .CountAsync(a => a.DctId == doctorId && a.ApmtDate >= DateOnly.FromDateTime(today) && (a.ApmStatus == 2 || a.ApmStatus ==3)),
                 CompletedAppointments = await _context.Appointments
                     .CountAsync(a => a.DctId == doctorId && a.ApmtDate < DateOnly.FromDateTime(today) && a.ApmStatus == 5),
                 TodaySchedule = await _context.Appointments
@@ -54,6 +54,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                     .ToListAsync<dynamic>(),
                 RecentPatients = await _context.Appointments
                     .Where(a => a.DctId == doctorId)
+                    .Where(a => a.ApmStatus == 5)
                     .OrderByDescending(a => a.ApmtDate)
                     .Select(a => new
                     {
