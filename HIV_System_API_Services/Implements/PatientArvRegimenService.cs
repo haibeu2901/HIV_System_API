@@ -769,6 +769,9 @@ namespace HIV_System_API_Services.Implements
                 && regimenRequest.StartDate > regimenRequest.EndDate)
                 throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");
 
+            if (regimenRequest.RegimenStatus == 2 || regimenRequest.RegimenStatus == 4 || regimenRequest.RegimenStatus == 2)
+                throw new ArgumentException("Không thể cập nhật phác đồ ARV với trạng thái đang hoạt động, thất bại hoặc hoàn thành.");
+
             // Validate medication inputs
             foreach (var med in medicationRequests)
             {
@@ -924,7 +927,7 @@ namespace HIV_System_API_Services.Implements
                 try
                 {
                     // Get today's notifications for end date reminders
-                    var todayStart = DateTime.UtcNow.Date;
+                    var todayStart = DateTime.Now.Date;
                     var todayEnd = todayStart.AddDays(1).AddTicks(-1);
 
                     var existingReminders = await _context.Notifications
