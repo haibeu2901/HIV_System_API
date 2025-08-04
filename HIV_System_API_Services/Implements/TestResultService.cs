@@ -444,6 +444,9 @@ namespace HIV_System_API_Services.Implements
 
                     await ValidatePatientMedicalRecordExists(testResult.PatientMedicalRecordId);
 
+                    if (existingTestResult.TestDate < DateOnly.FromDateTime(DateTime.Now))
+                        throw new InvalidOperationException("Không thể cập nhật kết quả xét nghiệm ở trong quá khứ.");
+
                     // Update main test result
                     existingTestResult.TestDate = testResult.TestDate;
                     existingTestResult.ResultValue = testResult.Result;
