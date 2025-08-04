@@ -945,7 +945,7 @@ function getPaymentMethodIcon(method) {
 
 function formatCurrency(amount, currency) {
     if (currency === 'VND') {
-        return 'd' + amount.toLocaleString();
+        return amount.toLocaleString() + 'đ';
     }
     return amount.toLocaleString();
 }
