@@ -116,7 +116,7 @@ builder.Services.AddSwaggerGen();
 //Add DB Context
 builder.Services.AddDbContext<HivSystemApiContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("HIVSystemDatabase"))
-                                                .EnableSensitiveDataLogging() // Enable sensitive data logging
+                                                .EnableSensitiveDataLogging(false) // Enable sensitive data logging
                                                 .EnableDetailedErrors());     // Enable detailed errors for debugging);
 
 // Register DAOs
@@ -176,8 +176,12 @@ builder.Services.AddHostedService<RegimenReminderBackgroundService>();
 // Configure logging
 builder.Services.AddLogging(logging =>
 {
+    logging.ClearProviders();
     logging.AddConsole();
     logging.AddDebug();
+    logging.SetMinimumLevel(LogLevel.Information);
+    // Filter out EF Core SQL logging
+    logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
 });
 
 // Add CORS policy
