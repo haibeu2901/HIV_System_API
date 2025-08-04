@@ -871,6 +871,7 @@ namespace HIV_System_API_Services.Implements
                 var notification = new Notification
                 {
                     NotiType = "Cập nhật phác đồ ARV",
+
                     NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {updatedMedications.Count} loại thuốc. Vui lòng kiểm tra kĩ hơn tại hồ sơ y tế của bạn. Nếu có vấn đề gì vui lòng liên hệ bác sĩ để được tư vấn và hỗ trợ tốt hơn.",
                     SendAt = DateTime.Now
                 };
@@ -909,7 +910,7 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<PatientArvRegimenResponseDTO>> SendEndDateReminderNotificationsAsync(int daysBeforeEnd)
         {
             if (daysBeforeEnd < 0)
-                throw new ArgumentException("Số ngày trước khi kết thúc phải lớn hơn hoặc bằng 0.", nameof(daysBeforeEnd));
+                throw new ArgumentException("Số ngày cho đến ngày phác đồ hết hạn phải lớn hơn 0.", nameof(daysBeforeEnd));
 
             try
             {
@@ -920,7 +921,7 @@ namespace HIV_System_API_Services.Implements
                     .Include(par => par.Pmr)
                     .ThenInclude(pmr => pmr.Ptn)
                     .Where(par => par.EndDate.HasValue
-                        && par.EndDate.Value == targetDate
+                        && par.EndDate.Value <= targetDate
                         && par.RegimenStatus == 2) // 2 = Active
                     .ToListAsync();
 
@@ -939,7 +940,7 @@ namespace HIV_System_API_Services.Implements
                     var todayEnd = todayStart.AddDays(1).AddTicks(-1);
 
                     var existingReminders = await _context.Notifications
-                        .Where(n => n.NotiType == "Nhắc nhở tái khám"
+                        .Where(n => n.NotiType == "Nhắc nhở phác đồ"
                             && n.SendAt >= todayStart
                             && n.SendAt <= todayEnd)
                         .Select(n => n.NotiMessage)
@@ -949,25 +950,27 @@ namespace HIV_System_API_Services.Implements
                         if (regimen.Pmr?.Ptn == null)
                             continue;
                         // Check if a reminder for this regimen already exists today
-                        var reminderMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng đặt lịch hẹn để tái khám.";
+                        var reminderMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng kiểm tra lại lịch tái khám.";
                         if (existingReminders.Any(msg => msg == reminderMessage))
                         {
                             // Skip creating duplicate reminder
-                            responseDTOs.Add(MapToResponseDTO(regimen));
                             continue;
                         }
-
-                        var notificationRequest = new CreateNotificationRequestDTO
+                        else
                         {
-                            NotiType = "Nhắc nhở tái khám",
-                            NotiMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng đặt lịch hẹn để tái khám.",
-                            SendAt = DateTime.Now
-                        };
+                            var notificationRequest = new CreateNotificationRequestDTO
+                            {
+                                NotiType = "Nhắc nhở phác đồ",
+                                NotiMessage = reminderMessage,
+                                SendAt = DateTime.Now
+                            };
 
-                        var response = await _notificationService.CreateAndSendToAccountIdAsync(notificationRequest, regimen.Pmr.Ptn.AccId);
-                        responseDTOs.Add(MapToResponseDTO(regimen));
+                            var response = await _notificationService.CreateAndSendToAccountIdAsync(notificationRequest, regimen.Pmr.Ptn.AccId);
+                            responseDTOs.Add(MapToResponseDTO(regimen));
+                        }
+
                     }
-
+                    await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
                     return responseDTOs;
                 }

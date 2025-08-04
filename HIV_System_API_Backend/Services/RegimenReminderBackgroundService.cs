@@ -10,17 +10,16 @@ namespace HIV_System_API_Services.Implements
 {
     public class RegimenReminderBackgroundService : BackgroundService
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
-        private Timer _reminderTimer;
-        private Timer _cancelAppointmentTimer;
+        private Timer _dailyTimer;
         private readonly TimeSpan _dailyExecutionTime = new TimeSpan(0, 0, 0); // Midnight (00:00)
 
         public RegimenReminderBackgroundService(
-        IServiceProvider serviceProvider,
+        IServiceScopeFactory scopeFactory,
         ILogger<RegimenReminderBackgroundService> logger)
         {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -35,21 +34,11 @@ namespace HIV_System_API_Services.Implements
         {
             var now = DateTime.Now;
             var nextRun = now.AddMinutes(1);
-
-
-
             var timeToNextRun = nextRun - now;
             _logger.LogInformation($"Next tasks scheduled for {nextRun:yyyy-MM-dd HH:mm:ss}.");
 
             // Timer cho reminder phác đồ
-            _reminderTimer = new Timer(
-                async state => await ExecuteReminderTaskAsync(stoppingToken),
-                null,
-                timeToNextRun,
-                TimeSpan.FromMinutes(1));
-
-            // Timer cho hủy cuộc hẹn
-            _cancelAppointmentTimer = new Timer(
+            _dailyTimer = new Timer(
                 async state => await ExecuteDailyTasksAsync(stoppingToken),
                 null,
                 timeToNextRun,
@@ -60,11 +49,16 @@ namespace HIV_System_API_Services.Implements
         {
             try
             {
-                // Thực hiện cả hai tác vụ
-                await Task.WhenAll(
-                    ExecuteReminderTaskAsync(stoppingToken),
-                    CancelPastDateAppointmentsAsync(stoppingToken)
-                );
+                using var scope = _scopeFactory.CreateScope();
+                var patientArvRegimenService = scope.ServiceProvider.GetRequiredService<IPatientArvRegimenService>();
+                var appointmentService = scope.ServiceProvider.GetRequiredService<IAppointmentService>();
+
+                // Execute tasks sequentially
+                await ArvRegimenReminderAsync(patientArvRegimenService, stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken); // Add small delay between tasks
+                await CancelPastDateAppointmentsAsync(appointmentService, stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                await AppontmentReminderAsync(appointmentService, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -79,17 +73,13 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
-        private async Task ExecuteReminderTaskAsync(CancellationToken stoppingToken)
+        private async Task ArvRegimenReminderAsync(IPatientArvRegimenService service, CancellationToken stoppingToken)
         {
             _logger.LogInformation("Executing regimen reminder task at {Time}.", DateTime.Now);
             try
             {
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var patientArvRegimenService = scope.ServiceProvider.GetRequiredService<IPatientArvRegimenService>();
-                    var results = await patientArvRegimenService.SendEndDateReminderNotificationsAsync(7);
-                    _logger.LogInformation($"Sent {results.Count} regimen end date reminders.");
-                }
+                var results = await service.SendEndDateReminderNotificationsAsync(7);
+                _logger.LogInformation($"Sent {results.Count} regimen end date reminders.");
             }
             catch (Exception ex)
             {
@@ -97,17 +87,13 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
-        private async Task CancelPastDateAppointmentsAsync(CancellationToken stoppingToken)
+        private async Task CancelPastDateAppointmentsAsync(IAppointmentService service, CancellationToken stoppingToken)
         {
             _logger.LogInformation("Executing cancel past date appointments task at {Time}.", DateTime.Now);
             try
             {
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var appointmentService = scope.ServiceProvider.GetRequiredService<IAppointmentService>();
-                    await appointmentService.CancelPastDateAppointmentsAsync();
-                    _logger.LogInformation("Successfully cancelled past date appointments.");
-                }
+                await service.CancelPastDateAppointmentsAsync();
+                _logger.LogInformation("Successfully cancelled all past date appointments.");
             }
             catch (Exception ex)
             {
@@ -115,11 +101,24 @@ namespace HIV_System_API_Services.Implements
             }
         }
 
+        private async Task AppontmentReminderAsync(IAppointmentService service, CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Executing regimen reminder task at {Time}.", DateTime.Now);
+            try
+            {
+                var results = await service.SendNearDateAppointmentAsync(7);
+                _logger.LogInformation($"There are {results.Count} appointment near the end date.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing regimen reminder task.");
+            }
+        }
+
         public override void Dispose()
         {
             _logger.LogInformation("Background Services are disposing.");
-            _reminderTimer?.Dispose();
-            _cancelAppointmentTimer?.Dispose();
+            _dailyTimer?.Dispose();
             base.Dispose();
         }
     }
