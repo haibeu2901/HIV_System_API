@@ -20,12 +20,14 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IAppointmentRepo _appointmentRepo;
         private readonly INotificationRepo _notificationRepo;
+        private readonly NotificationService _notificationService;
         private readonly HivSystemApiContext _context;
 
         public AppointmentService()
         {
             _appointmentRepo = new AppointmentRepo();
             _notificationRepo = new NotificationRepo();
+            _notificationService = new NotificationService();
             _context = new HivSystemApiContext();
         }
 
@@ -917,6 +919,95 @@ namespace HIV_System_API_Services.Implements
                 Debug.WriteLine($"Failed to cancel past date appointments: {ex.Message}");
                 await transaction.RollbackAsync();
                 throw;
+            }
+        }
+
+        public async Task<List<AppointmentResponseDTO>> SendNearDateAppointmentAsync(int daysBefore)
+        {
+            if (daysBefore < 0)
+                throw new ArgumentException("Số ngày trước cuộc hẹn phải lớn hơn 0.", nameof(daysBefore));
+
+            try
+            {
+                var currentDate = DateOnly.FromDateTime(DateTime.Now);
+                var targetDate = currentDate.AddDays(daysBefore);
+                var responseDTOs = new List<AppointmentResponseDTO>();
+
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    var appointments = await _context.Appointments
+                        .Include(a => a.Ptn)
+                        .ThenInclude(p => p.Acc)
+                        .Include(a => a.Dct)
+                        .ThenInclude(d => d.Acc)
+                        .Where(a => a.ApmtDate.HasValue
+                            && a.ApmtDate.Value <= targetDate
+                            && (a.ApmStatus == 2 || a.ApmStatus == 3))
+                        .ToListAsync();
+
+                    if (!appointments.Any())
+                    {
+                        return responseDTOs;
+                    }
+
+                    // Get today's notifications for appointment reminders
+                    var todayStart = DateTime.Now.Date;
+                    var todayEnd = todayStart.AddDays(1).AddTicks(-1);
+
+                    var existingReminders = await _context.Notifications
+                        .Where(n => n.NotiType == "Nhắc nhở lịch hẹn"
+                            && n.SendAt >= todayStart
+                            && n.SendAt <= todayEnd)
+                        .Select(n => n.NotiMessage)
+                        .ToListAsync();
+
+                    foreach (var appointment in appointments)
+                    {
+                        if (appointment.Ptn?.Acc == null || appointment.Dct?.Acc == null)
+                            continue;
+
+                        var reminderMessage = $"Bạn có cuộc hẹn {(appointment.ApmStatus == 3 ? "tái khám" : "")} vào ngày {appointment.ApmtDate:dd/MM/yyyy} " +
+                        $"lúc {appointment.ApmTime:HH:mm} với bác sĩ {appointment.Dct.Acc.Fullname}. " +
+                        "Vui lòng đến đúng giờ.";
+
+                        // Skip if reminder already sent today
+                         if (existingReminders.Any(msg => msg == reminderMessage))
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            var notificationRequest = new CreateNotificationRequestDTO
+                            {
+                                NotiType = "Nhắc nhở lịch hẹn",
+                                NotiMessage = reminderMessage,
+                                SendAt = DateTime.Now
+                            };
+
+                            var response = await _notificationService.CreateAndSendToAccountIdAsync(notificationRequest, appointment.Ptn.AccId);
+                            responseDTOs.Add(MapToResponseDTO(appointment));
+                        }
+
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return responseDTOs;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"Lỗi khi gửi thông báo nhắc nhở lịch hẹn: {ex.InnerException?.Message ?? ex.Message}");
+                }
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Lỗi cơ sở dữ liệu khi gửi thông báo nhắc nhở lịch hẹn: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Lỗi không mong muốn khi gửi thông báo nhắc nhở lịch hẹn: {ex.Message}");
             }
         }
 

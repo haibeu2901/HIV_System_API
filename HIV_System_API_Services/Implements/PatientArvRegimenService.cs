@@ -901,18 +901,18 @@ namespace HIV_System_API_Services.Implements
         public async Task<List<PatientArvRegimenResponseDTO>> SendEndDateReminderNotificationsAsync(int daysBeforeEnd)
         {
             if (daysBeforeEnd < 0)
-                throw new ArgumentException("Số ngày trước khi kết thúc phải lớn hơn hoặc bằng 0.", nameof(daysBeforeEnd));
+                throw new ArgumentException("Số ngày cho đến ngày phác đồ hết hạn phải lớn hơn 0.", nameof(daysBeforeEnd));
 
             try
             {
-                var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                var currentDate = DateOnly.FromDateTime(DateTime.Now);
                 var targetDate = currentDate.AddDays(daysBeforeEnd);
 
                 var regimens = await _context.PatientArvRegimen
                     .Include(par => par.Pmr)
                     .ThenInclude(pmr => pmr.Ptn)
                     .Where(par => par.EndDate.HasValue
-                        && par.EndDate.Value == targetDate
+                        && par.EndDate.Value <= targetDate
                         && par.RegimenStatus == 2) // 2 = Active
                     .ToListAsync();
 
@@ -931,7 +931,7 @@ namespace HIV_System_API_Services.Implements
                     var todayEnd = todayStart.AddDays(1).AddTicks(-1);
 
                     var existingReminders = await _context.Notifications
-                        .Where(n => n.NotiType == "Nhắc nhở tái khám"
+                        .Where(n => n.NotiType == "Nhắc nhở phác đồ"
                             && n.SendAt >= todayStart
                             && n.SendAt <= todayEnd)
                         .Select(n => n.NotiMessage)
@@ -941,25 +941,27 @@ namespace HIV_System_API_Services.Implements
                         if (regimen.Pmr?.Ptn == null)
                             continue;
                         // Check if a reminder for this regimen already exists today
-                        var reminderMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng đặt lịch hẹn để tái khám.";
+                        var reminderMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng kiểm tra lại lịch tái khám.";
                         if (existingReminders.Any(msg => msg == reminderMessage))
                         {
                             // Skip creating duplicate reminder
-                            responseDTOs.Add(MapToResponseDTO(regimen));
                             continue;
                         }
-
-                        var notificationRequest = new CreateNotificationRequestDTO
+                        else
                         {
-                            NotiType = "Nhắc nhở tái khám",
-                            NotiMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng đặt lịch hẹn để tái khám.",
-                            SendAt = DateTime.UtcNow
-                        };
+                            var notificationRequest = new CreateNotificationRequestDTO
+                            {
+                                NotiType = "Nhắc nhở phác đồ",
+                                NotiMessage = reminderMessage,
+                                SendAt = DateTime.Now
+                            };
 
-                        var response = await _notificationService.CreateAndSendToAccountIdAsync(notificationRequest, regimen.Pmr.Ptn.AccId);
-                        responseDTOs.Add(MapToResponseDTO(regimen));
+                            var response = await _notificationService.CreateAndSendToAccountIdAsync(notificationRequest, regimen.Pmr.Ptn.AccId);
+                            responseDTOs.Add(MapToResponseDTO(regimen));
+                        }
+
                     }
-
+                    await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
                     return responseDTOs;
                 }
