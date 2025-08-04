@@ -47,8 +47,9 @@ console.log('Current path:', window.location.pathname);
     console.log('SECURITY CHECK PASSED for role:', roleInt);
 })();
 
-// Get token from localStorage
-const token = localStorage.getItem('token');
+// Get token from localStorage (reuse if already exists)
+const token = window.token || localStorage.getItem('token');
+window.token = token;
 
 let allRegimens = [];
 let allRegimenMedications = [];
