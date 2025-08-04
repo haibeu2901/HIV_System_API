@@ -42,6 +42,11 @@ class AdminApp {
             window.notificationManager = this.managers.notification;
             window.medicalRecordManager = this.managers.medicalRecord;
             window.accountManager = this.managers.account;
+            
+            // Make paymentsManager globally available if it exists
+            if (typeof paymentsManager !== 'undefined') {
+                window.paymentsManager = paymentsManager;
+            }
 
             // Initialize all managers
             await this.initializeManagers();

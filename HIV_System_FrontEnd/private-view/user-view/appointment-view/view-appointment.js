@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
       };
     })
-    .filter(event => event !== null && event.extendedProps.statusCode !== 3 && event.extendedProps.statusCode !== 4); // Remove cancelled appointments and null events
+    .filter(event => event !== null  && event.extendedProps.statusCode !== 4); // Remove cancelled appointments and null events
   } catch (err) {
     calendarEl.innerHTML = `<p style="color:red;">${err.message}</p>`;
     return;
@@ -149,8 +149,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           acceptButton.style.display = "none";
         }
       }
-      
-      if (eventStatusCode === 1 || eventStatusCode === 2) { // Pending or Confirmed
+
+      if (eventStatusCode === 1 || eventStatusCode === 2 || eventStatusCode === 3) { // Pending or Confirmed
         if (updateButton) {
           updateButton.style.display = "block";
           updateButton.onclick = () => openUpdateModal();
@@ -227,11 +227,11 @@ function renderStatusText(status) {
     case 2:
       return "Đã xác nhận";
     case 3:
-      return "Rescheduled";
+      return "Tái Khám";
     case 4:
-      return "Rejected";
+      return "Đã Hủy";
     case 5:
-      return "Completed";
+      return "Hoàn Tất";
   }
 }
 
@@ -242,7 +242,7 @@ function getStatusColor(status) {
     case 2:
       return "#43a047"; // Confirmed - green
     case 3:
-      return "#e53935"; // Cancelled - red
+      return "#1e8fc8"; // Rescheduled - blue
     case 4:
       return "#e53935"; // Rejected - red
     case 5:

@@ -124,7 +124,7 @@ namespace HIV_System_API_Services.Implements
                 PmrId = requestDTO.PatientMedRecordId,
                 Notes = requestDTO.Notes,
                 RegimenLevel = requestDTO.RegimenLevel,
-                CreatedAt = requestDTO.CreatedAt ?? DateTime.UtcNow,
+                CreatedAt = requestDTO.CreatedAt ?? DateTime.Now,
                 StartDate = requestDTO.StartDate,
                 EndDate = requestDTO.EndDate,
                 RegimenStatus = requestDTO.RegimenStatus,
@@ -341,6 +341,12 @@ namespace HIV_System_API_Services.Implements
                 if (existingRegimen == null)
                 {
                     throw new InvalidOperationException($"Phác đồ ARV bệnh nhân với ID {parId} không tồn tại.");
+                }
+
+                // Validate the whether the regimen is active
+                if (existingRegimen.RegimenStatus == 2) // Active
+                {
+                    throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đang hoạt động.");
                 }
 
                 // Validate the whether the regimen is failed
@@ -669,7 +675,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Phác đồ ARV mới",
                     NotiMessage = $"Một phác đồ ARV mới với {medicationEntities.Count} loại thuốc đã được tạo ra.",
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
 
@@ -769,9 +775,6 @@ namespace HIV_System_API_Services.Implements
                 && regimenRequest.StartDate > regimenRequest.EndDate)
                 throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");
 
-            if (regimenRequest.RegimenStatus == 2 || regimenRequest.RegimenStatus == 4 || regimenRequest.RegimenStatus == 2)
-                throw new ArgumentException("Không thể cập nhật phác đồ ARV với trạng thái đang hoạt động, thất bại hoặc hoàn thành.");
-
             // Validate medication inputs
             foreach (var med in medicationRequests)
             {
@@ -795,6 +798,9 @@ namespace HIV_System_API_Services.Implements
                 if (existingRegimen == null)
                     throw new InvalidOperationException($"Phác đồ ARV với ID {parId} không tồn tại.");
 
+                if (existingRegimen.RegimenStatus == 2) // Active
+                    throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đang hoạt động.");
+
                 if (existingRegimen.RegimenStatus == 4) // Failed
                     throw new InvalidOperationException($"Không thể cập nhật phác đồ ARV với ID {parId} vì đã được đánh dấu là thất bại.");
 
@@ -804,6 +810,8 @@ namespace HIV_System_API_Services.Implements
                 // Update regimen
                 var updatedRegimenEntity = MapToEntity(regimenRequest);
                 updatedRegimenEntity.ParId = parId;
+                updatedRegimenEntity.PmrId = existingRegimen.PmrId; // Keep the same PatientMedicalRecord ID
+                updatedRegimenEntity.RegimenStatus = existingRegimen.RegimenStatus; // Update status
                 var updatedRegimen = await _patientArvRegimenRepo.UpdatePatientArvRegimenAsync(parId, updatedRegimenEntity);
 
                 // Get existing medications for this regimen
@@ -863,8 +871,9 @@ namespace HIV_System_API_Services.Implements
                 var notification = new Notification
                 {
                     NotiType = "Cập nhật phác đồ ARV",
-                    NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {updatedMedications.Count} loại thuốc.",
-                    SendAt = DateTime.UtcNow
+
+                    NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {updatedMedications.Count} loại thuốc. Vui lòng kiểm tra kĩ hơn tại hồ sơ y tế của bạn. Nếu có vấn đề gì vui lòng liên hệ bác sĩ để được tư vấn và hỗ trợ tốt hơn.",
+                    SendAt = DateTime.Now
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
 

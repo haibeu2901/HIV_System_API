@@ -41,8 +41,9 @@ class AuthUtils {
 
     static redirectToLogin(message = 'Your session has expired. Please log in again.') {
         this.clearAuthData();
-        alert(message);
-        window.location.href = '/public-view/landingpage.html';
+        console.log('Redirecting to landing page:', message);
+        const encodedMessage = encodeURIComponent(message);
+        window.location.href = `/public-view/landingpage.html?reason=${encodedMessage}`;
     }
 
     static async checkAuthAndRedirect() {
@@ -84,6 +85,14 @@ class AuthUtils {
                 this.redirectToLogin();
                 return false;
             }
+            
+            // Check if user is on the correct page for their role
+            const userRole = this.getUserRole();
+            const isCorrectPage = this.isUserOnCorrectPage(currentPath, userRole);
+            if (!isCorrectPage) {
+                this.redirectToLogin('You do not have permission to access this page.');
+                return false;
+            }
         }
         
         // If on landing page and has valid token, redirect to appropriate dashboard
@@ -122,6 +131,72 @@ class AuthUtils {
                 console.warn('Unknown role:', role);
                 this.redirectToLogin('Invalid user role. Please log in again.');
         }
+    }
+
+    // Check if user is on the correct page for their role
+    static isUserOnCorrectPage(currentPath, userRole) {
+        const roleInt = parseInt(userRole);
+        
+        // Define allowed paths for each role
+        const rolePaths = {
+            1: [ // Admin
+                '/private-view/admin-view/',
+                '/private-view/shared/' // Shared components accessible to all roles
+            ],
+            2: [ // Doctor
+                '/private-view/doctor-view/',
+                '/private-view/shared/'
+            ],
+            3: [ // Patient/User
+                '/private-view/user-view/',
+                '/private-view/shared/'
+            ],
+            4: [ // Staff
+                '/private-view/staff-view/',
+                '/private-view/shared/'
+            ],
+            5: [ // Manager
+                '/private-view/manager-view/',
+                '/private-view/shared/'
+            ]
+        };
+
+        // Get allowed paths for the user's role
+        const allowedPaths = rolePaths[roleInt];
+        
+        if (!allowedPaths) {
+            console.warn('Unknown role:', userRole);
+            return false;
+        }
+
+        // Check if current path matches any of the allowed paths
+        return allowedPaths.some(allowedPath => currentPath.includes(allowedPath));
+    }
+
+    // Force role verification for sensitive actions
+    static async verifyRoleAccess(requiredRoles = []) {
+        const userRole = parseInt(this.getUserRole());
+        
+        if (!requiredRoles.includes(userRole)) {
+            this.redirectToLogin('You do not have permission to perform this action.');
+            return false;
+        }
+        
+        // Also validate token to ensure session is still valid
+        const isValidToken = await this.validateToken();
+        if (!isValidToken) {
+            this.redirectToLogin('Your session has expired. Please log in again.');
+            return false;
+        }
+        
+        return true;
+    }
+
+    // Additional method to handle direct URL access attempts
+    static handleUnauthorizedAccess() {
+        console.log('Unauthorized access attempt detected');
+        this.clearAuthData();
+        window.location.href = '/public-view/landingpage.html';
     }
 }
 

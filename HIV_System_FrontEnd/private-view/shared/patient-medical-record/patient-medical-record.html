@@ -1,11 +1,47 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
+    <!-- IMMEDIATE SECURITY PROTECTION -->
+    <script src="../../immediate-security.js"></script>
     <meta charset="UTF-8">
     <title>Hồ Sơ Y Tế Bệnh Nhân</title>
+    
+    <!-- IMMEDIATE SECURITY CHECK -->
+    <script>
+        // Immediate security check before any content loads
+        (function() {
+            console.log('=== IMMEDIATE HTML SECURITY CHECK ===');
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+            
+            console.log('URL:', window.location.href);
+            console.log('Token:', !!token);
+            console.log('Role:', userRole);
+            
+            if (!token || !userRole) {
+                console.log('IMMEDIATE REDIRECT: Missing token or role');
+                window.location.href = '/public-view/landingpage.html?reason=Authentication%20required';
+                return;
+            }
+            
+            // Check if role has access to shared components
+            const roleInt = parseInt(userRole);
+            if (![1, 2, 3, 4, 5].includes(roleInt)) {
+                console.log('IMMEDIATE REDIRECT: Invalid role');
+                localStorage.clear();
+                window.location.href = '/public-view/landingpage.html?reason=Invalid%20role';
+                return;
+            }
+            
+            console.log('IMMEDIATE CHECK PASSED');
+        })();
+    </script>
+    
     <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
     <link rel="stylesheet" href="patient-medical-record-style.css">
 </head>
+
 <body>
 
 
@@ -32,57 +68,95 @@
 
             <!-- Appointments Section -->
             <div class="section">
-                <h3>Lịch sử cuộc hẹn</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Lịch sử cuộc hẹn</h3>
+                    <div id="createAppointmentContainer" style="display: none;">
+                        <button id="openCreateAppointmentBtn" class="primary-btn">
+                            <i class="fas fa-plus"></i> Tạo lịch tái khám
+                        </button>
+                    </div>
+                </div>
                 <div id="appointmentsSection" class="content-section">
                     <p>Đang tải cuộc hẹn...</p>
                 </div>
             </div>
 
             <!-- Test Results Section -->
-<!-- Test Results Section -->
-        <div class="section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3>Tất cả kết quả xét nghiệm</h3>
-                <div id="createTestResultContainer" style="display: none;">
-                    <button id="openTestResultModalBtn" class="primary-btn">
-                        <i class="fas fa-plus"></i> Tạo kết quả xét nghiệm
-                    </button>
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Tất cả kết quả xét nghiệm</h3>
+                    <div id="createTestResultContainer" style="display: none;">
+                        <button id="openTestResultModalBtn" class="primary-btn">
+                            <i class="fas fa-plus"></i> Tạo kết quả xét nghiệm
+                        </button>
+                    </div>
+                </div>
+                <div id="testResultsSection">
+                    <p>Đang tải kết quả xét nghiệm...</p>
                 </div>
             </div>
-            <div id="testResultsSection" >
-                <p>Đang tải kết quả xét nghiệm...</p>
-            </div>
-        </div>
 
             <!-- ARV Regimens Section -->
             <div class="section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3>Tất cả phác đồ ARV của bệnh nhân</h3>
-        <div id="regimenCreateContainer" style="display:none;">
-            <button id="openRegimenModalBtn" class="primary-btn">
-                <i class="fas fa-plus"></i> Tạo phác đồ ARV
-            </button>
-        </div>
-    </div>
-    <div id="arvRegimensSection" class="content-section">
-        <p>Đang tải phác đồ ARV...</p>
-    </div>
-            <!-- Payment History Section -->
-            <div class="section">
-                <h3>Lịch sử thanh toán</h3>
-                <!-- Create Payment Button Container (only for staff/doctor) -->
-                <div id="createPaymentContainer" style="text-align: right; margin-bottom: 1.5rem; display: none;">
-                    <button id="openPaymentModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo thanh toán</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Tất cả phác đồ ARV của bệnh nhân</h3>
+                    <div id="regimenCreateContainer" style="display:none;">
+                        <button id="openRegimenModalBtn" class="primary-btn">
+                            <i class="fas fa-plus"></i> Tạo phác đồ ARV
+                        </button>
+                    </div>
                 </div>
-                <div id="paymentsSection" class="content-section">
-                    <p>Đang tải lịch sử thanh toán...</p>
+                <div id="arvRegimensSection" class="content-section">
+                    <p>Đang tải phác đồ ARV...</p>
+                </div>
+                <!-- Payment History Section -->
+                <div class="section">
+                    <h3>Lịch sử thanh toán</h3>
+                    <!-- Create Payment Button Container (only for staff/doctor) -->
+                    <div id="createPaymentContainer" style="text-align: right; margin-bottom: 1.5rem; display: none;">
+                        <button id="openPaymentModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Tạo thanh
+                            toán</button>
+                    </div>
+                    <div id="paymentsSection" class="content-section">
+                        <p>Đang tải lịch sử thanh toán...</p>
 
+                    </div>
                 </div>
-            </div>
         </main>
     </div>
 
-    
+    <!-- Modal tạo lịch tái khám -->
+    <div id="createRescheduleAppointmentModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:400px;margin:auto;">
+            <span class="close" id="closeCreateRescheduleAppointmentModal"
+                style="float:right;cursor:pointer;font-size:22px;">&times;</span>
+            <h2>Tạo lịch tái khám</h2>
+            <form id="createRescheduleAppointmentForm">
+                <div class="form-group">
+                    <label>Ngày tái khám <span style="color:red">*</span></label>
+                    <input type="date" id="rescheduleAppointmentDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Giờ tái khám <span style="color:red">*</span></label>
+                    <select id="rescheduleAppointmentTime" required>
+                        <option value="">Chọn giờ...</option>
+                        <!-- Các option giờ sẽ được JS render -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú</label>
+                    <textarea id="rescheduleAppointmentNotes" rows="2"></textarea>
+                </div>
+                <div style="text-align:right;">
+                    <button type="submit" class="primary-btn">Tạo lịch</button>
+                    <button type="button" id="cancelCreateRescheduleAppointmentBtn" class="secondary-btn">Hủy</button>
+                </div>
+                <div id="createRescheduleAppointmentMsg" style="color:red;margin-top:10px;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!--Create ARV modal-->
     <div id="regimenModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" id="closeRegimenModalBtn">&times;</span>
@@ -133,7 +207,8 @@
                             <!-- Medication rows will be inserted here -->
                         </tbody>
                     </table>
-                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Thêm thuốc</button>
+                    <button type="button" id="addMedicationBtn" class="secondary-btn" style="margin-top: 1rem;">Thêm
+                        thuốc</button>
                 </div>
                 <div class="form-actions" style="margin-top: 2rem;">
                     <button type="submit" class="primary-btn">Tạo phác đồ mới</button>
@@ -175,118 +250,122 @@
 
     <!-- Create Test Result Modal -->
     <div id="testResultModal" class="modal" style="display:none;">
-      <div class="modal-content" style="max-width:600px;">
-        <span class="close" id="closeTestResultModalBtn">&times;</span>
-        <h2>Tạo kết quả xét nghiệm mới</h2>
-        <form id="testResultForm">
-          <input type="hidden" id="testResultPatientMedicalRecordId" name="patientMedicalRecordId" />
-          <div class="form-group">
-            <label for="testResultDate">Ngày xét nghiệm <span style="color:red">*</span></label>
-            <input type="date" id="testResultDate" name="testDate" required />
-          </div>
-          <div class="form-group">
-            <label for="testResultSelect">Kết quả <span style="color:red">*</span></label>
-            <select id="testResultSelect" name="result" required style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 0.5rem;">
-              <option value="">Chọn kết quả</option>
-              <option value="true">Dương tính</option>
-              <option value="false">Âm tính</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="testResultNotes">Ghi chú</label>
-            <textarea id="testResultNotes" name="notes" rows="2"></textarea>
-          </div>
-          <hr>
-          <div id="componentTestsContainer">
-            <h3>Thành phần xét nghiệm</h3>
-            <!-- Component test fieldsets will be inserted here -->
-          </div>
-          <button type="button" id="addComponentTestBtn" class="secondary-btn" style="margin-bottom: 1rem;">+</button>
-          <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
-            <button type="submit" class="primary-btn">Lưu</button>
-            <button type="button" id="cancelTestResultBtn" class="secondary-btn">Hủy</button>
-          </div>
-          <div id="testResultFormMsg" style="color:red; margin-top:10px;"></div>
-        </form>
-      </div>
+        <div class="modal-content" style="max-width:600px;">
+            <span class="close" id="closeTestResultModalBtn">&times;</span>
+            <h2>Tạo kết quả xét nghiệm mới</h2>
+            <form id="testResultForm">
+                <input type="hidden" id="testResultPatientMedicalRecordId" name="patientMedicalRecordId" />
+                <div class="form-group">
+                    <label for="testResultDate">Ngày xét nghiệm <span style="color:red">*</span></label>
+                    <input type="date" id="testResultDate" name="testDate" required />
+                </div>
+                <div class="form-group">
+                    <label for="testResultSelect">Kết quả <span style="color:red">*</span></label>
+                    <select id="testResultSelect" name="result" required
+                        style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 0.5rem;">
+                        <option value="">Chọn kết quả</option>
+                        <option value="true">Dương tính</option>
+                        <option value="false">Âm tính</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="testResultNotes">Ghi chú</label>
+                    <textarea id="testResultNotes" name="notes" rows="2"></textarea>
+                </div>
+                <hr>
+                <div id="componentTestsContainer">
+                    <h3>Thành phần xét nghiệm</h3>
+                    <!-- Component test fieldsets will be inserted here -->
+                </div>
+                <button type="button" id="addComponentTestBtn" class="secondary-btn"
+                    style="margin-bottom: 1rem;">+</button>
+                <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
+                    <button type="submit" class="primary-btn">Lưu</button>
+                    <button type="button" id="cancelTestResultBtn" class="secondary-btn">Hủy</button>
+                </div>
+                <div id="testResultFormMsg" style="color:red; margin-top:10px;"></div>
+            </form>
+        </div>
     </div>
 
     <!-- Update Component Test Result Modal -->
     <div id="updateComponentTestModal" class="modal" style="display:none;">
-      <div class="modal-content" style="max-width:500px;">
-        <span class="close" id="closeUpdateComponentTestModalBtn">&times;</span>
-        <h2>Cập nhật thành phần xét nghiệm</h2>
-        <form id="updateComponentTestForm">
-          <input type="hidden" id="updateComponentTestId" name="componentTestResultId" />
-          <div class="form-group">
-            <label for="updateComponentTestName">Tên thành phần <span style="color:red">*</span></label>
-            <input type="text" id="updateComponentTestName" name="componentTestResultName" required />
-          </div>
-          <div class="form-group">
-            <label for="updateComponentTestDesc">Mô tả</label>
-            <input type="text" id="updateComponentTestDesc" name="ctrDescription" />
-          </div>
-          <div class="form-group">
-            <label for="updateComponentTestValue">Giá trị kết quả <span style="color:red">*</span></label>
-            <input type="text" id="updateComponentTestValue" name="resultValue" required />
-          </div>
-          <div class="form-group">
-            <label for="updateComponentTestNotes">Ghi chú <span style="color:red">*</span></label>
-            <textarea id="updateComponentTestNotes" name="notes" rows="2" required></textarea>
-          </div>
-          <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
-            <button type="submit" class="primary-btn">Lưu</button>
-            <button type="button" id="cancelUpdateComponentTestBtn" class="secondary-btn">Hủy</button>
-          </div>
-          <div id="updateComponentTestMsg" style="color:red; margin-top:10px;"></div>
-        </form>
+        <div class="modal-content" style="max-width:500px;">
+            <span class="close" id="closeUpdateComponentTestModalBtn">&times;</span>
+            <h2>Cập nhật thành phần xét nghiệm</h2>
+            <form id="updateComponentTestForm">
+                <input type="hidden" id="updateComponentTestId" name="componentTestResultId" />
+                <div class="form-group">
+                    <label for="updateComponentTestName">Tên thành phần <span style="color:red">*</span></label>
+                    <input type="text" id="updateComponentTestName" name="componentTestResultName" required />
+                </div>
+                <div class="form-group">
+                    <label for="updateComponentTestDesc">Mô tả</label>
+                    <input type="text" id="updateComponentTestDesc" name="ctrDescription" />
+                </div>
+                <div class="form-group">
+                    <label for="updateComponentTestValue">Giá trị kết quả <span style="color:red">*</span></label>
+                    <input type="text" id="updateComponentTestValue" name="resultValue" required />
+                </div>
+                <div class="form-group">
+                    <label for="updateComponentTestNotes">Ghi chú <span style="color:red">*</span></label>
+                    <textarea id="updateComponentTestNotes" name="notes" rows="2" required></textarea>
+                </div>
+                <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
+                    <button type="submit" class="primary-btn">Lưu</button>
+                    <button type="button" id="cancelUpdateComponentTestBtn" class="secondary-btn">Hủy</button>
+                </div>
+                <div id="updateComponentTestMsg" style="color:red; margin-top:10px;"></div>
+            </form>
         </div>
     </div>
 
     <!-- Update Test Result Modal -->
     <div id="updateTestResultModal" class="modal" style="display:none;">
-      <div class="modal-content" style="max-width:600px;">
-        <span class="close" id="closeUpdateTestResultModalBtn">&times;</span>
-        <h2>Cập nhật kết quả xét nghiệm</h2>
-        <form id="updateTestResultForm">
-          <input type="hidden" id="updateTestResultId" name="testResultId" />
-          <div class="form-group">
-            <label for="updateTestResultDate">Ngày xét nghiệm <span style="color:red">*</span></label>
-            <input type="date" id="updateTestResultDate" name="testDate" required />
-          </div>
-          <div class="form-group">
-            <label for="updateTestResultSelect">Kết quả <span style="color:red">*</span></label>
-            <select id="updateTestResultSelect" name="result" required style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 0.5rem;">
-              <option value="">Chọn kết quả</option>
-              <option value="true">Dương tính</option>
-              <option value="false">Âm tính</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="updateTestResultNotes">Ghi chú</label>
-            <textarea id="updateTestResultNotes" name="notes" rows="2"></textarea>
-          </div>
-          <hr>
-          <div id="updateComponentTestsContainer">
-            <h3>Thành phần xét nghiệm</h3>
-            <!-- Component test fieldsets will be inserted here -->
-          </div>
-          <button type="button" id="addUpdateComponentTestBtn" class="secondary-btn" style="margin-bottom: 1rem;">+ Thêm thành phần</button>
-          <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
-            <button type="submit" class="primary-btn">Cập nhật</button>
-            <button type="button" id="cancelUpdateTestResultBtn" class="secondary-btn">Hủy</button>
-          </div>
-          <div id="updateTestResultMsg" style="color:red; margin-top:10px;"></div>
-        </form>
-      </div>
+        <div class="modal-content" style="max-width:600px;">
+            <span class="close" id="closeUpdateTestResultModalBtn">&times;</span>
+            <h2>Cập nhật kết quả xét nghiệm</h2>
+            <form id="updateTestResultForm">
+                <input type="hidden" id="updateTestResultId" name="testResultId" />
+                <div class="form-group">
+                    <label for="updateTestResultDate">Ngày xét nghiệm <span style="color:red">*</span></label>
+                    <input type="date" id="updateTestResultDate" name="testDate" required />
+                </div>
+                <div class="form-group">
+                    <label for="updateTestResultSelect">Kết quả <span style="color:red">*</span></label>
+                    <select id="updateTestResultSelect" name="result" required
+                        style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; margin-top: 0.5rem;">
+                        <option value="">Chọn kết quả</option>
+                        <option value="true">Dương tính</option>
+                        <option value="false">Âm tính</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="updateTestResultNotes">Ghi chú</label>
+                    <textarea id="updateTestResultNotes" name="notes" rows="2"></textarea>
+                </div>
+                <hr>
+                <div id="updateComponentTestsContainer">
+                    <h3>Thành phần xét nghiệm</h3>
+                    <!-- Component test fieldsets will be inserted here -->
+                </div>
+                <button type="button" id="addUpdateComponentTestBtn" class="secondary-btn"
+                    style="margin-bottom: 1rem;">+ Thêm thành phần</button>
+                <div class="form-actions" style="text-align:right; margin-top: 1.5rem;">
+                    <button type="submit" class="primary-btn">Cập nhật</button>
+                    <button type="button" id="cancelUpdateTestResultBtn" class="secondary-btn">Hủy</button>
+                </div>
+                <div id="updateTestResultMsg" style="color:red; margin-top:10px;"></div>
+            </form>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
     <script src="/private-view/shared/role-config.js"></script>
     <script src="/private-view/shared/header/header-script.js"></script>
     <script src="patient-medical-record-script.js"></script>
-    
-   
+
+
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -322,31 +401,32 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 Phòng khám HIV CareFirst. Bảo lưu mọi quyền. | Chính sách bảo mật | Điều khoản dịch vụ</p>
+                <p>&copy; 2025 Phòng khám HIV CareFirst. Bảo lưu mọi quyền. | Chính sách bảo mật | Điều khoản dịch vụ
+                </p>
             </div>
         </div>
     </footer>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
-          const roleId = window.roleUtils.getUserRole();
-          const roleName = window.roleUtils.ROLE_NAMES[roleId];
-          if (roleName === 'doctor') {
-            document.getElementById('regimenCreateContainer').style.display = '';
-            document.getElementById('regimenModal').style.display = 'none';
-          } else {
-            document.getElementById('regimenCreateContainer').style.display = 'none';
-            document.getElementById('regimenModal').remove();
-          }
-        }
-      });
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NAMES) {
+                const roleId = window.roleUtils.getUserRole();
+                const roleName = window.roleUtils.ROLE_NAMES[roleId];
+                if (roleName === 'doctor') {
+                    document.getElementById('regimenCreateContainer').style.display = '';
+                    document.getElementById('regimenModal').style.display = 'none';
+                } else {
+                    document.getElementById('regimenCreateContainer').style.display = 'none';
+                    document.getElementById('regimenModal').remove();
+                }
+            }
+        });
     </script>
 
     <!-- Payment Creation Modal -->
     <div id="paymentModal" class="modal" style="display:none;">
         <div class="modal-content">
-                <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>Tạo thanh toán mới</h2>
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <span id="closePaymentModalBtn" class="close">&times;</span>
             </div>
             <form id="paymentForm">
@@ -356,7 +436,8 @@
                         <option value="">Chọn dịch vụ...</option>
                         <!-- Services will be loaded here -->
                     </select>
-                    <div id="serviceDescription" class="service-description" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d; display: none;">
+                    <div id="serviceDescription" class="service-description"
+                        style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem; color: #6c757d; display: none;">
                         <!-- Service description will be shown here -->
                     </div>
                 </div>
@@ -368,7 +449,7 @@
                     <label for="paymentCurrency">Đơn vị tiền tệ <span style="color:red">*</span></label>
                     <select id="paymentCurrency" name="currency" required>
                         <option value="VND" selected>VND</option>
-                        <option value="USD">USD</option>
+                       
                     </select>
                 </div>
                 <div class="form-group">
@@ -381,7 +462,8 @@
                 </div>
                 <div class="form-group">
                     <label for="paymentDescription">Mô tả <span style="color:red">*</span></label>
-                    <textarea id="paymentDescription" name="description" rows="3" placeholder="Nhập mô tả cho thanh toán..." required></textarea>
+                    <textarea id="paymentDescription" name="description" rows="3"
+                        placeholder="Nhập mô tả cho thanh toán..." required></textarea>
                 </div>
                 <input type="hidden" id="paymentPmrId" name="pmrId" />
                 <div id="paymentFormMsg" class="form-message"></div>
@@ -393,5 +475,20 @@
         </div>
     </div>
 
+    <!-- Security Scripts - Must be first -->
+    <script src="../token-guard.js"></script>
+    <script src="../auth-utils.js"></script>
+    
+    <!-- Role Configuration -->
+    <script src="../role-config.js"></script>
+    
+    <!-- FontAwesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    
+    <!-- Main Scripts -->
+    <script src="../header/header-script.js"></script>
+    <script src="patient-medical-record-script.js"></script>
+
 </body>
+
 </html>

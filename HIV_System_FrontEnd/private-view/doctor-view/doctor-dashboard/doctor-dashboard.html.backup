@@ -1,0 +1,103 @@
+<!-- Doctor Dashboard -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Bảng điều khiển bác sĩ</title>
+    <link rel="stylesheet" href="doctor-dashboard-style.css">
+    <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <div class="dashboard-container" style="padding-top: 5px;">
+        <main class="main-content">
+            <div id="dashboardDebug" style="color: red; margin-bottom: 16px;"></div>
+            <div class="dashboard-header" id="dashboardHeader">
+                Chào mừng, Bác sĩ <span id="fullname"></span>!
+            </div>
+            <div class="dashboard-metrics">
+                <div class="metric-card">
+                    <div class="metric-title">Lịch hẹn hôm nay</div>
+                    <div class="metric-value" id="todayAppointments">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Lịch hẹn trong tuần</div>
+                    <div class="metric-value" id="weeklyAppointments">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Lịch hẹn trong tháng</div>
+                    <div class="metric-value" id="monthlyAppointments">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Tổng số bệnh nhân</div>
+                    <div class="metric-value" id="totalPatients">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Lịch hẹn sắp tới</div>
+                    <div class="metric-value" id="upcomingAppointments">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Lịch hẹn đã hoàn thành</div>
+                    <div class="metric-value" id="completedAppointments">0</div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions Section -->
+            <div class="dashboard-section">
+                <h3>Truy cập nhanh</h3>
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="window.location.href='doctor-dashboard-with-blog.html'">
+                        <i class="fas fa-blog"></i>
+                        <span>Blog & Cộng đồng</span>
+                        <small>Chia sẻ và thảo luận</small>
+                    </button>
+                    <button class="quick-action-btn" onclick="window.location.href='/private-view/shared/appointment-list/appoiment-list.html'">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Lịch hẹn</span>
+                        <small>Quản lý cuộc hẹn</small>
+                    </button>
+                    <button class="quick-action-btn" onclick="window.location.href='/private-view/shared/patient-list/patient-list.html'">
+                        <i class="fas fa-users"></i>
+                        <span>Danh sách bệnh nhân</span>
+                        <small>Xem hồ sơ bệnh nhân</small>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chart Section -->
+            <div class="dashboard-section">
+                <h3>Tổng quan lịch hẹn</h3>
+                <canvas id="appointmentsChart" style="max-width: 100%; height: 320px;"></canvas>
+            </div>
+            <div class="dashboard-section">
+                <h3>Lịch trình hôm nay</h3>
+                <div id="todaySchedule">
+                    <p>Không có lịch trình cho hôm nay.</p>
+                </div>
+            </div>
+            <div class="dashboard-section">
+                <h3>Bệnh nhân gần đây</h3>
+                <table class="recent-patients-table">
+                    <thead>
+                        <tr>
+                            <th>Tên bệnh nhân</th>
+                            <th>Lần khám gần nhất</th>
+                            <th>Thời gian khám gần nhất</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentPatientsBody">
+                        <!-- Bệnh nhân gần đây sẽ được hiển thị ở đây -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/private-view/shared/role-config.js"></script>
+    <script src="/private-view/shared/header/header-script.js"></script>
+    <script src="doctor-dashboard-script.js"></script>
+</body>
+</html>
