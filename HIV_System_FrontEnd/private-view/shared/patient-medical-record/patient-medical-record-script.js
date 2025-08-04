@@ -6,24 +6,24 @@ console.log('User role:', localStorage.getItem('userRole'));
 console.log('Current path:', window.location.pathname);
 
 // Additional security check for this specific page
-(function() {
+(function () {
     'use strict';
-    
+
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
     const currentPath = window.location.pathname;
-    
+
     console.log('=== IMMEDIATE SECURITY VALIDATION ===');
     console.log('Token present:', !!token);
     console.log('Role present:', !!userRole);
-    
+
     if (!token) {
         console.log('BLOCKING: No token found');
         alert('Authentication required. Redirecting to login page.');
         window.location.href = '/public-view/landingpage.html?reason=Authentication%20required';
         return;
     }
-    
+
     if (!userRole) {
         console.log('BLOCKING: No role found');
         alert('Invalid session. Redirecting to login page.');
@@ -31,11 +31,11 @@ console.log('Current path:', window.location.pathname);
         window.location.href = '/public-view/landingpage.html?reason=Invalid%20session';
         return;
     }
-    
+
     // Check role access for shared components
     const roleInt = parseInt(userRole);
     const validRoles = [1, 2, 3, 4, 5]; // All roles can access shared components
-    
+
     if (!validRoles.includes(roleInt)) {
         console.log('BLOCKING: Invalid role', roleInt);
         alert('Invalid user role. Redirecting to login page.');
@@ -43,7 +43,7 @@ console.log('Current path:', window.location.pathname);
         window.location.href = '/public-view/landingpage.html?reason=Invalid%20user%20role';
         return;
     }
-    
+
     console.log('SECURITY CHECK PASSED for role:', roleInt);
 })();
 
@@ -101,7 +101,7 @@ if (window.roleUtils && window.roleUtils.getUserRole && window.roleUtils.ROLE_NA
     const roleName = window.roleUtils.ROLE_NAMES[roleId];
     window.isStaff = (roleName === 'staff');
     window.isDoctor = (roleName === 'doctor');
-    
+
     console.log('=== ROLE DETECTION ===');
     console.log('Role ID:', roleId);
     console.log('Role Name:', roleName);
@@ -309,7 +309,7 @@ async function createPayment(paymentData) {
             const errorText = await response.text();
             console.error('Payment creation failed:', errorText);
             console.error('Response status:', response.status);
-            
+
             // Try to parse error as JSON for better error handling
             let errorMessage = 'Lỗi tạo thanh toán';
             try {
@@ -318,10 +318,10 @@ async function createPayment(paymentData) {
             } catch (parseError) {
                 errorMessage = errorText || errorMessage;
             }
-            
+
             throw new Error(errorMessage);
         }
-        
+
         const result = await response.json();
         console.log('Payment creation successful:', result);
         return result;
@@ -334,7 +334,7 @@ async function createPayment(paymentData) {
 // Render payment history
 function renderPaymentHistory(payments) {
     const section = document.getElementById('paymentsSection');
-    
+
     // Show/hide create payment button based on role
     const createPaymentContainer = document.getElementById('createPaymentContainer');
     if (createPaymentContainer) {
@@ -342,7 +342,7 @@ function renderPaymentHistory(payments) {
         console.log('Staff role:', window.isStaff);
         console.log('Doctor role:', window.isDoctor);
         console.log('Should show button:', window.isStaff || window.isDoctor);
-        
+
         if (window.isStaff || window.isDoctor) {
             createPaymentContainer.style.display = 'block';
             console.log('Payment button shown');
@@ -519,15 +519,15 @@ async function openCreatePaymentModal() {
         alert('Không tìm thấy hồ sơ y tế của bệnh nhân.');
         return;
     }
-    
+
     // Load services if not already loaded
     if (availableServices.length === 0) {
         availableServices = await fetchAllServices();
     }
-    
+
     // Create modal if it doesn't exist
     createPaymentModalIfNotExists();
-    
+
     // Reset form and show modal
     resetCreatePaymentForm();
     document.getElementById('paymentModal').style.display = 'block';
@@ -549,18 +549,18 @@ function resetCreatePaymentForm() {
     const form = document.getElementById('paymentForm');
     if (form) {
         form.reset();
-        
+
         // Populate services dropdown
         const serviceSelect = document.getElementById('paymentServiceSelect');
         serviceSelect.innerHTML = '<option value="">Chọn dịch vụ</option>';
-        
+
         availableServices.forEach(service => {
             const option = document.createElement('option');
             option.value = service.srvId;
             option.textContent = `${service.serviceName} - ${formatCurrency(service.price)} VND`;
             serviceSelect.appendChild(option);
         });
-        
+
         // Clear message
         const messageDiv = document.getElementById('paymentFormMsg');
         if (messageDiv) {
@@ -582,16 +582,16 @@ function closeCreatePaymentModal() {
 // Handle create payment form submission
 async function handleCreatePaymentSubmit(event) {
     event.preventDefault();
-    
+
     const messageDiv = document.getElementById('paymentFormMsg');
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
-    
+
     try {
         // Show loading state
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo...';
         submitBtn.disabled = true;
-        
+
         // Collect form data
         const serviceId = document.getElementById('paymentServiceSelect').value;
         const amount = parseInt(document.getElementById('paymentAmount').value);
@@ -599,16 +599,16 @@ async function handleCreatePaymentSubmit(event) {
         const description = document.getElementById('paymentDescription').value.trim();
         // Use description as notes since paymentNotes field doesn't exist
         const notes = description;
-        
+
         // Validation
         if (!serviceId || !amount || !paymentMethod) {
             throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc.');
         }
-        
+
         if (amount < 1000) {
             throw new Error('Số tiền phải ít nhất 1,000 VND.');
         }
-        
+
         // Prepare payment data
         const paymentData = {
             pmrId: window.pmrId,
@@ -619,7 +619,7 @@ async function handleCreatePaymentSubmit(event) {
             description: description || `Thanh toán cho dịch vụ`,
             notes: notes || description || `Thanh toán cho dịch vụ`
         };
-        
+
         console.log('=== FORM SUBMISSION DEBUG ===');
         console.log('Window pmrId:', window.pmrId);
         console.log('Service ID:', serviceId);
@@ -627,38 +627,38 @@ async function handleCreatePaymentSubmit(event) {
         console.log('Payment method:', paymentMethod);
         console.log('Description:', description);
         console.log('Final payment data:', paymentData);
-        
+
         // Validate required data
         if (!paymentData.pmrId) {
             throw new Error('Không tìm thấy ID hồ sơ bệnh án (pmrId)');
         }
-        
+
         if (!paymentData.srvId) {
             throw new Error('Không tìm thấy ID dịch vụ (srvId)');
         }
-        
+
         // Create payment
         const result = await createPayment(paymentData);
-        
+
         // Show success message
         messageDiv.className = 'form-message success';
         messageDiv.textContent = 'Tạo thanh toán thành công!';
         messageDiv.style.display = 'block';
-        
+
         // Close modal after short delay and reload data
         setTimeout(async () => {
             closeCreatePaymentModal();
             await loadPatientData();
         }, 1500);
-        
+
     } catch (error) {
         console.error('Error creating payment:', error);
-        
+
         // Show error message
         messageDiv.className = 'form-message error';
         messageDiv.textContent = error.message || 'Có lỗi xảy ra khi tạo thanh toán.';
         messageDiv.style.display = 'block';
-        
+
         // Restore button state
         submitBtn.innerHTML = originalBtnText;
         submitBtn.disabled = false;
@@ -1048,10 +1048,10 @@ function renderARVRegimens(regimens, medications) {
                     ` : `<div class='empty-state'><i class='fas fa-capsules'></i> No medications for this regimen.</div>`}
                     <div style="margin-top:1rem;text-align:right;">
                         ${(!window.isStaff && (regimen.regimenStatus !== 4 && regimen.regimenStatus !== 5)) ? `<button class="secondary-btn update-regimen-status-btn" data-id="${regimen.patientArvRegiId}" data-status="${regimen.regimenStatus}">Cập nhật trạng thái</button>` : ''}
-${(window.isDoctor && ![2,4,5].includes(regimen.regimenStatus)) 
-    ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>` 
-    : ''
-}
+${(window.isDoctor && ![2, 4, 5].includes(regimen.regimenStatus))
+                ? `<button class="secondary-btn update-regimen-btn" data-id="${regimen.patientArvRegiId}">Cập nhật phác đồ</button>`
+                : ''
+            }
                     </div>
                 </td>
             </tr>
@@ -1183,7 +1183,27 @@ updateRegimenStatusForm.onsubmit = async function (e) {
             body: JSON.stringify({ notes, regimenStatus: newStatus })
         });
         if (!res.ok) {
-            updateRegimenStatusMsg.textContent = 'Failed to update status.';
+            let errorMsg = 'Failed to update status.';
+            try {
+                let rawError = await res.text();
+                // Ưu tiên lấy đoạn sau "Operation failed: " và trước " at "
+                let match = rawError.match(/Operation failed:\s*(.+?)(?:\s+at\s+|$)/);
+                if (match && match[1]) {
+                    errorMsg = match[1].trim();
+                } else {
+                    // Nếu không có, fallback lấy đoạn sau dấu ":" đầu tiên và trước " at "
+                    match = rawError.match(/: (.+?)(?: at |$)/);
+                    if (match && match[1]) {
+                        errorMsg = match[1].trim();
+                    } else {
+                        // Nếu vẫn không có, lấy dòng tiếng Việt đầu tiên nếu có
+                        let viLine = rawError.split('\n').find(line => /[^\x00-\x7F]+/.test(line));
+                        if (viLine) errorMsg = viLine.trim();
+                        else errorMsg = rawError;
+                    }
+                }
+            } catch { }
+            updateRegimenStatusMsg.textContent = errorMsg || 'Failed to update status.';
             return;
         }
         updateRegimenStatusModal.style.display = 'none';
@@ -2038,7 +2058,7 @@ async function loadPatientData() {
             }
 
         }
-        
+
         // Load services for payment creation if user is staff
         if (window.isStaff && availableServices.length === 0) {
             try {
@@ -2067,7 +2087,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.log('=== DOM CONTENT LOADED - PAYMENT SETUP ===');
     console.log('Staff role:', window.isStaff);
     console.log('Doctor role:', window.isDoctor);
-    
+
     // Show payment creation button for doctors and staff
     if (window.isDoctor || window.isStaff) {
         const container = document.getElementById('createPaymentContainer');
@@ -2477,27 +2497,27 @@ async function loadAvailableRescheduleTimes(date) {
 }
 
 // Add payment form event listener
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const paymentForm = document.getElementById('paymentForm');
     if (paymentForm) {
         paymentForm.addEventListener('submit', handleCreatePaymentSubmit);
     }
-    
+
     // Add close modal event listeners
     const closePaymentModalBtn = document.getElementById('closePaymentModalBtn');
     if (closePaymentModalBtn) {
         closePaymentModalBtn.addEventListener('click', closeCreatePaymentModal);
     }
-    
+
     const cancelPaymentBtn = document.getElementById('cancelPaymentBtn');
     if (cancelPaymentBtn) {
         cancelPaymentBtn.addEventListener('click', closeCreatePaymentModal);
     }
-    
+
     // Add click outside modal to close
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal) {
-        paymentModal.addEventListener('click', function(event) {
+        paymentModal.addEventListener('click', function (event) {
             if (event.target === paymentModal) {
                 closeCreatePaymentModal();
             }
