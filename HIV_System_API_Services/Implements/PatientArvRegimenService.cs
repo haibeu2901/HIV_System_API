@@ -719,7 +719,7 @@ namespace HIV_System_API_Services.Implements
                 var patientRegimens = await _context.PatientArvRegimen.Where(r => r.ParId == parId && r.RegimenStatus == 2).ToListAsync();
                 if (patientRegimens.Any() && request.RegimenStatus == 2)
                 {
-                    throw new InvalidOperationException($"Phác đồ ARV với ID {parId} đã có trạng thái hoạt động. Không thể cập nhật thành trạng thái hoạt động.");
+                    throw new InvalidOperationException($"Không thể cập nhật thành trạng thái hoạt động vì đang có phác đồ ARV khác đang hoạt động.");
                 }
 
                 var existingRegimen = await _patientArvRegimenRepo.GetPatientArvRegimenByIdAsync(parId);
