@@ -871,6 +871,7 @@ namespace HIV_System_API_Services.Implements
                 var notification = new Notification
                 {
                     NotiType = "Cập nhật phác đồ ARV",
+
                     NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {updatedMedications.Count} loại thuốc. Vui lòng kiểm tra kĩ hơn tại hồ sơ y tế của bạn. Nếu có vấn đề gì vui lòng liên hệ bác sĩ để được tư vấn và hỗ trợ tốt hơn.",
                     SendAt = DateTime.Now
                 };
