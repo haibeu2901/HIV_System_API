@@ -12,12 +12,13 @@ namespace HIV_System_API_Services.Implements
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
-        private Timer _dailyTimer;
-        private readonly TimeSpan _dailyExecutionTime = new TimeSpan(0, 0, 0); // Midnight (00:00)
+        private Timer? _dailyTimer;
+        private readonly TimeSpan _executionInterval = TimeSpan.FromMinutes(1);
+        private volatile bool _isRunning;
 
         public RegimenReminderBackgroundService(
-        IServiceScopeFactory scopeFactory,
-        ILogger<RegimenReminderBackgroundService> logger)
+            IServiceScopeFactory scopeFactory,
+            ILogger<RegimenReminderBackgroundService> logger)
         {
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -32,33 +33,36 @@ namespace HIV_System_API_Services.Implements
 
         private void ScheduleDailyTasks(CancellationToken stoppingToken)
         {
-            var now = DateTime.Now;
-            var nextRun = now.AddMinutes(1);
-            var timeToNextRun = nextRun - now;
-            _logger.LogInformation($"Next tasks scheduled for {nextRun:yyyy-MM-dd HH:mm:ss}.");
-
-            // Timer cho reminder phác đồ
             _dailyTimer = new Timer(
-                async state => await ExecuteDailyTasksAsync(stoppingToken),
+                async _ => await ExecuteDailyTasksAsync(stoppingToken),
                 null,
-                timeToNextRun,
-                TimeSpan.FromMinutes(1));
+                TimeSpan.Zero, // Start immediately
+                _executionInterval); // Repeat every minute
         }
 
         private async Task ExecuteDailyTasksAsync(CancellationToken stoppingToken)
         {
+            // Prevent concurrent execution
+            if (_isRunning || stoppingToken.IsCancellationRequested)
+                return;
+
             try
             {
+                _isRunning = true;
+
                 using var scope = _scopeFactory.CreateScope();
                 var patientArvRegimenService = scope.ServiceProvider.GetRequiredService<IPatientArvRegimenService>();
                 var appointmentService = scope.ServiceProvider.GetRequiredService<IAppointmentService>();
 
                 // Execute tasks sequentially
                 await ArvRegimenReminderAsync(patientArvRegimenService, stoppingToken);
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken); // Add small delay between tasks
-                await CancelPastDateAppointmentsAsync(appointmentService, stoppingToken);
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-                await AppontmentReminderAsync(appointmentService, stoppingToken);
+                if (!stoppingToken.IsCancellationRequested)
+                    await CancelPastDateAppointmentsAsync(appointmentService, stoppingToken);
+                if (!stoppingToken.IsCancellationRequested)
+                    await AppontmentReminderAsync(appointmentService, stoppingToken);
+
+                var nextRun = DateTime.Now.Add(_executionInterval);
+                _logger.LogInformation($"Next tasks scheduled for {nextRun:yyyy-MM-dd HH:mm:ss}.");
             }
             catch (Exception ex)
             {
@@ -66,16 +70,13 @@ namespace HIV_System_API_Services.Implements
             }
             finally
             {
-                if (!stoppingToken.IsCancellationRequested)
-                {
-                    ScheduleDailyTasks(stoppingToken);
-                }
+                _isRunning = false;
             }
         }
 
         private async Task ArvRegimenReminderAsync(IPatientArvRegimenService service, CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Executing regimen reminder task at {Time}.", DateTime.Now);
+            _logger.LogInformation("Executing ARV regimen reminder task at {Time}.", DateTime.Now);
             try
             {
                 var results = await service.SendEndDateReminderNotificationsAsync(7);
@@ -83,7 +84,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing regimen reminder task.");
+                _logger.LogError(ex, "Error executing ARV regimen reminder task.");
             }
         }
 
@@ -93,7 +94,7 @@ namespace HIV_System_API_Services.Implements
             try
             {
                 await service.CancelPastDateAppointmentsAsync();
-                _logger.LogInformation("Successfully cancelled all past date appointments.");
+                _logger.LogInformation("Successfully cancelled past date appointments.");
             }
             catch (Exception ex)
             {
@@ -103,16 +104,25 @@ namespace HIV_System_API_Services.Implements
 
         private async Task AppontmentReminderAsync(IAppointmentService service, CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Executing regimen reminder task at {Time}.", DateTime.Now);
+            _logger.LogInformation("Executing appointment reminder task at {Time}.", DateTime.Now);
             try
             {
                 var results = await service.SendNearDateAppointmentAsync(7);
-                _logger.LogInformation($"There are {results.Count} appointment near the end date.");
+                _logger.LogInformation($"Found {results.Count} appointments near the end date.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing regimen reminder task.");
+                _logger.LogError(ex, "Error executing appointment reminder task.");
             }
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Background Services are stopping.");
+            
+            _dailyTimer?.Change(Timeout.Infinite, 0);
+            
+            await base.StopAsync(cancellationToken);
         }
 
         public override void Dispose()
