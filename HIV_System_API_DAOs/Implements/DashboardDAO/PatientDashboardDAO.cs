@@ -23,7 +23,7 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
             var stats = new PatientDashboardStats
             {
                 UpcomingAppointments = await _context.Appointments
-                    .CountAsync(a => a.PtnId == patientId && a.ApmtDate >= todayDateOnly && a.ApmStatus == 1),
+                    .CountAsync(a => a.PtnId == patientId && a.ApmtDate >= todayDateOnly && (a.ApmStatus == 2 || a.ApmStatus == 3)),
                 TotalAppointments = await _context.Appointments
                     .CountAsync(a => a.PtnId == patientId),
                 RecentTestResults = await _context.TestResults
@@ -32,9 +32,10 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                     .CountAsync(par => par.Pmr.PtnId == patientId),
                 TotalPayments = await _context.Payments
                     .Where(p => p.Pmr.PtnId == patientId)
+                    .Where(p => p.PaymentStatus == 2)
                     .SumAsync(p => p.Amount),
                 NextAppointment = await _context.Appointments
-                    .Where(a => a.PtnId == patientId && a.ApmtDate >= todayDateOnly && a.ApmStatus == 1)
+                    .Where(a => a.PtnId == patientId && a.ApmtDate >= todayDateOnly && (a.ApmStatus == 2 || a.ApmStatus == 3))
                     .OrderBy(a => a.ApmtDate)
                     .ThenBy(a => a.ApmTime)
                     .Select(a => new
