@@ -253,7 +253,7 @@ namespace HIV_System_API_Services.Implements
             }
             catch (InvalidOperationException)
             {
-                throw; // Re-throw business logic exceptions
+                throw; // Re-throw validation exceptions
             }
             catch (DbUpdateException ex)
             {
@@ -716,17 +716,19 @@ namespace HIV_System_API_Services.Implements
             await ValidateRegimenStatus(request.RegimenStatus);
             try
             {
-                var patientRegimens = await _context.PatientArvRegimen.Where(r => r.ParId == parId && r.RegimenStatus == 2).ToListAsync();
-                if (patientRegimens.Any() && request.RegimenStatus == 2)
-                {
-                    throw new InvalidOperationException($"Không thể cập nhật thành trạng thái hoạt động vì đang có phác đồ ARV khác đang hoạt động.");
-                }
-
                 var existingRegimen = await _patientArvRegimenRepo.GetPatientArvRegimenByIdAsync(parId);
                 if (existingRegimen == null)
                 {
                     throw new InvalidOperationException($"Phác đồ ARV bệnh nhân với ID {parId} không tồn tại.");
                 }
+
+                // Check if there is other regimens are already active
+                var patientRegimens = await _context.PatientArvRegimen.Where(r => r.PmrId == existingRegimen.PmrId && r.ParId != parId && r.RegimenStatus == 2).ToListAsync();
+                if (patientRegimens.Any() && request.RegimenStatus == 2)
+                {
+                    throw new InvalidOperationException($"Không thể cập nhật thành trạng thái hoạt động vì đang có phác đồ ARV khác đang hoạt động.");
+                }
+
                 // Check if the regimen is already completed
                 if (existingRegimen.RegimenStatus == 5) // Completed
                 {
