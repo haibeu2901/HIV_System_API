@@ -36,6 +36,27 @@ namespace HIV_System_API_Services.Implements
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        private async Task<bool> ValidatePatientArvRegimenStatusAsync(int patientId)
+        {
+            // Check if patient has an active ARV regimen (status = 2)
+            var activeRegimen = await _context.PatientArvRegimen
+                .Include(par => par.Pmr)
+                .Where(par => par.Pmr.PtnId == patientId && par.RegimenStatus == 2)
+                .FirstOrDefaultAsync();
+
+            return activeRegimen != null;
+        }
+
+        private async Task<bool> ValidatePatientArvMedicationRegimenStatusAsync(int patientArvMedicationId)
+        {
+            // Check if the medication belongs to an active ARV regimen (status = 2)
+            var medication = await _context.PatientArvMedications
+                .Include(pam => pam.Par)
+                .FirstOrDefaultAsync(pam => pam.PamId == patientArvMedicationId);
+
+            return medication?.Par?.RegimenStatus == 2;
+        }
+
         public async Task<MedicationAlarmResponseDTO> CreateMedicationAlarmAsync(MedicationAlarmRequestDTO request, int patientId)
         {
             if (request == null)
@@ -51,6 +72,10 @@ namespace HIV_System_API_Services.Implements
             if (patient == null)
                 throw new InvalidOperationException($"Bệnh nhân với ID {patientId} không tồn tại.");
 
+            // ADDED: Validate patient has active ARV regimen
+            if (!await ValidatePatientArvRegimenStatusAsync(patientId))
+                throw new InvalidOperationException("Không thể tạo nhắc nhở uống thuốc. Bệnh nhân không có phác đồ ARV đang hoạt động (trạng thái = 2).");
+
             // Validate medication exists and belongs to patient
             var medication = await _context.PatientArvMedications
                 .Include(pam => pam.Amd)
@@ -63,6 +88,10 @@ namespace HIV_System_API_Services.Implements
 
             if (medication.Par.Pmr.PtnId != patientId)
                 throw new UnauthorizedAccessException("Bạn không có quyền tạo báo động cho thuốc này.");
+
+            // ADDED: Validate medication belongs to active ARV regimen
+            if (!await ValidatePatientArvMedicationRegimenStatusAsync(request.PatientArvMedicationId))
+                throw new InvalidOperationException("Không thể tạo nhắc nhở uống thuốc. Thuốc này không thuộc phác đồ ARV đang hoạt động (trạng thái = 2).");
 
             // Check if alarm already exists for this medication
             var existingAlarm = _medicationAlarms.Values
@@ -92,21 +121,34 @@ namespace HIV_System_API_Services.Implements
             return MapToResponseDTO(alarmData);
         }
 
-        public Task<List<MedicationAlarmResponseDTO>> GetPersonalMedicationAlarmsAsync(int patientId)
+        public async Task<List<MedicationAlarmResponseDTO>> GetPersonalMedicationAlarmsAsync(int patientId)
         {
             if (patientId <= 0)
                 throw new ArgumentException("ID bệnh nhân không hợp lệ", nameof(patientId));
 
-            var patientAlarms = _medicationAlarms.Values
-                .Where(a => a.PatientId == patientId)
-                .OrderBy(a => a.AlarmTime)
-                .Select(MapToResponseDTO)
-                .ToList();
+            // ADDED: Filter alarms based on active ARV regimen status
+            var patientAlarms = new List<MedicationAlarmResponseDTO>();
+            
+            foreach (var alarm in _medicationAlarms.Values.Where(a => a.PatientId == patientId))
+            {
+                // Check if the medication still belongs to an active regimen
+                if (await ValidatePatientArvMedicationRegimenStatusAsync(alarm.PatientArvMedicationId))
+                {
+                    patientAlarms.Add(MapToResponseDTO(alarm));
+                }
+                else
+                {
+                    // Optionally, you can automatically deactivate alarms for inactive regimens
+                    alarm.IsActive = false;
+                    alarm.UpdatedAt = DateTime.Now;
+                    patientAlarms.Add(MapToResponseDTO(alarm)); // Still return it but marked as inactive
+                }
+            }
 
-            return Task.FromResult(patientAlarms);
+            return patientAlarms.OrderBy(a => a.AlarmTime).ToList();
         }
 
-        public Task<MedicationAlarmResponseDTO?> GetMedicationAlarmByIdAsync(int alarmId, int patientId)
+        public async Task<MedicationAlarmResponseDTO?> GetMedicationAlarmByIdAsync(int alarmId, int patientId)
         {
             if (alarmId <= 0)
                 throw new ArgumentException("ID báo động không hợp lệ", nameof(alarmId));
@@ -116,13 +158,21 @@ namespace HIV_System_API_Services.Implements
 
             if (_medicationAlarms.TryGetValue(alarmId, out var alarm) && alarm.PatientId == patientId)
             {
-                return Task.FromResult<MedicationAlarmResponseDTO?>(MapToResponseDTO(alarm));
+                // ADDED: Check if medication still belongs to active regimen
+                if (!await ValidatePatientArvMedicationRegimenStatusAsync(alarm.PatientArvMedicationId))
+                {
+                    // Automatically deactivate alarm for inactive regimen
+                    alarm.IsActive = false;
+                    alarm.UpdatedAt = DateTime.Now;
+                }
+
+                return MapToResponseDTO(alarm);
             }
 
-            return Task.FromResult<MedicationAlarmResponseDTO?>(null);
+            return null;
         }
 
-        public Task<MedicationAlarmResponseDTO> UpdateMedicationAlarmAsync(int alarmId, MedicationAlarmUpdateDTO request, int patientId)
+        public async Task<MedicationAlarmResponseDTO> UpdateMedicationAlarmAsync(int alarmId, MedicationAlarmUpdateDTO request, int patientId)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -139,6 +189,10 @@ namespace HIV_System_API_Services.Implements
             if (alarm.PatientId != patientId)
                 throw new UnauthorizedAccessException("Bạn không có quyền cập nhật báo động này.");
 
+            // ADDED: Validate medication still belongs to active regimen before allowing updates
+            if (!await ValidatePatientArvMedicationRegimenStatusAsync(alarm.PatientArvMedicationId))
+                throw new InvalidOperationException("Không thể cập nhật nhắc nhở uống thuốc. Thuốc này không thuộc phác đồ ARV đang hoạt động (trạng thái = 2).");
+
             // Update fields
             if (request.AlarmTime.HasValue)
                 alarm.AlarmTime = request.AlarmTime.Value;
@@ -149,10 +203,10 @@ namespace HIV_System_API_Services.Implements
 
             alarm.UpdatedAt = DateTime.Now;
 
-            return Task.FromResult(MapToResponseDTO(alarm));
+            return MapToResponseDTO(alarm);
         }
 
-        public Task<bool> DeleteMedicationAlarmAsync(int alarmId, int patientId)
+        public async Task<bool> DeleteMedicationAlarmAsync(int alarmId, int patientId)
         {
             if (alarmId <= 0)
                 throw new ArgumentException("ID báo động không hợp lệ", nameof(alarmId));
@@ -161,15 +215,17 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("ID bệnh nhân không hợp lệ", nameof(patientId));
 
             if (!_medicationAlarms.TryGetValue(alarmId, out var alarm))
-                return Task.FromResult(false);
+                return false;
 
             if (alarm.PatientId != patientId)
                 throw new UnauthorizedAccessException("Bạn không có quyền xóa báo động này.");
 
-            return Task.FromResult(_medicationAlarms.TryRemove(alarmId, out _));
+            // Note: We allow deletion regardless of regimen status
+            // This allows cleanup of old alarms from inactive regimens
+            return _medicationAlarms.TryRemove(alarmId, out _);
         }
 
-        public Task<bool> ToggleAlarmStatusAsync(int alarmId, bool isActive, int patientId)
+        public async Task<bool> ToggleAlarmStatusAsync(int alarmId, bool isActive, int patientId)
         {
             if (alarmId <= 0)
                 throw new ArgumentException("ID báo động không hợp lệ", nameof(alarmId));
@@ -178,15 +234,19 @@ namespace HIV_System_API_Services.Implements
                 throw new ArgumentException("ID bệnh nhân không hợp lệ", nameof(patientId));
 
             if (!_medicationAlarms.TryGetValue(alarmId, out var alarm))
-                return Task.FromResult(false);
+                return false;
 
             if (alarm.PatientId != patientId)
                 throw new UnauthorizedAccessException("Bạn không có quyền thay đổi báo động này.");
 
+            // ADDED: Only allow activation if regimen is active
+            if (isActive && !await ValidatePatientArvMedicationRegimenStatusAsync(alarm.PatientArvMedicationId))
+                throw new InvalidOperationException("Không thể kích hoạt nhắc nhở uống thuốc. Thuốc này không thuộc phác đồ ARV đang hoạt động (trạng thái = 2).");
+
             alarm.IsActive = isActive;
             alarm.UpdatedAt = DateTime.Now;
 
-            return Task.FromResult(true);
+            return true;
         }
 
         public async Task ProcessMedicationAlarmsAsync()
@@ -205,8 +265,19 @@ namespace HIV_System_API_Services.Implements
             {
                 try
                 {
-                    await SendMedicationAlarmNotificationAsync(alarm);
-                    alarm.LastNotificationSent = currentTime;
+                    // ADDED: Double-check regimen status before sending notification
+                    if (await ValidatePatientArvMedicationRegimenStatusAsync(alarm.PatientArvMedicationId))
+                    {
+                        await SendMedicationAlarmNotificationAsync(alarm);
+                        alarm.LastNotificationSent = currentTime;
+                    }
+                    else
+                    {
+                        // Automatically deactivate alarm if regimen is no longer active
+                        alarm.IsActive = false;
+                        alarm.UpdatedAt = currentTime;
+                        Console.WriteLine($"Alarm {alarm.AlarmId} deactivated due to inactive ARV regimen");
+                    }
                 }
                 catch (Exception ex)
                 {

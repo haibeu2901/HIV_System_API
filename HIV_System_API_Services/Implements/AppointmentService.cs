@@ -188,7 +188,7 @@ namespace HIV_System_API_Services.Implements
                         && a.ApmtDate == request.ApmtDate
                         && a.ApmtDate.HasValue
                         && a.ApmTime.HasValue
-                        && (a.ApmStatus != 4 || a.ApmStatus != 5)) // 4 = Cancelled, 5 = Completed
+                        && (a.ApmStatus != 4 && a.ApmStatus != 5)) // 4 = Cancelled, 5 = Completed
                     .ToListAsync();
 
                 // Check for overlapping appointments (not cancelled)
@@ -207,6 +207,20 @@ namespace HIV_System_API_Services.Implements
                     throw new InvalidOperationException(
                         $"Bác sĩ có một cuộc hẹn trùng lặp vào thời điểm này."
                     );
+                }
+
+                // Check if patient already has an appointment on the same date
+                var patientAppointmentsOnDate = await _context.Appointments
+                    .Where(a => a.PtnId == request.PatientId
+                        && a.ApmtDate == request.ApmtDate
+                        && a.ApmtDate.HasValue
+                        && a.ApmStatus != 4 && a.ApmStatus != 5 // 4 = Cancelled, 5 = Completed
+                        && (!apmId.HasValue || a.ApmId != apmId.Value))
+                    .CountAsync();
+
+                if (patientAppointmentsOnDate > 0)
+                {
+                    throw new InvalidOperationException("Bệnh nhân không được đặt quá 1 cuộc hẹn trong cùng một ngày.");
                 }
 
                 if (request.ApmtDate != default(DateOnly) && request.ApmTime != default(TimeOnly))
