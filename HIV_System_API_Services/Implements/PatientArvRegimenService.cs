@@ -124,7 +124,7 @@ namespace HIV_System_API_Services.Implements
                 PmrId = requestDTO.PatientMedRecordId,
                 Notes = requestDTO.Notes,
                 RegimenLevel = requestDTO.RegimenLevel,
-                CreatedAt = requestDTO.CreatedAt ?? DateTime.UtcNow,
+                CreatedAt = requestDTO.CreatedAt ?? DateTime.Now,
                 StartDate = requestDTO.StartDate,
                 EndDate = requestDTO.EndDate,
                 RegimenStatus = requestDTO.RegimenStatus,
@@ -669,7 +669,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Phác đồ ARV mới",
                     NotiMessage = $"Một phác đồ ARV mới với {medicationEntities.Count} loại thuốc đã được tạo ra.",
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
 
@@ -864,7 +864,7 @@ namespace HIV_System_API_Services.Implements
                 {
                     NotiType = "Cập nhật phác đồ ARV",
                     NotiMessage = $"Phác đồ ARV với ID {parId} đã được cập nhật với {updatedMedications.Count} loại thuốc.",
-                    SendAt = DateTime.UtcNow
+                    SendAt = DateTime.Now
                 };
                 var createdNotification = await _notificationRepo.CreateNotificationAsync(notification);
 
@@ -905,7 +905,7 @@ namespace HIV_System_API_Services.Implements
 
             try
             {
-                var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                var currentDate = DateOnly.FromDateTime(DateTime.Now);
                 var targetDate = currentDate.AddDays(daysBeforeEnd);
 
                 var regimens = await _context.PatientArvRegimen
@@ -953,7 +953,7 @@ namespace HIV_System_API_Services.Implements
                         {
                             NotiType = "Nhắc nhở tái khám",
                             NotiMessage = $"Phác đồ ARV của bạn (ID: {regimen.ParId}) sắp hết hạn vào ngày {regimen.EndDate.Value:dd/MM/yyyy}. Vui lòng đặt lịch hẹn để tái khám.",
-                            SendAt = DateTime.UtcNow
+                            SendAt = DateTime.Now
                         };
 
                         var response = await _notificationService.CreateAndSendToAccountIdAsync(notificationRequest, regimen.Pmr.Ptn.AccId);
