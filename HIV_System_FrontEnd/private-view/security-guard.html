@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Private View Security Guard</title>
+    
+    <!-- UNIVERSAL SECURITY GUARD - PROTECTS ALL PRIVATE PAGES -->
+    <script>
+        // Auto-inject security for any private-view page
+        (function() {
+            'use strict';
+            
+            // Only run on private-view pages
+            if (window.location.pathname.includes('/private-view/')) {
+                console.log('🚀 Auto-injecting universal security...');
+                
+                // Inject universal security script
+                const script = document.createElement('script');
+                script.src = '/private-view/universal-security.js';
+                script.onerror = function() {
+                    // Fallback: try relative path
+                    const fallbackScript = document.createElement('script');
+                    fallbackScript.src = '../universal-security.js';
+                    fallbackScript.onerror = function() {
+                        // Last resort: direct security check
+                        console.log('⚠️ Security script not found, applying direct protection');
+                        if (!localStorage.getItem('token')) {
+                            window.location.href = '/public-view/landingpage.html?reason=Authentication%20required';
+                        }
+                    };
+                    document.head.appendChild(fallbackScript);
+                };
+                document.head.appendChild(script);
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- This file serves as a template and fallback for security injection -->
+    <div style="display: none;">Universal Security Guard Active</div>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch hẹn của tôi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="../userStyle.css">
+    <link rel="stylesheet" href="../header/header.css">
+    <link rel="stylesheet" href="view-appointment.css">
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+    <style>
+        /* Add or override styles for better look */
+        .main-content {
+            max-width: 900px;
+            margin: 40px auto 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44,62,80,0.08);
+            padding: 32px 28px 28px 28px;
+        }
+        h1 {
+            color: #e74c3c;
+            margin-bottom: 24px;
+            font-size: 2.1em;
+            text-align: center;
+        }
+        #appointment-list {
+            margin-bottom: 32px;
+        }
+        .appointment-card {
+            background: #f7f8fa;
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: box-shadow 0.2s;
+        }
+        .appointment-card:hover {
+            box-shadow: 0 4px 16px rgba(231,76,60,0.10);
+        }
+        .appointment-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .appointment-title {
+            font-size: 1.15em;
+            font-weight: 600;
+            color: #333;
+        }
+        .appointment-meta {
+            font-size: 0.98em;
+            color: #888;
+            margin-top: 2px;
+        }
+        .appointment-status {
+            font-size: 0.97em;
+            font-weight: 600;
+            color: #fff;
+            background: #e74c3c;
+            border-radius: 5px;
+            padding: 4px 12px;
+            margin-left: 12px;
+        }
+        .appointment-actions button {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 16px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: background 0.2s;
+        }
+        .appointment-actions button:hover {
+            background: #c0392b;
+        }
+        #calendar {
+            margin-top: 32px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+            padding: 18px;
+        }
+        /* Sticky Note Modal */
+        .sticky-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(44,62,80,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .sticky-modal.hidden {
+            display: none;
+        }
+        .sticky-modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px 36px;
+            min-width: 340px;
+            box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+            position: relative;
+        }
+        .sticky-close {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            background: none;
+            border: none;
+            font-size: 1.6em;
+            color: #e74c3c;
+            cursor: pointer;
+        }
+        .sticky-field {
+            margin-bottom: 12px;
+            font-size: 1.08em;
+        }
+        @media (max-width: 700px) {
+            .main-content {
+                padding: 12px 4px;
+            }
+            .sticky-modal-content {
+                padding: 18px 8px;
+                min-width: 220px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <div class="main-content">
+        <h1>My Appointments</h1>
+        
+      
+        
+        <div id="appointment-list"></div>
+        <div id="calendar"></div>
+    </div>
+    <!-- Sticky Note Modal -->
+    <div id="sticky-note-modal" class="sticky-modal hidden">
+        <div class="sticky-modal-content">
+            <button id="closeStickyNote" class="sticky-close">&times;</button>
+            <h2 id="sticky-title"></h2>
+            <div class="sticky-field"><b>Trạng thái:</b> <span id="sticky-status"></span></div>
+            <div class="sticky-field"><b>Ngày:</b> <span id="sticky-date"></span></div>
+            <div class="sticky-field"><b>Thời gian:</b> <span id="sticky-time"></span></div>
+            <div class="sticky-field"><b>Ghi chú:</b> <span id="sticky-notes"></span></div>
+            <div class="sticky-actions">
+                <button id="accept-request-btn" class="accept-btn" style="display: none;">
+                    <i class="fas fa-check"></i> Đồng ý
+                </button>
+                <button id="update-appointment-btn" class="update-btn" style="display: none;">
+                    <i class="fas fa-edit"></i> Cập nhật lịch hẹn
+                </button>
+                <button id="cancel-appointment-btn" class="cancel-btn" style="display: none;">
+                    <i class="fas fa-times"></i> Hủy lịch hẹn
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Appointment Modal -->
+    <div id="update-appointment-modal" class="update-modal hidden">
+        <div class="update-modal-content">
+            <button id="closeUpdateModal" class="update-close">&times;</button>
+            <h2><i class="fas fa-edit"></i> Cập nhật lịch hẹn</h2>
+            <form id="update-appointment-form">
+                <div class="form-group">
+                    <label for="update-date">
+                        <i class="fas fa-calendar"></i> Ngày hẹn
+                    </label>
+                    <input type="date" id="update-date" name="appointmentDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="update-time">
+                        <i class="fas fa-clock"></i> Thời gian hẹn
+                    </label>
+                    <input type="time" id="update-time" name="appointmentTime" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="update-notes">
+                        <i class="fas fa-sticky-note"></i> Ghi chú
+                    </label>
+                    <textarea id="update-notes" name="notes" rows="4" 
+                              placeholder="Nhập ghi chú hoặc yêu cầu đặc biệt..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancel-update-btn" class="btn-secondary">
+                        <i class="fas fa-times"></i> Hủy bỏ
+                    </button>
+                    <button type="submit" id="save-update-btn" class="btn-primary">
+                        <i class="fas fa-save"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div id="cancel-confirmation-modal" class="cancel-modal hidden">
+        <div class="cancel-modal-content">
+            <h2><i class="fas fa-exclamation-triangle"></i> Hủy lịch hẹn</h2>
+            <p>Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác.</p>
+            <div class="modal-actions">
+                <button type="button" id="cancel-confirmation-no" class="btn-secondary">
+                    <i class="fas fa-times"></i> Không, giữ lại
+                </button>
+                <button type="button" id="cancel-confirmation-yes" class="btn-danger">
+                    <i class="fas fa-check"></i> Có, hủy lịch
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
+    <script src="../header/header.js"></script>
+    <script src="view-appointment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+   
+</body>
+</html>

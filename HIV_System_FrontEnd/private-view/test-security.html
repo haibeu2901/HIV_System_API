@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <!-- IMMEDIATE SECURITY PROTECTION -->
+    <script src="immediate-security.js"></script>
+    <!-- UNIVERSAL SECURITY PROTECTION -->
+    <script src="../universal-security.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Security Page</title>
+</head>
+<body>
+    <h1>This page should not be accessible without authentication</h1>
+    <p>If you can see this content, security is not working properly.</p>
+    
+    <script>
+        console.log('Page script running - this should not execute if security is working');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded - security should have blocked this');
+        });
+    </script>
+</body>
+</html>

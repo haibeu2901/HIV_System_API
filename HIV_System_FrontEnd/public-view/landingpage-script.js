@@ -419,7 +419,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
           } else if (role == 5) {
             window.location.href = "../private-view/manager-view/manager-home/manager-home.html";
           } else if (role == 3) {
-            window.location.href = "../private-view/user-view/booking/appointment-booking.html";
+            window.location.href = "../private-view/user-view/services/services.html";
           } else if (role == 2) {
             window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
           } else if (role== 4){
@@ -980,8 +980,162 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+// Authentication and Token Validation
+async function checkTokenAndRedirect() {
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+  
+  if (token) {
+    try {
+      // Validate token by making a test API call
+      const response = await fetch('https://localhost:7009/api/Account/View-profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Token is valid, redirect to appropriate dashboard
+        const roleInt = parseInt(userRole);
+        
+        switch (roleInt) {
+          case 1: // Admin
+            window.location.href = "../private-view/admin-view/admin-home/admin-home.html";
+            return;
+          case 2: // Doctor
+            window.location.href = "../private-view/doctor-view/doctor-dashboard/doctor-dashboard.html";
+            return;
+          case 3: // Patient
+            window.location.href = "../private-view/user-view/booking/appointment-booking.html";
+            return;
+          case 4: // Staff
+            window.location.href = "../private-view/staff-view/staff-dashboard/staff-dashboard.html";
+            return;
+          case 5: // Manager
+            window.location.href = "../private-view/manager-view/manager-home/manager-home.html";
+            return;
+          default:
+            console.warn('Unknown role:', userRole);
+            clearInvalidToken();
+        }
+      } else if (response.status === 401 || response.status === 403) {
+        // Token is invalid or expired
+        clearInvalidToken();
+      }
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      // If there's a network error, we'll clear the token to be safe
+      clearInvalidToken();
+    }
+  }
+}
+
+function clearInvalidToken() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('accId');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('fullName');
+}
+
+// Check for redirect messages and display them
+function checkForRedirectMessage() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const message = urlParams.get('message');
+  const reason = urlParams.get('reason');
+  
+  if (message || reason) {
+    // Create a subtle notification instead of alert
+    showRedirectNotification(message || reason || 'Please log in to continue');
+    
+    // Clean the URL without the message parameters
+    const url = new URL(window.location);
+    url.searchParams.delete('message');
+    url.searchParams.delete('reason');
+    window.history.replaceState({}, document.title, url.toString());
+  }
+}
+
+// Show subtle notification for redirect messages
+function showRedirectNotification(message) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = 'redirect-notification';
+  notification.innerHTML = `
+    <div class="notification-content">
+      <i class="fas fa-info-circle"></i>
+      <span>${message}</span>
+      <button onclick="this.parentElement.parentElement.remove()" class="notification-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `;
+  
+  // Add styles
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 10000;
+    max-width: 400px;
+    animation: slideInRight 0.5s ease-out;
+  `;
+  
+  // Add animation styles to head if not exists
+  if (!document.querySelector('#redirect-notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'redirect-notification-styles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .notification-close {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 5px;
+        margin-left: auto;
+      }
+      .notification-close:hover {
+        opacity: 0.7;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  // Add to page
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.remove();
+    }
+  }, 5000);
+}
+
 // Page Load Animation
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check for redirect messages
+  checkForRedirectMessage();
+  
+  // Check token validity first
+  await checkTokenAndRedirect();
+  
   // Show page loader
   const pageLoader = showPageLoader();
   
@@ -1028,3 +1182,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1600); // Show after page loader
   }
 });
+
+// Add window focus event to check token validity when user returns to page
+window.addEventListener('focus', async function() {
+  await checkTokenAndRedirect();
+});
+
+// Add periodic token validation (every 5 minutes)
+setInterval(async function() {
+  await checkTokenAndRedirect();
+}, 5 * 60 * 1000); // 5 minutes

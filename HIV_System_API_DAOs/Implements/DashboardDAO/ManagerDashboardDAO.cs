@@ -23,45 +23,8 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
             var startOfMonthDateOnly = DateOnly.FromDateTime(startOfMonth);
             var endOfMonthDateOnly = DateOnly.FromDateTime(endOfMonth);
 
-            // Execute all count queries in parallel for better performance
-            var totalDoctorsTask = GetTotalDoctorsAsync();
-            var totalStaffTask = GetTotalStaffAsync();
-            var totalPatientsTask = GetTotalPatientsAsync();
-            var todayAppointmentsTask = _context.Appointments.CountAsync(a => a.ApmtDate == todayDateOnly);
-            var monthlyAppointmentsTask = _context.Appointments.CountAsync(a => a.ApmtDate >= startOfMonthDateOnly && a.ApmtDate <= endOfMonthDateOnly);
-            var pendingTestsTask = _context.TestResults.CountAsync(trs => trs.TestDate == default(DateOnly));
-            var monthlyRevenueTask = GetMonthlyRevenueAsync(startOfMonth, endOfMonth);
-
-            // Execute performance queries in parallel
-            var doctorPerformanceTask = GetDoctorPerformanceAsync();
-            var staffPerformanceTask = GetStaffPerformanceAsync();
-            var serviceUtilizationTask = GetServiceUtilizationAsync();
-
-            // Wait for all tasks to complete
-            await Task.WhenAll(
-                totalDoctorsTask, totalStaffTask, totalPatientsTask,
-                todayAppointmentsTask, monthlyAppointmentsTask, pendingTestsTask, monthlyRevenueTask,
-                doctorPerformanceTask, staffPerformanceTask, serviceUtilizationTask);
-
-            var stats = new ManagerDashboardStats
-            {
-                TotalDoctors = await totalDoctorsTask,
-                TotalStaff = await totalStaffTask,
-                TotalPatients = await totalPatientsTask,
-                TodayAppointments = await todayAppointmentsTask,
-                MonthlyAppointments = await monthlyAppointmentsTask,
-                PendingTests = await pendingTestsTask,
-                MonthlyRevenue = await monthlyRevenueTask,
-                DoctorPerformance = await doctorPerformanceTask,
-                StaffPerformance = await staffPerformanceTask,
-                ServiceUtilization = await serviceUtilizationTask
-            };
-            return stats;
-        }
-
-        private async Task<List<dynamic>> GetDoctorPerformanceAsync()
-        {
-            return await _context.Doctors
+            // Fetch doctor performance data first to avoid LINQ translation issues
+            var doctorPerformanceData = await _context.Doctors
                 .Include(d => d.Acc)
                 .Select(d => new
                 {
@@ -72,13 +35,10 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                 })
                 .OrderByDescending(d => d.AppointmentCount)
                 .Take(5)
-                .Cast<dynamic>()
                 .ToListAsync();
-        }
 
-        private async Task<List<dynamic>> GetStaffPerformanceAsync()
-        {
-            return await _context.Staff
+            // Fetch staff performance data first to avoid LINQ translation issues
+            var staffPerformanceData = await _context.Staff
                 .Include(s => s.Acc)
                 .Select(s => new
                 {
@@ -89,13 +49,10 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                 })
                 .OrderByDescending(s => s.TestResultCount)
                 .Take(5)
-                .Cast<dynamic>()
                 .ToListAsync();
-        }
 
-        private async Task<List<dynamic>> GetServiceUtilizationAsync()
-        {
-            return await _context.MedicalServices
+            // Fetch service utilization data first to avoid LINQ translation issues
+            var serviceUtilizationData = await _context.MedicalServices
                 .GroupBy(ms => ms.ServiceName)
                 .Select(g => new
                 {
@@ -105,8 +62,24 @@ namespace HIV_System_API_DAOs.Implements.DashboardDAO
                 })
                 .OrderByDescending(g => g.UtilizationCount)
                 .Take(5)
-                .Cast<dynamic>()
                 .ToListAsync();
+
+            var stats = new ManagerDashboardStats
+            {
+                TotalDoctors = await GetTotalDoctorsAsync(),
+                TotalStaff = await GetTotalStaffAsync(),
+                TotalPatients = await GetTotalPatientsAsync(),
+                TodayAppointments = await _context.Appointments.CountAsync(a => a.ApmtDate == todayDateOnly),
+                MonthlyAppointments = await _context.Appointments.CountAsync(a => a.ApmtDate >= startOfMonthDateOnly && a.ApmtDate <= endOfMonthDateOnly),
+                PendingTests = await _context.TestResults.CountAsync(trs => trs.TestDate == default(DateOnly)),
+                TotalRevenue = await GetTotalRevenueAsync(),
+                MonthlyRevenue = await GetMonthlyRevenueAsync(startOfMonth, endOfMonth),
+                DoctorPerformance = doctorPerformanceData.Cast<dynamic>().ToList(),
+                StaffPerformance = staffPerformanceData.Cast<dynamic>().ToList(),
+                ServiceUtilization = serviceUtilizationData.Cast<dynamic>().ToList()
+            };
+
+            return stats;
         }
 
         public async Task<DashboardChart> GetManagerServiceChartAsync()

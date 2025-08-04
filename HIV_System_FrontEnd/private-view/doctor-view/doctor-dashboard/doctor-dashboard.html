@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <!-- UNIVERSAL SECURITY PROTECTION -->    <script src="../universal-security.js"></script>
     <meta charset="UTF-8">
     <title>Bảng điều khiển bác sĩ</title>
     <link rel="stylesheet" href="doctor-dashboard-style.css">
@@ -92,6 +93,8 @@
             </div>
         </main>
     </div>
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/private-view/shared/role-config.js"></script>

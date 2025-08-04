@@ -757,6 +757,19 @@ namespace HIV_System_API_Services.Implements
                 if (appointment.ApmStatus == 5)
                     throw new InvalidOperationException("Cuộc hẹn đã được hoàn thành.");
 
+                // Can not complete future appointments
+                if (appointment.ApmtDate.HasValue && appointment.ApmTime.HasValue)
+                {
+                    var today = DateOnly.FromDateTime(DateTime.Now);
+                    var now = TimeOnly.FromDateTime(DateTime.Now);
+
+                    // Future date OR (same date but future time)
+                    if (appointment.ApmtDate.Value > today ||
+                        (appointment.ApmtDate.Value == today && appointment.ApmTime.Value > now))
+                    {
+                        throw new InvalidOperationException("Không thể hoàn thành cuộc hẹn trong tương lai.");
+                    }
+                }
                 // Update notes if provided
                 if (!string.IsNullOrWhiteSpace(dto.Notes))
                 {

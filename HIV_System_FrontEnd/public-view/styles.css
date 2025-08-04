@@ -34,9 +34,9 @@ body {
 }
 
 .nav-container {
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1034,5 +1034,126 @@ a:focus {
     .contact-form,
     .modal-content {
         border: 2px solid #333;
+    }
+}
+
+/* HIV Education Section*/
+.hiv-education-section {
+    background: #f8f9fa;
+    padding: 80px 0 60px 0;
+}
+
+.hiv-education-section h2 {
+    text-align: center;
+    color: #e74c3c;
+    margin-bottom: 2.5rem;
+    font-size: 2.5rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.hiv-edu-content {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(231,76,60,0.08);
+    padding: 2.5rem 2.5rem 2rem 2.5rem;
+    border: 1.5px solid #f3dede;
+}
+
+.hiv-edu-content h3 {
+    color: #e74c3c;
+    margin-top: 2.2rem;
+    margin-bottom: 1.1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.hiv-edu-content ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1.2rem;
+    color: #444;
+    font-size: 1.08rem;
+    line-height: 1.7;
+}
+
+.hiv-edu-content ul ul {
+    margin-left: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.01rem;
+}
+
+.hiv-edu-content hr {
+    margin: 2.2rem 0 2rem 0;
+    border: none;
+    border-top: 1.5px solid #f3dede;
+}
+
+.hiv-edu-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.2rem;
+    background: #fff7f7;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.07);
+}
+
+.hiv-edu-content th, .hiv-edu-content td {
+    padding: 12px 10px;
+    border: 1px solid #f3dede;
+    font-size: 1.05rem;
+}
+
+.hiv-edu-content th {
+    background: linear-gradient(90deg, #e74c3c 100%);
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.hiv-edu-content td {
+    color: #333;
+    background: #fff;
+}
+
+.hiv-edu-content a {
+    color: #e74c3c;
+    text-decoration: underline;
+    transition: color 0.2s;
+    font-weight: 500;
+}
+
+.hiv-edu-content a:hover {
+    color: #c0392b;
+    text-decoration: underline;
+}
+
+.hiv-edu-content p {
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 900px) {
+    .hiv-edu-content {
+        padding: 1.5rem 0.7rem;
+    }
+    .hiv-education-section h2 {
+        font-size: 1.5rem;
+    }
+    .hiv-edu-content h3 {
+        font-size: 1.08rem;
+    }
+    .hiv-edu-content th, .hiv-edu-content td {
+        font-size: 0.97rem;
+        padding: 8px 4px;
+    }
+    .container,
+    .nav-container {
+        padding: 0 10px;
     }
 }

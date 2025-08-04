@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <!-- UNIVERSAL SECURITY PROTECTION -->    <script src="../universal-security.js"></script>
     <meta charset="UTF-8">
     <title>Lịch hẹn của tôi</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -137,19 +138,7 @@
     <div class="main-content">
         <h1>My Appointments</h1>
         
-        <!-- Quick Access -->
-        <div style="margin-bottom: 24px; text-align: center;">
-            <button onclick="window.location.href='../community/patient-community.html'" 
-                    style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); 
-                           color: white; border: none; border-radius: 8px; 
-                           padding: 12px 24px; font-size: 1em; cursor: pointer; 
-                           transition: transform 0.2s, box-shadow 0.2s;
-                           box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);"
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(231, 76, 60, 0.3)';"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(231, 76, 60, 0.2)';">
-                <i class="fas fa-blog"></i> Access Blog & Community
-            </button>
-        </div>
+      
         
         <div id="appointment-list"></div>
         <div id="calendar"></div>
@@ -232,6 +221,9 @@
             </div>
         </div>
     </div>
+    
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
     <script src="../header/header.js"></script>
     <script src="view-appointment.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>

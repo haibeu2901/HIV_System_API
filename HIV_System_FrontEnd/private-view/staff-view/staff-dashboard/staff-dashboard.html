@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <!-- UNIVERSAL SECURITY PROTECTION -->    <script src="../universal-security.js"></script>
     <meta charset="UTF-8">
     <title>Bảng điều khiển nhân viên</title>
     <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
@@ -52,6 +53,8 @@
             </div>
         </div>
     </footer>
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
     <script src="/private-view/shared/role-config.js"></script>
     <script src="/private-view/shared/header/header-script.js"></script>
     <script src="staff-dashboard-script.js"></script>

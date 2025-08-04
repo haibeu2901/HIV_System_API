@@ -11,7 +11,8 @@ const ROLE_PERMISSIONS = {
         canManageMedicalRecords: true,
         canViewDashboard: true,
         canExportData: true,
-        canManageSystem: true
+        canManageSystem: true,
+        canCreatePayments: true
     },
     manager: {
         canManageAccounts: false,
@@ -24,7 +25,50 @@ const ROLE_PERMISSIONS = {
         canManageMedicalRecords: true,
         canViewDashboard: true,
         canExportData: true,
-        canManageSystem: false
+        canManageSystem: false,
+        canCreatePayments: false
+    },
+    doctor: {
+        canManageAccounts: false,
+        canCreateAccounts: false,
+        canDeleteAccounts: false,
+        canModifyRoles: false,
+        canManageNotifications: false,
+        canManageAppointments: true,
+        canViewMedicalRecords: true,
+        canManageMedicalRecords: true,
+        canViewDashboard: true,
+        canExportData: false,
+        canManageSystem: false,
+        canCreatePayments: true
+    },
+    staff: {
+        canManageAccounts: false,
+        canCreateAccounts: false,
+        canDeleteAccounts: false,
+        canModifyRoles: false,
+        canManageNotifications: false,
+        canManageAppointments: true,
+        canViewMedicalRecords: true,
+        canManageMedicalRecords: true,
+        canViewDashboard: false,
+        canExportData: false,
+        canManageSystem: false,
+        canCreatePayments: true
+    },
+    patient: {
+        canManageAccounts: false,
+        canCreateAccounts: false,
+        canDeleteAccounts: false,
+        canModifyRoles: false,
+        canManageNotifications: false,
+        canManageAppointments: false,
+        canViewMedicalRecords: false,
+        canManageMedicalRecords: false,
+        canViewDashboard: false,
+        canExportData: false,
+        canManageSystem: false,
+        canCreatePayments: false
     }
 };
 

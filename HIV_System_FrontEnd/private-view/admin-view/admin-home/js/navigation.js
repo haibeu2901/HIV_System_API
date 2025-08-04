@@ -53,6 +53,11 @@ class NavigationManager {
             case 'accounts':
                 window.accountManager.loadAccounts();
                 break;
+            case 'payments':
+                if (window.paymentsManager) {
+                    window.paymentsManager.initialize();
+                }
+                break;
         }
     }
 

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- UNIVERSAL SECURITY PROTECTION -->    <script src="../universal-security.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bảng điều khiển quản lý - Phòng khám CareFirst HIV</title>
@@ -371,6 +372,8 @@
     </div>
 
     <!-- Load JavaScript modules in order -->
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
     <script src="../../shared/role-config.js"></script>
     <script src="../../admin-view/admin-home/js/utils.js"></script>
     <script src="../../admin-view/admin-home/js/auth.js"></script>
