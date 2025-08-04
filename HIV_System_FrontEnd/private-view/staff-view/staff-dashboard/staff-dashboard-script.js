@@ -37,6 +37,14 @@ function renderDashboardCards(dashboard) {
                 <div style="font-size:2rem; font-weight:bold;">${dashboard.pendingTests ?? '0'}</div>
             </div>
             <div class="dashboard-card" style="flex:1; min-width:200px; background:#fff; border-radius:12px; box-shadow:0 2px 8px #0001; padding:2rem; text-align:center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
+                 onclick="window.location.href='../staff-create-payment.html'" 
+                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 16px rgba(46, 204, 113, 0.2)';" 
+                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px #0001';">
+                <i class="fas fa-credit-card" style="font-size:2rem; color:#2ecc71;"></i>
+                <h3 style="margin:1rem 0 0.5rem;">Tạo thanh toán</h3>
+                <div style="font-size:1.2rem; font-weight:bold; color:#2ecc71;">Truy cập ngay</div>
+            </div>
+            <div class="dashboard-card" style="flex:1; min-width:200px; background:#fff; border-radius:12px; box-shadow:0 2px 8px #0001; padding:2rem; text-align:center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
                  onclick="window.location.href='../staff-community.html'" 
                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 16px rgba(142, 68, 173, 0.2)';" 
                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px #0001';">
