@@ -5,10 +5,46 @@
     // IMMEDIATE SECURITY CHECK - Run before anything else
     const immediateToken = localStorage.getItem('token');
     if (!immediateToken) {
-        console.log('SECURITY: No token found, immediate redirect to login');
-        alert('You need to be logged in to access this page.');
+        console.log('SECURITY: No token found, immediate redirect to landing page');
+        clearAuthData();
         window.location.href = '/public-view/landingpage.html';
         return; // Stop execution
+    }
+    
+    // IMMEDIATE ROLE CHECK - Run before anything else
+    const immediateRole = localStorage.getItem('userRole');
+    const currentPath = window.location.pathname;
+    if (immediateRole) {
+        const roleInt = parseInt(immediateRole);
+        const rolePaths = {
+            1: ['/private-view/admin-view/', '/private-view/shared/'],
+            2: ['/private-view/doctor-view/', '/private-view/shared/'],
+            3: ['/private-view/user-view/', '/private-view/shared/'],
+            4: ['/private-view/staff-view/', '/private-view/shared/'],
+            5: ['/private-view/manager-view/', '/private-view/shared/']
+        };
+        
+        const allowedPaths = rolePaths[roleInt];
+        if (allowedPaths && !allowedPaths.some(path => currentPath.includes(path))) {
+            console.log('SECURITY: Role access denied, immediate redirect to landing page');
+            clearAuthData();
+            window.location.href = '/public-view/landingpage.html';
+            return; // Stop execution
+        }
+    } else {
+        console.log('SECURITY: No role found, immediate redirect to landing page');
+        clearAuthData();
+        window.location.href = '/public-view/landingpage.html';
+        return; // Stop execution
+    }
+
+    // Clear authentication data helper function
+    function clearAuthData() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('accId');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('fullName');
     }
     
     // Configuration
@@ -21,8 +57,8 @@
     function checkTokenExistence() {
         const token = localStorage.getItem('token');
         if (!token) {
-            console.log('No token found, redirecting to login...');
-            redirectToLogin('You need to be logged in to access this page.');
+            console.log('No token found, redirecting to landing page...');
+            redirectToLandingPage('Authentication required.');
             return false;
         }
         return true;
@@ -33,8 +69,8 @@
         const token = localStorage.getItem('token');
         
         if (!token) {
-            console.log('No token found during validation, redirecting to login...');
-            redirectToLogin('You need to be logged in to access this page.');
+            console.log('No token found during validation, redirecting to landing page...');
+            redirectToLandingPage('Authentication required.');
             return false;
         }
         
@@ -49,13 +85,13 @@
             
             if (response.status === 401 || response.status === 403) {
                 console.log('Token invalid or expired, clearing auth data...');
-                redirectToLogin('Your session has expired. Please log in again.');
+                redirectToLandingPage('Session expired. Please log in again.');
                 return false;
             }
             
             if (!response.ok) {
                 console.log('Token validation failed with status:', response.status);
-                redirectToLogin('Authentication failed. Please log in again.');
+                redirectToLandingPage('Authentication failed. Please log in again.');
                 return false;
             }
             
@@ -63,7 +99,7 @@
         } catch (error) {
             console.error('Token validation failed:', error);
             // On network error, redirect to be safe - no access without valid token
-            redirectToLogin('Unable to verify your session. Please log in again.');
+            redirectToLandingPage('Unable to verify session. Please log in again.');
             return false;
         }
     }
@@ -77,11 +113,17 @@
         localStorage.removeItem('fullName');
     }
     
-    // Redirect to login with message
-    function redirectToLogin(message = 'Your session has expired. Please log in again.') {
+    // Redirect to landing page with message
+    function redirectToLandingPage(message = 'Access denied. Please log in.') {
         clearAuthData();
-        alert(message);
-        window.location.href = CONFIG.LOGIN_PAGE;
+        console.log('Redirecting to landing page:', message);
+        const encodedMessage = encodeURIComponent(message);
+        window.location.href = `${CONFIG.LOGIN_PAGE}?reason=${encodedMessage}`;
+    }
+
+    // Legacy function for backward compatibility
+    function redirectToLogin(message = 'Access denied. Please log in.') {
+        redirectToLandingPage(message);
     }
     
     // Main validation function
@@ -93,7 +135,73 @@
         
         // If token exists, validate it with API
         const isValid = await validateToken();
-        // validateToken now handles its own redirects, so we don't need additional logic here
+        if (!isValid) {
+            return; // Already redirected by validateToken
+        }
+        
+        // Check role-based access
+        const hasRoleAccess = checkRoleAccess();
+        if (!hasRoleAccess) {
+            return; // Already redirected by checkRoleAccess
+        }
+    }
+    
+    // Check if user has correct role for the current page
+    function checkRoleAccess() {
+        const currentPath = window.location.pathname;
+        const userRole = localStorage.getItem('userRole');
+        
+        if (!userRole) {
+            console.log('No user role found, redirecting to landing page...');
+            redirectToLandingPage('Invalid session. Please log in again.');
+            return false;
+        }
+        
+        const roleInt = parseInt(userRole);
+        
+        // Define allowed paths for each role
+        const rolePaths = {
+            1: [ // Admin
+                '/private-view/admin-view/',
+                '/private-view/shared/' // Shared components accessible to all roles
+            ],
+            2: [ // Doctor
+                '/private-view/doctor-view/',
+                '/private-view/shared/'
+            ],
+            3: [ // Patient/User
+                '/private-view/user-view/',
+                '/private-view/shared/'
+            ],
+            4: [ // Staff
+                '/private-view/staff-view/',
+                '/private-view/shared/'
+            ],
+            5: [ // Manager
+                '/private-view/manager-view/',
+                '/private-view/shared/'
+            ]
+        };
+
+        // Get allowed paths for the user's role
+        const allowedPaths = rolePaths[roleInt];
+        
+        if (!allowedPaths) {
+            console.log('Unknown role:', userRole);
+            redirectToLandingPage('Invalid user role. Please log in again.');
+            return false;
+        }
+
+        // Check if current path matches any of the allowed paths
+        const hasAccess = allowedPaths.some(allowedPath => currentPath.includes(allowedPath));
+        
+        if (!hasAccess) {
+            console.log('Role access denied. User role:', userRole, 'Path:', currentPath);
+            redirectToLandingPage('You do not have permission to access this page.');
+            return false;
+        }
+        
+        return true;
     }
     
     // Run validation immediately if DOM is already loaded
@@ -128,7 +236,8 @@
         validateToken: validateToken,
         redirectToLogin: redirectToLogin,
         clearAuthData: clearAuthData,
-        performTokenValidation: performTokenValidation
+        performTokenValidation: performTokenValidation,
+        checkRoleAccess: checkRoleAccess
     };
     
 })();

@@ -1,9 +1,60 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <!-- INLINE SECURITY PROTECTION - IMMEDIATE EXECUTION -->
+    <script>
+    (function() {
+        'use strict';
+        console.log('🔒 INLINE SECURITY CHECK STARTED');
+        
+        // IMMEDIATE token check
+        const token = localStorage.getItem('token');
+        const userRole = localStorage.getItem('userRole');
+        
+        if (!token) {
+            console.log('❌ BLOCKING: No token found');
+            document.documentElement.style.display = 'none';
+            localStorage.clear();
+            setTimeout(() => {
+                window.location.href = '/public-view/landingpage.html?reason=' + encodeURIComponent('Authentication required');
+            }, 100);
+            return;
+        }
+        
+        if (!userRole) {
+            console.log('❌ BLOCKING: No role found');
+            document.documentElement.style.display = 'none';
+            localStorage.clear();
+            setTimeout(() => {
+                window.location.href = '/public-view/landingpage.html?reason=' + encodeURIComponent('Invalid user role');
+            }, 100);
+            return;
+        }
+        
+        // Role check - only users (role 3) can access user-view
+        const role = parseInt(userRole);
+        if (role !== 3) {
+            console.log('❌ BLOCKING: Wrong role for user-view:', role);
+            document.documentElement.style.display = 'none';
+            setTimeout(() => {
+                window.location.href = '/public-view/landingpage.html?reason=' + encodeURIComponent('Access denied for your role');
+            }, 100);
+            return;
+        }
+        
+        console.log('✅ INLINE SECURITY: Access granted for role', role);
+    })();
+    </script>
+    
+    <!-- IMMEDIATE SECURITY PROTECTION -->
+    <script src="../../immediate-security.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dịch vụ Y tế - HIV CareFirst</title>
+    
+    <!-- UNIVERSAL SECURITY PROTECTION -->
+    <script src="../../universal-security.js"></script>
+    
     <link rel="stylesheet" href="../../shared/doctor-staff-style.css">
     <link rel="stylesheet" href="../userStyle.css">
     <link rel="stylesheet" href="services-style.css">
@@ -48,7 +99,7 @@
             <div class="services-section">
                 <div class="services-grid" id="servicesGrid">
                     <!-- Services will be loaded dynamically -->
-                    <div class="services-loading">
+                    <div class="loader">
                         <i class="fas fa-spinner fa-spin"></i>
                         <p>Đang tải dịch vụ...</p>
                     </div>

@@ -1,6 +1,33 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <!-- IMMEDIATE SECURITY PROTECTION -->
+    <script src="../../immediate-security.js"></script>
+    
+    <!-- ADDITIONAL ROLE-BASED SECURITY FOR PATIENT LIST -->
+    <script>
+    (function() {
+        'use strict';
+        console.log('🔒 ADDITIONAL SECURITY CHECK - Patient List');
+        
+        // Additional check specifically for patient list - accessible by doctors (2), staff (4), and admins (1)
+        const userRole = localStorage.getItem('userRole');
+        if (userRole) {
+            const role = parseInt(userRole);
+            const allowedRoles = [1, 2, 4]; // admin, doctor, staff
+            if (!allowedRoles.includes(role)) {
+                console.log('❌ BLOCKING: Wrong role for patient list:', role);
+                document.documentElement.style.display = 'none';
+                setTimeout(() => {
+                    window.location.href = '/public-view/landingpage.html?reason=' + encodeURIComponent('Access denied for your role');
+                }, 100);
+                return;
+            }
+            console.log('✅ ADDITIONAL SECURITY: Patient list access granted for role', role);
+        }
+    })();
+    </script>
+    
     <meta charset="UTF-8">
     <title>Danh sách bệnh nhân</title>
     <link rel="stylesheet" href="patient-list-style.css">

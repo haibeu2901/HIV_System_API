@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Security Test Debug</title>
+    <script>
+        console.log('=== SECURITY DEBUG TEST ===');
+        console.log('Page URL:', window.location.href);
+        console.log('Page Path:', window.location.pathname);
+        console.log('Token exists:', !!localStorage.getItem('token'));
+        console.log('Role exists:', !!localStorage.getItem('userRole'));
+        console.log('Token value:', localStorage.getItem('token'));
+        console.log('Role value:', localStorage.getItem('userRole'));
+        
+        // Clear tokens for testing
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        console.log('Tokens cleared for testing');
+        
+        // Test if page content is visible
+        setTimeout(() => {
+            console.log('Page body display:', document.body ? document.body.style.display : 'no body');
+            console.log('Document display:', document.documentElement.style.display);
+        }, 500);
+    </script>
+    
+    <!-- IMMEDIATE SECURITY PROTECTION -->
+    <script src="immediate-security.js"></script>
+    
+    <!-- UNIVERSAL SECURITY PROTECTION -->
+    <script src="universal-security.js"></script>
+</head>
+<body>
+    <h1 style="color: red; font-size: 24px;">🚨 SECURITY TEST PAGE 🚨</h1>
+    <p style="color: red; font-size: 18px;">If you can see this text, security is NOT working!</p>
+    <p>This page should be blocked and redirect to landing page.</p>
+    
+    <script>
+        console.log('Body script executed - Security failed!');
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded - Security definitely failed!');
+        });
+    </script>
+</body>
+</html>

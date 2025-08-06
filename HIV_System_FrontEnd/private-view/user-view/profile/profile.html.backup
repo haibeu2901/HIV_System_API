@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hồ sơ bệnh nhân</title>
+    <link rel="stylesheet" href="../userStyle.css" />
+    <link rel ="stylesheet" href="../header/header.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="profile.css" />
+  </head>
+  <body>
+    <div id="header-placeholder"></div>
+    <main class="main-content">
+      <div class="container">
+        <div class="medical-record-icon">
+          <!-- Sử dụng hình ảnh hoặc biểu tượng Font Awesome -->
+          <!-- <img src="clipboard.png" alt="Hồ sơ y tế" /> -->
+          <i class="fas fa-notes-medical"></i>
+        </div>
+        <h2>Hồ sơ bệnh nhân</h2>
+        <div id="profile-details">
+          <!-- Biểu mẫu hồ sơ sẽ được hiển thị ở đây bằng JS -->
+        </div>
+        <div id="profile-message"></div>
+      </div>
+    </main>
+    <!-- Token validation guard - Must be first script -->
+    <script src="../../shared/token-guard.js"></script>
+    <script src ="../header/header.js"></script>
+    <script src ="./profile.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+  </body>
+</html>

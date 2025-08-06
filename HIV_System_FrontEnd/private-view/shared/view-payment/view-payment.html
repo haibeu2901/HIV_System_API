@@ -2,6 +2,32 @@
 <html lang="vi">
 
 <head>
+    <!-- IMMEDIATE SECURITY PROTECTION -->
+    <script src="../../immediate-security.js"></script>
+    
+    <!-- ADDITIONAL ROLE-BASED SECURITY FOR PAYMENT VIEW -->
+    <script>
+    (function() {
+        'use strict';
+        console.log('🔒 ADDITIONAL SECURITY CHECK - View Payment');
+        
+        // Additional check specifically for payment view - accessible by staff (4), admins (1), and users (3)
+        const userRole = localStorage.getItem('userRole');
+        if (userRole) {
+            const role = parseInt(userRole);
+            const allowedRoles = [1, 3, 4]; // admin, user, staff
+            if (!allowedRoles.includes(role)) {
+                console.log('❌ BLOCKING: Wrong role for payment view:', role);
+                document.documentElement.style.display = 'none';
+                setTimeout(() => {
+                    window.location.href = '/public-view/landingpage.html?reason=' + encodeURIComponent('Access denied for your role');
+                }, 100);
+                return;
+            }
+            console.log('✅ ADDITIONAL SECURITY: Payment view access granted for role', role);
+        }
+    })();
+    </script>
     <meta charset="UTF-8">
     <title>Danh sách thanh toán</title>
     <link rel="stylesheet" href="view-payment-style.css">

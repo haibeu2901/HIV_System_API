@@ -2,8 +2,42 @@
 <html lang="vi">
 
 <head>
+    <!-- IMMEDIATE SECURITY PROTECTION -->
+    <script src="../../immediate-security.js"></script>
     <meta charset="UTF-8">
     <title>Hồ Sơ Y Tế Bệnh Nhân</title>
+    
+    <!-- IMMEDIATE SECURITY CHECK -->
+    <script>
+        // Immediate security check before any content loads
+        (function() {
+            console.log('=== IMMEDIATE HTML SECURITY CHECK ===');
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+            
+            console.log('URL:', window.location.href);
+            console.log('Token:', !!token);
+            console.log('Role:', userRole);
+            
+            if (!token || !userRole) {
+                console.log('IMMEDIATE REDIRECT: Missing token or role');
+                window.location.href = '/public-view/landingpage.html?reason=Authentication%20required';
+                return;
+            }
+            
+            // Check if role has access to shared components
+            const roleInt = parseInt(userRole);
+            if (![1, 2, 3, 4, 5].includes(roleInt)) {
+                console.log('IMMEDIATE REDIRECT: Invalid role');
+                localStorage.clear();
+                window.location.href = '/public-view/landingpage.html?reason=Invalid%20role';
+                return;
+            }
+            
+            console.log('IMMEDIATE CHECK PASSED');
+        })();
+    </script>
+    
     <link rel="stylesheet" href="/private-view/shared/header/header-style.css">
     <link rel="stylesheet" href="patient-medical-record-style.css">
 </head>
@@ -393,7 +427,6 @@
         <div class="modal-content">
             <div class="modal-header"
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>Tạo thanh toán mới</h2>
                 <span id="closePaymentModalBtn" class="close">&times;</span>
             </div>
             <form id="paymentForm">
@@ -416,7 +449,7 @@
                     <label for="paymentCurrency">Đơn vị tiền tệ <span style="color:red">*</span></label>
                     <select id="paymentCurrency" name="currency" required>
                         <option value="VND" selected>VND</option>
-                        <option value="USD">USD</option>
+                       
                     </select>
                 </div>
                 <div class="form-group">
@@ -441,6 +474,20 @@
             </form>
         </div>
     </div>
+
+    <!-- Security Scripts - Must be first -->
+    <script src="../token-guard.js"></script>
+    <script src="../auth-utils.js"></script>
+    
+    <!-- Role Configuration -->
+    <script src="../role-config.js"></script>
+    
+    <!-- FontAwesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    
+    <!-- Main Scripts -->
+    <script src="../header/header-script.js"></script>
+    <script src="patient-medical-record-script.js"></script>
 
 </body>
 

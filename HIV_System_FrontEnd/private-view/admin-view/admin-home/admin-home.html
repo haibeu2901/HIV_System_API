@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- UNIVERSAL SECURITY PROTECTION -->    <script src="../universal-security.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="page-title">Admin Dashboard - Phòng khám CareFirst HIV</title>
@@ -61,9 +62,9 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="../blog-management.html" class="nav-link">
-                        <i class="fas fa-blog"></i>
-                        Blog Management
+                    <a href="#payments" class="nav-link" data-section="payments">
+                        <i class="fas fa-credit-card"></i>
+                        Payments Management
                     </a>
                 </li>
             </ul>
@@ -322,6 +323,72 @@
                 </div>
             </div>
         </section>
+
+        <!-- Payments Section -->
+        <section id="payments" class="admin-section">
+            <div class="section-header">
+                <h1><i class="fas fa-credit-card"></i> Payments Management</h1>
+                <div class="header-actions">
+                    <select id="payment-status-filter">
+                        <option value="all">All Status</option>
+                        <option value="1">Pending</option>
+                        <option value="2">Paid</option>
+                        <option value="3">Failed</option>
+                    </select>
+                    <select id="payment-method-filter">
+                        <option value="all">All Methods</option>
+                        <option value="card">Card</option>
+                        <option value="cash">Cash</option>
+                    </select>
+                    <input type="text" id="payment-search" placeholder="Search by patient name or payment ID...">
+                </div>
+            </div>
+            
+            <div class="payments-container">
+                <div class="payments-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-payments-count">0</h3>
+                            <p>Total Payments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="successful-payments">0</h3>
+                            <p>Successful Payments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="pending-payments">0</h3>
+                            <p>Pending Payments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-revenue-amount">0</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="payments-list" class="payments-list">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Modals -->
@@ -502,6 +569,7 @@
     <script src="js/notifications.js"></script>
     <script src="js/medical-records.js"></script>
     <script src="js/accounts.js"></script>
+    <script src="js/payments.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
