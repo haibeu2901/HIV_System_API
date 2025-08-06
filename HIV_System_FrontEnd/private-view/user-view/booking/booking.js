@@ -129,18 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return [];
             }
             
-            // Generate all possible time slots for the day (8:00 AM to 6:00 PM)
-            const dayStartTime = '08:00';
-            const dayEndTime = '18:00';
-            const allPossibleTimeSlots = generateTimeSlotsBetween(dayStartTime, dayEndTime);
-            
-            console.log('All possible time slots for the day:', allPossibleTimeSlots);
-            
-            if (allPossibleTimeSlots.length === 0) {
-                console.warn('No time slots generated');
-                return [];
-            }
-            
             // Get all doctors to check their schedules
             const doctorsResponse = await fetch('https://localhost:7009/api/Doctor/GetAllDoctors', {
                 headers: {
@@ -162,10 +150,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return [];
             }
             
-            // Fetch all doctor schedules for the selected date (optimize by fetching once per doctor)
-            const doctorSchedules = [];
-            
             console.log(`Fetching schedules for ${doctors.length} doctors on date: ${date}`);
+            
+            // Collect all available time slots from all doctors' schedules
+            const allAvailableTimeSlots = new Set();
             
             for (const doctor of doctors) {
                 try {
@@ -187,17 +175,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         const schedules = await scheduleResponse.json();
                         console.log(`Schedules for doctor ${doctor.doctorId}:`, schedules);
                         
-                        const schedule = schedules.find(s => s.workDate === date);
+                        // Find all schedules for the selected date
+                        const daySchedules = schedules.filter(s => s.workDate === date && s.isAvailable);
                         
-                        if (schedule && schedule.isAvailable) {
-                            console.log(`Doctor ${doctor.doctorId} is available on ${date}:`, schedule);
-                            doctorSchedules.push({
-                                doctorId: doctor.doctorId,
-                                startTime: schedule.startTime.substring(0, 5),
-                                endTime: schedule.endTime.substring(0, 5)
+                        if (daySchedules.length > 0) {
+                            console.log(`Doctor ${doctor.doctorId} is available on ${date}:`, daySchedules);
+                            
+                            // Generate time slots for each schedule period
+                            daySchedules.forEach(schedule => {
+                                const startTime = schedule.startTime.substring(0, 5);
+                                const endTime = schedule.endTime.substring(0, 5);
+                                const scheduleTimeSlots = generateTimeSlotsBetween(startTime, endTime);
+                                
+                                scheduleTimeSlots.forEach(slot => allAvailableTimeSlots.add(slot));
                             });
                         } else {
-                            console.log(`Doctor ${doctor.doctorId} not available on ${date}:`, schedule);
+                            console.log(`Doctor ${doctor.doctorId} not available on ${date}`);
                         }
                     } else {
                         console.warn(`Failed to fetch schedule for doctor ${doctor.doctorId}:`, scheduleResponse.status);
@@ -207,16 +200,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            console.log('All available doctor schedules:', doctorSchedules);
+            // Convert Set to Array and sort
+            const availableTimeSlots = Array.from(allAvailableTimeSlots).sort();
             
-            // Check which time slots have at least one doctor available
-            const availableTimeSlots = allPossibleTimeSlots.filter(timeSlot => {
-                return doctorSchedules.some(schedule => 
-                    isTimeSlotWithinSchedule(timeSlot, schedule.startTime, schedule.endTime)
-                );
-            });
-            
-            console.log('Available time slots:', availableTimeSlots);
+            console.log('All available time slots from doctors\' actual schedules:', availableTimeSlots);
             return availableTimeSlots;
             
         } catch (error) {
