@@ -923,7 +923,7 @@ namespace HIV_System_API_Services.Implements
             await ValidateUsernameAsync(request.AccUsername, request.Email);
             ValidatePassword(request.AccPassword, request.AccUsername);
             await ValidateEmailAsync(request.Email, request.AccUsername);
-
+            await ValidateFullName(request.Fullname);
             // Validate Date of Birth - FIXED
             if (request.Dob.HasValue)
             {

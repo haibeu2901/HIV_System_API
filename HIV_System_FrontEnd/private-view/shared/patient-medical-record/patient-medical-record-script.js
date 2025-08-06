@@ -412,7 +412,7 @@ function renderPaymentHistory(payments) {
                     <th>Số tiền</th>
                     <th>Phương thức</th>
                     <th>Dịch vụ</th>
-                    <th>Ngày thanh toán</th>
+                  
                     <th>Mô tả</th>
                     <th>Thao tác</th>
                 </tr>
@@ -436,7 +436,6 @@ function renderPaymentHistory(payments) {
                 <td class="payment-amount-cell">${formatCurrency(payment.amount)} ${payment.currency}</td>
                 <td>${formatPaymentMethod(payment.paymentMethod)}</td>
                 <td>${payment.serviceName || '-'}</td>
-                <td>${formatDateTime(payment.paymentDate)}</td>
                 <td>${payment.description || '-'}</td>
                 <td class="payment-actions-cell">
                     ${showActionButton ? `

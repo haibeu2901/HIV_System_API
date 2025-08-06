@@ -621,7 +621,8 @@ namespace HIV_System_API_Services.Implements
             if (regimenRequest.StartDate.HasValue && regimenRequest.EndDate.HasValue
                 && regimenRequest.StartDate > regimenRequest.EndDate)
                 throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");
-
+            if (regimenRequest.StartDate.HasValue && regimenRequest.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new ArgumentException("Ngay bat dau khong the trong qua khu");
             // Validate medication inputs
             foreach (var med in medicationRequests)
             {
@@ -782,7 +783,8 @@ namespace HIV_System_API_Services.Implements
             if (regimenRequest.StartDate.HasValue && regimenRequest.EndDate.HasValue
                 && regimenRequest.StartDate > regimenRequest.EndDate)
                 throw new ArgumentException("Ngày bắt đầu không thể muộn hơn ngày kết thúc.");
-
+            if (regimenRequest.StartDate.HasValue && regimenRequest.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new ArgumentException("Ngay bat dau khong the trong qua khu");
             // Validate medication inputs
             foreach (var med in medicationRequests)
             {
