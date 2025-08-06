@@ -968,7 +968,7 @@ namespace HIV_System_API_Services.Implements
             if (!_memoryCache.TryGetValue(cacheKey, out PendingPatientRegistrationDTO? pendingRegistration))
                 throw new InvalidOperationException("Không tìm thấy đăng ký đang chờ hoặc đăng ký đã hết hạn.");
 
-            _memoryCache.Remove(cacheKey);
+            
 
             // Create the patient account
             var patientRequest = new PatientAccountRequestDTO
@@ -988,7 +988,9 @@ namespace HIV_System_API_Services.Implements
             if (account != null)
             {
                 account.IsActive = true;
+
                 await _accountRepo.UpdateAccountStatusAsync(account.AccId, true);
+                _memoryCache.Remove(cacheKey);
             }
 
             return patientResponse.Account ?? throw new InvalidOperationException("Không thể tạo tài khoản.");

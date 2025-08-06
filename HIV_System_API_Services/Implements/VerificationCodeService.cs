@@ -41,7 +41,7 @@ namespace HIV_System_API_Services.Implements
                 return false;
 
             // Remove the code immediately after verification attempt
-            _cache.Remove(cacheKey);
+           
 
             return code == storedCode;
         }
